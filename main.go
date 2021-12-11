@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
+	"strconv"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -16,25 +18,47 @@ func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	// id := params.ByName("id")
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Could not read http request body")
+		w.WriteHeader(400)
+	}
 
-	// Parse data from request body
+	var job Job
+	err = json.Unmarshal(body, &job)
+	if err != nil {
+		log.Printf("Could not unmarshal http request body")
+		w.WriteHeader(400)
+	}
 
-	// Complete Http Request
-
-	// Put into storage/cache/db
+	w.WriteHeader(200)
+	store.Put(job)
 }
 
 func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	// id := params.ByName("id")
+	strId := params.ByName("id")
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Could not read http request body")
+		w.WriteHeader(400)
+	}
 
-	// Parse stopTime from body
+	var stopJob StopJob
+	err = json.Unmarshal(body, &stopJob)
+	if err != nil {
+		log.Printf("Could not unmarshal http request body")
+		w.WriteHeader(400)
+	}
 
-	// Complete Http request
+	id, err := strconv.Atoi(strId)
+	if err != nil {
+		log.Printf("Id not a valid integer")
+		w.WriteHeader(400)
+	}
+	w.WriteHeader(200)
+	store.StopJob(id, stopJob)
 
 	// Generate Snapshot of Dashboards and get Dashboard Id
-
-	// Update job in storage
 }
 
 func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -46,6 +70,8 @@ func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	id := params.ByName("id")
+
 	// Check user authorization/authentification
 
 	// Get job metadata from storage
@@ -56,12 +82,12 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 }
 
 func main() {
-	store.Init(7 * 24 * time.Hour)
+	store.Init(7 * 24 * 60 * 60)
 
 	router := httprouter.New()
 	router.GET("/", Index)
-	router.PUT("/jobStart/:id", JobStart)
-	router.PATCH("/jobStop/:id", JobStop)
+	router.PUT("/job_start", JobStart)
+	router.PATCH("/job_stop/:id", JobStop)
 	router.GET("/jobs", GetJobs)
 	router.GET("/jobs/:id", GetJob)
 

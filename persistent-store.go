@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sort"
 	"sync"
 	"syscall"
 	"time"
@@ -19,21 +20,25 @@ type Job struct {
 	Id        int
 	UserId    string
 	ClusterId string
-	StartTime time.Time
-	StopTime  time.Time
+	StartTime int
+	StopTime  int
 	IsRunning bool
 	JobScript string
 	ProjectId string
-	TTL       time.Duration
+	TTL       int
+}
+
+type StopJob struct {
+	StopTime int
 }
 
 type Store struct {
-	Jobs       []Job
-	defaultTTL time.Duration
+	Jobs       map[int]Job
+	defaultTTL int
 	mut        sync.Mutex
 }
 
-func (s *Store) Init(defTTL time.Duration) {
+func (s *Store) Init(defTTL int) {
 	data, err := os.ReadFile(STOREFILE)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		log.Fatalf("Could not read store file: %v\n Error: %v\n", STOREFILE, err)
@@ -61,14 +66,12 @@ func (s *Store) Put(job Job) {
 			job.TTL = s.defaultTTL
 		}
 		s.mut.Lock()
-		s.Jobs = append(s.Jobs, job)
+		s.Jobs[job.Id] = job
 		s.mut.Unlock()
 	}()
 }
 
 func (s *Store) Get(id int) (Job, error) {
-	s.mut.Lock()
-	defer s.mut.Unlock()
 	for _, job := range s.Jobs {
 		if job.Id == id {
 			return job, nil
@@ -78,9 +81,30 @@ func (s *Store) Get(id int) (Job, error) {
 }
 
 func (s *Store) GetAll() []Job {
+	jobs := make([]Job, 0, len(s.Jobs))
+	for _, v := range s.Jobs {
+		jobs = append(jobs, v)
+	}
+
+	sort.Slice(jobs, func(i, j int) bool {
+		return jobs[i].Id < jobs[j].Id
+	})
+
+	return jobs
+}
+
+func (s *Store) StopJob(id int, stopJob StopJob) {
 	s.mut.Lock()
-	defer s.mut.Unlock()
-	return s.Jobs
+	job := s.Jobs[id]
+	job.StopTime = stopJob.StopTime
+	job.IsRunning = false
+	s.Jobs[id] = job
+	s.mut.Unlock()
+}
+
+func (j *Job) expired() bool {
+	now := int(time.Now().Unix())
+	return j.StopTime+j.TTL < now
 }
 
 func (s *Store) removeExpiredJobs() {
@@ -88,22 +112,19 @@ func (s *Store) removeExpiredJobs() {
 	for {
 		<-ticker.C
 
-		var jobs []Job
-		for _, j := range s.Jobs {
-			if !j.IsRunning && j.StopTime.Add(j.TTL).Before(time.Now()) {
-				continue
-			}
-			jobs = append(jobs, j)
-		}
 		s.mut.Lock()
-		s.Jobs = jobs
-		s.mut.Unlock()
+		for id, j := range s.Jobs {
+			if !j.IsRunning && j.expired() {
+				delete(s.Jobs, id)
+			}
+		}
 
+		s.mut.Unlock()
 	}
 }
 
 func (s *Store) Flush() {
-	data, err := json.Marshal(s)
+	data, err := json.MarshalIndent(s, "", "    ")
 	if err != nil {
 		log.Printf("Could not marshal store into json: %v\n", err)
 	}
