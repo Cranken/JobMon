@@ -17,15 +17,18 @@ import (
 const STOREFILE = "store.json"
 
 type Job struct {
-	Id        int
-	UserId    string
-	ClusterId string
-	StartTime int
-	StopTime  int
-	IsRunning bool
-	JobScript string
-	ProjectId string
-	TTL       int
+	Id          int
+	UserId      string
+	ClusterId   string
+	NumNodes    int
+	NodeList    string
+	StartTime   int
+	StopTime    int
+	IsRunning   bool
+	JobScript   string
+	ProjectId   string
+	TTL         int
+	DashboardId string
 }
 
 type StopJob struct {
@@ -38,6 +41,8 @@ type Store struct {
 	mut        sync.Mutex
 }
 
+type JobPred func(*Job) bool
+
 func (s *Store) Init(defTTL int) {
 	data, err := os.ReadFile(STOREFILE)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
@@ -45,6 +50,9 @@ func (s *Store) Init(defTTL int) {
 	}
 	s.mut.Lock()
 	json.Unmarshal(data, s)
+	if s.Jobs == nil {
+		s.Jobs = make(map[int]Job)
+	}
 	s.defaultTTL = defTTL
 	s.mut.Unlock()
 
@@ -72,18 +80,24 @@ func (s *Store) Put(job Job) {
 }
 
 func (s *Store) Get(id int) (Job, error) {
-	for _, job := range s.Jobs {
-		if job.Id == id {
-			return job, nil
-		}
+	job, pres := s.Jobs[id]
+	var err error
+	if !pres {
+		err = fmt.Errorf("Job with id: %v not found", id)
 	}
-	return Job{}, fmt.Errorf("Job with id: %v not found", id)
+	return job, err
 }
 
 func (s *Store) GetAll() []Job {
+	return s.GetAllByPred(func(_ *Job) bool { return true })
+}
+
+func (s *Store) GetAllByPred(pred JobPred) []Job {
 	jobs := make([]Job, 0, len(s.Jobs))
 	for _, v := range s.Jobs {
-		jobs = append(jobs, v)
+		if pred(&v) {
+			jobs = append(jobs, v)
+		}
 	}
 
 	sort.Slice(jobs, func(i, j int) bool {
