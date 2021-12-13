@@ -7,16 +7,14 @@ import (
 	"io/fs"
 	"log"
 	"os"
-	"os/signal"
 	"sort"
 	"sync"
-	"syscall"
 	"time"
 )
 
 const STOREFILE = "store.json"
 
-type Job struct {
+type JobMetadata struct {
 	Id          int
 	UserId      string
 	ClusterId   string
@@ -36,12 +34,12 @@ type StopJob struct {
 }
 
 type Store struct {
-	Jobs       map[int]Job
+	Jobs       map[int]JobMetadata
 	defaultTTL int
 	mut        sync.Mutex
 }
 
-type JobPred func(*Job) bool
+type JobPred func(*JobMetadata) bool
 
 func (s *Store) Init(defTTL int) {
 	data, err := os.ReadFile(STOREFILE)
@@ -51,24 +49,16 @@ func (s *Store) Init(defTTL int) {
 	s.mut.Lock()
 	json.Unmarshal(data, s)
 	if s.Jobs == nil {
-		s.Jobs = make(map[int]Job)
+		s.Jobs = make(map[int]JobMetadata)
 	}
 	s.defaultTTL = defTTL
 	s.mut.Unlock()
+	s.removeExpiredJobs()
 
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
-
-	go func() {
-		<-sigChan
-		s.Flush()
-		os.Exit(0)
-	}()
-
-	go s.removeExpiredJobs()
+	go s.startExpiredJobsTimer()
 }
 
-func (s *Store) Put(job Job) {
+func (s *Store) Put(job JobMetadata) {
 	go func() {
 		if job.TTL == 0 {
 			job.TTL = s.defaultTTL
@@ -79,21 +69,21 @@ func (s *Store) Put(job Job) {
 	}()
 }
 
-func (s *Store) Get(id int) (Job, error) {
+func (s *Store) Get(id int) (JobMetadata, error) {
 	job, pres := s.Jobs[id]
 	var err error
 	if !pres {
-		err = fmt.Errorf("Job with id: %v not found", id)
+		err = fmt.Errorf("job with id: %v not found", id)
 	}
 	return job, err
 }
 
-func (s *Store) GetAll() []Job {
-	return s.GetAllByPred(func(_ *Job) bool { return true })
+func (s *Store) GetAll() []JobMetadata {
+	return s.GetAllByPred(func(_ *JobMetadata) bool { return true })
 }
 
-func (s *Store) GetAllByPred(pred JobPred) []Job {
-	jobs := make([]Job, 0, len(s.Jobs))
+func (s *Store) GetAllByPred(pred JobPred) []JobMetadata {
+	jobs := make([]JobMetadata, 0, len(s.Jobs))
 	for _, v := range s.Jobs {
 		if pred(&v) {
 			jobs = append(jobs, v)
@@ -107,34 +97,37 @@ func (s *Store) GetAllByPred(pred JobPred) []Job {
 	return jobs
 }
 
-func (s *Store) StopJob(id int, stopJob StopJob) {
+func (s *Store) StopJob(id int, stopJob StopJob) JobMetadata {
 	s.mut.Lock()
 	job := s.Jobs[id]
 	job.StopTime = stopJob.StopTime
 	job.IsRunning = false
 	s.Jobs[id] = job
 	s.mut.Unlock()
+	return s.Jobs[id]
 }
 
-func (j *Job) expired() bool {
+func (j *JobMetadata) expired() bool {
 	now := int(time.Now().Unix())
 	return j.StopTime+j.TTL < now
 }
 
-func (s *Store) removeExpiredJobs() {
+func (s *Store) startExpiredJobsTimer() {
 	ticker := time.NewTicker(12 * time.Hour)
 	for {
 		<-ticker.C
-
-		s.mut.Lock()
-		for id, j := range s.Jobs {
-			if !j.IsRunning && j.expired() {
-				delete(s.Jobs, id)
-			}
-		}
-
-		s.mut.Unlock()
+		s.removeExpiredJobs()
 	}
+}
+
+func (s *Store) removeExpiredJobs() {
+	s.mut.Lock()
+	for id, j := range s.Jobs {
+		if !j.IsRunning && j.expired() {
+			delete(s.Jobs, id)
+		}
+	}
+	s.mut.Unlock()
 }
 
 func (s *Store) Flush() {
