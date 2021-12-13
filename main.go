@@ -5,22 +5,22 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
-	"github.com/flosch/pongo2/v4"
 	"github.com/julienschmidt/httprouter"
 )
 
 var store = Store{}
-var indexTmpl *pongo2.Template
-var jobsTmpl *pongo2.Template
+var config = Configuration{}
+var db = DB{}
+var jobCache = LRUCache{}
 
 func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	err := indexTmpl.ExecuteWriter(pongo2.Context{}, w)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	w.Write([]byte("Index"))
 }
 
 func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -30,7 +30,7 @@ func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 		w.WriteHeader(400)
 	}
 
-	var job Job
+	var job JobMetadata
 	err = json.Unmarshal(body, &job)
 	if err != nil {
 		log.Printf("Could not unmarshal http request body")
@@ -63,9 +63,11 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	}
 	w.WriteHeader(200)
 
-	store.StopJob(id, stopJob)
+	jobMetadata := store.StopJob(id, stopJob)
 
-	// Generate Snapshot of Dashboards and get Dashboard Id
+	if config.Prefetch {
+		jobCache.Get(jobMetadata)
+	}
 }
 
 func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -73,13 +75,18 @@ func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	// Get all for now
 	jobs := store.GetAll()
 
-	err := jobsTmpl.ExecuteWriter(pongo2.Context{"jobs": jobs}, w)
+	data, err := json.Marshal(&jobs)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("Could not marshal jobs to json")
+		w.WriteHeader(500)
 	}
+	allowCors(w.Header())
+	w.Write(data)
 }
 
 func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	start := time.Now()
+
 	strId := params.ByName("id")
 	id, err := strconv.Atoi(strId)
 	if err != nil {
@@ -87,7 +94,7 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		w.WriteHeader(400)
 	}
 
-	// Check user authorization/authentification
+	// TODO: Check user authorization/authentification
 
 	job, err := store.Get(id)
 	if err != nil {
@@ -95,42 +102,57 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		w.WriteHeader(400)
 	}
 
-	// TODO: Remove test output
-	data, err := json.Marshal(&job)
+	jobData := jobCache.Get(job)
+	if jobData == nil {
+		log.Printf("Could not get job metric data")
+		w.WriteHeader(500)
+	}
+	jsonData, err := json.Marshal(&jobData)
 	if err != nil {
 		log.Printf("Could not marshal job to json")
 		w.WriteHeader(500)
 	}
-	w.Write(data)
 
-	// Fill page template with job metadata
+	elapsed := time.Since(start)
+	log.Printf("Get job %v took %s", id, elapsed)
 
-	// Write filled template into Http response
+	allowCors(w.Header())
+	w.Write(jsonData)
 }
 
 func main() {
-	store.Init(7 * 24 * 60 * 60)
-	pongo2.RegisterFilter("convTime", UnixToTime)
-	indexTmpl = pongo2.Must(pongo2.FromFile("frontend/index.html"))
-	jobsTmpl = pongo2.Must(pongo2.FromFile("frontend/jobs.html"))
+	config.Init()
+	log.Printf("%v\n", config)
+	store.Init(config.DefaultTTL)
+	db.Init(config)
+	jobCache.Init(config.CacheSize, &db)
 
 	router := httprouter.New()
+	router.ServeFiles("/static/*filepath", http.Dir("static"))
 	router.GET("/", Index)
 	router.PUT("/api/job_start", JobStart)
 	router.PATCH("/api/job_stop/:id", JobStop)
-	router.GET("/jobs", GetJobs)
-	router.GET("/jobs/:id", GetJob)
+	router.GET("/api/jobs", GetJobs)
+	router.GET("/api/job/:id", GetJob)
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	registerCleanup()
+
+	log.Fatal(http.ListenAndServe("127.0.0.1:8080", router))
 }
 
-func UnixToTime(in *pongo2.Value, _ *pongo2.Value) (*pongo2.Value, *pongo2.Error) {
-	if !in.IsInteger() {
-		return nil, &pongo2.Error{
-			Filename: "filter:convTime",
-		}
-	}
-	ts := in.Integer()
-	time := time.Unix(int64(ts), 0)
-	return pongo2.AsValue(time), nil
+func allowCors(header http.Header) {
+	header.Set("Access-Control-Allow-Methods", header.Get("Allow"))
+	header.Set("Access-Control-Allow-Origin", "*")
+}
+
+func registerCleanup() {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+
+	go func() {
+		<-sigChan
+		store.Flush()
+		db.Close()
+		os.Exit(0)
+	}()
 }
