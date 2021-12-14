@@ -11,19 +11,22 @@ import (
 const CONFIG_FILE = "config.json"
 
 type Configuration struct {
-	DBHost     string
-	DBToken    string
-	DBOrg      string
-	DBBucket   string
-	DefaultTTL int
-	Metrics    []MetricConfig
-	CacheSize  int
-	Prefetch   bool
+	DBHost         string
+	DBToken        string
+	DBOrg          string
+	DBBucket       string
+	DefaultTTL     int
+	Metrics        []MetricConfig
+	CacheSize      int
+	Prefetch       bool
+	SampleInterval string
 }
 
 type MetricConfig struct {
-	MetricType  string
-	Measurement string
+	Type           string
+	Measurement    string
+	AggFn          string
+	SampleInterval string
 }
 
 func (c *Configuration) Init() {
