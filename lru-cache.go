@@ -2,6 +2,7 @@ package main
 
 import (
 	"container/list"
+	"log"
 	"sync"
 )
 
@@ -33,8 +34,12 @@ func (c *LRUCache) Get(job JobMetadata) []MetricData {
 	if data != nil {
 		return data
 	}
-	data = c.db.GetJobData(job)
-	c.put(Item{id: job.Id, data: data})
+	data, err := c.db.GetJobData(job)
+	if err != nil {
+		log.Printf("couldnt get job data: %v", err)
+	} else {
+		c.put(Item{id: job.Id, data: data})
+	}
 	return data
 }
 
