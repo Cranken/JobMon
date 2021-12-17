@@ -2,7 +2,7 @@ package main
 
 import (
 	"container/list"
-	"log"
+	"fmt"
 	"sync"
 )
 
@@ -15,7 +15,7 @@ type LRUCache struct {
 
 type Item struct {
 	id   int
-	data []MetricData
+	data JobData
 }
 
 func (c *LRUCache) Init(size int, db *DB) {
@@ -26,21 +26,19 @@ func (c *LRUCache) Init(size int, db *DB) {
 	c.db = db
 }
 
-func (c *LRUCache) Get(job JobMetadata) []MetricData {
+func (c *LRUCache) Get(job JobMetadata) (data JobData, err error) {
 	c.mut.Lock()
 	defer c.mut.Unlock()
 
-	data := c.find(job.Id)
-	if data != nil {
-		return data
+	data, err = c.find(job.Id)
+	if err == nil {
+		return data, err
 	}
-	data, err := c.db.GetJobData(job)
-	if err != nil {
-		log.Printf("couldnt get job data: %v", err)
-	} else {
+	data, err = c.db.GetJobData(job)
+	if err == nil {
 		c.put(Item{id: job.Id, data: data})
 	}
-	return data
+	return data, err
 }
 
 func (c *LRUCache) put(data Item) {
@@ -50,12 +48,12 @@ func (c *LRUCache) put(data Item) {
 	c.list.PushFront(data)
 }
 
-func (c *LRUCache) find(id int) []MetricData {
+func (c *LRUCache) find(id int) (data JobData, err error) {
 	for el := c.list.Front(); el != nil; el = el.Next() {
 		if el.Value.(Item).id == id {
 			c.list.MoveToFront(el)
-			return el.Value.(Item).data
+			return el.Value.(Item).data, nil
 		}
 	}
-	return nil
+	return data, fmt.Errorf("key %v not found in cache", id)
 }

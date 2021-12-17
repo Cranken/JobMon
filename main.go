@@ -28,6 +28,7 @@ func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 	if err != nil {
 		log.Printf("Could not read http request body")
 		w.WriteHeader(400)
+		return
 	}
 
 	var job JobMetadata
@@ -35,6 +36,7 @@ func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 	if err != nil {
 		log.Printf("Could not unmarshal http request body")
 		w.WriteHeader(400)
+		return
 	}
 
 	w.WriteHeader(200)
@@ -46,6 +48,7 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	if err != nil {
 		log.Printf("Could not read http request body")
 		w.WriteHeader(400)
+		return
 	}
 
 	var stopJob StopJob
@@ -53,6 +56,7 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	if err != nil {
 		log.Printf("Could not parse json from http request body")
 		w.WriteHeader(400)
+		return
 	}
 
 	strId := params.ByName("id")
@@ -60,6 +64,7 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	if err != nil {
 		log.Printf("Id is not a valid integer")
 		w.WriteHeader(400)
+		return
 	}
 	w.WriteHeader(200)
 
@@ -83,6 +88,7 @@ func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	if err != nil {
 		log.Printf("Could not marshal jobs to json")
 		w.WriteHeader(500)
+		return
 	}
 	allowCors(w.Header())
 	w.Write(data)
@@ -91,34 +97,46 @@ func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	start := time.Now()
 
+	node := r.URL.Query().Get("node")
 	strId := params.ByName("id")
+
 	id, err := strconv.Atoi(strId)
 	if err != nil {
-		log.Printf("Id is not a valid integer")
-		w.WriteHeader(400)
+		log.Printf("Could not job id data")
+		w.WriteHeader(500)
+		return
 	}
 
 	// TODO: Check user authorization/authentification
 
 	job, err := store.Get(id)
 	if err != nil {
-		log.Printf("Job does not exist")
-		w.WriteHeader(400)
+		log.Printf("Could not get job meta data")
+		w.WriteHeader(500)
+		return
 	}
 
-	jobData := jobCache.Get(job)
-	if jobData == nil {
-		log.Printf("Could not get job metric data")
-		w.WriteHeader(500)
+	var jobData JobData
+	if node == "" {
+		jobData, err = jobCache.Get(job)
+	} else {
+		jobData, err = db.GetNodeJobData(job, node)
 	}
+	if err != nil {
+		log.Printf("Could not get job metric data: %v\n", err)
+		w.WriteHeader(500)
+		return
+	}
+
 	jsonData, err := json.Marshal(&jobData)
 	if err != nil {
 		log.Printf("Could not marshal job to json")
 		w.WriteHeader(500)
+		return
 	}
 
 	elapsed := time.Since(start)
-	log.Printf("Get job %v took %s", id, elapsed)
+	log.Printf("Get job %v took %s", job.Id, elapsed)
 
 	allowCors(w.Header())
 	w.Write(jsonData)

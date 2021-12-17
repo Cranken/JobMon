@@ -27,6 +27,7 @@ type MetricConfig struct {
 	Measurement    string
 	AggFn          string
 	SampleInterval string
+	Unit           string
 }
 
 func (c *Configuration) Init() {
