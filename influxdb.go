@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -21,6 +22,7 @@ type DB struct {
 	bucket                string
 	metrics               []MetricConfig
 	defaultSampleInterval string
+	metricQuantiles       []string
 }
 
 type MetricData struct {
@@ -28,9 +30,16 @@ type MetricData struct {
 	Data   map[string][]QueryResult
 }
 
+type QuantileData struct {
+	Config    MetricConfig
+	Quantiles []string
+	Data      map[string][]QueryResult
+}
+
 type JobData struct {
-	Metadata   JobMetadata
-	MetricData []MetricData
+	Metadata     JobMetadata
+	MetricData   []MetricData
+	QuantileData []QuantileData
 }
 
 type QueryResult map[string]interface{}
@@ -44,6 +53,7 @@ func (db *DB) Init(c Configuration) {
 	db.org = c.DBOrg
 	db.metrics = c.Metrics
 	db.defaultSampleInterval = c.SampleInterval
+	db.metricQuantiles = c.MetricQuantiles
 	go db.updateAggregationTasks()
 }
 
@@ -64,19 +74,38 @@ func (db *DB) getJobData(job JobMetadata, metrics []MetricConfig, node string) (
 		return data, fmt.Errorf("job is still running")
 	}
 	var metricData []MetricData
+	var quantileData []QuantileData
 	var wg sync.WaitGroup
 	for _, m := range metrics {
-		wg.Add(1)
+		wg.Add(2)
 		go func(m MetricConfig) {
 			result, err := db.query(m, job, node)
-			if err == nil {
-				metricData = append(metricData, MetricData{Config: m, Data: result})
-			}
 			defer wg.Done()
+			if err != nil {
+				log.Printf("could not get metric data %v", err)
+				return
+			}
+			metricData = append(metricData, MetricData{Config: m, Data: result})
+		}(m)
+
+		go func(m MetricConfig) {
+			tempRes, err := db.queryQuantileMeasurement(m, job, db.metricQuantiles)
+			defer wg.Done()
+			if err != nil {
+				log.Printf("could not get quantile data %v", err)
+				return
+			}
+			result, err := parseQueryResult(tempRes, "_field")
+			if err != nil {
+				log.Printf("could not parsequantile data %v", err)
+				return
+			}
+			quantileData = append(quantileData, QuantileData{Config: m, Data: result, Quantiles: db.metricQuantiles})
 		}(m)
 	}
 	wg.Wait()
 	data.MetricData = metricData
+	data.QuantileData = quantileData
 	data.Metadata = job
 	return data, err
 }
@@ -86,7 +115,7 @@ func (db *DB) query(metric MetricConfig, job JobMetadata, node string) (result m
 	if metric.AggFn != "" && node == "" {
 		queryResult, err = db.queryAggregateMeasurement(metric, job)
 		if err == nil {
-			result, err = parseSimpleQueryResult(queryResult, "hostname")
+			result, err = parseQueryResult(queryResult, "hostname")
 		}
 	} else if node != "" {
 		queryResult, err = db.querySimpleMeasurement(metric, job, node)
@@ -95,12 +124,12 @@ func (db *DB) query(metric MetricConfig, job JobMetadata, node string) (result m
 			if metric.Type != "node" {
 				separationKey = "type-id"
 			}
-			result, err = parseSimpleQueryResult(queryResult, separationKey)
+			result, err = parseQueryResult(queryResult, separationKey)
 		}
 	} else {
 		queryResult, err = db.querySimpleMeasurement(metric, job, node)
 		if err == nil {
-			result, err = parseSimpleQueryResult(queryResult, "hostname")
+			result, err = parseQueryResult(queryResult, "hostname")
 		}
 	}
 	return result, err
@@ -124,7 +153,7 @@ func (db *DB) querySimpleMeasurement(metric MetricConfig, job JobMetadata, node 
 	return result, err
 }
 
-func parseSimpleQueryResult(queryResult *api.QueryTableResult, separationKey string) (result map[string][]QueryResult, err error) {
+func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (result map[string][]QueryResult, err error) {
 	result = make(map[string][]QueryResult)
 	tableRows := []QueryResult{}
 	curNode := ""
@@ -141,12 +170,11 @@ func parseSimpleQueryResult(queryResult *api.QueryTableResult, separationKey str
 	}
 	result[curNode] = tableRows
 
-	// check for an error
 	if queryResult.Err() != nil {
 		fmt.Printf("query parsing error: %s\n", queryResult.Err().Error())
 		return nil, queryResult.Err()
 	}
-	return result, nil
+	return
 }
 
 func (db *DB) queryAggregateMeasurement(metric MetricConfig, job JobMetadata) (result *api.QueryTableResult, err error) {
@@ -160,10 +188,82 @@ func (db *DB) queryAggregateMeasurement(metric MetricConfig, job JobMetadata) (r
 	if err != nil {
 		log.Printf("Error at query: %v\n", err)
 	}
-	return result, err
+	return
 }
 
-func (db *DB) updateAggregationTasks() {
+func (db *DB) queryQuantileMeasurement(metric MetricConfig, job JobMetadata, quantiles []string) (result *api.QueryTableResult, err error) {
+	measurement := metric.Measurement
+	if metric.Type != "node" && metric.AggFn != "" {
+		measurement += "_" + metric.AggFn
+	}
+	tempKeys := []string{}
+	for i := 'A'; i <= 'Z'; i++ {
+		tempKeys = append(tempKeys, string(i))
+	}
+
+	query := fmt.Sprintf(`
+		data = from(bucket: "%v")
+			|> range(start: %v, stop: %v)
+			|> filter(fn: (r) => r["_measurement"] == "%v")
+			|> filter(fn: (r) => r["hostname"] =~ /%v/)
+			|> group(columns: ["_time"], mode: "by")`,
+		db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList)
+
+	for i, q := range quantiles {
+		query += "\n" + quantileString(tempKeys[i], q, measurement)
+	}
+
+	query += "\n" + fmt.Sprintf(`
+		union(tables: %v)
+		|> group(columns: ["_field"])`, "["+strings.Join(tempKeys[0:len(quantiles)], ",")+"]")
+
+	result, err = db.queryAPI.Query(context.Background(), query)
+	if err != nil {
+		log.Printf("Error at query: %v\n", err)
+	}
+	return
+}
+
+func quantileString(streamName string, q string, measurement string) string {
+	return fmt.Sprintf(`
+		%v = data
+    |> quantile(column: "_value", q: %v, method: "estimate_tdigest", compression: 1000.0)
+    |> set(key: "_field", value: "%v")
+    |> set(key: "_measurement", value: "%v_quant")`,
+		streamName, q, q, measurement)
+}
+
+func (db *DB) createTask(taskName string, taskStr string, orgId string) (task *domain.Task, err error) {
+	task, err = db.tasksAPI.CreateTaskWithEvery(context.Background(), taskName, taskStr, "5m", orgId)
+	if err != nil {
+		log.Printf("Could not create task: %v\n", err)
+		return
+	}
+	db.tasks = append(db.tasks, *task)
+	return
+}
+
+func (db *DB) createAggregationTask(metric MetricConfig, orgId string) (task *domain.Task, err error) {
+	taskName := metric.Measurement + "_" + metric.AggFn
+	sampleInterval := metric.SampleInterval
+	if sampleInterval == "" {
+		sampleInterval = db.defaultSampleInterval
+	}
+	query := fmt.Sprintf(`
+		from(bucket: "%v")
+			|> range(start: -task.every)
+			|> filter(fn: (r) => r["_measurement"] == "%v")
+			|> filter(fn: (r) => r.type == "%v")
+			|> group(columns: ["_measurement", "hostname"], mode:"by")
+			|> aggregateWindow(every: %v, fn: %v, createEmpty: false)
+			|> set(key: "_measurement", value: "%v")
+			|> set(key: "_field", value: "%v")
+			|> to(bucket: "%v", org: "%v")
+	`, db.bucket, metric.Measurement, metric.Type, sampleInterval, metric.AggFn, taskName, taskName, db.bucket, db.org)
+	return db.createTask(taskName, query, orgId)
+}
+
+func (db *DB) updateAggregationTasks() (err error) {
 	tasks, err := db.tasksAPI.FindTasks(context.Background(), nil)
 	if err != nil {
 		log.Printf("Could not get tasks from influxdb: %v\n", err)
@@ -193,33 +293,11 @@ func (db *DB) updateAggregationTasks() {
 		return
 	}
 	for _, metric := range missingMetricTasks {
-		go db.createAggregationTask(metric, org.Id)
+		go func(metric MetricConfig) {
+			_, err = db.createAggregationTask(metric, *org.Id)
+		}(metric)
 	}
-}
-
-func (db *DB) createAggregationTask(metric MetricConfig, orgId *string) {
-	taskName := metric.Measurement + "_" + metric.AggFn
-	sampleInterval := metric.SampleInterval
-	if sampleInterval == "" {
-		sampleInterval = db.defaultSampleInterval
-	}
-	query := fmt.Sprintf(`
-		from(bucket: "%v")
-			|> range(start: -task.every)
-			|> filter(fn: (r) => r["_measurement"] == "%v")
-			|> filter(fn: (r) => r.type == "%v")
-			|> group(columns: ["_measurement", "hostname"], mode:"by")
-			|> aggregateWindow(every: %v, fn: %v, createEmpty: false)
-			|> set(key: "_measurement", value: "%v")
-			|> set(key: "_field", value: "%v")
-			|> to(bucket: "%v", org: "%v")
-	`, db.bucket, metric.Measurement, metric.Type, sampleInterval, metric.AggFn, taskName, taskName, db.bucket, db.org)
-	task, err := db.tasksAPI.CreateTaskWithEvery(context.Background(), taskName, query, "5m", *orgId)
-	if err != nil {
-		log.Printf("Could not create task: %v\n", err)
-		return
-	}
-	db.tasks = append(db.tasks, *task)
+	return
 }
 
 func (db *DB) RunTasks() {
