@@ -1,0 +1,14 @@
+.selection {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+  align-content: center;
+  border: 1px;
+  border-color: black;
+}
+
+.selectionItem {
+  /* background-color: #b0b0ff3b; */
+  /* border-radius: 5px; */
+  padding: 1px;
+}
