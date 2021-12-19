@@ -9,7 +9,7 @@ export interface LineChartProps<T> {
   data: T[];
   x?: (d: T) => Date; // given d in data, returns the (temporal) x-value
   y?: (d: T) => number; // given d in data, returns the (quantitative) y-value,
-  z?: (d: T) => number | string;
+  z?: (d: T) => string;
   title?: (d: T) => string;
   unit?: string;
   defined?: (d: T, index: number, data: Iterable<T>) => boolean; // for gaps in data
@@ -35,6 +35,8 @@ export interface LineChartProps<T> {
   strokeOpacity?: number; // stroke opacity of line
   mixBlendMode?: string;
   colors?: string[] | readonly string[];
+  fill?: string; // Fill area between fillBoundKeys
+  fillBoundKeys?: [string, string]; // Fill the area between [lower, upper]
 }
 
 // Typescript version based on chart released under:
@@ -71,6 +73,8 @@ export function LineChart<T>({
   strokeOpacity = 1, // stroke opacity of line
   mixBlendMode = "multiply", // blend mode of lines
   colors = d3.schemeTableau10, // array of categorical colors
+  fill = "#ff000020",
+  fillBoundKeys,
 }: LineChartProps<T>) {
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -211,20 +215,46 @@ export function LineChart<T>({
           .text(yLabel)
       );
 
+    if (fillBoundKeys) {
+      const range = d3.range(linePointCount);
+      const lower = I.filter((i) => Z[i] === fillBoundKeys[0]);
+      const upper = I.filter((i) => Z[i] === fillBoundKeys[1]);
+      // console.log(lower, upper, yLabel, range);
+      const area = d3
+        .area<number>()
+        .defined((_, index) => D[index])
+        // .curve(curve)
+        .x((index) => xScale(X[index]))
+        .y0((index) => yScale(Y[lower[index]]))
+        .y1((index) => yScale(Y[upper[index]]));
+
+      svg
+        .append("g")
+        .attr("fill", fill)
+        .attr("stroke", color)
+        .attr("stroke-width", strokeWidth)
+        .attr("stroke-linecap", strokeLinecap)
+        .attr("stroke-linejoin", strokeLinejoin)
+        .attr("stroke-opacity", strokeOpacity)
+        .selectAll("path")
+        .data(d3.group(range, (i) => Z[i]))
+        .join("path")
+        .style("mix-blend-mode", mixBlendMode)
+        .attr("stroke", (_, I) => colorFn(I))
+        .attr("d", ([_, I]) => area(I));
+      // .attr("id", ([d, _]) => "path_" + d.slice(2));
+    }
+
     const path = svg
       .append("g")
       .attr("fill", "none")
-      .attr("stroke", color)
-      .attr("stroke-width", strokeWidth)
-      .attr("stroke-linecap", strokeLinecap)
-      .attr("stroke-linejoin", strokeLinejoin)
-      .attr("stroke-opacity", strokeOpacity)
       .selectAll("path")
       .data(d3.group(I, (i) => Z[i]))
       .join("path")
       .style("mix-blend-mode", mixBlendMode)
       .attr("stroke", (_, I) => colorFn(I))
-      .attr("d", ([_, I]) => line(I));
+      .attr("d", ([_, I]) => line(I))
+      .attr("id", ([d, _]) => "path_" + d.slice(2));
 
     const ruler = svg.append("g");
 

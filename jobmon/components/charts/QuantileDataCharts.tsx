@@ -23,7 +23,10 @@ export const QuantileDataCharts = ({
     stopTime || new Date(),
   ];
   let chartElements = [];
-  for (const metric of quantiles) {
+  const sortedMetrics = quantiles.sort((a, b) =>
+    a.Config.Measurement < b.Config.Measurement ? 1 : -1
+  );
+  for (const metric of sortedMetrics) {
     let metricData: QuantilePoint[] = [];
     if (metric.Data === null) {
       continue;

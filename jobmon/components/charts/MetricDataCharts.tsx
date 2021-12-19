@@ -24,7 +24,10 @@ export const MetricDataCharts = ({
     stopTime || new Date(),
   ];
   let chartElements = [];
-  for (const metric of metrics) {
+  const sortedMetrics = metrics.sort((a, b) =>
+    a.Config.Measurement < b.Config.Measurement ? 1 : -1
+  );
+  for (const metric of sortedMetrics) {
     let metricData: MetricPoint[] = [];
     if (metric.Data === null) {
       continue;
