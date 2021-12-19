@@ -3,11 +3,18 @@ import styles from "./JobList.module.css";
 
 interface JobListProps {
   jobs: JobMetadata[];
+  filter?: (job: JobMetadata) => boolean;
+  sortBy?: string;
   width?: string;
   height?: string;
 }
 
-export const JobList = ({ jobs, width, height }: JobListProps) => {
+export const JobList = ({
+  jobs,
+  width,
+  height,
+  filter = (_) => true,
+}: JobListProps) => {
   const style = {
     width: width || "50vw",
     height: height || "auto",
@@ -15,13 +22,13 @@ export const JobList = ({ jobs, width, height }: JobListProps) => {
   return (
     <div className={styles.list} style={style}>
       <div className={styles.listHeader}>
-        <text>Job ID</text>
-        <text>User ID</text>
-        <text>Number of Nodes</text>
-        <text>Start Time</text>
-        <text>End Time</text>
+        <div>Job ID</div>
+        <div>User ID</div>
+        <div>Number of Nodes</div>
+        <div>Start Time</div>
+        <div>End Time</div>
       </div>
-      {jobs.map((job) => (
+      {jobs.filter(filter).map((job) => (
         <JobListItem key={job.Id} job={job} />
       ))}
     </div>
@@ -35,11 +42,11 @@ interface JobListItemProps {
 export const JobListItem = ({ job }: JobListItemProps) => {
   return (
     <a className={styles.listItem} href={`/job/${job.Id}`}>
-      <text>{job.Id}</text>
-      <text>{job.UserId}</text>
-      <text>{job.NumNodes}</text>
-      <text>{new Date(job.StartTime * 1000).toLocaleString()}</text>
-      <text>{new Date(job.StopTime * 1000).toLocaleString()}</text>
+      <div>{job.Id}</div>
+      <div>{job.UserId}</div>
+      <div>{job.NumNodes}</div>
+      <div>{new Date(job.StartTime * 1000).toLocaleString()}</div>
+      <div>{new Date(job.StopTime * 1000).toLocaleString()}</div>
     </a>
   );
 };
