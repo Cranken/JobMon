@@ -2,7 +2,7 @@ import type { NextPage } from "next";
 import React, { useMemo } from "react";
 import { useEffect } from "react";
 import { useState } from "react";
-import { Selection } from "../../components/Selection";
+import { Selection } from "../../components/jobview/Selection";
 import { JobData } from "../../types/job";
 import MetricDataCharts from "../../components/charts/MetricDataCharts";
 import { useRouter } from "next/router";
