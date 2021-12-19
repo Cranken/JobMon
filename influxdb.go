@@ -206,8 +206,9 @@ func (db *DB) queryQuantileMeasurement(metric MetricConfig, job JobMetadata, qua
 			|> range(start: %v, stop: %v)
 			|> filter(fn: (r) => r["_measurement"] == "%v")
 			|> filter(fn: (r) => r["hostname"] =~ /%v/)
+			|> truncateTimeColumn(unit: %v)
 			|> group(columns: ["_time"], mode: "by")`,
-		db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList)
+		db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, db.defaultSampleInterval)
 
 	for i, q := range quantiles {
 		query += "\n" + quantileString(tempKeys[i], q, measurement)
