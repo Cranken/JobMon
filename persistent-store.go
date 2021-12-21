@@ -109,6 +109,9 @@ func (s *Store) StopJob(id int, stopJob StopJob) JobMetadata {
 
 func (j *JobMetadata) expired() bool {
 	now := int(time.Now().Unix())
+	if j.TTL == 0 {
+		return false
+	}
 	return j.StopTime+j.TTL < now
 }
 
