@@ -1,12 +1,23 @@
+import {
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  Box,
+  AccordionIcon,
+  AccordionPanel,
+  Container,
+  Flex,
+  Button,
+  Text,
+} from "@chakra-ui/react";
 import styles from "./Selection.module.css";
 
 export interface SelectionProps {
   setChecked: (key: string, val: boolean) => void;
   items: { [key: string]: boolean };
-  height?: string;
 }
 
-export const Selection = ({ setChecked, items, height }: SelectionProps) => {
+export const Selection = ({ setChecked, items }: SelectionProps) => {
   let elements: JSX.Element[] = [];
 
   let allChecked = true;
@@ -23,23 +34,42 @@ export const Selection = ({ setChecked, items, height }: SelectionProps) => {
       );
     })
   );
-  elements.unshift(
-    <SelectionItem
-      key="all"
-      label="Select All"
-      value="all"
-      onChange={setChecked}
-      checked={allChecked}
-    />
-  );
+  // elements.unshift(
+  //   <SelectionItem
+  //     key="all"
+  //     label="Select All"
+  //     value="all"
+  //     onChange={setChecked}
+  //     checked={allChecked}
+  //   />
+  // );
 
   return (
-    <div
-      style={{ height: height ? height : "auto" }}
-      className={styles.selection}
-    >
-      {elements}
-    </div>
+    <Accordion allowToggle w={"100%"}>
+      <AccordionItem>
+        <h2>
+          <AccordionButton>
+            <Flex flex="1" textAlign="left" justify="space-between">
+              <Text>Nodes ({Object.keys(items).length})</Text>
+            </Flex>
+            <AccordionIcon />
+          </AccordionButton>
+        </h2>
+        <AccordionPanel pb={4}>
+          <Flex wrap="wrap" direction="row">
+            <Button
+              w="12ch"
+              size="xs"
+              mr={2}
+              onClick={() => setChecked("all", !allChecked)}
+            >
+              Select {allChecked ? "None" : "All"}
+            </Button>
+            {elements}
+          </Flex>
+        </AccordionPanel>
+      </AccordionItem>
+    </Accordion>
   );
 };
 
@@ -58,15 +88,15 @@ const SelectionItem = ({
 }: SelectionItemProps) => {
   const id = value + "_checkbox";
   return (
-    <div className={styles.selectionItem}>
-      <input
-        type="checkbox"
-        id={id}
-        onChange={(event) => onChange(value, !checked)}
-        checked={checked}
-      />
-      <label htmlFor={id}>{label ? label : value}</label>
-    </div>
+    <Text
+      mr={1}
+      as={checked ? undefined : "s"}
+      onClick={() => onChange(value, !checked)}
+      cursor="pointer"
+      fontWeight="bold"
+    >
+      {value}
+    </Text>
   );
 };
 

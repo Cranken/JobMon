@@ -11,25 +11,19 @@
 }
 
 .listItem {
-  display: flex;
-  width: 100%;
   padding-bottom: 5px;
   padding-top: 5px;
   margin-top: 5px;
-  box-shadow: 0px 0px 5px #00000080;
-  background-color: #0000000d;
+  cursor: pointer;
 }
 
-.listItem div,
-.listHeader div {
-  width: 100%;
-  flex-grow: 1;
-  text-align: center;
-  border-right: 1px solid black;
+.listItem p,
+.listHeader p {
+  border-right: 1px solid;
 }
 
-.listHeader div:last-child,
-.listItem div:last-child {
+.listHeader p:last-child,
+.listItem p:last-child {
   border-right: 0px;
 }
 
@@ -40,4 +34,9 @@
   padding-bottom: 5px;
   padding-top: 5px;
   /* border-bottom: 1px solid black; */
+}
+
+.listItemColumn {
+  flex-grow: 1;
+  width: 100%;
 }

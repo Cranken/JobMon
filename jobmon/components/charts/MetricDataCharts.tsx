@@ -1,3 +1,4 @@
+import { Grid } from "@chakra-ui/react";
 import { MetricData, MetricPoint } from "../../types/job";
 import { LineChart } from "./LineChart";
 
@@ -20,8 +21,8 @@ export const MetricDataCharts = ({
     return <div>No metrics</div>;
   }
   const xDomain: [Date, Date] = [
-    startTime || new Date(0),
-    stopTime || new Date(),
+    startTime ?? new Date(0),
+    stopTime ?? new Date(),
   ];
   let chartElements = [];
   const sortedMetrics = metrics.sort((a, b) =>
@@ -59,14 +60,14 @@ export const MetricDataCharts = ({
         z={z}
         xDomain={xDomain}
         setTimeRange={setTimeRange}
-        width={document.body.clientWidth / 2 - 50}
+        width={document.body.clientWidth / 2}
         title={title}
         unit={metric.Config.Unit}
         yLabel={metric.Config.Measurement}
       />
     );
   }
-  return <div>{chartElements}</div>;
+  return <Grid templateColumns={"repeat(2, 1fr)"}>{chartElements}</Grid>;
 };
 
 export default MetricDataCharts;

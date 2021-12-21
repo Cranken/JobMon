@@ -1,6 +1,7 @@
 import { QuantileData } from "../../types/job";
 import { LineChart } from "./LineChart";
 import { QuantilePoint } from "./../../types/job";
+import { Grid } from "@chakra-ui/react";
 
 interface QuantileDataChartsProps {
   quantiles: QuantileData[] | undefined;
@@ -19,8 +20,8 @@ export const QuantileDataCharts = ({
     return <div>No quantiles</div>;
   }
   const xDomain: [Date, Date] = [
-    startTime || new Date(0),
-    stopTime || new Date(),
+    startTime ?? new Date(0),
+    stopTime ?? new Date(),
   ];
   let chartElements = [];
   const sortedMetrics = quantiles.sort((a, b) =>
@@ -54,14 +55,14 @@ export const QuantileDataCharts = ({
         //       ]
         //     : undefined
         // }
-        width={document.body.clientWidth / 2 - 50}
+        width={document.body.clientWidth / 2}
         title={(d: QuantilePoint) => `${d._field}: ${d._value.toString()}`}
         unit={metric.Config.Unit}
         yLabel={metric.Config.Measurement}
       />
     );
   }
-  return <div>{chartElements}</div>;
+  return <Grid templateColumns={"repeat(2, 1fr)"}>{chartElements}</Grid>;
 };
 
 export default QuantileDataCharts;

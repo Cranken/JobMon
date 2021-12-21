@@ -2,11 +2,13 @@ import type { NextPage } from "next";
 import React, { useMemo } from "react";
 import { useEffect } from "react";
 import { useState } from "react";
-import { Selection } from "../../components/jobview/Selection";
 import { JobData } from "../../types/job";
 import MetricDataCharts from "../../components/charts/MetricDataCharts";
 import { useRouter } from "next/router";
 import QuantileDataCharts from "../../components/charts/QuantileDataCharts";
+import Control from "../../components/jobview/ViewControl";
+import { Box, Button, Center, Flex, Grid, Spinner } from "@chakra-ui/react";
+import { JobInfo } from "../../components/jobview/JobInfo";
 
 export type SelectionMap = { [key: string]: boolean };
 
@@ -14,7 +16,6 @@ const Job: NextPage = () => {
   const router = useRouter();
   const jobId = router.query["id"];
   const [selection, setSelection] = useState<SelectionMap>({});
-  const [showSelection, setShowSelection] = useState(false);
   const selected = Object.keys(selection).filter((val) => selection[val]);
   const node = selected.length === 1 ? selected[0] : undefined;
   const data = useGetJobData(parseInt(jobId as string), node);
@@ -45,7 +46,6 @@ const Job: NextPage = () => {
     );
   }, [data, selected, startTime, stopTime, showQuantiles]);
 
-  let elements = [];
   useEffect(() => {
     if (data?.Metadata.NodeList !== undefined) {
       let allHostSelection: SelectionMap = {};
@@ -70,7 +70,11 @@ const Job: NextPage = () => {
   }, [data?.Metadata.StopTime]);
 
   if (!data) {
-    return <div>Loading/Error</div>;
+    return (
+      <Center>
+        <Spinner size="xl" />
+      </Center>
+    );
   }
 
   const setChecked = (key: string, val: boolean) => {
@@ -87,83 +91,34 @@ const Job: NextPage = () => {
 
   console.log("Main data", data);
 
-  if (data.Metadata.StartTime && data.Metadata.StopTime) {
-    const timezoneOffsetMsec = new Date().getTimezoneOffset() * 60 * 1000;
-    const getDateString = (d: Date) =>
-      new Date(d.getTime() - timezoneOffsetMsec).toISOString().slice(0, 16);
-
-    const minDate = new Date(data.Metadata.StartTime * 1000);
-    const min = getDateString(minDate);
-    const maxDate = new Date(data.Metadata.StopTime * 1000);
-    const max = getDateString(maxDate);
-    elements.push(
-      <React.Fragment>
-        <label htmlFor="start-time">Start Time:</label>
-        <input
-          type="datetime-local"
-          id="start-time"
-          name="start-time"
-          value={getDateString(startTime)}
-          min={min}
-          // max={maxDate > stopTime ? max : getDateString(stopTime)}
-          max={getDateString(stopTime)}
-          onChange={(ev) => {
-            const newVal = new Date(ev.target.value);
-            if (minDate <= newVal && newVal < stopTime) setStartTime(newVal);
-          }}
-        />
-        <label htmlFor="end-time">End Time:</label>
-        <input
-          type="datetime-local"
-          id="end-time"
-          name="end-time"
-          value={getDateString(stopTime)}
-          // min={minDate < startTime ? min : getDateString(startTime)}
-          min={getDateString(startTime)}
-          max={max}
-          onChange={(ev) => {
-            const newVal = new Date(ev.target.value);
-            if (startTime < newVal && newVal <= maxDate) setStopTime(newVal);
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => {
-            setStartTime(new Date(data.Metadata.StartTime * 1000));
-            setStopTime(new Date(data.Metadata.StopTime * 1000));
-          }}
-        >
-          Reset Time Range
-        </button>
-      </React.Fragment>
-    );
-  }
-
-  elements.push(
-    <button type="button" onClick={() => setShowQuantiles(!showQuantiles)}>
-      Toggle Quantile View
-    </button>
-  );
-
-  if (!showQuantiles) {
-    elements.push(
-      <button type="button" onClick={() => setShowSelection(!showSelection)}>
-        Toggle node selection
-      </button>
-    );
-
-    if (showSelection) {
-      elements.push(
-        <Selection height={"100px"} setChecked={setChecked} items={selection} />
-      );
-    }
-  }
-
   return (
-    <div>
-      <div>{elements}</div>
+    <Box m={5}>
+      <Grid
+        mb={3}
+        p={2}
+        border="1px"
+        borderRadius="10px"
+        templateColumns="repeat(2, 1fr)"
+      >
+        <JobInfo
+          metadata={data.Metadata}
+          setChecked={setChecked}
+          nodes={selection}
+        />
+        <Control
+          metadata={data.Metadata}
+          setStartTime={setStartTime}
+          setStopTime={setStopTime}
+          startTime={startTime}
+          stopTime={stopTime}
+          showQuantiles={showQuantiles}
+          setShowQuantiles={setShowQuantiles}
+          selection={selection}
+          setChecked={setChecked}
+        />
+      </Grid>
       {generateChartsMemo}
-    </div>
+    </Box>
   );
 };
 export default Job;

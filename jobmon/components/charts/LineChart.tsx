@@ -3,7 +3,7 @@ import * as d3 from "d3";
 import React, { useEffect, useState } from "react";
 import { useRef } from "react";
 import { isDate } from "util";
-import { clamp } from "./../../utils/utils";
+import { checkBetween, clamp } from "./../../utils/utils";
 
 export interface LineChartProps<T> {
   data: T[];
@@ -47,7 +47,7 @@ export function LineChart<T>({
   data,
   x = (_) => new Date(), // given d in data, returns the (temporal) x-value
   y = (_) => 0, // given d in data, returns the (quantitative) y-value
-  z = (_) => 1,
+  z = (_) => "default",
   title = (_) => "",
   unit,
   defined = (_) => true, // for gaps in data
@@ -82,10 +82,6 @@ export function LineChart<T>({
     if (!data || !svgRef.current) {
       return;
     }
-    const checkBetween = (d1: Date, d2: Date, point: T) => {
-      const time = x(point);
-      return d1 < time && time < d2;
-    };
 
     // Filter data based on given time range
     let filteredData = data;
@@ -96,9 +92,9 @@ export function LineChart<T>({
       xDomain[1] = xDomain[1] <= lastDate ? xDomain[1] : lastDate;
       filteredData = filteredData.filter((dat) =>
         checkBetween(
-          xDomain?.[0] || x(filteredData[0]),
-          xDomain?.[1] || x(filteredData[data.length - 1]),
-          dat
+          xDomain?.[0] ?? x(filteredData[0]),
+          xDomain?.[1] ?? x(filteredData[data.length - 1]),
+          x(dat)
         )
       );
     }
@@ -113,7 +109,7 @@ export function LineChart<T>({
 
     // Compute default domains.
     if (xDomain === undefined) xDomain = d3.extent(X) as [Date, Date];
-    if (yDomain === undefined) yDomain = [0, d3.max(Y) || 1];
+    if (yDomain === undefined) yDomain = [0, d3.max(Y) ?? 1];
     if (zDomain === undefined) zDomain = Z;
     const zSet = new d3.InternSet(zDomain);
     const linePointCount = Math.floor(filteredData.length / zSet.size);
@@ -154,7 +150,7 @@ export function LineChart<T>({
 
     let dragStart = 0;
     let dragEnd = 0;
-    const svgXOffset = svg.node()?.getBoundingClientRect().x || 0;
+    const svgXOffset = svg.node()?.getBoundingClientRect().x ?? 0;
     const drag = d3
       .drag<SVGSVGElement, unknown>()
       .on("start", (event: DragEvent) => {
@@ -236,13 +232,13 @@ export function LineChart<T>({
         .attr("stroke-linecap", strokeLinecap)
         .attr("stroke-linejoin", strokeLinejoin)
         .attr("stroke-opacity", strokeOpacity)
+        .style("overflow-x", "scroll")
         .selectAll("path")
         .data(d3.group(range, (i) => Z[i]))
         .join("path")
-        .style("mix-blend-mode", mixBlendMode)
+        // .style("mix-blend-mode", mixBlendMode)
         .attr("stroke", (_, I) => colorFn(I))
         .attr("d", ([_, I]) => area(I));
-      // .attr("id", ([d, _]) => "path_" + d.slice(2));
     }
 
     const path = svg
@@ -251,10 +247,9 @@ export function LineChart<T>({
       .selectAll("path")
       .data(d3.group(I, (i) => Z[i]))
       .join("path")
-      .style("mix-blend-mode", mixBlendMode)
+      // .style("mix-blend-mode", mixBlendMode)
       .attr("stroke", (_, I) => colorFn(I))
-      .attr("d", ([_, I]) => line(I))
-      .attr("id", ([d, _]) => "path_" + d.slice(2));
+      .attr("d", ([_, I]) => line(I));
 
     const ruler = svg.append("g");
 
@@ -299,7 +294,7 @@ export function LineChart<T>({
             .append("text")
             .text(tooltipText)
             .attr("transform", `translate(0, ${lastY})`);
-          lastY -= text.node()?.getBBox().height || 0;
+          lastY -= text.node()?.getBBox().height ?? 0;
         }
         for (let idx = 0; idx < 5; idx++) {
           const val = values.pop();
@@ -314,7 +309,7 @@ export function LineChart<T>({
             .append("text")
             .text(tooltipText)
             .attr("transform", `translate(0, ${lastY})`);
-          lastY -= text.node()?.getBBox().height || 0;
+          lastY -= text.node()?.getBBox().height ?? 0;
         }
       } else {
         for (let idx = 0; idx < values.length; idx++) {
@@ -326,7 +321,7 @@ export function LineChart<T>({
             .append("text")
             .text(tooltipText)
             .attr("transform", `translate(0, ${lastY})`);
-          lastY -= text.node()?.getBBox().height || 0;
+          lastY -= text.node()?.getBBox().height ?? 0;
         }
       }
 
@@ -338,10 +333,10 @@ export function LineChart<T>({
 
       // Layout & positioning
       tooltip.selectAll("text").attr("fill", "currentcolor");
-      const tooltipWidth = tooltip.node()?.getBBox().width || 0;
-      const tooltipHeight = tooltip.node()?.getBBox().height || 0;
-      const svgLeft = svg.node()?.getBoundingClientRect().left || 0;
-      const svgRight = svg.node()?.getBoundingClientRect().right || 0;
+      const tooltipWidth = tooltip.node()?.getBBox().width ?? 0;
+      const tooltipHeight = tooltip.node()?.getBBox().height ?? 0;
+      const svgLeft = svg.node()?.getBoundingClientRect().left ?? 0;
+      const svgRight = svg.node()?.getBoundingClientRect().right ?? 0;
       let xPos = xm + 15;
       const yPos = Math.min(
         height - marginBottom - 5,
