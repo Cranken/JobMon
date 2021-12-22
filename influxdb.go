@@ -146,7 +146,8 @@ func (db *DB) querySimpleMeasurement(metric MetricConfig, job JobMetadata, node 
 		|> filter(fn: (r) => r["_measurement"] == "%v")
 	  |> filter(fn: (r) => r["type"] == "%v")
 		|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	`, db.bucket, job.StartTime, job.StopTime, metric.Measurement, metric.Type, nodeList))
+		|> truncateTimeColumn(unit: %v)
+	`, db.bucket, job.StartTime, job.StopTime, metric.Measurement, metric.Type, nodeList, db.defaultSampleInterval))
 	if err != nil {
 		log.Printf("Error at query: %v\n", err)
 	}
