@@ -1,7 +1,7 @@
 import { QuantileData } from "../../types/job";
 import { LineChart } from "./LineChart";
 import { QuantilePoint } from "./../../types/job";
-import { Grid } from "@chakra-ui/react";
+import { Container, Flex, Grid } from "@chakra-ui/react";
 
 interface QuantileDataChartsProps {
   quantiles: QuantileData[] | undefined;
@@ -37,29 +37,21 @@ export const QuantileDataCharts = ({
     }
 
     chartElements.push(
-      <LineChart
-        key={metric.Config.Measurement}
-        data={metricData}
-        x={(d: QuantilePoint) => new Date(d._time)}
-        y={(d: QuantilePoint) => d._value}
-        z={(d: QuantilePoint) => d._field}
-        xDomain={xDomain}
-        setTimeRange={setTimeRange}
-        // xDomain={
-        //   metricData.length > 1
-        //     ? [
-        //         new Date(
-        //           new Date(metricData[0]._time).getTime() + 30 * 60 * 1000
-        //         ),
-        //         new Date(),
-        //       ]
-        //     : undefined
-        // }
-        width={document.body.clientWidth / 2}
-        title={(d: QuantilePoint) => `${d._field}: ${d._value.toString()}`}
-        unit={metric.Config.Unit}
-        yLabel={metric.Config.Measurement}
-      />
+      <Flex border="1px" borderColor="gray.700" borderRadius="md" m={3}>
+        <LineChart
+          key={metric.Config.Measurement}
+          data={metricData}
+          x={(d: QuantilePoint) => new Date(d._time)}
+          y={(d: QuantilePoint) => d._value}
+          z={(d: QuantilePoint) => d._field}
+          xDomain={xDomain}
+          setTimeRange={setTimeRange}
+          width={document.body.clientWidth / 2}
+          title={(d: QuantilePoint) => `${d._field}: ${d._value.toString()}`}
+          unit={metric.Config.Unit}
+          yLabel={metric.Config.Measurement}
+        />
+      </Flex>
     );
   }
   return <Grid templateColumns={"repeat(2, 1fr)"}>{chartElements}</Grid>;

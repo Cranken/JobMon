@@ -1,4 +1,4 @@
-import { Grid } from "@chakra-ui/react";
+import { Flex, Grid } from "@chakra-ui/react";
 import { MetricData, MetricPoint } from "../../types/job";
 import { LineChart } from "./LineChart";
 
@@ -37,7 +37,7 @@ export const MetricDataCharts = ({
     let title;
     if (nodeSelection.length === 1 && metric.Config.Type !== "node") {
       z = (d: MetricPoint) => d["type-id"];
-      title = (d: MetricPoint) => `${d["type-id"]}: ${d._value.toString(2)}`;
+      title = (d: MetricPoint) => `${d["type-id"]}: ${d._value.toFixed(2)}`;
       for (const node of Object.keys(metric.Data)) {
         metricData = metricData.concat(metric.Data[node]);
       }
@@ -52,19 +52,21 @@ export const MetricDataCharts = ({
     }
 
     chartElements.push(
-      <LineChart
-        key={metric.Config.Measurement}
-        data={metricData}
-        x={(d: MetricPoint) => new Date(d._time)}
-        y={(d: MetricPoint) => d._value}
-        z={z}
-        xDomain={xDomain}
-        setTimeRange={setTimeRange}
-        width={document.body.clientWidth / 2}
-        title={title}
-        unit={metric.Config.Unit}
-        yLabel={metric.Config.Measurement}
-      />
+      <Flex border="1px" borderColor="gray.700" borderRadius="md" m={3}>
+        <LineChart
+          key={metric.Config.Measurement}
+          data={metricData}
+          x={(d: MetricPoint) => new Date(d._time)}
+          y={(d: MetricPoint) => d._value}
+          z={z}
+          xDomain={xDomain}
+          setTimeRange={setTimeRange}
+          width={document.body.clientWidth / 2}
+          title={title}
+          unit={metric.Config.Unit}
+          yLabel={metric.Config.Measurement}
+        />
+      </Flex>
     );
   }
   return <Grid templateColumns={"repeat(2, 1fr)"}>{chartElements}</Grid>;

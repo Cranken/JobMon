@@ -53,9 +53,9 @@ export function LineChart<T>({
   defined = (_) => true, // for gaps in data
   curve = d3.curveLinear, // method of interpolation between points
   marginTop = 20, // top margin, in pixels
-  marginRight = 30, // right margin, in pixels
+  marginRight = 50, // right margin, in pixels
   marginBottom = 30, // bottom margin, in pixels
-  marginLeft = 60, // left margin, in pixels
+  marginLeft = 50, // left margin, in pixels
   width = 1200, // outer width, in pixels
   height = 400, // outer height, in pixels
   xDomain, // [xmin, xmax]
@@ -122,7 +122,7 @@ export function LineChart<T>({
     const colorFn = d3.scaleOrdinal(zDomain, colors);
     const xAxis = d3
       .axisBottom<Date>(xScale)
-      .ticks(width / 80)
+      // .ticks(width / 80)
       .tickSizeOuter(0)
       .tickFormat((val) => val.toLocaleTimeString());
     const yAxis = d3.axisLeft(yScale).ticks(height / 40, yFormat);
@@ -137,9 +137,9 @@ export function LineChart<T>({
 
     const svg = d3
       .select(svgRef.current)
-      .attr("width", width)
+      .attr("width", "100%")
       .attr("height", height)
-      .attr("viewBox", [0, 0, width, height])
+      .attr("viewBox", [0, 0, "100%", height])
       .attr("style", "max-width: 100%; height: auto; height: intrinsic;")
       .on("pointermove", pointermoved)
       .on("pointerleave", pointerleft)
@@ -154,11 +154,15 @@ export function LineChart<T>({
     const drag = d3
       .drag<SVGSVGElement, unknown>()
       .on("start", (event: DragEvent) => {
-        dragStart = clamp(event.x - svgXOffset, xRange[0], xRange[1]);
-        dragEnd = clamp(event.x - svgXOffset, xRange[0], xRange[1]);
+        dragStart = clamp(event.x, xRange[0], xRange[1]);
+        dragEnd = clamp(event.x, xRange[0], xRange[1]);
+        // dragStart = clamp(event.x - svgXOffset, xRange[0], xRange[1]);
+        // dragEnd = clamp(event.x - svgXOffset, xRange[0], xRange[1]);
+        console.log(event.x, dragStart, dragEnd, svgXOffset);
       })
       .on("drag", (event: DragEvent) => {
-        dragEnd = clamp(event.x - svgXOffset, xRange[0], xRange[1]);
+        // dragEnd = clamp(event.x - svgXOffset, xRange[0], xRange[1]);
+        dragEnd = clamp(event.x, xRange[0], xRange[1]);
         svg.selectChild("rect").remove();
         svg
           .append("rect")
@@ -174,7 +178,8 @@ export function LineChart<T>({
           .lower();
       })
       .on("end", (event: DragEvent) => {
-        dragEnd = clamp(event.x - svgXOffset, xRange[0], xRange[1]);
+        // dragEnd = clamp(event.x - svgXOffset, xRange[0], xRange[1]);
+        dragEnd = clamp(event.x, xRange[0], xRange[1]);
         svg.selectChild("rect").remove();
         const startIdx = getNearestPointIdx(dragStart);
         const endIdx = getNearestPointIdx(dragEnd);
@@ -279,28 +284,22 @@ export function LineChart<T>({
       for (let idx = zSet.size - 1; idx >= 0; idx--) {
         values.push(filteredData[idx * linePointCount + i]);
       }
+      values.sort((a, b) => (y(a) < y(b) ? -1 : 1));
       if (values.length > 10) {
-        values.sort((a, b) => (y(a) < y(b) ? -1 : 1));
-        for (let idx = 0; idx < 5; idx++) {
-          const val = values.shift();
+        for (let idx = 0; idx < 10; idx++) {
+          const val = idx < 5 ? values.shift() : values.pop();
           if (!val) {
             continue;
           }
-          let tooltipText = title(val);
-          if (unit) {
-            tooltipText += " " + unit;
+
+          if (idx === 5) {
+            const text = tooltip
+              .append("text")
+              .text(`[${values.length - 10} more hidden]`)
+              .attr("transform", `translate(0, ${lastY})`);
+            lastY -= text.node()?.getBBox().height ?? 0;
           }
-          const text = tooltip
-            .append("text")
-            .text(tooltipText)
-            .attr("transform", `translate(0, ${lastY})`);
-          lastY -= text.node()?.getBBox().height ?? 0;
-        }
-        for (let idx = 0; idx < 5; idx++) {
-          const val = values.pop();
-          if (!val) {
-            continue;
-          }
+
           let tooltipText = title(val);
           if (unit) {
             tooltipText += " " + unit;
