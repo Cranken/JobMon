@@ -1,12 +1,20 @@
 import { JobMetadata } from "./../../types/job";
 import styles from "./JobList.module.css";
 import {
+  Box,
+  Center,
+  Divider,
+  Flex,
   Grid,
+  GridItem,
+  Heading,
   LinkBox,
   LinkOverlay,
+  Stack,
   Text,
   useColorModeValue,
 } from "@chakra-ui/react";
+import { Histogram } from "../charts/Histogram";
 
 interface JobListProps {
   jobs: JobMetadata[];
@@ -23,26 +31,15 @@ export const JobList = ({
   filter = (_) => true,
 }: JobListProps) => {
   const style = {
-    width: width ?? "50vw",
+    width: width ?? "100%",
     height: height ?? "auto",
   };
   return (
-    <div className={styles.list} style={style}>
-      <Grid
-        className={styles.listHeader}
-        templateColumns="repeat(5, 1fr)"
-        gap={1}
-      >
-        <Text>Job ID</Text>
-        <Text>User ID</Text>
-        <Text>Number of Nodes</Text>
-        <Text>Start Time</Text>
-        <Text>End Time</Text>
-      </Grid>
+    <Stack>
       {jobs.filter(filter).map((job) => (
         <JobListItem key={job.Id} job={job} />
       ))}
-    </div>
+    </Stack>
   );
 };
 
@@ -51,26 +48,57 @@ interface JobListItemProps {
 }
 
 export const JobListItem = ({ job }: JobListItemProps) => {
-  const borderColor = useColorModeValue("whiteAlpha.900", "gray.800");
+  const borderColor = useColorModeValue("gray.500", "whiteAlpha.800");
+  const sortedData = job.Data.sort((a, b) =>
+    a.Config.Measurement < b.Config.Measurement ? -1 : 1
+  );
   return (
     <LinkBox>
       <LinkOverlay href={`/job/${job.Id}`}>
         <Grid
-          className={styles.listItem}
-          templateColumns="repeat(5, 1fr)"
-          gap={1}
-          bg={useColorModeValue("gray.300", "gray.700")}
-          borderRadius={"md"}
+          templateColumns="repeat(7, 1fr)"
+          gap={2}
+          border="1px"
+          borderColor={borderColor}
+          borderRadius={5}
+          m={2}
         >
-          <Text borderColor={borderColor}>{job.Id}</Text>
-          <Text borderColor={borderColor}>{job.UserId}</Text>
-          <Text borderColor={borderColor}>{job.NumNodes}</Text>
-          <Text borderColor={borderColor}>
-            {new Date(job.StartTime * 1000).toLocaleString()}
-          </Text>
-          <Text borderColor={borderColor}>
-            {new Date(job.StopTime * 1000).toLocaleString()}
-          </Text>
+          <GridItem colSpan={1}>
+            <Flex height="100%">
+              <Stack textAlign="start" m={5} pl={5}>
+                <Heading size="sm" textDecoration="underline">
+                  {job.Id}
+                </Heading>
+                <Text>User: {job.UserId}</Text>
+                <Text>Nodes: {job.NumNodes}</Text>
+                <Text>
+                  Start: {new Date(job.StartTime * 1000).toLocaleString()}
+                </Text>
+                <Text>
+                  End: {new Date(job.StopTime * 1000).toLocaleString()}
+                </Text>
+              </Stack>
+              <Center height="90%" m="auto">
+                <Divider orientation="vertical" borderColor={borderColor} />
+              </Center>
+            </Flex>
+          </GridItem>
+          <GridItem colSpan={6}>
+            <Stack direction="row" gap={2} h="100%">
+              {job.Data.map((dat) => (
+                <Center key={dat.Config.Measurement}>
+                  <Histogram
+                    data={dat.Data}
+                    x={(d) => d}
+                    // width={250}
+                    width={window.document.body.clientWidth / 7}
+                    height={180}
+                    xLabel={dat.Config.Measurement}
+                  />
+                </Center>
+              ))}
+            </Stack>
+          </GridItem>
         </Grid>
       </LinkOverlay>
     </LinkBox>

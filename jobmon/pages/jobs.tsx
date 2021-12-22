@@ -18,6 +18,7 @@ export const Jobs = () => {
   let elements = [];
   elements.push(
     <JobFilter
+      key="jobfilter"
       userId={[userId, setUserId]}
       startTime={[startTime, setStartTime]}
       stopTime={[stopTime, setStopTime]}
@@ -26,6 +27,7 @@ export const Jobs = () => {
   );
   elements.push(
     <JobList
+      key="joblist"
       jobs={jobs}
       filter={(job) =>
         job.UserId.startsWith(userId) &&

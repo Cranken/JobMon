@@ -9,6 +9,7 @@ export interface JobMetadata {
   IsRunning: boolean;
   JobScript: string;
   ProjectId: string;
+  Data: JobMetadataData[];
 }
 
 export enum CollectionType {
@@ -66,4 +67,9 @@ export interface JobData {
   Metadata: JobMetadata;
   MetricData: MetricData[];
   QuantileData: QuantileData[];
+}
+
+export interface JobMetadataData {
+  Config: MetricConfig;
+  Data: number[];
 }

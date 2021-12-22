@@ -26,7 +26,7 @@ export const MetricDataCharts = ({
   ];
   let chartElements = [];
   const sortedMetrics = metrics.sort((a, b) =>
-    a.Config.Measurement < b.Config.Measurement ? 1 : -1
+    a.Config.Measurement < b.Config.Measurement ? -1 : 1
   );
   for (const metric of sortedMetrics) {
     let metricData: MetricPoint[] = [];
