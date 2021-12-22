@@ -9,6 +9,7 @@ export const Jobs = () => {
   const [userId, setUserId] = useState("");
   const [startTime, setStartTime] = useState(new Date("2021-10-01"));
   const [stopTime, setStopTime] = useState(new Date());
+  const [numNodes, setNumNodes] = useState([1, 192]);
 
   if (!jobs) {
     return <div>Loading</div>;
@@ -20,6 +21,7 @@ export const Jobs = () => {
       userId={[userId, setUserId]}
       startTime={[startTime, setStartTime]}
       stopTime={[stopTime, setStopTime]}
+      numNodes={[numNodes, setNumNodes]}
     />
   );
   elements.push(
@@ -27,7 +29,8 @@ export const Jobs = () => {
       jobs={jobs}
       filter={(job) =>
         job.UserId.startsWith(userId) &&
-        checkBetween(startTime, stopTime, new Date(job.StartTime * 1000))
+        checkBetween(startTime, stopTime, new Date(job.StartTime * 1000)) &&
+        checkBetween(numNodes[0], numNodes[1], job.NumNodes)
       }
     />
   );
