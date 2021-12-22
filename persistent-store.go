@@ -27,6 +27,7 @@ type JobMetadata struct {
 	ProjectId   string
 	TTL         int
 	DashboardId string
+	Data        []JobMetadataData
 }
 
 type StopJob struct {
@@ -37,11 +38,12 @@ type Store struct {
 	Jobs       map[int]JobMetadata
 	defaultTTL int
 	mut        sync.Mutex
+	db         *DB
 }
 
 type JobPred func(*JobMetadata) bool
 
-func (s *Store) Init(defTTL int) {
+func (s *Store) Init(defTTL int, db *DB) {
 	data, err := os.ReadFile(STOREFILE)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		log.Fatalf("Could not read store file: %v\n Error: %v\n", STOREFILE, err)
@@ -51,9 +53,11 @@ func (s *Store) Init(defTTL int) {
 	if s.Jobs == nil {
 		s.Jobs = make(map[int]JobMetadata)
 	}
+	s.db = db
 	s.defaultTTL = defTTL
 	s.mut.Unlock()
 	s.removeExpiredJobs()
+	s.addDataToIncompleteJobs()
 
 	go s.startExpiredJobsTimer()
 }
@@ -104,6 +108,10 @@ func (s *Store) StopJob(id int, stopJob StopJob) JobMetadata {
 	job.IsRunning = false
 	s.Jobs[id] = job
 	s.mut.Unlock()
+	go func() {
+		time.Sleep(10 * time.Second)
+		s.addDataToIncompleteJobs()
+	}()
 	return s.Jobs[id]
 }
 
@@ -131,6 +139,20 @@ func (s *Store) removeExpiredJobs() {
 		}
 	}
 	s.mut.Unlock()
+}
+
+func (s *Store) addDataToIncompleteJobs() {
+	s.mut.Lock()
+	defer s.mut.Unlock()
+	for i, j := range s.Jobs {
+		if j.Data == nil {
+			data, err := db.GetJobMetadataMetrics(j)
+			if err == nil {
+				j.Data = data
+				s.Jobs[i] = j
+			}
+		}
+	}
 }
 
 func (s *Store) Flush() {

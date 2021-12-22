@@ -30,6 +30,11 @@ type MetricData struct {
 	Data   map[string][]QueryResult
 }
 
+type JobMetadataData struct {
+	Config MetricConfig
+	Data   []float64
+}
+
 type QuantileData struct {
 	Config    MetricConfig
 	Quantiles []string
@@ -67,6 +72,35 @@ func (db *DB) GetJobData(job JobMetadata) (data JobData, err error) {
 
 func (db *DB) GetNodeJobData(job JobMetadata, node string) (data JobData, err error) {
 	return db.getJobData(job, db.metrics, node)
+}
+
+func (db *DB) GetJobMetadataMetrics(job JobMetadata) (data []JobMetadataData, err error) {
+	var wg sync.WaitGroup
+	for _, m := range db.metrics {
+		wg.Add(1)
+		go func(m MetricConfig) {
+			defer wg.Done()
+			tempRes, err := db.queryMetadataMeasurements(m, job)
+			if err != nil {
+				log.Printf("could not get quantile data %v", err)
+				return
+			}
+			result, err := parseQueryResult(tempRes, "_field")
+			if err != nil {
+				log.Printf("could not parsequantile data %v", err)
+				return
+			}
+			var tempData []float64
+			for _, v := range result {
+				for _, qr := range v {
+					tempData = append(tempData, qr["_value"].(float64))
+				}
+			}
+			data = append(data, JobMetadataData{Config: m, Data: tempData})
+		}(m)
+	}
+	wg.Wait()
+	return
 }
 
 func (db *DB) getJobData(job JobMetadata, metrics []MetricConfig, node string) (data JobData, err error) {
@@ -233,6 +267,28 @@ func quantileString(streamName string, q string, measurement string) string {
     |> set(key: "_field", value: "%v")
     |> set(key: "_measurement", value: "%v_quant")`,
 		streamName, q, q, measurement)
+}
+
+func (db *DB) queryMetadataMeasurements(metric MetricConfig, job JobMetadata) (result *api.QueryTableResult, err error) {
+	measurement := metric.Measurement
+	aggFn := "mean"
+	if metric.AggFn != "" {
+		aggFn = metric.AggFn
+		if metric.Type != "node" {
+			measurement += "_" + metric.AggFn
+		}
+	}
+	result, err = db.queryAPI.Query(context.Background(), fmt.Sprintf(`
+		from(bucket: "%v")
+		|> range(start: %v, stop: %v)
+		|> filter(fn: (r) => r["_measurement"] == "%v")
+		|> %v(column: "_value")
+    |> group()
+	`, db.bucket, job.StartTime, job.StopTime, measurement, aggFn))
+	if err != nil {
+		log.Printf("Error at query: %v\n", err)
+	}
+	return
 }
 
 func (db *DB) createTask(taskName string, taskStr string, orgId string) (task *domain.Task, err error) {

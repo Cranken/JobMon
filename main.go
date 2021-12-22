@@ -122,6 +122,8 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	} else {
 		jobData, err = db.GetNodeJobData(job, node)
 	}
+	test, _ := db.GetJobMetadataMetrics(job)
+	log.Println(test)
 	if err != nil {
 		log.Printf("Could not get job metric data: %v\n", err)
 		w.WriteHeader(500)
@@ -145,8 +147,8 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 func main() {
 	config.Init()
 	log.Printf("%v\n", config)
-	store.Init(config.DefaultTTL)
 	db.Init(config)
+	store.Init(config.DefaultTTL, &db)
 	jobCache.Init(config.CacheSize, &db)
 
 	router := httprouter.New()
