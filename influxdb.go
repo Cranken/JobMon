@@ -282,9 +282,10 @@ func (db *DB) queryMetadataMeasurements(metric MetricConfig, job JobMetadata) (r
 		from(bucket: "%v")
 		|> range(start: %v, stop: %v)
 		|> filter(fn: (r) => r["_measurement"] == "%v")
+		|> filter(fn: (r) => r["hostname"] =~ /%v/)
 		|> %v(column: "_value")
     |> group()
-	`, db.bucket, job.StartTime, job.StopTime, measurement, aggFn))
+	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, aggFn))
 	if err != nil {
 		log.Printf("Error at query: %v\n", err)
 	}

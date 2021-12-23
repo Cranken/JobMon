@@ -122,8 +122,6 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	} else {
 		jobData, err = db.GetNodeJobData(job, node)
 	}
-	test, _ := db.GetJobMetadataMetrics(job)
-	log.Println(test)
 	if err != nil {
 		log.Printf("Could not get job metric data: %v\n", err)
 		w.WriteHeader(500)
