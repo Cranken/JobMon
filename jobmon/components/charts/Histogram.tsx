@@ -72,7 +72,6 @@ export function Histogram<T>({
       .bin()
       .thresholds(thresholds)
       .value((i) => X[i])(I);
-    console.log(X, Y, I, bins);
 
     // Compute default domains.
     if (xDomain === undefined)
@@ -85,7 +84,8 @@ export function Histogram<T>({
     const yScale = d3.scaleLinear(yDomain, yRange);
     const xAxis = d3
       .axisBottom(xScale)
-      .ticks(width / 80, xFormat)
+      .ticks(3, xFormat)
+      // .ticks(width / 80, xFormat)
       .tickSizeOuter(0);
     const yAxis = d3.axisLeft(yScale).ticks(height / 40, yFormat);
     let yFormatFn = yScale.tickFormat(100, yFormat);

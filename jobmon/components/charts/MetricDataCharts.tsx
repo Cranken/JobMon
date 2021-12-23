@@ -37,13 +37,27 @@ export const MetricDataCharts = ({
     let title;
     if (nodeSelection.length === 1 && metric.Config.Type !== "node") {
       z = (d: MetricPoint) => d["type-id"];
-      title = (d: MetricPoint) => `${d["type-id"]}: ${d._value.toFixed(2)}`;
+      title = (d: MetricPoint) =>
+        `${d["type-id"]}: ${
+          +d._value === 0
+            ? 0
+            : d._value.toFixed(
+                1 - Math.floor(Math.log(d._value) / Math.log(10))
+              )
+        }`;
       for (const node of Object.keys(metric.Data)) {
         metricData = metricData.concat(metric.Data[node]);
       }
     } else {
       z = (d: MetricPoint) => d["hostname"];
-      title = (d: MetricPoint) => `${d["hostname"]}: ${+d._value.toFixed(2)}`;
+      title = (d: MetricPoint) =>
+        `${d["hostname"]}: ${
+          +d._value === 0
+            ? 0
+            : d._value.toFixed(
+                1 - Math.floor(Math.log(d._value) / Math.log(10))
+              )
+        }`;
       for (const node of Object.keys(metric.Data)) {
         if (nodeSelection.indexOf(node) > -1) {
           metricData = metricData.concat(metric.Data[node]);

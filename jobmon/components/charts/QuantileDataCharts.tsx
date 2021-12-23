@@ -47,7 +47,15 @@ export const QuantileDataCharts = ({
           xDomain={xDomain}
           setTimeRange={setTimeRange}
           width={document.body.clientWidth / 2}
-          title={(d: QuantilePoint) => `${d._field}: ${d._value.toString()}`}
+          title={(d: QuantilePoint) =>
+            `${d._field}: ${
+              +d._value === 0
+                ? 0
+                : d._value.toFixed(
+                    1 - Math.floor(Math.log(d._value) / Math.log(10))
+                  )
+            }`
+          }
           unit={metric.Config.Unit}
           yLabel={metric.Config.DisplayName}
         />
