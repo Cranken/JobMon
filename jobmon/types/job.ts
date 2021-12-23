@@ -24,6 +24,7 @@ export interface MetricConfig {
   AggFn: string;
   SampleInterval: string;
   Unit: string;
+  DisplayName: string;
 }
 
 export interface MetricPoint {

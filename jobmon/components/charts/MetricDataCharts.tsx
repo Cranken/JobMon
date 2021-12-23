@@ -64,7 +64,7 @@ export const MetricDataCharts = ({
           width={document.body.clientWidth / 2}
           title={title}
           unit={metric.Config.Unit}
-          yLabel={metric.Config.Measurement}
+          yLabel={metric.Config.DisplayName}
         />
       </Flex>
     );

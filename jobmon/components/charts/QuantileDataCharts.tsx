@@ -49,7 +49,7 @@ export const QuantileDataCharts = ({
           width={document.body.clientWidth / 2}
           title={(d: QuantilePoint) => `${d._field}: ${d._value.toString()}`}
           unit={metric.Config.Unit}
-          yLabel={metric.Config.Measurement}
+          yLabel={metric.Config.DisplayName}
         />
       </Flex>
     );

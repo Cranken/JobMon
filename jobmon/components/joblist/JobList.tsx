@@ -93,7 +93,7 @@ export const JobListItem = ({ job }: JobListItemProps) => {
                     // width={250}
                     width={window.document.body.clientWidth / 7}
                     height={180}
-                    xLabel={dat.Config.Measurement}
+                    xLabel={dat.Config.DisplayName}
                   />
                 </Center>
               ))}
