@@ -18,6 +18,7 @@ import { Histogram } from "../charts/Histogram";
 
 interface JobListProps {
   jobs: JobMetadata[];
+  displayMetrics: string[];
   filter?: (job: JobMetadata) => boolean;
   sortBy?: string;
   width?: string;
@@ -26,32 +27,32 @@ interface JobListProps {
 
 export const JobList = ({
   jobs,
+  displayMetrics,
   width,
   height,
   filter = (_) => true,
 }: JobListProps) => {
-  const style = {
-    width: width ?? "100%",
-    height: height ?? "auto",
-  };
   return (
-    <Stack>
-      {jobs.filter(filter).map((job) => (
-        <JobListItem key={job.Id} job={job} />
-      ))}
-    </Stack>
+    <Center>
+      <Stack w={width ?? "1280px"}>
+        {jobs.filter(filter).map((job) => (
+          <JobListItem key={job.Id} job={job} displayMetrics={displayMetrics} />
+        ))}
+      </Stack>
+    </Center>
   );
 };
 
 interface JobListItemProps {
   job: JobMetadata;
+  displayMetrics: string[];
 }
 
-export const JobListItem = ({ job }: JobListItemProps) => {
-  const borderColor = useColorModeValue("gray.500", "whiteAlpha.800");
-  const sortedData = job.Data.sort((a, b) =>
-    a.Config.Measurement < b.Config.Measurement ? -1 : 1
-  );
+export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
+  const borderColor = useColorModeValue("gray.200", "whiteAlpha.300");
+  const sortedData = job.Data.filter((val) =>
+    displayMetrics.includes(val.Config.Measurement)
+  ).sort((a, b) => (a.Config.Measurement < b.Config.Measurement ? -1 : 1));
   return (
     <LinkBox>
       <LinkOverlay href={`/job/${job.Id}`}>
@@ -61,9 +62,9 @@ export const JobListItem = ({ job }: JobListItemProps) => {
           border="1px"
           borderColor={borderColor}
           borderRadius={5}
-          m={2}
+          // m={2}
         >
-          <GridItem colSpan={1}>
+          <GridItem colSpan={2}>
             <Flex height="100%">
               <Stack textAlign="start" m={5} pl={5}>
                 <Heading size="sm" textDecoration="underline">
@@ -83,15 +84,16 @@ export const JobListItem = ({ job }: JobListItemProps) => {
               </Center>
             </Flex>
           </GridItem>
-          <GridItem colSpan={6}>
+          <GridItem colSpan={5}>
             <Stack direction="row" gap={2} h="100%">
-              {job.Data.map((dat) => (
-                <Center key={dat.Config.Measurement}>
+              {sortedData.map((dat) => (
+                <Center key={dat.Config.Measurement} width="100%" height="100%">
                   <Histogram
                     data={dat.Data}
                     x={(d) => d}
                     // width={250}
-                    width={window.document.body.clientWidth / 7}
+                    width={1280 / 4}
+                    // width={window.document.body.clientWidth / 8}
                     height={180}
                     xLabel={dat.Config.DisplayName}
                   />

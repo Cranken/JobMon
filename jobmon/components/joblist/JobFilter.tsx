@@ -50,7 +50,7 @@ export const JobFilter = ({
         borderRadius="lg"
         padding="3ch"
         margin="2ch"
-        height="25vh"
+        height="22vh"
       >
         <Tabs w="100%">
           <TabList>

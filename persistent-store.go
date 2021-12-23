@@ -30,6 +30,11 @@ type JobMetadata struct {
 	Data        []JobMetadataData
 }
 
+type JobListData struct {
+	Jobs           []JobMetadata
+	DisplayMetrics []string
+}
+
 type StopJob struct {
 	StopTime int
 }

@@ -2,16 +2,16 @@ import React, { useState, useEffect } from "react";
 import JobFilter from "../components/joblist/JobFilter";
 import JobList from "../components/joblist/JobList";
 import { checkBetween } from "../utils/utils";
-import { JobMetadata } from "./../types/job";
+import { JobListData } from "./../types/job";
 
 export const Jobs = () => {
-  const jobs = useGetJobs();
+  const jobListData = useGetJobs();
   const [userId, setUserId] = useState("");
   const [startTime, setStartTime] = useState(new Date("2021-10-01"));
   const [stopTime, setStopTime] = useState(new Date());
   const [numNodes, setNumNodes] = useState([1, 192]);
 
-  if (!jobs) {
+  if (!jobListData) {
     return <div>Loading</div>;
   }
 
@@ -28,7 +28,8 @@ export const Jobs = () => {
   elements.push(
     <JobList
       key="joblist"
-      jobs={jobs}
+      jobs={jobListData.Jobs}
+      displayMetrics={jobListData.DisplayMetrics}
       filter={(job) =>
         job.UserId.startsWith(userId) &&
         checkBetween(startTime, stopTime, new Date(job.StartTime * 1000)) &&
@@ -41,13 +42,13 @@ export const Jobs = () => {
 };
 
 export const useGetJobs = () => {
-  const [jobs, setJobs] = useState<JobMetadata[]>();
+  const [jobListData, setJobs] = useState<JobListData>();
   useEffect(() => {
     fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/jobs").then((res) =>
       res.json().then((data) => setJobs(data))
     );
   }, []);
-  return jobs;
+  return jobListData;
 };
 
 export default Jobs;

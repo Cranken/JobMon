@@ -21,6 +21,7 @@ type Configuration struct {
 	Prefetch        bool
 	SampleInterval  string
 	MetricQuantiles []string
+	JobListMetrics  []string
 }
 
 type MetricConfig struct {

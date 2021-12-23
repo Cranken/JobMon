@@ -12,6 +12,11 @@ export interface JobMetadata {
   Data: JobMetadataData[];
 }
 
+export interface JobListData {
+  Jobs: JobMetadata[];
+  DisplayMetrics: string[];
+}
+
 export enum CollectionType {
   PerNode,
   PerSocket,
