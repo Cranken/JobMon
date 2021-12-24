@@ -3,13 +3,22 @@ import JobFilter from "../components/joblist/JobFilter";
 import JobList from "../components/joblist/JobList";
 import { checkBetween } from "../utils/utils";
 import { JobListData } from "./../types/job";
+import { useRouter } from "next/router";
 
 export const Jobs = () => {
+  const query = useRouter().query;
   const jobListData = useGetJobs();
   const [userId, setUserId] = useState("");
   const [startTime, setStartTime] = useState(new Date("2021-10-01"));
   const [stopTime, setStopTime] = useState(new Date());
   const [numNodes, setNumNodes] = useState([1, 192]);
+
+  useEffect(() => {
+    const { user } = query;
+    if (user?.length ?? 0 > 0) {
+      setUserId(user as string);
+    }
+  }, [query]);
 
   if (!jobListData) {
     return <div>Loading</div>;

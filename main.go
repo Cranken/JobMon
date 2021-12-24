@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -143,6 +144,23 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	w.Write(jsonData)
 }
 
+func Search(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	searchTerm := params.ByName("term")
+
+	id, err := strconv.Atoi(searchTerm)
+	if err == nil {
+		_, err := store.Get(id)
+		if err == nil {
+			allowCors(w.Header())
+			w.Write([]byte(fmt.Sprintf("job:%v", id)))
+			return
+		}
+	}
+
+	allowCors(w.Header())
+	w.Write([]byte(fmt.Sprintf("user:%v", searchTerm)))
+}
+
 func main() {
 	config.Init()
 	log.Printf("%v\n", config)
@@ -157,6 +175,7 @@ func main() {
 	router.PATCH("/api/job_stop/:id", JobStop)
 	router.GET("/api/jobs", GetJobs)
 	router.GET("/api/job/:id", GetJob)
+	router.GET("/api/search/:term", Search)
 
 	registerCleanup()
 
