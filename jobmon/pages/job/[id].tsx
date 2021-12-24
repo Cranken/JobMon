@@ -138,7 +138,19 @@ const Job: NextPage = () => {
 
         <TabPanels>
           <TabPanel>{generateChartsMemo}</TabPanel>
-          <TabPanel></TabPanel>
+          <TabPanel>
+            <Flex>
+              {data.Metadata.Data.map((val) => (
+                <BoxPlot
+                  key={val.Config.Measurement}
+                  data={val.Data}
+                  y={(dat) => dat}
+                  width={window.document.body.clientWidth / 6}
+                  yLabel={val.Config.DisplayName}
+                />
+              ))}
+            </Flex>
+          </TabPanel>
         </TabPanels>
       </Tabs>
     </Box>

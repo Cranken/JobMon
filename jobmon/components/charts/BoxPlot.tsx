@@ -98,21 +98,24 @@ export function BoxPlot<T>({
         let b = bin as ExtBin;
         b.quartiles = [q1, q2, q3];
         b.range = [r0, r1];
-        b.x0 = 0;
-        b.x1 = 1;
+        b.x0 = 0.25;
+        b.x1 = 0.75;
         b.outliers = bin.filter((i) => Y[i] < r0 || Y[i] > r1);
         return b;
       });
 
-    console.log(data, X, Y, B);
-
     // Compute default domains.
     if (xDomain === undefined)
-      xDomain = [d3.min(B, (d) => d.x0) ?? 0, d3.max(B, (d) => d.x1) ?? 0];
+      // xDomain = [d3.min(B, (d) => d.x0) ?? 0, d3.max(B, (d) => d.x1) ?? 0];
+      xDomain = [0, 1];
     if (yDomain === undefined)
+      // yDomain = [
+      //   (d3.min(B, (d) => d.range[0]) ?? 0) * 0.85,
+      //   (d3.max(B, (d) => d.range[1]) ?? 0) * 1.15,
+      // ];
       yDomain = [
-        d3.min(B, (d) => d.range[0]) ?? 0,
-        d3.max(B, (d) => d.range[1]) ?? 0,
+        (d3.min(I, (d) => Y[d]) ?? 0) * 0.85,
+        (d3.max(I, (d) => Y[d]) ?? 0) * 1.15,
       ];
 
     // Construct scales and axes.
@@ -120,10 +123,7 @@ export function BoxPlot<T>({
       .scaleLinear(xDomain, xRange)
       .interpolate(d3.interpolateRound);
     const yScale = d3.scaleLinear(yDomain, yRange);
-    const xAxis = d3
-      .axisBottom(xScale)
-      .ticks(thresholds, xFormat)
-      .tickSizeOuter(0);
+    const xAxis = d3.axisBottom(xScale).ticks(0, xFormat).tickSizeOuter(0);
     const yAxis = d3.axisLeft(yScale).ticks(height / 40, yFormat);
 
     const svg = d3
