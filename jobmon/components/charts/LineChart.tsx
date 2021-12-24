@@ -209,7 +209,7 @@ export function LineChart<T>({
       .call((g) =>
         g
           .append("text")
-          .attr("x", -marginLeft)
+          .attr("x", -marginLeft + 5)
           .attr("y", 10)
           .attr("fill", "currentColor")
           .attr("text-anchor", "start")

@@ -7,8 +7,21 @@ import MetricDataCharts from "../../components/charts/MetricDataCharts";
 import { useRouter } from "next/router";
 import QuantileDataCharts from "../../components/charts/QuantileDataCharts";
 import Control from "../../components/jobview/ViewControl";
-import { Box, Button, Center, Flex, Grid, Spinner } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  Grid,
+  Spinner,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
+} from "@chakra-ui/react";
 import { JobInfo } from "../../components/jobview/JobInfo";
+import { BoxPlot } from "../../components/charts/BoxPlot";
 
 export type SelectionMap = { [key: string]: boolean };
 
@@ -117,7 +130,17 @@ const Job: NextPage = () => {
           setChecked={setChecked}
         />
       </Grid>
-      {generateChartsMemo}
+      <Tabs>
+        <TabList>
+          <Tab>Timeline</Tab>
+          <Tab>Analysis</Tab>
+        </TabList>
+
+        <TabPanels>
+          <TabPanel>{generateChartsMemo}</TabPanel>
+          <TabPanel></TabPanel>
+        </TabPanels>
+      </Tabs>
     </Box>
   );
 };
