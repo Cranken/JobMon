@@ -22,6 +22,7 @@ type Configuration struct {
 	SampleInterval  string
 	MetricQuantiles []string
 	JobListMetrics  []string
+	JWTSecret       string
 }
 
 type MetricConfig struct {

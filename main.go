@@ -19,10 +19,7 @@ var store = Store{}
 var config = Configuration{}
 var db = DB{}
 var jobCache = LRUCache{}
-
-func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	w.Write([]byte("Index"))
-}
+var authManager = AuthManager{}
 
 func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	body, err := ioutil.ReadAll(r.Body)
@@ -161,21 +158,53 @@ func Search(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	w.Write([]byte(fmt.Sprintf("user:%v", searchTerm)))
 }
 
+func Login(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Could not read http request body")
+		w.WriteHeader(400)
+		return
+	}
+
+	var dat AuthPayload
+	err = json.Unmarshal(body, &dat)
+	if err != nil {
+		log.Printf("Could not unmarshal http request body")
+		w.WriteHeader(400)
+		return
+	}
+
+	user, err := authManager.AuthUser(dat.Username, dat.Password)
+	if err != nil {
+		log.Printf("Could not authenticate user: %v", err)
+		w.WriteHeader(401)
+		return
+	}
+
+	err = authManager.AppendJWT(user, w)
+	if err != nil {
+		log.Printf("Could not generate JWT: %v", err)
+		w.WriteHeader(500)
+		return
+	}
+	w.WriteHeader(200)
+}
+
 func main() {
 	config.Init()
 	log.Printf("%v\n", config)
 	db.Init(config)
 	store.Init(config.DefaultTTL, &db)
 	jobCache.Init(config.CacheSize, &db)
+	authManager.Init(config)
 
 	router := httprouter.New()
-	router.ServeFiles("/static/*filepath", http.Dir("static"))
-	router.GET("/", Index)
-	router.PUT("/api/job_start", JobStart)
-	router.PATCH("/api/job_stop/:id", JobStop)
-	router.GET("/api/jobs", GetJobs)
-	router.GET("/api/job/:id", GetJob)
-	router.GET("/api/search/:term", Search)
+	router.PUT("/api/job_start", Protected(JobStart, JOBCONTROL))
+	router.PATCH("/api/job_stop/:id", Protected(JobStop, JOBCONTROL))
+	router.GET("/api/jobs", Protected(GetJobs, USER))
+	router.GET("/api/job/:id", Protected(GetJob, USER))
+	router.GET("/api/search/:term", Protected(Search, USER))
+	router.GET("/api/login", Login)
 
 	registerCleanup()
 
