@@ -1,6 +1,8 @@
 import { JobMetadata } from "./../../types/job";
 import styles from "./JobList.module.css";
 import {
+  Alert,
+  AlertIcon,
   Box,
   Center,
   Divider,
@@ -11,6 +13,7 @@ import {
   LinkBox,
   LinkOverlay,
   Stack,
+  Tag,
   Text,
   useColorModeValue,
 } from "@chakra-ui/react";
@@ -55,7 +58,7 @@ export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
   ).sort((a, b) => (a.Config.Measurement < b.Config.Measurement ? -1 : 1));
   return (
     <LinkBox>
-      <LinkOverlay href={`/job/${job.Id}`}>
+      <LinkOverlay href={job.IsRunning ? undefined : `/job/${job.Id}`}>
         <Grid
           templateColumns="repeat(7, 1fr)"
           gap={2}
@@ -75,9 +78,15 @@ export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
                 <Text>
                   Start: {new Date(job.StartTime * 1000).toLocaleString()}
                 </Text>
-                <Text>
-                  End: {new Date(job.StopTime * 1000).toLocaleString()}
-                </Text>
+                {job.IsRunning ? (
+                  <Box>
+                    <Tag colorScheme="green">Running</Tag>
+                  </Box>
+                ) : (
+                  <Text>
+                    End: {new Date(job.StopTime * 1000).toLocaleString()}
+                  </Text>
+                )}
               </Stack>
               <Center height="90%" m="auto">
                 <Divider orientation="vertical" borderColor={borderColor} />
@@ -85,21 +94,36 @@ export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
             </Flex>
           </GridItem>
           <GridItem colSpan={5}>
-            <Stack direction="row" gap={2} h="100%">
-              {sortedData.map((dat) => (
-                <Center key={dat.Config.Measurement} width="100%" height="100%">
-                  <Histogram
-                    data={dat.Data}
-                    x={(d) => d}
-                    // width={250}
-                    width={1280 / 4}
-                    // width={window.document.body.clientWidth / 8}
-                    height={180}
-                    xLabel={dat.Config.DisplayName}
-                  />
-                </Center>
-              ))}
-            </Stack>
+            {job.IsRunning ? (
+              <Center h="100%">
+                <Box>
+                  <Alert status="info">
+                    <AlertIcon />
+                    Job is still running. No metric data available yet.
+                  </Alert>
+                </Box>
+              </Center>
+            ) : (
+              <Stack direction="row" gap={2} h="100%">
+                {sortedData.map((dat) => (
+                  <Center
+                    key={dat.Config.Measurement}
+                    width="100%"
+                    height="100%"
+                  >
+                    <Histogram
+                      data={dat.Data}
+                      x={(d) => d}
+                      // width={250}
+                      width={1280 / 4}
+                      // width={window.document.body.clientWidth / 8}
+                      height={180}
+                      xLabel={dat.Config.DisplayName}
+                    />
+                  </Center>
+                ))}
+              </Stack>
+            )}
           </GridItem>
         </Grid>
       </LinkOverlay>
