@@ -193,7 +193,7 @@ export function BoxPlot<T>({
 
     g.append("g")
       .attr("fill", stroke)
-      .attr("fill-opacity", 0.2)
+      .attr("fill-opacity", 0.4)
       .attr("stroke", "none")
       .attr(
         "transform",

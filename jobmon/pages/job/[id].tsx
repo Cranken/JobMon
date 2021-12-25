@@ -19,6 +19,7 @@ import {
   TabPanel,
   TabPanels,
   Tabs,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { JobInfo } from "../../components/jobview/JobInfo";
 import { BoxPlot } from "../../components/charts/BoxPlot";
@@ -35,6 +36,7 @@ const Job: NextPage = () => {
   const [startTime, setStartTime] = useState<Date>(new Date());
   const [stopTime, setStopTime] = useState<Date>(new Date());
   const [showQuantiles, setShowQuantiles] = useState(true);
+  const fillColor = useColorModeValue("#ddd", "#ababab");
 
   const generateChartsMemo = useMemo(() => {
     const setTimeRange = (start: Date, end: Date) => {
@@ -147,6 +149,7 @@ const Job: NextPage = () => {
                   y={(dat) => dat}
                   width={window.document.body.clientWidth / 6}
                   yLabel={val.Config.DisplayName}
+                  fill={fillColor}
                 />
               ))}
             </Flex>
