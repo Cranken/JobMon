@@ -36,7 +36,7 @@ const Job: NextPage = () => {
   const [startTime, setStartTime] = useState<Date>(new Date());
   const [stopTime, setStopTime] = useState<Date>(new Date());
   const [showQuantiles, setShowQuantiles] = useState(true);
-  const fillColor = useColorModeValue("#ddd", "#ababab");
+  const fillColor = useColorModeValue("#ddd", "#727272");
 
   const generateChartsMemo = useMemo(() => {
     const setTimeRange = (start: Date, end: Date) => {
