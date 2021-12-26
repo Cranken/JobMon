@@ -25,6 +25,7 @@ func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Could not read http request body")
+		allowCors(r, w.Header())
 		w.WriteHeader(400)
 		return
 	}
@@ -33,6 +34,7 @@ func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 	err = json.Unmarshal(body, &job)
 	if err != nil {
 		log.Printf("Could not unmarshal http request body")
+		allowCors(r, w.Header())
 		w.WriteHeader(400)
 		return
 	}
@@ -45,6 +47,7 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Could not read http request body")
+		allowCors(r, w.Header())
 		w.WriteHeader(400)
 		return
 	}
@@ -53,6 +56,7 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	err = json.Unmarshal(body, &stopJob)
 	if err != nil {
 		log.Printf("Could not parse json from http request body")
+		allowCors(r, w.Header())
 		w.WriteHeader(400)
 		return
 	}
@@ -61,6 +65,7 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	id, err := strconv.Atoi(strId)
 	if err != nil {
 		log.Printf("Id is not a valid integer")
+		allowCors(r, w.Header())
 		w.WriteHeader(400)
 		return
 	}
@@ -86,10 +91,11 @@ func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	data, err := json.Marshal(&jobListData)
 	if err != nil {
 		log.Printf("Could not marshal jobs to json")
+		allowCors(r, w.Header())
 		w.WriteHeader(500)
 		return
 	}
-	allowCors(w.Header())
+	allowCors(r, w.Header())
 	w.Write(data)
 }
 
@@ -102,6 +108,7 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	id, err := strconv.Atoi(strId)
 	if err != nil {
 		log.Printf("Could not job id data")
+		allowCors(r, w.Header())
 		w.WriteHeader(500)
 		return
 	}
@@ -111,6 +118,7 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	job, err := store.Get(id)
 	if err != nil {
 		log.Printf("Could not get job meta data")
+		allowCors(r, w.Header())
 		w.WriteHeader(500)
 		return
 	}
@@ -123,6 +131,7 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	}
 	if err != nil {
 		log.Printf("Could not get job metric data: %v\n", err)
+		allowCors(r, w.Header())
 		w.WriteHeader(500)
 		return
 	}
@@ -130,6 +139,7 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	jsonData, err := json.Marshal(&jobData)
 	if err != nil {
 		log.Printf("Could not marshal job to json")
+		allowCors(r, w.Header())
 		w.WriteHeader(500)
 		return
 	}
@@ -137,7 +147,7 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	elapsed := time.Since(start)
 	log.Printf("Get job %v took %s", job.Id, elapsed)
 
-	allowCors(w.Header())
+	allowCors(r, w.Header())
 	w.Write(jsonData)
 }
 
@@ -148,13 +158,13 @@ func Search(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	if err == nil {
 		_, err := store.Get(id)
 		if err == nil {
-			allowCors(w.Header())
+			allowCors(r, w.Header())
 			w.Write([]byte(fmt.Sprintf("job:%v", id)))
 			return
 		}
 	}
 
-	allowCors(w.Header())
+	allowCors(r, w.Header())
 	w.Write([]byte(fmt.Sprintf("user:%v", searchTerm)))
 }
 
@@ -162,6 +172,7 @@ func Login(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Could not read http request body")
+		allowCors(r, w.Header())
 		w.WriteHeader(400)
 		return
 	}
@@ -170,6 +181,7 @@ func Login(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	err = json.Unmarshal(body, &dat)
 	if err != nil {
 		log.Printf("Could not unmarshal http request body")
+		allowCors(r, w.Header())
 		w.WriteHeader(400)
 		return
 	}
@@ -177,6 +189,7 @@ func Login(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	user, err := authManager.AuthUser(dat.Username, dat.Password)
 	if err != nil {
 		log.Printf("Could not authenticate user: %v", err)
+		allowCors(r, w.Header())
 		w.WriteHeader(401)
 		return
 	}
@@ -184,9 +197,11 @@ func Login(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	err = authManager.AppendJWT(user, w)
 	if err != nil {
 		log.Printf("Could not generate JWT: %v", err)
+		allowCors(r, w.Header())
 		w.WriteHeader(500)
 		return
 	}
+	allowCors(r, w.Header())
 	w.WriteHeader(200)
 }
 
@@ -204,16 +219,18 @@ func main() {
 	router.GET("/api/jobs", Protected(GetJobs, USER))
 	router.GET("/api/job/:id", Protected(GetJob, USER))
 	router.GET("/api/search/:term", Protected(Search, USER))
-	router.GET("/api/login", Login)
+	router.POST("/api/login", Login)
 
 	registerCleanup()
 
 	log.Fatal(http.ListenAndServe("127.0.0.1:8080", router))
 }
 
-func allowCors(header http.Header) {
-	header.Set("Access-Control-Allow-Methods", header.Get("Allow"))
-	header.Set("Access-Control-Allow-Origin", "*")
+func allowCors(r *http.Request, header http.Header) {
+	header.Set("Access-Control-Allow-Methods", r.Header.Get("Allow"))
+	header.Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+	header.Set("Access-Control-Allow-Credentials", "true")
+	header.Set("Access-Control-Expose-Headers", "Set-Cookie")
 }
 
 func registerCleanup() {

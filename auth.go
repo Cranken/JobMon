@@ -22,8 +22,8 @@ type AuthPayload struct {
 }
 
 type UserInfo struct {
-	role     string
-	username string
+	Role     string
+	Username string
 }
 
 type UserClaims struct {
@@ -40,36 +40,32 @@ const ISSUER = "monitoring-backend"
 
 func Protected(h httprouter.Handle, authLevel string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		// TODO: Implement frontend auth and remove this early return
-		h(w, r, ps)
-		return
-
 		token, err := r.Cookie("Authorization")
 		if err != nil {
-			allowCors(w.Header())
+			allowCors(r, w.Header())
 			w.WriteHeader(401)
 			return
 		}
 
 		parts := strings.Split(token.Value, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			allowCors(w.Header())
+			allowCors(r, w.Header())
 			w.WriteHeader(401)
 			return
 		}
 
 		user, err := authManager.validate(parts[1])
 		if err != nil {
-			allowCors(w.Header())
+			allowCors(r, w.Header())
 			w.WriteHeader(401)
 			return
 		}
 
-		if user.role == authLevel {
+		if user.Role == authLevel || user.Role == ADMIN {
 			h(w, r, ps)
 		} else {
-			allowCors(w.Header())
-			w.WriteHeader(401)
+			allowCors(r, w.Header())
+			w.WriteHeader(403)
 			return
 		}
 	}
@@ -80,20 +76,27 @@ func (auth *AuthManager) Init(c Configuration) {
 }
 
 func (auth *AuthManager) validate(tokenStr string) (user UserInfo, err error) {
-	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, &UserClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
 		return auth.hmacSampleSecret, nil
 	})
-
-	if claims, ok := token.Claims.(UserClaims); ok && token.Valid {
-		if claims.VerifyExpiresAt(jwt.TimeFunc().Unix(), true) && claims.VerifyIssuer(ISSUER, true) {
-			return UserInfo{role: claims.role, username: claims.username}, nil
-		}
+	if err != nil {
+		return
 	}
-	return user, err
+	claims, ok := token.Claims.(*UserClaims)
+	if ok && token.Valid {
+		if claims.VerifyExpiresAt(jwt.TimeFunc().Unix(), true) && claims.VerifyIssuer(ISSUER, true) {
+			return claims.UserInfo, nil
+		} else {
+			err = fmt.Errorf("token expired or issuer does not match")
+		}
+	} else {
+		err = fmt.Errorf("invalid token")
+	}
+	return
 }
 
 func (auth *AuthManager) generateJWT(user UserInfo) (string, error) {
@@ -115,13 +118,13 @@ func (auth *AuthManager) AppendJWT(user UserInfo, w http.ResponseWriter) (err er
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "Bearer " + token, HttpOnly: true, Expires: time.Now().Add(EXPIRATIONTIME * time.Second), Path: "/"})
+	http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "Bearer " + token, Expires: time.Now().Add(EXPIRATIONTIME * time.Second), Path: "/"})
 	return
 }
 
 func (auth *AuthManager) AuthUser(username string, password string) (user UserInfo, err error) {
 	if username == "admin" && password == "admin" {
-		user = UserInfo{role: ADMIN, username: username}
+		user = UserInfo{Role: ADMIN, Username: username}
 		return
 	}
 	err = fmt.Errorf("no valid user or invalid password")
