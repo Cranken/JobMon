@@ -13,13 +13,22 @@ import {
 import { useCookies } from "react-cookie";
 import { MdLogout } from "react-icons/md";
 import { useIsAuthenticated } from "../../utils/auth";
+import { useGetUser } from "./../../utils/auth";
 
 export const Header = () => {
+  const user = useGetUser();
   const { colorMode, toggleColorMode } = useColorMode();
   const [_c, _s, removeCookie] = useCookies(["Authorization"]);
   const headerBg = useColorModeValue("gray.400", "gray.500");
   const buttonBg = useColorModeValue("gray.500", "gray.400");
   const isAuthenticated = useIsAuthenticated();
+  const logout = () => {
+    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/logout", {
+      method: "POST",
+      credentials: "include",
+      body: JSON.stringify(user),
+    }).then(() => removeCookie("Authorization", { path: "/" }));
+  };
   return (
     <header>
       <Flex bg={headerBg} p={2}>
@@ -43,10 +52,7 @@ export const Header = () => {
           </Tooltip>
           {isAuthenticated ? (
             <Tooltip label="Logout">
-              <Button
-                bg={buttonBg}
-                onClick={() => removeCookie("Authorization", { path: "/" })}
-              >
+              <Button bg={buttonBg} onClick={() => logout()}>
                 <Icon as={MdLogout} />
               </Button>
             </Tooltip>

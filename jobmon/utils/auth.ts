@@ -23,7 +23,6 @@ export const useGetUser = () => {
     return {} as AuthUser;
   }
   const data = JSON.parse(base64url.decode(split[1]));
-  console.log(data);
   return { Username: data["Username"], Role: data["Role"] } as AuthUser;
 };
 

@@ -22,6 +22,7 @@ import {
 } from "@chakra-ui/react";
 import { JobInfo } from "../../components/jobview/JobInfo";
 import { BoxPlot } from "../../components/charts/BoxPlot";
+import { useCookies } from "react-cookie";
 
 export type SelectionMap = { [key: string]: boolean };
 
@@ -159,6 +160,7 @@ export default Job;
 export const useGetJobData = (id: number | undefined, node?: string) => {
   const [jobData, setJobData] = useState<JobData>();
   const [jobCache, setJobCache] = useState<{ [key: string]: JobData }>({});
+  const [_c, _s, removeCookie] = useCookies(["Authorization"]);
   useEffect(() => {
     if (!id) {
       return;
@@ -175,15 +177,19 @@ export const useGetJobData = (id: number | undefined, node?: string) => {
       setJobData(jobCache["all"]);
       return;
     }
-    fetch(URL, { credentials: "include" }).then((res) =>
-      res.json().then((data) => {
-        setJobCache((prevState) => {
-          prevState[node ? node : "all"] = data;
-          return prevState;
+    fetch(URL, { credentials: "include" }).then((res) => {
+      if (!res.ok && (res.status === 401 || res.status === 403)) {
+        removeCookie("Authorization");
+      } else {
+        res.json().then((data) => {
+          setJobCache((prevState) => {
+            prevState[node ? node : "all"] = data;
+            return prevState;
+          });
+          setJobData(data);
         });
-        setJobData(data);
-      })
-    );
-  }, [id, node, jobCache]);
+      }
+    });
+  }, [id, node, jobCache, removeCookie]);
   return jobData;
 };

@@ -33,6 +33,7 @@ type UserClaims struct {
 
 type AuthManager struct {
 	hmacSampleSecret []byte
+	sessionStorage   map[string]string
 }
 
 const EXPIRATIONTIME = 60 * 60 * 24 * 7
@@ -43,6 +44,7 @@ func Protected(h httprouter.Handle, authLevel string) httprouter.Handle {
 		token, err := r.Cookie("Authorization")
 		if err != nil {
 			allowCors(r, w.Header())
+			http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -50,6 +52,7 @@ func Protected(h httprouter.Handle, authLevel string) httprouter.Handle {
 		parts := strings.Split(token.Value, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			allowCors(r, w.Header())
+			http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -57,6 +60,7 @@ func Protected(h httprouter.Handle, authLevel string) httprouter.Handle {
 		user, err := authManager.validate(parts[1])
 		if err != nil {
 			allowCors(r, w.Header())
+			http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -65,6 +69,7 @@ func Protected(h httprouter.Handle, authLevel string) httprouter.Handle {
 			h(w, r, ps)
 		} else {
 			allowCors(r, w.Header())
+			http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
@@ -73,6 +78,7 @@ func Protected(h httprouter.Handle, authLevel string) httprouter.Handle {
 
 func (auth *AuthManager) Init(c Configuration) {
 	auth.hmacSampleSecret = []byte(c.JWTSecret)
+	auth.sessionStorage = map[string]string{}
 }
 
 func (auth *AuthManager) validate(tokenStr string) (user UserInfo, err error) {
@@ -89,7 +95,11 @@ func (auth *AuthManager) validate(tokenStr string) (user UserInfo, err error) {
 	claims, ok := token.Claims.(*UserClaims)
 	if ok && token.Valid {
 		if claims.VerifyExpiresAt(jwt.TimeFunc().Unix(), true) && claims.VerifyIssuer(ISSUER, true) {
-			return claims.UserInfo, nil
+			if _, ok := auth.sessionStorage[claims.Username]; ok {
+				return claims.UserInfo, nil
+			} else {
+				err = fmt.Errorf("session was revoked")
+			}
 		} else {
 			err = fmt.Errorf("token expired or issuer does not match")
 		}
@@ -118,6 +128,7 @@ func (auth *AuthManager) AppendJWT(user UserInfo, w http.ResponseWriter) (err er
 		return
 	}
 
+	auth.sessionStorage[user.Username] = token
 	http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "Bearer " + token, Expires: time.Now().Add(EXPIRATIONTIME * time.Second), Path: "/"})
 	return
 }
@@ -129,4 +140,8 @@ func (auth *AuthManager) AuthUser(username string, password string) (user UserIn
 	}
 	err = fmt.Errorf("no valid user or invalid password")
 	return
+}
+
+func (auth *AuthManager) Logout(username string) {
+	delete(auth.sessionStorage, username)
 }

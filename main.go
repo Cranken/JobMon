@@ -205,6 +205,36 @@ func Login(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	w.WriteHeader(200)
 }
 
+func Logout(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Could not read http request body")
+		allowCors(r, w.Header())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	var dat AuthPayload
+	err = json.Unmarshal(body, &dat)
+	if err != nil {
+		log.Printf("Could not unmarshal http request body")
+		allowCors(r, w.Header())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if dat.Username == "" {
+		log.Printf("No username given on logout")
+		allowCors(r, w.Header())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	authManager.Logout(dat.Username)
+
+	allowCors(r, w.Header())
+	http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
+	w.WriteHeader(200)
+}
 func main() {
 	config.Init()
 	log.Printf("%v\n", config)
@@ -220,6 +250,7 @@ func main() {
 	router.GET("/api/job/:id", Protected(GetJob, USER))
 	router.GET("/api/search/:term", Protected(Search, USER))
 	router.POST("/api/login", Login)
+	router.POST("/api/logout", Protected(Logout, USER))
 
 	registerCleanup()
 

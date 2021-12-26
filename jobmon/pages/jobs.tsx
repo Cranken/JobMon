@@ -4,6 +4,7 @@ import JobList from "../components/joblist/JobList";
 import { checkBetween } from "../utils/utils";
 import { JobListData } from "./../types/job";
 import { useRouter } from "next/router";
+import { useCookies } from "react-cookie";
 
 export const Jobs = () => {
   const router = useRouter();
@@ -52,11 +53,18 @@ export const Jobs = () => {
 
 export const useGetJobs = () => {
   const [jobListData, setJobs] = useState<JobListData>();
+  const [_c, _s, removeCookie] = useCookies(["Authorization"]);
   useEffect(() => {
     fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/jobs", {
       credentials: "include",
-    }).then((res) => res.json().then((data) => setJobs(data)));
-  }, []);
+    }).then((res) => {
+      if (!res.ok && (res.status === 401 || res.status === 403)) {
+        removeCookie("Authorization");
+      } else {
+        res.json().then((data) => setJobs(data));
+      }
+    });
+  }, [removeCookie]);
   return jobListData;
 };
 
