@@ -26,7 +26,7 @@ func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 	if err != nil {
 		log.Printf("Could not read http request body")
 		allowCors(r, w.Header())
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -35,7 +35,7 @@ func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 	if err != nil {
 		log.Printf("Could not unmarshal http request body")
 		allowCors(r, w.Header())
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -48,7 +48,7 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	if err != nil {
 		log.Printf("Could not read http request body")
 		allowCors(r, w.Header())
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -57,7 +57,7 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	if err != nil {
 		log.Printf("Could not parse json from http request body")
 		allowCors(r, w.Header())
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -66,7 +66,7 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	if err != nil {
 		log.Printf("Id is not a valid integer")
 		allowCors(r, w.Header())
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	w.WriteHeader(200)
@@ -92,7 +92,7 @@ func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	if err != nil {
 		log.Printf("Could not marshal jobs to json")
 		allowCors(r, w.Header())
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	allowCors(r, w.Header())
@@ -109,7 +109,7 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	if err != nil {
 		log.Printf("Could not job id data")
 		allowCors(r, w.Header())
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -119,7 +119,7 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	if err != nil {
 		log.Printf("Could not get job meta data")
 		allowCors(r, w.Header())
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -132,7 +132,7 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	if err != nil {
 		log.Printf("Could not get job metric data: %v\n", err)
 		allowCors(r, w.Header())
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -140,7 +140,7 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	if err != nil {
 		log.Printf("Could not marshal job to json")
 		allowCors(r, w.Header())
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -173,7 +173,7 @@ func Login(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	if err != nil {
 		log.Printf("Could not read http request body")
 		allowCors(r, w.Header())
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -182,7 +182,7 @@ func Login(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	if err != nil {
 		log.Printf("Could not unmarshal http request body")
 		allowCors(r, w.Header())
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -190,7 +190,7 @@ func Login(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	if err != nil {
 		log.Printf("Could not authenticate user: %v", err)
 		allowCors(r, w.Header())
-		w.WriteHeader(401)
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
@@ -198,7 +198,7 @@ func Login(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	if err != nil {
 		log.Printf("Could not generate JWT: %v", err)
 		allowCors(r, w.Header())
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	allowCors(r, w.Header())

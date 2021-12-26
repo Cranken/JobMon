@@ -43,21 +43,21 @@ func Protected(h httprouter.Handle, authLevel string) httprouter.Handle {
 		token, err := r.Cookie("Authorization")
 		if err != nil {
 			allowCors(r, w.Header())
-			w.WriteHeader(401)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		parts := strings.Split(token.Value, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			allowCors(r, w.Header())
-			w.WriteHeader(401)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		user, err := authManager.validate(parts[1])
 		if err != nil {
 			allowCors(r, w.Header())
-			w.WriteHeader(401)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
@@ -65,7 +65,7 @@ func Protected(h httprouter.Handle, authLevel string) httprouter.Handle {
 			h(w, r, ps)
 		} else {
 			allowCors(r, w.Header())
-			w.WriteHeader(403)
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 	}
