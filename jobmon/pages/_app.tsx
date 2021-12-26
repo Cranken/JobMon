@@ -1,14 +1,41 @@
 import "../styles/globals.css";
 import type { AppProps } from "next/app";
-import { ChakraProvider } from "@chakra-ui/react";
+import { Center, ChakraProvider } from "@chakra-ui/react";
 import theme from "../styles/theme";
 import Header from "../components/header/Header";
+import { useIsAuthenticated } from "../utils/auth";
+import { useRouter } from "next/router";
+import { useEffect } from "react";
 
 function MyApp({ Component, pageProps }: AppProps) {
+  const isAuthenticated = useIsAuthenticated();
+  const router = useRouter();
+  useEffect(() => {
+    if (!isAuthenticated && router.pathname !== "/login") {
+      router.push("/login");
+    }
+    if (isAuthenticated && router.pathname === "/login") {
+      router.push("/jobs");
+    }
+  });
+  let redirectionString;
+  if (!isAuthenticated && router.pathname !== "/login") {
+    redirectionString = "Redirecting to login...";
+  }
+  if (isAuthenticated && router.pathname === "/login") {
+    redirectionString = "Redirecting to jobs...";
+  }
+
+  const content = redirectionString ? (
+    <Center>{redirectionString}</Center>
+  ) : (
+    <Component {...pageProps} />
+  );
+
   return (
     <ChakraProvider theme={theme}>
       <Header />
-      <Component {...pageProps} />
+      {content}
     </ChakraProvider>
   );
 }

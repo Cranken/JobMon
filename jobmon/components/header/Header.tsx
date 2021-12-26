@@ -3,34 +3,54 @@ import {
   Box,
   Button,
   Flex,
+  Icon,
   Input,
+  Spacer,
+  Tooltip,
   useColorMode,
   useColorModeValue,
 } from "@chakra-ui/react";
-import { KeyboardEvent } from "react";
+import { useCookies } from "react-cookie";
+import { MdLogout } from "react-icons/md";
+import { useIsAuthenticated } from "../../utils/auth";
 
 export const Header = () => {
   const { colorMode, toggleColorMode } = useColorMode();
+  const [_c, _s, removeCookie] = useCookies(["Authorization"]);
+  const headerBg = useColorModeValue("gray.400", "gray.500");
+  const buttonBg = useColorModeValue("gray.500", "gray.400");
+  const isAuthenticated = useIsAuthenticated();
   return (
     <header>
-      <Flex bg={useColorModeValue("gray.400", "gray.500")} p={2}>
-        <Box flexGrow={1}></Box>
+      <Flex bg={headerBg} p={2}>
+        <Spacer flexGrow={1} />
         <Box flexGrow={1}>
-          <Input
-            placeholder="Search user/job"
-            onKeyPress={(ev) => searchHandler(ev.key, ev.currentTarget.value)}
-            borderColor={"whiteAlpha.600"}
-            _hover={{ borderColor: "whiteAlpha.900" }}
-            _placeholder={{ color: "gray.900" }}
-          />
+          {isAuthenticated ? (
+            <Input
+              placeholder="Search user/job"
+              onKeyPress={(ev) => searchHandler(ev.key, ev.currentTarget.value)}
+              borderColor={"whiteAlpha.600"}
+              _hover={{ borderColor: "whiteAlpha.900" }}
+              _placeholder={{ color: "gray.900" }}
+            />
+          ) : null}
         </Box>
-        <Flex flexGrow={1} justify={"end"}>
-          <Button
-            bg={useColorModeValue("gray.500", "gray.400")}
-            onClick={toggleColorMode}
-          >
-            {colorMode === "light" ? <MoonIcon /> : <SunIcon />}
-          </Button>
+        <Flex flexGrow={1} justify={"end"} gap={2}>
+          <Tooltip label="Toggle Color Mode">
+            <Button bg={buttonBg} onClick={toggleColorMode}>
+              {colorMode === "light" ? <MoonIcon /> : <SunIcon />}
+            </Button>
+          </Tooltip>
+          {isAuthenticated ? (
+            <Tooltip label="Logout">
+              <Button
+                bg={buttonBg}
+                onClick={() => removeCookie("Authorization", { path: "/" })}
+              >
+                <Icon as={MdLogout} />
+              </Button>
+            </Tooltip>
+          ) : null}
         </Flex>
       </Flex>
     </header>

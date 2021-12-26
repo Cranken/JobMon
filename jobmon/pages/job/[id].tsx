@@ -180,7 +180,7 @@ export const useGetJobData = (id: number | undefined, node?: string) => {
       setJobData(jobCache["all"]);
       return;
     }
-    fetch(URL).then((res) =>
+    fetch(URL, { credentials: "include" }).then((res) =>
       res.json().then((data) => {
         setJobCache((prevState) => {
           prevState[node ? node : "all"] = data;

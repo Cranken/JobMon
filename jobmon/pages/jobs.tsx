@@ -53,9 +53,9 @@ export const Jobs = () => {
 export const useGetJobs = () => {
   const [jobListData, setJobs] = useState<JobListData>();
   useEffect(() => {
-    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/jobs").then((res) =>
-      res.json().then((data) => setJobs(data))
-    );
+    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/jobs", {
+      credentials: "include",
+    }).then((res) => res.json().then((data) => setJobs(data)));
   }, []);
   return jobListData;
 };
