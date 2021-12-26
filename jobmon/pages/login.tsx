@@ -5,11 +5,9 @@ import {
   Center,
   Flex,
   FormControl,
-  FormHelperText,
   FormLabel,
   Input,
   Stack,
-  Text,
   useColorModeValue,
 } from "@chakra-ui/react";
 import React, { useState } from "react";

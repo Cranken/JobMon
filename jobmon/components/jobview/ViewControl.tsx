@@ -1,8 +1,6 @@
-import { Button, Flex, useColorModeValue } from "@chakra-ui/react";
-import React, { useState } from "react";
-import { SelectionMap } from "../../pages/job/[id]";
+import { Button, Flex } from "@chakra-ui/react";
+import React from "react";
 import { JobMetadata } from "../../types/job";
-import Selection from "./Selection";
 import TimeControl from "./TimeControl";
 
 interface ControlProps {
@@ -13,8 +11,6 @@ interface ControlProps {
   setStopTime: (t: Date) => void;
   showQuantiles: boolean;
   setShowQuantiles: (b: boolean) => void;
-  selection: SelectionMap;
-  setChecked: (key: string, val: boolean) => void;
 }
 
 export const ViewControl = ({
@@ -25,8 +21,6 @@ export const ViewControl = ({
   setStopTime,
   showQuantiles,
   setShowQuantiles,
-  selection,
-  setChecked,
 }: ControlProps) => {
   return (
     <Flex>

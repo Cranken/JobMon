@@ -1,11 +1,4 @@
-import {
-  Box,
-  Button,
-  Flex,
-  Text,
-  Tooltip,
-  useColorModeValue,
-} from "@chakra-ui/react";
+import { Box, Button, Flex } from "@chakra-ui/react";
 import Slider, { createSliderWithTooltip } from "rc-slider";
 import { JobMetadata } from "../../types/job";
 import { useEffect, useState } from "react";
@@ -40,9 +33,6 @@ const TimeControl = ({
 
   return (
     <Flex maxH={10} align="center" marginX={5} w="100%">
-      {/* <Text whiteSpace="nowrap" mr={5}>
-        Time Control
-      </Text> */}
       <Box mr={5} w="100%">
         <Range
           min={defaultTime[0]}
@@ -73,42 +63,6 @@ const TimeControl = ({
       >
         Reset Time Range
       </Button>
-      {/* <Box
-        sx={{
-          ".time-input": {
-            bg: useColorModeValue("gray.200", "whiteAlpha.300"),
-          },
-        }}
-      >
-        <label htmlFor="start-time">Start Time:</label>
-        <input
-          className="time-input"
-          type="datetime-local"
-          id="start-time"
-          name="start-time"
-          value={getDateString(startTime)}
-          min={min}
-          max={getDateString(stopTime)}
-          onChange={(ev) => {
-            const newVal = new Date(ev.target.value);
-            if (minDate <= newVal && newVal < stopTime) setStartTime(newVal);
-          }}
-        />
-        <label htmlFor="end-time">End Time:</label>
-        <input
-          className="time-input"
-          type="datetime-local"
-          id="end-time"
-          name="end-time"
-          value={getDateString(stopTime)}
-          min={getDateString(startTime)}
-          max={max}
-          onChange={(ev) => {
-            const newVal = new Date(ev.target.value);
-            if (startTime < newVal && newVal <= maxDate) setStopTime(newVal);
-          }}
-        />
-      </Box> */}
     </Flex>
   );
 };

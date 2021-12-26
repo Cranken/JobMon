@@ -9,7 +9,6 @@ import QuantileDataCharts from "../../components/charts/QuantileDataCharts";
 import Control from "../../components/jobview/ViewControl";
 import {
   Box,
-  Button,
   Center,
   Flex,
   Grid,
@@ -104,8 +103,6 @@ const Job: NextPage = () => {
     }
   };
 
-  console.log("Main data", data);
-
   return (
     <Box m={5}>
       <Grid
@@ -128,8 +125,6 @@ const Job: NextPage = () => {
           stopTime={stopTime}
           showQuantiles={showQuantiles}
           setShowQuantiles={setShowQuantiles}
-          selection={selection}
-          setChecked={setChecked}
         />
       </Grid>
       <Tabs>

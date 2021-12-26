@@ -65,7 +65,6 @@ export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
           border="1px"
           borderColor={borderColor}
           borderRadius={5}
-          // m={2}
         >
           <GridItem colSpan={2}>
             <Flex height="100%">
@@ -114,9 +113,7 @@ export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
                     <Histogram
                       data={dat.Data}
                       x={(d) => d}
-                      // width={250}
                       width={1280 / 4}
-                      // width={window.document.body.clientWidth / 8}
                       height={180}
                       xLabel={dat.Config.DisplayName}
                     />

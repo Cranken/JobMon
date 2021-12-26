@@ -1,18 +1,5 @@
 import { JobMetadata } from "./../../types/job";
-import {
-  Accordion,
-  AccordionButton,
-  AccordionIcon,
-  AccordionItem,
-  AccordionPanel,
-  Box,
-  Button,
-  Container,
-  Flex,
-  Grid,
-  Stack,
-  Text,
-} from "@chakra-ui/react";
+import { Grid, Stack, Text } from "@chakra-ui/react";
 import Selection from "./Selection";
 
 interface JobInfoProps {

@@ -3,7 +3,7 @@ import JobFilter from "../components/joblist/JobFilter";
 import JobList from "../components/joblist/JobList";
 import { checkBetween } from "../utils/utils";
 import { JobListData } from "./../types/job";
-import Router, { useRouter } from "next/router";
+import { useRouter } from "next/router";
 
 export const Jobs = () => {
   const router = useRouter();

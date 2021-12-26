@@ -2,15 +2,12 @@ import {
   Accordion,
   AccordionItem,
   AccordionButton,
-  Box,
   AccordionIcon,
   AccordionPanel,
-  Container,
   Flex,
   Button,
   Text,
 } from "@chakra-ui/react";
-import styles from "./Selection.module.css";
 
 export interface SelectionProps {
   setChecked: (key: string, val: boolean) => void;
@@ -34,15 +31,6 @@ export const Selection = ({ setChecked, items }: SelectionProps) => {
       );
     })
   );
-  // elements.unshift(
-  //   <SelectionItem
-  //     key="all"
-  //     label="Select All"
-  //     value="all"
-  //     onChange={setChecked}
-  //     checked={allChecked}
-  //   />
-  // );
 
   return (
     <Accordion allowToggle w={"100%"}>

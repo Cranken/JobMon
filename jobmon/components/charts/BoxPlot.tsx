@@ -105,14 +105,8 @@ export function BoxPlot<T>({
       });
 
     // Compute default domains.
-    if (xDomain === undefined)
-      // xDomain = [d3.min(B, (d) => d.x0) ?? 0, d3.max(B, (d) => d.x1) ?? 0];
-      xDomain = [0, 1];
+    if (xDomain === undefined) xDomain = [0, 1];
     if (yDomain === undefined)
-      // yDomain = [
-      //   (d3.min(B, (d) => d.range[0]) ?? 0) * 0.85,
-      //   (d3.max(B, (d) => d.range[1]) ?? 0) * 1.15,
-      // ];
       yDomain = [
         (d3.min(I, (d) => Y[d]) ?? 0) * 0.85,
         (d3.max(I, (d) => Y[d]) ?? 0) * 1.15,

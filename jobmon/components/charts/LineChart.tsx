@@ -156,12 +156,8 @@ export function LineChart<T>({
       .on("start", (event: DragEvent) => {
         dragStart = clamp(event.x, xRange[0], xRange[1]);
         dragEnd = clamp(event.x, xRange[0], xRange[1]);
-        // dragStart = clamp(event.x - svgXOffset, xRange[0], xRange[1]);
-        // dragEnd = clamp(event.x - svgXOffset, xRange[0], xRange[1]);
-        console.log(event.x, dragStart, dragEnd, svgXOffset);
       })
       .on("drag", (event: DragEvent) => {
-        // dragEnd = clamp(event.x - svgXOffset, xRange[0], xRange[1]);
         dragEnd = clamp(event.x, xRange[0], xRange[1]);
         svg.selectChild("rect").remove();
         svg
@@ -178,7 +174,6 @@ export function LineChart<T>({
           .lower();
       })
       .on("end", (event: DragEvent) => {
-        // dragEnd = clamp(event.x - svgXOffset, xRange[0], xRange[1]);
         dragEnd = clamp(event.x, xRange[0], xRange[1]);
         svg.selectChild("rect").remove();
         const startIdx = getNearestPointIdx(dragStart);
@@ -220,11 +215,9 @@ export function LineChart<T>({
       const range = d3.range(linePointCount);
       const lower = I.filter((i) => Z[i] === fillBoundKeys[0]);
       const upper = I.filter((i) => Z[i] === fillBoundKeys[1]);
-      // console.log(lower, upper, yLabel, range);
       const area = d3
         .area<number>()
         .defined((_, index) => D[index])
-        // .curve(curve)
         .x((index) => xScale(X[index]))
         .y0((index) => yScale(Y[lower[index]]))
         .y1((index) => yScale(Y[upper[index]]));
@@ -241,7 +234,6 @@ export function LineChart<T>({
         .selectAll("path")
         .data(d3.group(range, (i) => Z[i]))
         .join("path")
-        // .style("mix-blend-mode", mixBlendMode)
         .attr("stroke", (_, I) => colorFn(I))
         .attr("d", ([_, I]) => area(I));
     }
@@ -252,7 +244,6 @@ export function LineChart<T>({
       .selectAll("path")
       .data(d3.group(I, (i) => Z[i]))
       .join("path")
-      // .style("mix-blend-mode", mixBlendMode)
       .attr("stroke", (_, I) => colorFn(I))
       .attr("d", ([_, I]) => line(I));
 

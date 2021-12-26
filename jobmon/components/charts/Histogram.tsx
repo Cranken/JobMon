@@ -82,11 +82,7 @@ export function Histogram<T>({
     // Construct scales and axes.
     const xScale = d3.scaleLinear(xDomain, xRange);
     const yScale = d3.scaleLinear(yDomain, yRange);
-    const xAxis = d3
-      .axisBottom(xScale)
-      .ticks(3, xFormat)
-      // .ticks(width / 80, xFormat)
-      .tickSizeOuter(0);
+    const xAxis = d3.axisBottom(xScale).ticks(3, xFormat).tickSizeOuter(0);
     const yAxis = d3.axisLeft(yScale).ticks(height / 40, yFormat);
     let yFormatFn = yScale.tickFormat(100, yFormat);
 
