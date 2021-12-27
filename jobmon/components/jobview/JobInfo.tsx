@@ -1,10 +1,11 @@
 import { JobMetadata } from "./../../types/job";
 import { Grid, Stack, Text } from "@chakra-ui/react";
 import Selection from "./Selection";
+import { SelectionMap } from "../../pages/job/[id]";
 
 interface JobInfoProps {
   metadata: JobMetadata;
-  setChecked: (key: string, val: boolean) => void;
+  setChecked: (val: SelectionMap) => void;
   nodes: { [key: string]: boolean };
 }
 
@@ -20,7 +21,11 @@ export const JobInfo = ({ metadata, setChecked, nodes }: JobInfoProps) => {
         <Text>End: {new Date(metadata.StopTime * 1000).toLocaleString()}</Text>
       </Stack>
       <Stack>
-        <Selection setChecked={setChecked} items={nodes} />
+        <Selection
+          setChecked={setChecked}
+          items={nodes}
+          nodePrefix={metadata.ClusterId}
+        />
       </Stack>
     </Grid>
   );

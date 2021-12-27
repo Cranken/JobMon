@@ -35,9 +35,11 @@ export const Header = () => {
     <header>
       <Flex bg={headerBg} p={2}>
         <Flex flexGrow={1}>
-          <Link href="/jobs">
-            <Button bg={buttonBg}>Home</Button>
-          </Link>
+          {isAuthenticated ? (
+            <Link href="/jobs">
+              <Button bg={buttonBg}>Home</Button>
+            </Link>
+          ) : null}
         </Flex>
         <Box flexGrow={1}>
           {isAuthenticated ? (

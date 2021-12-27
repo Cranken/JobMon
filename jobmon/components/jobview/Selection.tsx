@@ -7,15 +7,32 @@ import {
   Flex,
   Button,
   Text,
+  Input,
+  Spacer,
+  Stack,
 } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
+import { SelectionMap } from "../../pages/job/[id]";
+
+type Items = { [key: string]: boolean };
+type SetFn = (val: SelectionMap) => void;
 
 export interface SelectionProps {
-  setChecked: (key: string, val: boolean) => void;
-  items: { [key: string]: boolean };
+  setChecked: SetFn;
+  items: Items;
+  nodePrefix: string;
 }
 
-export const Selection = ({ setChecked, items }: SelectionProps) => {
+export const Selection = ({
+  setChecked,
+  items,
+  nodePrefix,
+}: SelectionProps) => {
+  const [selectionString, setSelectionString] = useState("");
   let elements: JSX.Element[] = [];
+  useEffect(() => {
+    parseSelection(selectionString, items, setChecked, nodePrefix);
+  }, [selectionString]);
 
   let allChecked = true;
   elements.push(
@@ -44,17 +61,26 @@ export const Selection = ({ setChecked, items }: SelectionProps) => {
           </AccordionButton>
         </h2>
         <AccordionPanel pb={4}>
-          <Flex wrap="wrap" direction="row">
-            <Button
-              w="12ch"
-              size="xs"
-              mr={2}
-              onClick={() => setChecked("all", !allChecked)}
-            >
-              Select {allChecked ? "None" : "All"}
-            </Button>
-            {elements}
-          </Flex>
+          <Stack>
+            <Flex justify="space-between">
+              <Button
+                w="14ch"
+                size="xs"
+                mr={2}
+                onClick={() => setChecked({ all: !allChecked })}
+              >
+                Select {allChecked ? "None" : "All"}
+              </Button>
+              <Input
+                size="xs"
+                onChange={(e) => setSelectionString(e.target.value)}
+                value={selectionString}
+              />
+            </Flex>
+            <Flex wrap="wrap" direction="row" mt={2}>
+              {elements}
+            </Flex>
+          </Stack>
         </AccordionPanel>
       </AccordionItem>
     </Accordion>
@@ -62,30 +88,62 @@ export const Selection = ({ setChecked, items }: SelectionProps) => {
 };
 
 interface SelectionItemProps {
-  label?: string;
   value: string;
-  onChange: (key: string, val: boolean) => void;
+  onChange: SetFn;
   checked: boolean;
 }
 
-const SelectionItem = ({
-  label,
-  value,
-  onChange,
-  checked,
-}: SelectionItemProps) => {
-  const id = value + "_checkbox";
+const SelectionItem = ({ value, onChange, checked }: SelectionItemProps) => {
   return (
     <Text
       mr={1}
       as={checked ? undefined : "s"}
-      onClick={() => onChange(value, !checked)}
+      onClick={() => onChange({ value: !checked })}
       cursor="pointer"
       fontWeight="bold"
     >
       {value}
     </Text>
   );
+};
+
+const parseSelection = (
+  str: string,
+  items: Items,
+  setChecked: SetFn,
+  nodePrefix: string
+) => {
+  const parts = str.split(",");
+  if (parts.length > 0) {
+    const selected = parts.flatMap(parsePart);
+    let map: SelectionMap = {};
+    map["all"] = false;
+    for (const node of selected) {
+      const padding = 4 - node.length;
+      const nodeName = nodePrefix + "0".repeat(padding) + node;
+      map[nodeName] = true;
+    }
+    setChecked(map);
+  }
+};
+
+const parsePart = (s: string) => {
+  let nodes: string[] = [];
+  if (s.length > 0) {
+    const parts = s.split("-");
+    if (parts.length === 1) {
+      nodes.push(parts[0]);
+    } else if (parts.length === 2) {
+      const lower = parseInt(parts[0]);
+      const upper = parseInt(parts[1]);
+      if (lower !== NaN && upper !== NaN) {
+        for (let i = lower; i <= upper; i++) {
+          nodes.push(i.toString());
+        }
+      }
+    }
+  }
+  return nodes;
 };
 
 export default Selection;

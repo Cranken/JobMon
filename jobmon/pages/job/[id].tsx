@@ -92,16 +92,19 @@ const Job: NextPage = () => {
     );
   }
 
-  const setChecked = (key: string, val: boolean) => {
+  const setChecked = (val: SelectionMap) => {
     const newSelection = { ...selection };
-    if (key === "all") {
-      Object.keys(newSelection).forEach((k) => (newSelection[k] = val));
-    } else if (key in selection) {
-      newSelection[key] = val;
-    }
-    if (selection !== newSelection) {
-      setSelection(newSelection);
-    }
+    console.log(val);
+    Object.keys(val).forEach((key) => {
+      if (key === "all") {
+        Object.keys(newSelection).forEach((k) => (newSelection[k] = val[key]));
+      } else if (key in selection) {
+        newSelection[key] = val[key];
+      }
+      if (selection !== newSelection) {
+        setSelection(newSelection);
+      }
+    });
   };
 
   return (
