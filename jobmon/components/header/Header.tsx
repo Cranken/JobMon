@@ -5,6 +5,7 @@ import {
   Flex,
   Icon,
   Input,
+  Link,
   Spacer,
   Tooltip,
   useColorMode,
@@ -21,6 +22,7 @@ export const Header = () => {
   const [_c, _s, removeCookie] = useCookies(["Authorization"]);
   const headerBg = useColorModeValue("gray.400", "gray.500");
   const buttonBg = useColorModeValue("gray.500", "gray.400");
+  const searchInputColor = useColorModeValue("gray.800", "whiteAlpha.900");
   const isAuthenticated = useIsAuthenticated();
   const logout = () => {
     fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/logout", {
@@ -32,15 +34,18 @@ export const Header = () => {
   return (
     <header>
       <Flex bg={headerBg} p={2}>
-        <Spacer flexGrow={1} />
+        <Flex flexGrow={1}>
+          <Link href="/jobs">
+            <Button bg={buttonBg}>Home</Button>
+          </Link>
+        </Flex>
         <Box flexGrow={1}>
           {isAuthenticated ? (
             <Input
               placeholder="Search user/job"
               onKeyPress={(ev) => searchHandler(ev.key, ev.currentTarget.value)}
-              borderColor={"whiteAlpha.600"}
-              _hover={{ borderColor: "whiteAlpha.900" }}
-              _placeholder={{ color: "gray.900" }}
+              borderColor={searchInputColor}
+              _placeholder={{ color: searchInputColor }}
             />
           ) : null}
         </Box>
@@ -65,22 +70,23 @@ export const Header = () => {
 
 const searchHandler = (key: string, term: string) => {
   if (key === "Enter") {
-    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/${term}`).then(
-      (res) =>
-        res.text().then((val) => {
-          const split = val.split(":");
-          if (split.length !== 2) {
+    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/${term}`, {
+      credentials: "include",
+    }).then((res) =>
+      res.text().then((val) => {
+        const split = val.split(":");
+        if (split.length !== 2) {
+          return;
+        }
+        switch (split[0]) {
+          case "job":
+            window.location.href = `/job/${split[1]}`;
             return;
-          }
-          switch (split[0]) {
-            case "job":
-              window.location.href = `/job/${split[1]}`;
-              return;
-            case "user":
-              window.location.href = `/jobs?user=${split[1]}`;
-              return;
-          }
-        })
+          case "user":
+            window.location.href = `/jobs?user=${split[1]}`;
+            return;
+        }
+      })
     );
   }
 };
