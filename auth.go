@@ -129,7 +129,7 @@ func (auth *AuthManager) AppendJWT(user UserInfo, w http.ResponseWriter) (err er
 	}
 
 	auth.sessionStorage[user.Username] = token
-	http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "Bearer " + token, Expires: time.Now().Add(EXPIRATIONTIME * time.Second), Path: "/"})
+	http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "Bearer " + token, Expires: time.Now().Add(EXPIRATIONTIME * time.Second), Path: "/", Secure: true})
 	return
 }
 
