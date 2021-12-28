@@ -1,4 +1,4 @@
-import { MoonIcon, SunIcon } from "@chakra-ui/icons";
+import { MoonIcon, SettingsIcon, SunIcon } from "@chakra-ui/icons";
 import {
   Box,
   Button,
@@ -6,11 +6,22 @@ import {
   Icon,
   Input,
   Link,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
   Spacer,
+  Stack,
+  Textarea,
   Tooltip,
   useColorMode,
   useColorModeValue,
+  useDisclosure,
 } from "@chakra-ui/react";
+import { useState } from "react";
 import { useCookies } from "react-cookie";
 import { MdLogout } from "react-icons/md";
 import { useIsAuthenticated } from "../../utils/auth";
@@ -24,6 +35,9 @@ export const Header = () => {
   const buttonBg = useColorModeValue("gray.500", "gray.400");
   const searchInputColor = useColorModeValue("gray.800", "whiteAlpha.900");
   const isAuthenticated = useIsAuthenticated();
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [apiKey, setApiKey] = useState("");
+
   const logout = () => {
     fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/logout", {
       method: "POST",
@@ -31,8 +45,49 @@ export const Header = () => {
       body: JSON.stringify(user),
     }).then(() => removeCookie("Authorization", { path: "/" }));
   };
+
+  const generateApiKey = () => {
+    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/generateAPIKey", {
+      method: "POST",
+      credentials: "include",
+    }).then((resp) =>
+      resp.body
+        ?.getReader()
+        .read()
+        .then((val) => {
+          if (val.value) {
+            setApiKey(new TextDecoder().decode(val.value));
+          }
+        })
+    );
+  };
   return (
     <header>
+      <>
+        <Modal isOpen={isOpen} onClose={onClose}>
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>Modal Title</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <Stack gap={2}>
+                <Button onClick={() => generateApiKey()}>
+                  Generate API Key
+                </Button>
+                <Textarea value={apiKey} isReadOnly>
+                  test
+                </Textarea>
+              </Stack>
+            </ModalBody>
+
+            <ModalFooter>
+              <Button colorScheme="blue" mr={3} onClick={onClose}>
+                Close
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      </>
       <Flex bg={headerBg} p={2}>
         <Flex flexGrow={1}>
           {isAuthenticated ? (
@@ -52,12 +107,19 @@ export const Header = () => {
           ) : null}
         </Box>
         <Flex flexGrow={1} justify={"end"} gap={2}>
+          {isAuthenticated ? (
+            <Tooltip label="Logout">
+              <Button bg={buttonBg} onClick={onOpen}>
+                <SettingsIcon />
+              </Button>
+            </Tooltip>
+          ) : null}
           <Tooltip label="Toggle Color Mode">
             <Button bg={buttonBg} onClick={toggleColorMode}>
               {colorMode === "light" ? <MoonIcon /> : <SunIcon />}
             </Button>
           </Tooltip>
-          {isAuthenticated ? (
+          {isAuthenticated && user.Role === "admin" ? (
             <Tooltip label="Logout">
               <Button bg={buttonBg} onClick={() => logout()}>
                 <Icon as={MdLogout} />

@@ -235,6 +235,19 @@ func Logout(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
 	w.WriteHeader(200)
 }
+
+func GenerateAPIKey(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	jwt, err := authManager.GenerateJWT(UserInfo{Role: JOBCONTROL, Username: "api"}, true)
+	if err != nil {
+		log.Printf("Could not generate JWT: %v", err)
+		allowCors(r, w.Header())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	allowCors(r, w.Header())
+	w.Write([]byte(jwt))
+}
+
 func main() {
 	config.Init()
 	db.Init(config)
@@ -250,6 +263,7 @@ func main() {
 	router.GET("/api/search/:term", Protected(Search, USER))
 	router.POST("/api/login", Login)
 	router.POST("/api/logout", Protected(Logout, USER))
+	router.POST("/api/generateAPIKey", Protected(GenerateAPIKey, ADMIN))
 
 	registerCleanup()
 

@@ -112,7 +112,7 @@ func (auth *AuthManager) validate(tokenStr string) (user UserInfo, err error) {
 	return
 }
 
-func (auth *AuthManager) generateJWT(user UserInfo, remember bool) (string, error) {
+func (auth *AuthManager) GenerateJWT(user UserInfo, remember bool) (string, error) {
 	expirationTime := EXPIRATIONTIME * time.Second
 	if remember {
 		expirationTime = time.Hour * 24 * 365
@@ -126,16 +126,19 @@ func (auth *AuthManager) generateJWT(user UserInfo, remember bool) (string, erro
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(auth.hmacSampleSecret)
+	ret, err := token.SignedString(auth.hmacSampleSecret)
+	if err == nil {
+		auth.store.SessionStorage[user.Username] = ret
+	}
+	return ret, err
 }
 
 func (auth *AuthManager) AppendJWT(user UserInfo, remember bool, w http.ResponseWriter) (err error) {
-	token, err := auth.generateJWT(user, remember)
+	token, err := auth.GenerateJWT(user, remember)
 	if err != nil {
 		return
 	}
 
-	auth.store.SessionStorage[user.Username] = token
 	expirationTime := EXPIRATIONTIME * time.Second
 	if remember {
 		expirationTime = time.Hour * 24 * 365
