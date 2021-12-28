@@ -18,10 +18,10 @@ type Item struct {
 	data JobData
 }
 
-func (c *LRUCache) Init(size int, db *DB) {
+func (c *LRUCache) Init(config Configuration, db *DB) {
 	c.mut.Lock()
 	defer c.mut.Unlock()
-	c.size = size
+	c.size = config.CacheSize
 	c.list = new(list.List)
 	c.db = db
 }

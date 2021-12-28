@@ -23,6 +23,7 @@ type Configuration struct {
 	MetricQuantiles []string
 	JobListMetrics  []string
 	JWTSecret       string
+	StoreFile       string
 }
 
 type MetricConfig struct {

@@ -1,0 +1,36 @@
+services:
+  frontend:
+    build:
+      context: ./jobmon
+      args:
+        - NEXT_PUBLIC_BACKEND_URL=http://${HOSTNAME}:${BACKEND_PORT}
+    environment:
+      - NEXT_PUBLIC_BACKEND_URL=http://${HOSTNAME}:${BACKEND_PORT}
+    depends_on:
+      - backend
+      - influxdb
+    ports:
+      - ${FRONTEND_PORT}:3000
+  backend:
+    build: ./
+    volumes:
+      - type: bind
+        source: ./config.json
+        target: /app/config.json
+        read_only: true
+      - ./store:/app/store
+    depends_on:
+      - influxdb
+    ports:
+      - ${BACKEND_PORT}:8080
+  influxdb:
+    image: influxdb
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USER}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN}
+    ports:
+      - 8086:3001

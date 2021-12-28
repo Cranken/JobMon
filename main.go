@@ -237,10 +237,9 @@ func Logout(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 }
 func main() {
 	config.Init()
-	log.Printf("%v\n", config)
 	db.Init(config)
-	store.Init(config.DefaultTTL, &db)
-	jobCache.Init(config.CacheSize, &db)
+	store.Init(config, &db)
+	jobCache.Init(config, &db)
 	authManager.Init(config)
 
 	router := httprouter.New()
@@ -254,7 +253,7 @@ func main() {
 
 	registerCleanup()
 
-	log.Fatal(http.ListenAndServe("127.0.0.1:8080", router))
+	log.Fatal(http.ListenAndServe(":8080", router))
 }
 
 func allowCors(r *http.Request, header http.Header) {

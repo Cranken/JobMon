@@ -12,8 +12,6 @@ import (
 	"time"
 )
 
-const STOREFILE = "store.json"
-
 type JobMetadata struct {
 	Id          int
 	UserId      string
@@ -44,22 +42,24 @@ type Store struct {
 	defaultTTL int
 	mut        sync.Mutex
 	db         *DB
+	storefile  string
 }
 
 type JobPred func(*JobMetadata) bool
 
-func (s *Store) Init(defTTL int, db *DB) {
-	data, err := os.ReadFile(STOREFILE)
+func (s *Store) Init(config Configuration, db *DB) {
+	s.storefile = config.StoreFile
+	s.db = db
+	s.defaultTTL = config.DefaultTTL
+	data, err := os.ReadFile(s.storefile)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		log.Fatalf("Could not read store file: %v\n Error: %v\n", STOREFILE, err)
+		log.Fatalf("Could not read store file: %v\n Error: %v\n", s.storefile, err)
 	}
 	s.mut.Lock()
 	json.Unmarshal(data, s)
 	if s.Jobs == nil {
 		s.Jobs = make(map[int]JobMetadata)
 	}
-	s.db = db
-	s.defaultTTL = defTTL
 	s.mut.Unlock()
 	s.removeExpiredJobs()
 	s.addDataToIncompleteJobs()
@@ -165,5 +165,5 @@ func (s *Store) Flush() {
 	if err != nil {
 		log.Printf("Could not marshal store into json: %v\n", err)
 	}
-	os.WriteFile(STOREFILE, data, 0644)
+	os.WriteFile(s.storefile, data, 0644)
 }
