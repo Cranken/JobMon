@@ -32,6 +32,7 @@ export const Selection = ({
   let elements: JSX.Element[] = [];
   useEffect(() => {
     parseSelection(selectionString, items, setChecked, nodePrefix);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionString]);
 
   let allChecked = true;
@@ -41,7 +42,7 @@ export const Selection = ({
       return (
         <SelectionItem
           key={key}
-          value={key}
+          node={key}
           onChange={setChecked}
           checked={items[key]}
         />
@@ -88,21 +89,21 @@ export const Selection = ({
 };
 
 interface SelectionItemProps {
-  value: string;
+  node: string;
   onChange: SetFn;
   checked: boolean;
 }
 
-const SelectionItem = ({ value, onChange, checked }: SelectionItemProps) => {
+const SelectionItem = ({ node, onChange, checked }: SelectionItemProps) => {
   return (
     <Text
       mr={1}
       as={checked ? undefined : "s"}
-      onClick={() => onChange({ value: !checked })}
+      onClick={() => onChange({ [node]: !checked })}
       cursor="pointer"
       fontWeight="bold"
     >
-      {value}
+      {node}
     </Text>
   );
 };

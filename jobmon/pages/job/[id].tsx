@@ -94,7 +94,6 @@ const Job: NextPage = () => {
 
   const setChecked = (val: SelectionMap) => {
     const newSelection = { ...selection };
-    console.log(val);
     Object.keys(val).forEach((key) => {
       if (key === "all") {
         Object.keys(newSelection).forEach((k) => (newSelection[k] = val[key]));

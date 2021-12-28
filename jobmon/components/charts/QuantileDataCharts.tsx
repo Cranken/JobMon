@@ -37,9 +37,14 @@ export const QuantileDataCharts = ({
     }
 
     chartElements.push(
-      <Flex border="1px" borderColor="gray.700" borderRadius="md" m={3}>
+      <Flex
+        border="1px"
+        borderColor="gray.700"
+        borderRadius="md"
+        m={3}
+        key={metric.Config.Measurement}
+      >
         <LineChart
-          key={metric.Config.Measurement}
           data={metricData}
           x={(d: QuantilePoint) => new Date(d._time)}
           y={(d: QuantilePoint) => d._value}

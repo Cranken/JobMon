@@ -137,9 +137,9 @@ export function LineChart<T>({
 
     const svg = d3
       .select(svgRef.current)
-      .attr("width", "100%")
+      .attr("width", width)
       .attr("height", height)
-      .attr("viewBox", [0, 0, "100%", height])
+      .attr("viewBox", [0, 0, width, height])
       .attr("style", "max-width: 100%; height: auto; height: intrinsic;")
       .on("pointermove", pointermoved)
       .on("pointerleave", pointerleft)
