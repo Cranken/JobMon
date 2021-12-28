@@ -194,7 +194,7 @@ func Login(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		return
 	}
 
-	err = authManager.AppendJWT(user, w)
+	err = authManager.AppendJWT(user, dat.Remember, w)
 	if err != nil {
 		log.Printf("Could not generate JWT: %v", err)
 		allowCors(r, w.Header())
@@ -240,7 +240,7 @@ func main() {
 	db.Init(config)
 	store.Init(config, &db)
 	jobCache.Init(config, &db)
-	authManager.Init(config)
+	authManager.Init(config, &store)
 
 	router := httprouter.New()
 	router.PUT("/api/job_start", Protected(JobStart, JOBCONTROL))

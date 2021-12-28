@@ -38,11 +38,12 @@ type StopJob struct {
 }
 
 type Store struct {
-	Jobs       map[int]JobMetadata
-	defaultTTL int
-	mut        sync.Mutex
-	db         *DB
-	storefile  string
+	Jobs           map[int]JobMetadata
+	SessionStorage map[string]string
+	defaultTTL     int
+	mut            sync.Mutex
+	db             *DB
+	storefile      string
 }
 
 type JobPred func(*JobMetadata) bool
@@ -59,6 +60,9 @@ func (s *Store) Init(config Configuration, db *DB) {
 	json.Unmarshal(data, s)
 	if s.Jobs == nil {
 		s.Jobs = make(map[int]JobMetadata)
+	}
+	if s.SessionStorage == nil {
+		s.SessionStorage = make(map[string]string)
 	}
 	s.mut.Unlock()
 	s.removeExpiredJobs()

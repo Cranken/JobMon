@@ -24,6 +24,7 @@ type Configuration struct {
 	JobListMetrics  []string
 	JWTSecret       string
 	StoreFile       string
+	LocalUsers      map[string]LocalUser
 }
 
 type MetricConfig struct {
@@ -33,6 +34,11 @@ type MetricConfig struct {
 	SampleInterval string
 	Unit           string
 	DisplayName    string
+}
+
+type LocalUser struct {
+	Password string
+	Role     string
 }
 
 func (c *Configuration) Init() {

@@ -3,6 +3,7 @@ import {
   AlertIcon,
   Button,
   Center,
+  Checkbox,
   Flex,
   FormControl,
   FormLabel,
@@ -19,12 +20,13 @@ export const Login = () => {
   const failed = router.query["login_failed"] !== undefined;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false);
 
   const submit = (e?: React.KeyboardEvent) => {
     if (!e || e.key == "Enter") {
       fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/login", {
         method: "POST",
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, remember }),
         credentials: "include",
       }).then((resp) => {
         if (resp.ok) {
@@ -70,7 +72,13 @@ export const Login = () => {
             onChange={(e) => setPassword(e.target.value)}
             onKeyPress={submit}
           />
-          <Flex mt={5} justify="end">
+          <Flex mt={5} justify="space-between">
+            <Checkbox
+              isChecked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+            >
+              Remember Me
+            </Checkbox>
             <Button onClick={() => submit()}>Login</Button>
           </Flex>
         </FormControl>

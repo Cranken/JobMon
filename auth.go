@@ -19,6 +19,7 @@ const (
 type AuthPayload struct {
 	Username string
 	Password string
+	Remember bool
 }
 
 type UserInfo struct {
@@ -33,7 +34,8 @@ type UserClaims struct {
 
 type AuthManager struct {
 	hmacSampleSecret []byte
-	sessionStorage   map[string]string
+	store            *Store
+	localUsers       map[string]LocalUser
 }
 
 const EXPIRATIONTIME = 60 * 60 * 24 * 7
@@ -76,9 +78,10 @@ func Protected(h httprouter.Handle, authLevel string) httprouter.Handle {
 	}
 }
 
-func (auth *AuthManager) Init(c Configuration) {
+func (auth *AuthManager) Init(c Configuration, store *Store) {
 	auth.hmacSampleSecret = []byte(c.JWTSecret)
-	auth.sessionStorage = map[string]string{}
+	auth.store = store
+	auth.localUsers = c.LocalUsers
 }
 
 func (auth *AuthManager) validate(tokenStr string) (user UserInfo, err error) {
@@ -95,7 +98,7 @@ func (auth *AuthManager) validate(tokenStr string) (user UserInfo, err error) {
 	claims, ok := token.Claims.(*UserClaims)
 	if ok && token.Valid {
 		if claims.VerifyExpiresAt(jwt.TimeFunc().Unix(), true) && claims.VerifyIssuer(ISSUER, true) {
-			if _, ok := auth.sessionStorage[claims.Username]; ok {
+			if _, ok := auth.store.SessionStorage[claims.Username]; ok {
 				return claims.UserInfo, nil
 			} else {
 				err = fmt.Errorf("session was revoked")
@@ -109,11 +112,15 @@ func (auth *AuthManager) validate(tokenStr string) (user UserInfo, err error) {
 	return
 }
 
-func (auth *AuthManager) generateJWT(user UserInfo) (string, error) {
+func (auth *AuthManager) generateJWT(user UserInfo, remember bool) (string, error) {
+	expirationTime := EXPIRATIONTIME * time.Second
+	if remember {
+		expirationTime = time.Hour * 24 * 365
+	}
 	claims := UserClaims{
 		user,
 		jwt.StandardClaims{
-			ExpiresAt: jwt.TimeFunc().Unix() + EXPIRATIONTIME,
+			ExpiresAt: time.Now().Add(expirationTime).Unix(),
 			Issuer:    ISSUER,
 		},
 	}
@@ -122,20 +129,24 @@ func (auth *AuthManager) generateJWT(user UserInfo) (string, error) {
 	return token.SignedString(auth.hmacSampleSecret)
 }
 
-func (auth *AuthManager) AppendJWT(user UserInfo, w http.ResponseWriter) (err error) {
-	token, err := auth.generateJWT(user)
+func (auth *AuthManager) AppendJWT(user UserInfo, remember bool, w http.ResponseWriter) (err error) {
+	token, err := auth.generateJWT(user, remember)
 	if err != nil {
 		return
 	}
 
-	auth.sessionStorage[user.Username] = token
-	http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "Bearer " + token, Expires: time.Now().Add(EXPIRATIONTIME * time.Second), Path: "/", Secure: true})
+	auth.store.SessionStorage[user.Username] = token
+	expirationTime := EXPIRATIONTIME * time.Second
+	if remember {
+		expirationTime = time.Hour * 24 * 365
+	}
+	http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "Bearer " + token, Expires: time.Now().Add(expirationTime), Path: "/", Secure: true})
 	return
 }
 
 func (auth *AuthManager) AuthUser(username string, password string) (user UserInfo, err error) {
-	if username == "admin" && password == "admin" {
-		user = UserInfo{Role: ADMIN, Username: username}
+	if val, ok := auth.localUsers[username]; ok && password == val.Password {
+		user = UserInfo{Role: val.Role, Username: username}
 		return
 	}
 	err = fmt.Errorf("no valid user or invalid password")
@@ -143,5 +154,5 @@ func (auth *AuthManager) AuthUser(username string, password string) (user UserIn
 }
 
 func (auth *AuthManager) Logout(username string) {
-	delete(auth.sessionStorage, username)
+	delete(auth.store.SessionStorage, username)
 }
