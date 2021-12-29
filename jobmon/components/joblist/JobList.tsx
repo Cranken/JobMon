@@ -34,7 +34,7 @@ export const JobList = ({
   width,
   height,
 }: JobListProps) => {
-  jobs.sort((a, b) => (a.StartTime < b.StartTime ? -1 : 1));
+  jobs.sort((a, b) => (a.StartTime < b.StartTime ? 1 : -1));
   return (
     <Center>
       <Stack w={width ?? "1280px"}>
