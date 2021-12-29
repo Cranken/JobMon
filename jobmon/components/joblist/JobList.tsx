@@ -1,4 +1,4 @@
-import { JobMetadata } from "./../../types/job";
+import { JobMetadata, JobMetadataData } from "./../../types/job";
 import styles from "./JobList.module.css";
 import {
   Alert,
@@ -53,9 +53,12 @@ interface JobListItemProps {
 
 export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
   const borderColor = useColorModeValue("gray.200", "whiteAlpha.300");
-  const sortedData = job.Data.filter((val) =>
-    displayMetrics.includes(val.Config.Measurement)
-  ).sort((a, b) => (a.Config.Measurement < b.Config.Measurement ? -1 : 1));
+  let sortedData: JobMetadataData[] = [];
+  if (job.Data) {
+    sortedData = job.Data.filter((val) =>
+      displayMetrics.includes(val.Config.Measurement)
+    ).sort((a, b) => (a.Config.Measurement < b.Config.Measurement ? -1 : 1));
+  }
   return (
     <LinkBox>
       <LinkOverlay href={job.IsRunning ? undefined : `/job/${job.Id}`}>

@@ -41,6 +41,8 @@ export const MetricDataCharts = ({
         `${d["type-id"]}: ${
           +d._value === 0
             ? 0
+            : d._value > 1
+            ? d._value
             : d._value.toFixed(
                 1 - Math.floor(Math.log(d._value) / Math.log(10))
               )
@@ -54,6 +56,8 @@ export const MetricDataCharts = ({
         `${d["hostname"]}: ${
           +d._value === 0
             ? 0
+            : d._value > 1
+            ? d._value
             : d._value.toFixed(
                 1 - Math.floor(Math.log(d._value) / Math.log(10))
               )

@@ -82,6 +82,9 @@ export function LineChart<T>({
     if (!data || !svgRef.current) {
       return;
     }
+    const bbox = svgRef.current.getBoundingClientRect();
+    width = bbox.width;
+    xRange = [marginLeft, width - marginRight]; // [left, right]
 
     // Filter data based on given time range
     let filteredData = data;
@@ -150,7 +153,7 @@ export function LineChart<T>({
 
     let dragStart = 0;
     let dragEnd = 0;
-    const svgXOffset = svg.node()?.getBoundingClientRect().x ?? 0;
+    const svgXOffset = width - svgRef.current.getBoundingClientRect().width;
     const drag = d3
       .drag<SVGSVGElement, unknown>()
       .on("start", (event: DragEvent) => {
@@ -363,7 +366,7 @@ export function LineChart<T>({
     };
   }, [data, svgRef]);
 
-  return <svg ref={svgRef} />;
+  return <svg ref={svgRef} width="100%" height="100%" />;
 }
 
 export default LineChart;

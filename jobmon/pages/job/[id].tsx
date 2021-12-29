@@ -140,16 +140,18 @@ const Job: NextPage = () => {
           <TabPanel>{generateChartsMemo}</TabPanel>
           <TabPanel>
             <Flex>
-              {data.Metadata.Data.map((val) => (
-                <BoxPlot
-                  key={val.Config.Measurement}
-                  data={val.Data}
-                  y={(dat) => dat}
-                  width={window.document.body.clientWidth / 6}
-                  yLabel={val.Config.DisplayName}
-                  fill={fillColor}
-                />
-              ))}
+              {data.Metadata.Data
+                ? data.Metadata.Data.map((val) => (
+                    <BoxPlot
+                      key={val.Config.Measurement}
+                      data={val.Data}
+                      y={(dat) => dat}
+                      width={window.document.body.clientWidth / 6}
+                      yLabel={val.Config.DisplayName}
+                      fill={fillColor}
+                    />
+                  ))
+                : null}
             </Flex>
           </TabPanel>
         </TabPanels>
