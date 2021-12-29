@@ -33,12 +33,12 @@ export const JobList = ({
   displayMetrics,
   width,
   height,
-  filter = (_) => true,
 }: JobListProps) => {
+  jobs.sort((a, b) => (a.StartTime < b.StartTime ? -1 : 1));
   return (
     <Center>
       <Stack w={width ?? "1280px"}>
-        {jobs.filter(filter).map((job) => (
+        {jobs.map((job) => (
           <JobListItem key={job.Id} job={job} displayMetrics={displayMetrics} />
         ))}
       </Stack>
@@ -118,6 +118,7 @@ export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
                       x={(d) => d}
                       width={1280 / 4}
                       height={180}
+                      yLabel="Number of Nodes"
                       xLabel={dat.Config.DisplayName}
                     />
                   </Center>

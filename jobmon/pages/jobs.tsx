@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import JobFilter from "../components/joblist/JobFilter";
 import JobList from "../components/joblist/JobList";
 import { checkBetween } from "../utils/utils";
-import { JobListData } from "./../types/job";
+import { JobListData, JobMetadata } from "./../types/job";
 import { useRouter } from "next/router";
 import { useCookies } from "react-cookie";
 
@@ -35,16 +35,16 @@ export const Jobs = () => {
       numNodes={[numNodes, setNumNodes]}
     />
   );
+  const filter = (job: JobMetadata) =>
+    job.UserId.startsWith(userId) &&
+    checkBetween(startTime, stopTime, new Date(job.StartTime * 1000)) &&
+    checkBetween(numNodes[0], numNodes[1], job.NumNodes);
+
   elements.push(
     <JobList
       key="joblist"
-      jobs={jobListData.Jobs}
+      jobs={jobListData.Jobs.filter(filter)}
       displayMetrics={jobListData.DisplayMetrics}
-      filter={(job) =>
-        job.UserId.startsWith(userId) &&
-        checkBetween(startTime, stopTime, new Date(job.StartTime * 1000)) &&
-        checkBetween(numNodes[0], numNodes[1], job.NumNodes)
-      }
     />
   );
 
