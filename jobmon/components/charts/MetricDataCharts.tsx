@@ -68,7 +68,7 @@ export const MetricDataCharts = ({
             const hThreadData = metric.Data[hThread];
             const aggPoints = pThreadData.map((val, idx) => {
               let aggThread = val;
-              aggThread._value += hThreadData[idx]._value;
+              aggThread._value += hThreadData.at(idx)?._value ?? 0;
               return aggThread;
             });
             metricData = metricData.concat(aggPoints);
