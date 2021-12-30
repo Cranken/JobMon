@@ -32,7 +32,7 @@ const Job: NextPage = () => {
   const [selection, setSelection] = useState<SelectionMap>({});
   const selected = Object.keys(selection).filter((val) => selection[val]);
   const node = selected.length === 1 ? selected[0] : undefined;
-  const data = useGetJobData(parseInt(jobId as string), node);
+  const [data, isLoading] = useGetJobData(parseInt(jobId as string), node);
   const [startTime, setStartTime] = useState<Date>(new Date());
   const [stopTime, setStopTime] = useState<Date>(new Date());
   const [showQuantiles, setShowQuantiles] = useState(true);
@@ -49,6 +49,7 @@ const Job: NextPage = () => {
         startTime={startTime}
         stopTime={stopTime}
         setTimeRange={setTimeRange}
+        isLoading={isLoading}
       />
     ) : (
       <MetricDataCharts
@@ -57,9 +58,10 @@ const Job: NextPage = () => {
         startTime={startTime}
         stopTime={stopTime}
         setTimeRange={setTimeRange}
+        isLoading={isLoading}
       />
     );
-  }, [data, selected, startTime, stopTime, showQuantiles]);
+  }, [data, selected, startTime, stopTime, showQuantiles, isLoading]);
 
   useEffect(() => {
     if (data?.Metadata.NodeList !== undefined) {
@@ -161,8 +163,15 @@ const Job: NextPage = () => {
 };
 export default Job;
 
-export const useGetJobData = (id: number | undefined, node?: string) => {
+export const useGetJobData: (
+  id: number | undefined,
+  node?: string
+) => [JobData | undefined, boolean] = (
+  id: number | undefined,
+  node?: string
+) => {
   const [jobData, setJobData] = useState<JobData>();
+  const [isLoading, setIsLoading] = useState(true);
   const [jobCache, setJobCache] = useState<{ [key: string]: JobData }>({});
   const [_c, _s, removeCookie] = useCookies(["Authorization"]);
   useEffect(() => {
@@ -174,13 +183,16 @@ export const useGetJobData = (id: number | undefined, node?: string) => {
       URL += `?node=${node}`;
       if (node in jobCache) {
         setJobData(jobCache[node]);
+        setIsLoading(false);
         return;
       }
     }
     if (!node && "all" in jobCache) {
       setJobData(jobCache["all"]);
+      setIsLoading(false);
       return;
     }
+    setIsLoading(true);
     fetch(URL, { credentials: "include" }).then((res) => {
       if (!res.ok && (res.status === 401 || res.status === 403)) {
         removeCookie("Authorization");
@@ -191,9 +203,10 @@ export const useGetJobData = (id: number | undefined, node?: string) => {
             return prevState;
           });
           setJobData(data);
+          setIsLoading(false);
         });
       }
     });
   }, [id, node, jobCache, removeCookie]);
-  return jobData;
+  return [jobData, isLoading];
 };

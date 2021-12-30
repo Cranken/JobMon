@@ -1,13 +1,14 @@
 import { QuantileData } from "../../types/job";
 import { LineChart } from "./LineChart";
 import { QuantilePoint } from "./../../types/job";
-import { Container, Flex, Grid } from "@chakra-ui/react";
+import { Center, Container, Flex, Grid, Spinner } from "@chakra-ui/react";
 
 interface QuantileDataChartsProps {
   quantiles: QuantileData[] | undefined;
   startTime?: Date;
   stopTime?: Date;
   setTimeRange?: (start: Date, end: Date) => void;
+  isLoading: boolean;
 }
 
 export const QuantileDataCharts = ({
@@ -15,9 +16,17 @@ export const QuantileDataCharts = ({
   startTime,
   stopTime,
   setTimeRange,
+  isLoading,
 }: QuantileDataChartsProps) => {
   if (!quantiles) {
     return <div>No quantiles</div>;
+  }
+  if (isLoading) {
+    return (
+      <Center>
+        <Spinner />
+      </Center>
+    );
   }
   const xDomain: [Date, Date] = [
     startTime ?? new Date(0),

@@ -1,4 +1,4 @@
-import { Flex, Grid } from "@chakra-ui/react";
+import { Center, Flex, Grid, Spinner } from "@chakra-ui/react";
 import { MetricData, MetricPoint } from "../../types/job";
 import { LineChart } from "./LineChart";
 
@@ -8,6 +8,7 @@ interface MetricDataChartsProps {
   startTime?: Date;
   stopTime?: Date;
   setTimeRange?: (start: Date, end: Date) => void;
+  isLoading: boolean;
 }
 
 export const MetricDataCharts = ({
@@ -16,9 +17,17 @@ export const MetricDataCharts = ({
   startTime,
   stopTime,
   setTimeRange,
+  isLoading,
 }: MetricDataChartsProps) => {
   if (!metrics) {
     return <div>No metrics</div>;
+  }
+  if (isLoading) {
+    return (
+      <Center>
+        <Spinner />
+      </Center>
+    );
   }
   const xDomain: [Date, Date] = [
     startTime ?? new Date(0),
@@ -47,8 +56,28 @@ export const MetricDataCharts = ({
                 1 - Math.floor(Math.log(d._value) / Math.log(10))
               )
         }`;
+      const pThreadCount = Object.keys(metric.Data).length / 2;
       for (const node of Object.keys(metric.Data)) {
-        metricData = metricData.concat(metric.Data[node]);
+        if (metric.Config.Type === "cpu") {
+          if (+node >= pThreadCount) {
+            break;
+          }
+          let pThreadData = metric.Data[node];
+          const hThread = (+node + pThreadCount).toString();
+          if (hThread in metric.Data) {
+            const hThreadData = metric.Data[hThread];
+            const aggPoints = pThreadData.map((val, idx) => {
+              let aggThread = val;
+              aggThread._value += hThreadData[idx]._value;
+              return aggThread;
+            });
+            metricData = metricData.concat(aggPoints);
+          } else {
+            metricData = metricData.concat(pThreadData);
+          }
+        } else {
+          metricData = metricData.concat(metric.Data[node]);
+        }
       }
     } else {
       z = (d: MetricPoint) => d["hostname"];
