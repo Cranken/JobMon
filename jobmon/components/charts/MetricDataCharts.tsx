@@ -88,7 +88,7 @@ export const MetricDataCharts = ({
       })(key);
       title = ((key: keyof MetricPoint) => {
         return (d: MetricPoint) =>
-          `${d[key].toString}: ${
+          `${d[key]}: ${
             +d._value === 0
               ? 0
               : d._value > 1
