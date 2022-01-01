@@ -5,6 +5,7 @@ import { checkBetween } from "../utils/utils";
 import { JobListData, JobMetadata } from "./../types/job";
 import { useRouter } from "next/router";
 import { useCookies } from "react-cookie";
+import { Center, Spinner } from "@chakra-ui/react";
 
 export const Jobs = () => {
   const router = useRouter();
@@ -22,7 +23,11 @@ export const Jobs = () => {
   }, [router]);
 
   if (!jobListData) {
-    return <div>Loading</div>;
+    return (
+      <Center>
+        <Spinner />
+      </Center>
+    );
   }
 
   let elements = [];

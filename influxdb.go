@@ -158,6 +158,9 @@ func (db *DB) query(metric MetricConfig, job JobMetadata, node string) (result m
 			if metric.Type != "node" {
 				separationKey = "type-id"
 			}
+			if metric.SeparationKey != "" {
+				separationKey = metric.SeparationKey
+			}
 			result, err = parseQueryResult(queryResult, separationKey)
 		}
 	} else {
@@ -174,14 +177,16 @@ func (db *DB) querySimpleMeasurement(metric MetricConfig, job JobMetadata, node 
 	if node != "" {
 		nodeList = node
 	}
-	result, err = db.queryAPI.Query(context.Background(), fmt.Sprintf(`
+	query := fmt.Sprintf(`
 		from(bucket: "%v")
 		|> range(start: %v, stop: %v)
 		|> filter(fn: (r) => r["_measurement"] == "%v")
 	  |> filter(fn: (r) => r["type"] == "%v")
 		|> filter(fn: (r) => r["hostname"] =~ /%v/)
 		|> truncateTimeColumn(unit: %v)
-	`, db.bucket, job.StartTime, job.StopTime, metric.Measurement, metric.Type, nodeList, db.defaultSampleInterval))
+	`, db.bucket, job.StartTime, job.StopTime, metric.Measurement, metric.Type, nodeList, db.defaultSampleInterval)
+	query += metric.PostQueryOp
+	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		log.Printf("Error at query: %v\n", err)
 	}
@@ -214,12 +219,14 @@ func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (
 
 func (db *DB) queryAggregateMeasurement(metric MetricConfig, job JobMetadata) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement + "_" + metric.AggFn
-	result, err = db.queryAPI.Query(context.Background(), fmt.Sprintf(`
+	query := fmt.Sprintf(`
 		from(bucket: "%v")
 		|> range(start: %v, stop: %v)
 		|> filter(fn: (r) => r["_measurement"] == "%v")
 		|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList))
+	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList)
+	query += metric.PostQueryOp
+	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		log.Printf("Error at query: %v\n", err)
 	}
@@ -228,7 +235,7 @@ func (db *DB) queryAggregateMeasurement(metric MetricConfig, job JobMetadata) (r
 
 func (db *DB) queryQuantileMeasurement(metric MetricConfig, job JobMetadata, quantiles []string) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement
-	if metric.Type != "node" && metric.AggFn != "" {
+	if metric.AggFn != "" {
 		measurement += "_" + metric.AggFn
 	}
 	tempKeys := []string{}
@@ -274,9 +281,7 @@ func (db *DB) queryMetadataMeasurements(metric MetricConfig, job JobMetadata) (r
 	aggFn := "mean"
 	if metric.AggFn != "" {
 		aggFn = metric.AggFn
-		if metric.Type != "node" {
-			measurement += "_" + metric.AggFn
-		}
+		measurement += "_" + metric.AggFn
 	}
 	result, err = db.queryAPI.Query(context.Background(), fmt.Sprintf(`
 		from(bucket: "%v")
@@ -331,7 +336,7 @@ func (db *DB) updateAggregationTasks() (err error) {
 
 	missingMetricTasks := []MetricConfig{}
 	for _, metric := range db.metrics {
-		if metric.Type != "node" && metric.AggFn != "" {
+		if metric.AggFn != "" {
 			name := metric.Measurement + "_" + metric.AggFn
 			found := false
 			for _, task := range tasks {

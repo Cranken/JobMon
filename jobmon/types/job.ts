@@ -30,6 +30,7 @@ export interface MetricConfig {
   SampleInterval: string;
   Unit: string;
   DisplayName: string;
+  SeparationKey: string;
 }
 
 export interface MetricPoint {
@@ -45,6 +46,7 @@ export interface MetricPoint {
   table: number;
   type: string;
   ["type-id"]: string;
+  device: string;
 }
 
 export interface QuantilePoint {

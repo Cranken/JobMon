@@ -34,6 +34,8 @@ type MetricConfig struct {
 	SampleInterval string
 	Unit           string
 	DisplayName    string
+	PostQueryOp    string
+	SeparationKey  string
 }
 
 type LocalUser struct {

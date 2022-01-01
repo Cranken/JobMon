@@ -80,19 +80,26 @@ export const MetricDataCharts = ({
         }
       }
     } else {
-      z = (d: MetricPoint) => d["hostname"];
-      title = (d: MetricPoint) =>
-        `${d["hostname"]}: ${
-          +d._value === 0
-            ? 0
-            : d._value > 1
-            ? d._value
-            : d._value.toFixed(
-                1 - Math.floor(Math.log(d._value) / Math.log(10))
-              )
-        }`;
+      const key = (
+        metric.Config.SeparationKey !== "" ? "device" : "hostname"
+      ) as keyof MetricPoint;
+      z = ((key: keyof MetricPoint) => {
+        return (d: MetricPoint) => d[key].toString();
+      })(key);
+      title = ((key: keyof MetricPoint) => {
+        return (d: MetricPoint) =>
+          `${d[key].toString}: ${
+            +d._value === 0
+              ? 0
+              : d._value > 1
+              ? d._value
+              : d._value.toFixed(
+                  1 - Math.floor(Math.log(d._value) / Math.log(10))
+                )
+          }`;
+      })(key);
       for (const node of Object.keys(metric.Data)) {
-        if (nodeSelection.indexOf(node) > -1) {
+        if (key !== "hostname" || nodeSelection.indexOf(node) > -1) {
           metricData = metricData.concat(metric.Data[node]);
         }
       }
