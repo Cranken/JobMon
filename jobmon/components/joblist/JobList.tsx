@@ -59,6 +59,20 @@ export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
       displayMetrics.includes(val.Config.Measurement)
     ).sort((a, b) => (a.Config.Measurement < b.Config.Measurement ? -1 : 1));
   }
+
+  let histogramAvailable = true;
+  let reason = "";
+  if (job.IsRunning) {
+    histogramAvailable = false;
+    reason = "Job is still running. No metric data available yet.";
+  } else if (job.NumNodes <= 1) {
+    histogramAvailable = false;
+    reason = "No histogram available for jobs with less than two nodes.";
+  } else if (job.StopTime - job.StartTime < 300) {
+    histogramAvailable = false;
+    reason = "No histogram available for short jobs (<5Min).";
+  }
+
   return (
     <LinkBox>
       <LinkOverlay href={job.IsRunning ? undefined : `/job/${job.Id}`}>
@@ -96,12 +110,12 @@ export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
             </Flex>
           </GridItem>
           <GridItem colSpan={5}>
-            {job.IsRunning ? (
+            {!histogramAvailable ? (
               <Center h="100%">
                 <Box>
                   <Alert status="info">
                     <AlertIcon />
-                    Job is still running. No metric data available yet.
+                    {reason}
                   </Alert>
                 </Box>
               </Center>
