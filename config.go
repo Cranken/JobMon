@@ -36,6 +36,8 @@ type MetricConfig struct {
 	DisplayName    string
 	PostQueryOp    string
 	SeparationKey  string
+	MaxPerNode     string
+	MaxPerType     string
 }
 
 type LocalUser struct {
