@@ -259,6 +259,7 @@ func (db *DB) queryQuantileMeasurement(metric MetricConfig, job JobMetadata, qua
 	query += "\n" + fmt.Sprintf(`
 		union(tables: %v)
 		|> group(columns: ["_field"])`, "["+strings.Join(tempKeys[0:len(quantiles)], ",")+"]")
+	query += metric.PostQueryOp
 
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
