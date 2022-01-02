@@ -143,7 +143,7 @@ func (auth *AuthManager) AppendJWT(user UserInfo, remember bool, w http.Response
 	if remember {
 		expirationTime = time.Hour * 24 * 365
 	}
-	http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "Bearer " + token, Expires: time.Now().Add(expirationTime), Path: "/", Secure: true})
+	http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "Bearer " + token, Expires: time.Now().Add(expirationTime), Path: "/"})
 	return
 }
 
