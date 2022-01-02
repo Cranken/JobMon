@@ -81,7 +81,9 @@ export const MetricDataCharts = ({
       }
     } else {
       const key = (
-        metric.Config.SeparationKey !== "" ? "device" : "hostname"
+        nodeSelection.length === 1 && metric.Config.SeparationKey !== ""
+          ? metric.Config.SeparationKey
+          : "hostname"
       ) as keyof MetricPoint;
       z = ((key: keyof MetricPoint) => {
         return (d: MetricPoint) => d[key].toString();
