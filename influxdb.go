@@ -82,12 +82,12 @@ func (db *DB) GetJobMetadataMetrics(job JobMetadata) (data []JobMetadataData, er
 			defer wg.Done()
 			tempRes, err := db.queryMetadataMeasurements(m, job)
 			if err != nil {
-				log.Printf("could not get quantile data %v", err)
+				log.Printf("could not get metadata data %v", err)
 				return
 			}
 			result, err := parseQueryResult(tempRes, "_field")
 			if err != nil {
-				log.Printf("could not parsequantile data %v", err)
+				log.Printf("could not parse metadata data %v", err)
 				return
 			}
 			var tempData []float64
@@ -131,7 +131,7 @@ func (db *DB) getJobData(job JobMetadata, metrics []MetricConfig, node string) (
 			}
 			result, err := parseQueryResult(tempRes, "_field")
 			if err != nil {
-				log.Printf("could not parsequantile data %v", err)
+				log.Printf("could not parse quantile data %v", err)
 				return
 			}
 			quantileData = append(quantileData, QuantileData{Config: m, Data: result, Quantiles: db.metricQuantiles})
@@ -262,7 +262,7 @@ func (db *DB) queryQuantileMeasurement(metric MetricConfig, job JobMetadata, qua
 
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
-		log.Printf("Error at query: %v\n", err)
+		log.Printf("Error at quantile query: %v\n", err)
 	}
 	return
 }
@@ -283,16 +283,17 @@ func (db *DB) queryMetadataMeasurements(metric MetricConfig, job JobMetadata) (r
 		aggFn = metric.AggFn
 		measurement += "_" + metric.AggFn
 	}
-	result, err = db.queryAPI.Query(context.Background(), fmt.Sprintf(`
+	query := fmt.Sprintf(`
 		from(bucket: "%v")
 		|> range(start: %v, stop: %v)
 		|> filter(fn: (r) => r["_measurement"] == "%v")
 		|> filter(fn: (r) => r["hostname"] =~ /%v/)
 		|> %v(column: "_value")
     |> group()
-	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, aggFn))
+	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, aggFn)
+	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
-		log.Printf("Error at query: %v\n", err)
+		log.Printf("Error at metadata query: %v\n", err)
 	}
 	return
 }
