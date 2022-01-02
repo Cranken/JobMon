@@ -45,6 +45,7 @@ const Job: NextPage = () => {
     };
     return showQuantiles ? (
       <QuantileDataCharts
+        key="quantile-charts"
         quantiles={data?.QuantileData}
         startTime={startTime}
         stopTime={stopTime}
@@ -53,6 +54,7 @@ const Job: NextPage = () => {
       />
     ) : (
       <MetricDataCharts
+        key="metric-charts"
         metrics={data?.MetricData}
         nodeSelection={selected}
         startTime={startTime}

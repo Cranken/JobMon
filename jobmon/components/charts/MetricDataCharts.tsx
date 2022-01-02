@@ -34,7 +34,7 @@ export const MetricDataCharts = ({
     stopTime ?? new Date(),
   ];
   let chartElements = [];
-  const sortedMetrics = metrics.sort((a, b) =>
+  const sortedMetrics = [...metrics].sort((a, b) =>
     a.Config.Measurement < b.Config.Measurement ? -1 : 1
   );
   for (const metric of sortedMetrics) {
@@ -67,7 +67,7 @@ export const MetricDataCharts = ({
           if (hThread in metric.Data) {
             const hThreadData = metric.Data[hThread];
             const aggPoints = pThreadData.map((val, idx) => {
-              let aggThread = val;
+              let aggThread = Object.assign({}, val);
               aggThread._value += hThreadData.at(idx)?._value ?? 0;
               return aggThread;
             });
@@ -108,9 +108,14 @@ export const MetricDataCharts = ({
     }
 
     chartElements.push(
-      <Flex border="1px" borderColor="gray.700" borderRadius="md" m={3}>
+      <Flex
+        border="1px"
+        borderColor="gray.700"
+        borderRadius="md"
+        m={3}
+        key={metric.Config.Measurement}
+      >
         <LineChart
-          key={metric.Config.Measurement}
           data={metricData}
           x={(d: MetricPoint) => new Date(d._time)}
           y={(d: MetricPoint) => d._value}
