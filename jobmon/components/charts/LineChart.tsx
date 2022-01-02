@@ -281,8 +281,7 @@ export function LineChart<T>({
       values.sort((a, b) => (y(a) < y(b) ? -1 : 1));
       if (values.length > 10) {
         for (let idx = 0; idx < 10; idx++) {
-          const val =
-            idx < 5 ? values[idx] : values[values.length - 1 + idx - 10];
+          const val = idx < 5 ? values[idx] : values[values.length + idx - 10];
           if (!val) {
             continue;
           }
