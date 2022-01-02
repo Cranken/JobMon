@@ -25,6 +25,7 @@ type Configuration struct {
 	JWTSecret       string
 	StoreFile       string
 	LocalUsers      map[string]LocalUser
+	Partitions      []string
 }
 
 type MetricConfig struct {

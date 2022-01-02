@@ -6,6 +6,7 @@ import { JobListData, JobMetadata } from "./../types/job";
 import { useRouter } from "next/router";
 import { useCookies } from "react-cookie";
 import { Center, Spinner } from "@chakra-ui/react";
+import { SelectionMap } from "./job/[id]";
 
 export const Jobs = () => {
   const router = useRouter();
@@ -14,6 +15,8 @@ export const Jobs = () => {
   const [startTime, setStartTime] = useState(new Date("2021-10-01"));
   const [stopTime, setStopTime] = useState(new Date());
   const [numNodes, setNumNodes] = useState([1, 192]);
+  const [metrics, setMetrics] = useState<SelectionMap>({});
+  const [partition, setPartition] = useState("");
 
   useEffect(() => {
     const { user } = router.query;
@@ -21,6 +24,18 @@ export const Jobs = () => {
       setUserId(user as string);
     }
   }, [router]);
+
+  useEffect(() => {
+    let newMetrics: SelectionMap = {};
+    jobListData?.Config.Metrics.forEach(
+      (val) => (newMetrics[val.Measurement] = false)
+    );
+    const savedMetrics = localStorage.getItem("displayMetrics")?.split(",");
+    if (savedMetrics) {
+      savedMetrics.forEach((val) => (newMetrics[val] = true));
+    }
+    setMetrics(newMetrics);
+  }, [jobListData]);
 
   if (!jobListData) {
     return (
@@ -30,6 +45,20 @@ export const Jobs = () => {
     );
   }
 
+  const setChecked = (val: SelectionMap) => {
+    const newMetrics = { ...metrics };
+    Object.keys(val).forEach((key) => {
+      if (key in metrics) {
+        newMetrics[key] = val[key];
+      }
+      if (metrics !== newMetrics) {
+        setMetrics(newMetrics);
+      }
+    });
+    const selected = Object.keys(newMetrics).filter((val) => newMetrics[val]);
+    localStorage.setItem("displayMetrics", selected.join(","));
+  };
+
   let elements = [];
   elements.push(
     <JobFilter
@@ -38,6 +67,8 @@ export const Jobs = () => {
       startTime={[startTime, setStartTime]}
       stopTime={[stopTime, setStopTime]}
       numNodes={[numNodes, setNumNodes]}
+      metrics={[metrics, setChecked]}
+      partitions={[jobListData.Config.Partitions, partition, setPartition]}
     />
   );
   const filter = (job: JobMetadata) =>
@@ -45,11 +76,13 @@ export const Jobs = () => {
     checkBetween(startTime, stopTime, new Date(job.StartTime * 1000)) &&
     checkBetween(numNodes[0], numNodes[1], job.NumNodes);
 
+  const displayMetrics = Object.keys(metrics).filter((val) => metrics[val]);
+
   elements.push(
     <JobList
       key="joblist"
       jobs={jobListData.Jobs.filter(filter)}
-      displayMetrics={jobListData.DisplayMetrics}
+      displayMetrics={displayMetrics}
     />
   );
 

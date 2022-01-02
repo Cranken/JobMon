@@ -29,8 +29,13 @@ type JobMetadata struct {
 }
 
 type JobListData struct {
-	Jobs           []JobMetadata
-	DisplayMetrics []string
+	Jobs   []JobMetadata
+	Config JobListConfig
+}
+
+type JobListConfig struct {
+	Metrics    []MetricConfig
+	Partitions []string
 }
 
 type StopJob struct {

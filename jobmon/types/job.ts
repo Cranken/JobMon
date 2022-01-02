@@ -14,7 +14,12 @@ export interface JobMetadata {
 
 export interface JobListData {
   Jobs: JobMetadata[];
-  DisplayMetrics: string[];
+  Config: JobListConfig;
+}
+
+export interface JobListConfig {
+  Metrics: MetricConfig[];
+  Partitions: string[];
 }
 
 export enum CollectionType {
@@ -31,6 +36,8 @@ export interface MetricConfig {
   Unit: string;
   DisplayName: string;
   SeparationKey: string;
+  MaxPerNode: string;
+  MaxPerType: string;
 }
 
 export interface MetricPoint {

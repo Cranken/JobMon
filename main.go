@@ -87,7 +87,7 @@ func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	// Get all for now
 	jobs := store.GetAll()
 
-	jobListData := JobListData{Jobs: jobs, DisplayMetrics: config.JobListMetrics}
+	jobListData := JobListData{Jobs: jobs, Config: JobListConfig{Metrics: config.Metrics, Partitions: config.Partitions}}
 	data, err := json.Marshal(&jobListData)
 	if err != nil {
 		log.Printf("Could not marshal jobs to json")

@@ -21,16 +21,28 @@ import {
   NumberInput,
   NumberInputField,
   NumberInputStepper,
+  Checkbox,
+  Accordion,
+  AccordionItem,
+  AccordionPanel,
+  AccordionIcon,
+  AccordionButton,
+  Select,
+  Container,
 } from "@chakra-ui/react";
 import { Dispatch, SetStateAction, useState } from "react";
+import { SelectionMap } from "../../pages/job/[id]";
 
 import style from "./JobFilter.module.css";
+type SetFn = (val: SelectionMap) => void;
 
 interface JobFilterProps {
   userId: [string, Dispatch<SetStateAction<string>>];
   startTime: [Date, Dispatch<SetStateAction<Date>>];
   stopTime: [Date, Dispatch<SetStateAction<Date>>];
   numNodes: [number[], Dispatch<SetStateAction<number[]>>];
+  metrics: [SelectionMap, SetFn];
+  partitions: [string[], string, Dispatch<SetStateAction<string>>];
 }
 
 export const JobFilter = ({
@@ -38,6 +50,8 @@ export const JobFilter = ({
   startTime,
   stopTime,
   numNodes,
+  metrics,
+  partitions,
 }: JobFilterProps) => {
   const timezoneOffsetMsec = new Date().getTimezoneOffset() * 60 * 1000;
   const getDateString = (d: Date) =>
@@ -50,12 +64,13 @@ export const JobFilter = ({
         borderRadius="lg"
         padding="3ch"
         margin="2ch"
-        height="22vh"
+        minHeight="22vh"
       >
         <Tabs w="100%">
           <TabList>
             <Tab>Job Data</Tab>
             <Tab>Time</Tab>
+            <Tab>Settings</Tab>
           </TabList>
           <TabPanels>
             <TabPanel>
@@ -67,6 +82,18 @@ export const JobFilter = ({
                   mr={5}
                   onChange={(ev) => userId[1](ev.target.value)}
                 />
+                <Select
+                  maxW="30ch"
+                  value={partitions[1]}
+                  onChange={(e) => partitions[2](e.target.value)}
+                >
+                  <option value="">All partitions</option>
+                  {partitions[0].map((part) => (
+                    <option key={part} value={part}>
+                      {part}
+                    </option>
+                  ))}
+                </Select>
                 <Box>
                   <Flex justify="space-between" align="center">
                     <NumberInput
@@ -153,6 +180,34 @@ export const JobFilter = ({
                   Reset
                 </Button>
               </Flex>
+            </TabPanel>
+            <TabPanel>
+              <Accordion allowToggle>
+                <AccordionItem>
+                  <h2>
+                    <AccordionButton>
+                      <Box flex="1" textAlign="left">
+                        Select metrics shown in histograms
+                      </Box>
+                    </AccordionButton>
+                  </h2>
+                  <AccordionPanel>
+                    <Stack>
+                      {Object.keys(metrics[0]).map((val) => (
+                        <Checkbox
+                          key={val}
+                          isChecked={metrics[0][val]}
+                          onChange={(e) =>
+                            metrics[1]({ [val]: e.target.checked })
+                          }
+                        >
+                          {val}
+                        </Checkbox>
+                      ))}
+                    </Stack>
+                  </AccordionPanel>
+                </AccordionItem>
+              </Accordion>
             </TabPanel>
           </TabPanels>
         </Tabs>
