@@ -86,7 +86,7 @@ export const MetricDataCharts = ({
           : "hostname"
       ) as keyof MetricPoint;
       z = ((key: keyof MetricPoint) => {
-        return (d: MetricPoint) => d[key].toString();
+        return (d: MetricPoint) => d[key]?.toString() ?? "";
       })(key);
       title = ((key: keyof MetricPoint) => {
         return (d: MetricPoint) =>
