@@ -43,6 +43,7 @@ interface JobFilterProps {
   numNodes: [number[], Dispatch<SetStateAction<number[]>>];
   metrics: [SelectionMap, SetFn];
   partitions: [string[], string, Dispatch<SetStateAction<string>>];
+  numGpu: [number[], Dispatch<SetStateAction<number[]>>];
 }
 
 export const JobFilter = ({
@@ -52,6 +53,7 @@ export const JobFilter = ({
   numNodes,
   metrics,
   partitions,
+  numGpu,
 }: JobFilterProps) => {
   const timezoneOffsetMsec = new Date().getTimezoneOffset() * 60 * 1000;
   const getDateString = (d: Date) =>
@@ -94,52 +96,104 @@ export const JobFilter = ({
                     </option>
                   ))}
                 </Select>
-                <Box>
-                  <Flex justify="space-between" align="center">
-                    <NumberInput
-                      maxW="10ch"
-                      value={numNodes[0][0]}
-                      min={1}
-                      max={numNodes[0][1]}
-                      onChange={(_, val) => numNodes[1]([val, numNodes[0][1]])}
-                    >
-                      <NumberInputField />
-                      <NumberInputStepper>
-                        <NumberIncrementStepper />
-                        <NumberDecrementStepper />
-                      </NumberInputStepper>
-                    </NumberInput>
-                    <Text>Number of Nodes</Text>
-                    <NumberInput
-                      maxW="10ch"
-                      value={numNodes[0][1]}
-                      min={numNodes[0][0]}
-                      max={192}
-                      onChange={(_, val) => numNodes[1]([numNodes[0][0], val])}
-                    >
-                      <NumberInputField />
-                      <NumberInputStepper>
-                        <NumberIncrementStepper />
-                        <NumberDecrementStepper />
-                      </NumberInputStepper>
-                    </NumberInput>
-                  </Flex>
-                  <Box w="100%">
-                    <RangeSlider
-                      defaultValue={[0, 192]}
-                      min={1}
-                      max={192}
-                      value={numNodes[0]}
-                      onChange={(val) => numNodes[1](val)}
-                    >
-                      <RangeSliderTrack>
-                        <RangeSliderFilledTrack />
-                      </RangeSliderTrack>
-                      <RangeSliderThumb index={0} />
-                      <RangeSliderThumb index={1} />
-                    </RangeSlider>
+                <Stack direction="row" gap={6}>
+                  <Box flexGrow={1}>
+                    <Flex justify="space-between" align="center">
+                      <NumberInput
+                        maxW="10ch"
+                        value={numNodes[0][0]}
+                        min={1}
+                        max={numNodes[0][1]}
+                        onChange={(_, val) =>
+                          numNodes[1]([val, numNodes[0][1]])
+                        }
+                      >
+                        <NumberInputField />
+                        <NumberInputStepper>
+                          <NumberIncrementStepper />
+                          <NumberDecrementStepper />
+                        </NumberInputStepper>
+                      </NumberInput>
+                      <Text>Number of Nodes</Text>
+                      <NumberInput
+                        maxW="10ch"
+                        value={numNodes[0][1]}
+                        min={numNodes[0][0]}
+                        max={192}
+                        onChange={(_, val) =>
+                          numNodes[1]([numNodes[0][0], val])
+                        }
+                      >
+                        <NumberInputField />
+                        <NumberInputStepper>
+                          <NumberIncrementStepper />
+                          <NumberDecrementStepper />
+                        </NumberInputStepper>
+                      </NumberInput>
+                    </Flex>
+                    <Box w="100%">
+                      <RangeSlider
+                        defaultValue={[0, 192]}
+                        min={1}
+                        max={192}
+                        value={numNodes[0]}
+                        onChange={(val) => numNodes[1](val)}
+                      >
+                        <RangeSliderTrack>
+                          <RangeSliderFilledTrack />
+                        </RangeSliderTrack>
+                        <RangeSliderThumb index={0} />
+                        <RangeSliderThumb index={1} />
+                      </RangeSlider>
+                    </Box>
                   </Box>
-                </Box>
+                  <Box flexGrow={1}>
+                    <Flex justify="space-between" align="center">
+                      <NumberInput
+                        maxW="10ch"
+                        value={numGpu[0][0]}
+                        min={0}
+                        max={numGpu[0][1]}
+                        onChange={(_, val) => numGpu[1]([val, numGpu[0][1]])}
+                      >
+                        <NumberInputField />
+                        <NumberInputStepper>
+                          <NumberIncrementStepper />
+                          <NumberDecrementStepper />
+                        </NumberInputStepper>
+                      </NumberInput>
+                      <Text>Number of GPUs</Text>
+                      <NumberInput
+                        maxW="10ch"
+                        value={numGpu[0][1]}
+                        min={numGpu[0][0]}
+                        max={128}
+                        onChange={(_, val) => numGpu[1]([numGpu[0][0], val])}
+                      >
+                        <NumberInputField />
+                        <NumberInputStepper>
+                          <NumberIncrementStepper />
+                          <NumberDecrementStepper />
+                        </NumberInputStepper>
+                      </NumberInput>
+                    </Flex>
+                    <Box w="100%">
+                      <RangeSlider
+                        defaultValue={[0, 192]}
+                        min={0}
+                        max={128}
+                        value={numGpu[0]}
+                        onChange={(val) => numGpu[1](val)}
+                      >
+                        <RangeSliderTrack>
+                          <RangeSliderFilledTrack />
+                        </RangeSliderTrack>
+                        <RangeSliderThumb index={0} />
+                        <RangeSliderThumb index={1} />
+                      </RangeSlider>
+                    </Box>
+                  </Box>
+                </Stack>
               </Stack>
             </TabPanel>
             <TabPanel>

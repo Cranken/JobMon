@@ -9,6 +9,8 @@ export interface JobMetadata {
   IsRunning: boolean;
   JobScript: string;
   ProjectId: string;
+  Partition: string;
+  NumGpu: number;
   Data: JobMetadataData[];
 }
 

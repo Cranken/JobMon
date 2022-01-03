@@ -17,6 +17,7 @@ export const Jobs = () => {
   const [numNodes, setNumNodes] = useState([1, 192]);
   const [metrics, setMetrics] = useState<SelectionMap>({});
   const [partition, setPartition] = useState("");
+  const [numGpu, setNumGpu] = useState([0, 128]);
 
   useEffect(() => {
     const { user } = router.query;
@@ -69,12 +70,15 @@ export const Jobs = () => {
       numNodes={[numNodes, setNumNodes]}
       metrics={[metrics, setChecked]}
       partitions={[jobListData.Config.Partitions, partition, setPartition]}
+      numGpu={[numGpu, setNumGpu]}
     />
   );
   const filter = (job: JobMetadata) =>
     job.UserId.startsWith(userId) &&
     checkBetween(startTime, stopTime, new Date(job.StartTime * 1000)) &&
-    checkBetween(numNodes[0], numNodes[1], job.NumNodes);
+    checkBetween(numNodes[0], numNodes[1], job.NumNodes) &&
+    (partition === "" ? true : partition === job.Partition) &&
+    checkBetween(numGpu[0], numGpu[1], job.NumGpu);
 
   const displayMetrics = Object.keys(metrics).filter((val) => metrics[val]);
 
