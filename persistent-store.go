@@ -13,19 +13,20 @@ import (
 )
 
 type JobMetadata struct {
-	Id          int
-	UserId      string
-	ClusterId   string
-	NumNodes    int
-	NodeList    string
-	StartTime   int
-	StopTime    int
-	IsRunning   bool
-	JobScript   string
-	ProjectId   string
-	TTL         int
-	DashboardId string
-	Data        []JobMetadataData
+	Id        int
+	UserId    string
+	ClusterId string
+	NumNodes  int
+	NodeList  string
+	StartTime int
+	StopTime  int
+	IsRunning bool
+	JobScript string
+	ProjectId string
+	TTL       int
+	Partition string
+	NumGpu    int
+	Data      []JobMetadataData
 }
 
 type JobListData struct {
