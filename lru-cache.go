@@ -26,7 +26,7 @@ func (c *LRUCache) Init(config Configuration, db *DB) {
 	c.db = db
 }
 
-func (c *LRUCache) Get(job JobMetadata) (data JobData, err error) {
+func (c *LRUCache) Get(job *JobMetadata) (data JobData, err error) {
 	c.mut.Lock()
 	defer c.mut.Unlock()
 

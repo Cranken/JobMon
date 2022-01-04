@@ -77,7 +77,7 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	if config.Prefetch {
 		go func() {
 			time.Sleep(10 * time.Second)
-			jobCache.Get(jobMetadata)
+			jobCache.Get(&jobMetadata)
 		}()
 	}
 }
@@ -125,9 +125,9 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 
 	var jobData JobData
 	if node == "" {
-		jobData, err = jobCache.Get(job)
+		jobData, err = jobCache.Get(&job)
 	} else {
-		jobData, err = db.GetNodeJobData(job, node)
+		jobData, err = db.GetNodeJobData(&job, node)
 	}
 	if err != nil {
 		log.Printf("Could not get job metric data: %v\n", err)

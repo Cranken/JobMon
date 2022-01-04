@@ -42,7 +42,7 @@ type QuantileData struct {
 }
 
 type JobData struct {
-	Metadata     JobMetadata
+	Metadata     *JobMetadata
 	MetricData   []MetricData
 	QuantileData []QuantileData
 }
@@ -66,15 +66,15 @@ func (db *DB) Close() {
 	db.client.Close()
 }
 
-func (db *DB) GetJobData(job JobMetadata) (data JobData, err error) {
+func (db *DB) GetJobData(job *JobMetadata) (data JobData, err error) {
 	return db.getJobData(job, db.metrics, "")
 }
 
-func (db *DB) GetNodeJobData(job JobMetadata, node string) (data JobData, err error) {
+func (db *DB) GetNodeJobData(job *JobMetadata, node string) (data JobData, err error) {
 	return db.getJobData(job, db.metrics, node)
 }
 
-func (db *DB) GetJobMetadataMetrics(job JobMetadata) (data []JobMetadataData, err error) {
+func (db *DB) GetJobMetadataMetrics(job *JobMetadata) (data []JobMetadataData, err error) {
 	var wg sync.WaitGroup
 	for _, m := range db.metrics {
 		wg.Add(1)
@@ -103,7 +103,7 @@ func (db *DB) GetJobMetadataMetrics(job JobMetadata) (data []JobMetadataData, er
 	return
 }
 
-func (db *DB) getJobData(job JobMetadata, metrics []MetricConfig, node string) (data JobData, err error) {
+func (db *DB) getJobData(job *JobMetadata, metrics []MetricConfig, node string) (data JobData, err error) {
 	if job.IsRunning {
 		return data, fmt.Errorf("job is still running")
 	}
@@ -144,7 +144,7 @@ func (db *DB) getJobData(job JobMetadata, metrics []MetricConfig, node string) (
 	return data, err
 }
 
-func (db *DB) query(metric MetricConfig, job JobMetadata, node string) (result map[string][]QueryResult, err error) {
+func (db *DB) query(metric MetricConfig, job *JobMetadata, node string) (result map[string][]QueryResult, err error) {
 	var queryResult *api.QueryTableResult
 	if metric.AggFn != "" && node == "" {
 		queryResult, err = db.queryAggregateMeasurement(metric, job)
@@ -172,7 +172,7 @@ func (db *DB) query(metric MetricConfig, job JobMetadata, node string) (result m
 	return result, err
 }
 
-func (db *DB) querySimpleMeasurement(metric MetricConfig, job JobMetadata, node string) (result *api.QueryTableResult, err error) {
+func (db *DB) querySimpleMeasurement(metric MetricConfig, job *JobMetadata, node string) (result *api.QueryTableResult, err error) {
 	nodeList := job.NodeList
 	if node != "" {
 		nodeList = node
@@ -217,7 +217,7 @@ func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (
 	return
 }
 
-func (db *DB) queryAggregateMeasurement(metric MetricConfig, job JobMetadata) (result *api.QueryTableResult, err error) {
+func (db *DB) queryAggregateMeasurement(metric MetricConfig, job *JobMetadata) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement + "_" + metric.AggFn
 	query := fmt.Sprintf(`
 		from(bucket: "%v")
@@ -233,7 +233,7 @@ func (db *DB) queryAggregateMeasurement(metric MetricConfig, job JobMetadata) (r
 	return
 }
 
-func (db *DB) queryQuantileMeasurement(metric MetricConfig, job JobMetadata, quantiles []string) (result *api.QueryTableResult, err error) {
+func (db *DB) queryQuantileMeasurement(metric MetricConfig, job *JobMetadata, quantiles []string) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement
 	if metric.AggFn != "" {
 		measurement += "_" + metric.AggFn
@@ -277,7 +277,7 @@ func quantileString(streamName string, q string, measurement string) string {
 		streamName, q, q, measurement)
 }
 
-func (db *DB) queryMetadataMeasurements(metric MetricConfig, job JobMetadata) (result *api.QueryTableResult, err error) {
+func (db *DB) queryMetadataMeasurements(metric MetricConfig, job *JobMetadata) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement
 	aggFn := "mean"
 	if metric.AggFn != "" {
