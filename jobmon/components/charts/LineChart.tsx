@@ -37,6 +37,7 @@ export interface LineChartProps<T> {
   colors?: string[] | readonly string[];
   fill?: string; // Fill area between fillBoundKeys
   fillBoundKeys?: [string, string]; // Fill the area between [lower, upper]
+  showTooltipSummary?: boolean;
 }
 
 // Typescript version based on chart released under:
@@ -75,6 +76,7 @@ export function LineChart<T>({
   colors = d3.schemeTableau10, // array of categorical colors
   fill = "#ff000020",
   fillBoundKeys,
+  showTooltipSummary = true,
 }: LineChartProps<T>) {
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -279,30 +281,43 @@ export function LineChart<T>({
         values.push(filteredData[idx * linePointCount + i]);
       }
       values.sort((a, b) => (y(a) < y(b) ? -1 : 1));
-      if (values.length > 10) {
-        for (let idx = 0; idx < 10; idx++) {
-          const val = idx < 5 ? values[idx] : values[values.length + idx - 10];
+
+      const addLine = (str: string) => {
+        const text = tooltip
+          .append("text")
+          .text(str)
+          .attr("transform", `translate(0, ${lastY})`);
+        lastY -= text.node()?.getBBox().height ?? 0;
+      };
+
+      if (showTooltipSummary) {
+        const pointValues = values.map((a) => y(a));
+        const sum = d3.sum(pointValues);
+        const max = y(values[values.length - 1]);
+        const min = y(values[0]);
+        const mean = d3.mean(pointValues);
+
+        addLine(`Min: ${min.toFixed(2)} ${unit}`);
+        addLine(`Mean: ${mean?.toFixed(2)} ${unit}`);
+        addLine(`Max: ${max.toFixed(2)} ${unit}`);
+        addLine(`Sum: ${sum.toFixed(2)} ${unit}`);
+      }
+      if (values.length > 6) {
+        for (let idx = 0; idx < 6; idx++) {
+          const val = idx < 3 ? values[idx] : values[values.length + idx - 6];
           if (!val) {
             continue;
           }
 
-          if (idx === 5) {
-            const text = tooltip
-              .append("text")
-              .text(`[${values.length - 10} more hidden]`)
-              .attr("transform", `translate(0, ${lastY})`);
-            lastY -= text.node()?.getBBox().height ?? 0;
+          if (idx === 3) {
+            addLine(`[${values.length - 10} more hidden]`);
           }
 
           let tooltipText = title(val);
           if (unit) {
             tooltipText += " " + unit;
           }
-          const text = tooltip
-            .append("text")
-            .text(tooltipText)
-            .attr("transform", `translate(0, ${lastY})`);
-          lastY -= text.node()?.getBBox().height ?? 0;
+          addLine(tooltipText);
         }
       } else {
         for (let idx = 0; idx < values.length; idx++) {
@@ -310,19 +325,12 @@ export function LineChart<T>({
           if (unit) {
             tooltipText += " " + unit;
           }
-          const text = tooltip
-            .append("text")
-            .text(tooltipText)
-            .attr("transform", `translate(0, ${lastY})`);
-          lastY -= text.node()?.getBBox().height ?? 0;
+          addLine(tooltipText);
         }
       }
 
       // Timestamp of current point
-      tooltip
-        .append("text")
-        .text(X[i].toLocaleString())
-        .attr("transform", `translate(0, ${lastY})`);
+      addLine(X[i].toLocaleString());
 
       // Layout & positioning
       tooltip.selectAll("text").attr("fill", "currentcolor");

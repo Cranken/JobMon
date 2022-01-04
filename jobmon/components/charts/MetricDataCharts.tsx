@@ -51,7 +51,7 @@ export const MetricDataCharts = ({
           +d._value === 0
             ? 0
             : d._value > 1
-            ? d._value
+            ? d._value.toFixed(2)
             : d._value.toFixed(
                 1 - Math.floor(Math.log(d._value) / Math.log(10))
               )
@@ -94,7 +94,7 @@ export const MetricDataCharts = ({
             +d._value === 0
               ? 0
               : d._value > 1
-              ? d._value
+              ? d._value.toFixed(2)
               : d._value.toFixed(
                   1 - Math.floor(Math.log(d._value) / Math.log(10))
                 )
