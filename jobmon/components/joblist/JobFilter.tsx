@@ -37,7 +37,7 @@ import style from "./JobFilter.module.css";
 type SetFn = (val: SelectionMap) => void;
 
 interface JobFilterProps {
-  userId: [string, Dispatch<SetStateAction<string>>];
+  userName: [string, Dispatch<SetStateAction<string>>];
   startTime: [Date, Dispatch<SetStateAction<Date>>];
   stopTime: [Date, Dispatch<SetStateAction<Date>>];
   numNodes: [number[], Dispatch<SetStateAction<number[]>>];
@@ -47,7 +47,7 @@ interface JobFilterProps {
 }
 
 export const JobFilter = ({
-  userId,
+  userName,
   startTime,
   stopTime,
   numNodes,
@@ -78,11 +78,11 @@ export const JobFilter = ({
             <TabPanel>
               <Stack>
                 <Input
-                  value={userId[0]}
+                  value={userName[0]}
                   placeholder="User Id"
                   maxW="15ch"
                   mr={5}
-                  onChange={(ev) => userId[1](ev.target.value)}
+                  onChange={(ev) => userName[1](ev.target.value)}
                 />
                 <Select
                   maxW="30ch"

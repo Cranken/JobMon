@@ -1,16 +1,22 @@
 export interface JobMetadata {
   Id: number;
-  UserId: string;
+  UserId: number;
+  UserName: string;
+  GroupId: number;
+  GroupName: string;
   ClusterId: string;
   NumNodes: number;
+  NumTasks: number;
+  TasksPerNode: number;
+  GPUsPerNode: number;
   NodeList: string;
   StartTime: number;
   StopTime: number;
   IsRunning: boolean;
-  JobScript: string;
-  ProjectId: string;
+  JobName: string;
+  Account: string;
   Partition: string;
-  NumGpu: number;
+  JobScript: string;
   Data: JobMetadataData[];
 }
 

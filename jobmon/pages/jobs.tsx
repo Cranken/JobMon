@@ -11,7 +11,7 @@ import { SelectionMap } from "./job/[id]";
 export const Jobs = () => {
   const router = useRouter();
   const jobListData = useGetJobs();
-  const [userId, setUserId] = useState("");
+  const [userName, setUserId] = useState("");
   const [startTime, setStartTime] = useState(new Date("2021-10-01"));
   const [stopTime, setStopTime] = useState(new Date());
   const [numNodes, setNumNodes] = useState([1, 192]);
@@ -64,7 +64,7 @@ export const Jobs = () => {
   elements.push(
     <JobFilter
       key="jobfilter"
-      userId={[userId, setUserId]}
+      userName={[userName, setUserId]}
       startTime={[startTime, setStartTime]}
       stopTime={[stopTime, setStopTime]}
       numNodes={[numNodes, setNumNodes]}
@@ -74,11 +74,11 @@ export const Jobs = () => {
     />
   );
   const filter = (job: JobMetadata) =>
-    job.UserId.startsWith(userId) &&
+    job.UserName.startsWith(userName) &&
     checkBetween(startTime, stopTime, new Date(job.StartTime * 1000)) &&
     checkBetween(numNodes[0], numNodes[1], job.NumNodes) &&
     (partition === "" ? true : partition === job.Partition) &&
-    checkBetween(numGpu[0], numGpu[1], job.NumGpu);
+    checkBetween(numGpu[0], numGpu[1], job.GPUsPerNode * job.NumNodes);
 
   const displayMetrics = Object.keys(metrics).filter((val) => metrics[val]);
 

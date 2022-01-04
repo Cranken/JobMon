@@ -14,7 +14,7 @@ export const JobInfo = ({ metadata, setChecked, nodes }: JobInfoProps) => {
     <Grid templateColumns="repeat(2, 1fr)" w="100%">
       <Stack>
         <Text>Id: {metadata.Id}</Text>
-        <Text>User: {metadata.UserId}</Text>
+        <Text>User: {metadata.UserName}</Text>
         <Text>
           Start: {new Date(metadata.StartTime * 1000).toLocaleString()}
         </Text>
