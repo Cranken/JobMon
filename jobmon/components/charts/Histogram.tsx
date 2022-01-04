@@ -63,9 +63,14 @@ export function Histogram<T>({
     if (!data || !svgRef.current) {
       return;
     }
-    const X = d3.map(data, x);
+    let X = d3.map(data, x);
     const Y = d3.map(data, y);
     const I = d3.range(X.length);
+
+    const max = d3.max(X) ?? 1;
+    X = d3.map(X, (val) => val / (max + 0.0000001));
+
+    xDomain = [0, 1];
 
     // Compute bins.
     const bins = d3
@@ -82,7 +87,10 @@ export function Histogram<T>({
     // Construct scales and axes.
     const xScale = d3.scaleLinear(xDomain, xRange);
     const yScale = d3.scaleLinear(yDomain, yRange);
-    const xAxis = d3.axisBottom(xScale).ticks(3, xFormat).tickSizeOuter(0);
+    const xAxis = d3
+      .axisBottom(xScale)
+      .ticks(4, d3.format(",%"))
+      .tickSizeOuter(0);
     const yAxis = d3.axisLeft(yScale).ticks(height / 40, yFormat);
     let yFormatFn = yScale.tickFormat(100, yFormat);
 
