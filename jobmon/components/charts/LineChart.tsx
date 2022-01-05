@@ -293,13 +293,9 @@ export function LineChart<T>({
       if (showTooltipSummary) {
         const pointValues = values.map((a) => y(a));
         const sum = d3.sum(pointValues);
-        const max = y(values[values.length - 1]);
-        const min = y(values[0]);
         const mean = d3.mean(pointValues);
 
-        addLine(`Min: ${min.toFixed(2)} ${unit}`);
         addLine(`Mean: ${mean?.toFixed(2)} ${unit}`);
-        addLine(`Max: ${max.toFixed(2)} ${unit}`);
         addLine(`Sum: ${sum.toFixed(2)} ${unit}`);
       }
       if (values.length > 6) {

@@ -74,6 +74,7 @@ export const QuantileDataCharts = ({
           }
           unit={metric.Config.Unit}
           yLabel={metric.Config.DisplayName}
+          showTooltipSummary={false}
         />
       </Flex>
     );
