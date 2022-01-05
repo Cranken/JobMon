@@ -89,8 +89,14 @@ export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
                 <Heading size="sm" textDecoration="underline">
                   {job.Id}
                 </Heading>
-                <Text>User: {job.UserId}</Text>
-                <Text>Nodes: {job.NumNodes}</Text>
+                <Text>User: {job.UserName}</Text>
+                <Text>Partition: {job.Partition}</Text>
+                <Stack direction="row" justify="space-between">
+                  <Text>Nodes: {job.NumNodes}</Text>
+                  {job.Partition === "accelerated" ? (
+                    <Text>GPUs: {job.GPUsPerNode * job.NumNodes}</Text>
+                  ) : null}
+                </Stack>
                 <Text>
                   Start: {new Date(job.StartTime * 1000).toLocaleString()}
                 </Text>
