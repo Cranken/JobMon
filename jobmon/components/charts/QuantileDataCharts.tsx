@@ -2,6 +2,7 @@ import { QuantileData } from "../../types/job";
 import { LineChart } from "./LineChart";
 import { QuantilePoint } from "./../../types/job";
 import { Center, Container, Flex, Grid, Spinner } from "@chakra-ui/react";
+import { Unit } from "./../../types/units";
 
 interface QuantileDataChartsProps {
   quantiles: QuantileData[] | undefined;
@@ -61,17 +62,10 @@ export const QuantileDataCharts = ({
           xDomain={xDomain}
           setTimeRange={setTimeRange}
           width={document.body.clientWidth / 2}
-          title={(d: QuantilePoint) =>
-            `${d._field}: ${
-              +d._value === 0
-                ? 0
-                : d._value > 1
-                ? d._value
-                : d._value.toFixed(
-                    1 - Math.floor(Math.log(d._value) / Math.log(10))
-                  )
-            }`
-          }
+          title={((unitStr: string) => {
+            return (d: QuantilePoint) =>
+              `${d._field}: ${new Unit(d._value, unitStr).toString()}`;
+          })(metric.Config.Unit)}
           unit={metric.Config.Unit}
           yLabel={metric.Config.DisplayName}
           showTooltipSummary={false}

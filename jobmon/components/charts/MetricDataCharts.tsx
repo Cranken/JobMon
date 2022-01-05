@@ -1,5 +1,6 @@
 import { Center, Flex, Grid, Spinner } from "@chakra-ui/react";
 import { MetricData, MetricPoint } from "../../types/job";
+import { Unit } from "../../types/units";
 import { LineChart } from "./LineChart";
 
 interface MetricDataChartsProps {
@@ -46,16 +47,10 @@ export const MetricDataCharts = ({
     let title;
     if (nodeSelection.length === 1 && metric.Config.Type !== "node") {
       z = (d: MetricPoint) => d["type-id"];
-      title = (d: MetricPoint) =>
-        `${d["type-id"]}: ${
-          +d._value === 0
-            ? 0
-            : d._value > 1
-            ? d._value.toFixed(2)
-            : d._value.toFixed(
-                1 - Math.floor(Math.log(d._value) / Math.log(10))
-              )
-        }`;
+      title = ((unitStr: string) => {
+        return (d: MetricPoint) =>
+          `${d["type-id"]}: ${new Unit(d._value, unitStr).toString()}`;
+      })(metric.Config.Unit);
       const pThreadCount = Object.keys(metric.Data).length / 2;
       for (const node of Object.keys(metric.Data)) {
         if (metric.Config.Type === "cpu") {
@@ -88,18 +83,10 @@ export const MetricDataCharts = ({
       z = ((key: keyof MetricPoint) => {
         return (d: MetricPoint) => d[key]?.toString() ?? "";
       })(key);
-      title = ((key: keyof MetricPoint) => {
+      title = ((key: keyof MetricPoint, unitStr: string) => {
         return (d: MetricPoint) =>
-          `${d[key]}: ${
-            +d._value === 0
-              ? 0
-              : d._value > 1
-              ? d._value.toFixed(2)
-              : d._value.toFixed(
-                  1 - Math.floor(Math.log(d._value) / Math.log(10))
-                )
-          }`;
-      })(key);
+          `${d[key]}: ${new Unit(d._value, unitStr).toString()}`;
+      })(key, metric.Config.Unit);
       for (const node of Object.keys(metric.Data)) {
         if (key !== "hostname" || nodeSelection.indexOf(node) > -1) {
           metricData = metricData.concat(metric.Data[node]);

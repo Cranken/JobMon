@@ -3,6 +3,7 @@ import * as d3 from "d3";
 import React, { useEffect, useState } from "react";
 import { useRef } from "react";
 import { isDate } from "util";
+import { Unit } from "../../types/units";
 import { checkBetween, clamp } from "./../../utils/utils";
 
 export interface LineChartProps<T> {
@@ -295,8 +296,8 @@ export function LineChart<T>({
         const sum = d3.sum(pointValues);
         const mean = d3.mean(pointValues);
 
-        addLine(`Mean: ${mean?.toFixed(2)} ${unit}`);
-        addLine(`Sum: ${sum.toFixed(2)} ${unit}`);
+        addLine(`Mean: ${mean ? new Unit(mean, unit ?? "").toString() : 0}`);
+        addLine(`Sum: ${new Unit(sum, unit ?? "").toString()}`);
       }
       if (values.length > 6) {
         for (let idx = 0; idx < 6; idx++) {
@@ -310,17 +311,11 @@ export function LineChart<T>({
           }
 
           let tooltipText = title(val);
-          if (unit) {
-            tooltipText += " " + unit;
-          }
           addLine(tooltipText);
         }
       } else {
         for (let idx = 0; idx < values.length; idx++) {
           let tooltipText = title(values[idx]);
-          if (unit) {
-            tooltipText += " " + unit;
-          }
           addLine(tooltipText);
         }
       }
