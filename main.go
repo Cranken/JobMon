@@ -76,7 +76,6 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	db.RunTasks()
 	if config.Prefetch {
 		go func() {
-			time.Sleep(10 * time.Second)
 			jobCache.Get(&jobMetadata)
 		}()
 	}

@@ -129,10 +129,7 @@ func (s *Store) StopJob(id int, stopJob StopJob) JobMetadata {
 	job.IsRunning = false
 	s.Jobs[id] = job
 	s.mut.Unlock()
-	go func() {
-		time.Sleep(10 * time.Second)
-		s.addDataToIncompleteJobs()
-	}()
+	s.addDataToIncompleteJobs()
 	return s.Jobs[id]
 }
 
