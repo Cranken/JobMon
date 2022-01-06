@@ -63,7 +63,12 @@ export const MetricDataCharts = ({
             const hThreadData = metric.Data[hThread];
             const aggPoints = pThreadData.map((val, idx) => {
               let aggThread = Object.assign({}, val);
-              aggThread._value += hThreadData.at(idx)?._value ?? 0;
+              if (metric.Config.PThreadAggFn === "mean") {
+                aggThread._value += hThreadData.at(idx)?._value ?? 0;
+                aggThread._value /= 2;
+              } else {
+                aggThread._value += hThreadData.at(idx)?._value ?? 0;
+              }
               return aggThread;
             });
             metricData = metricData.concat(aggPoints);

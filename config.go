@@ -39,6 +39,7 @@ type MetricConfig struct {
 	SeparationKey  string
 	MaxPerNode     string
 	MaxPerType     string
+	PThreadAggFn   string
 }
 
 type LocalUser struct {
