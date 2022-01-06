@@ -38,7 +38,7 @@ export function Histogram<T>({
   data,
   x = () => 1, // given d in data, returns the (quantitative) x-value
   y = () => 1, // given d in data, returns the (quantitative) weight
-  thresholds = 5, // approximate number of bins to generate, or threshold function
+  thresholds = 4, // approximate number of bins to generate, or threshold function
   marginTop = 20, // top margin, in pixels
   marginRight = 30, // right margin, in pixels
   marginBottom = 30, // bottom margin, in pixels
@@ -47,7 +47,7 @@ export function Histogram<T>({
   height = 400, // outer height of chart, in pixels
   insetLeft = 0.5, // inset left edge of bar
   insetRight = 0.5, // inset right edge of bar
-  xDomain, // [xmin, xmax]
+  xDomain = [0, 1], // [xmin, xmax]
   xRange = [marginLeft, width - marginRight], // [left, right]
   xLabel = "Bins", // a label for the x-axis
   xFormat, // a format specifier string for the x-axis
@@ -67,15 +67,17 @@ export function Histogram<T>({
     const Y = d3.map(data, y);
     const I = d3.range(X.length);
 
-    const max = d3.max(X) ?? 1;
-    X = d3.map(X, (val) => val / (max + 0.0000001));
+    let max = d3.max(X) ?? 1;
+    max = max < xDomain[1] ? xDomain[1] : max;
+    X = d3.map(X, (val) => val / (max + 0.0001));
 
     xDomain = [0, 1];
 
     // Compute bins.
     const bins = d3
       .bin()
-      .thresholds(thresholds)
+      .domain(xDomain)
+      .thresholds([0, 0.2, 0.4, 0.6, 0.8, 1.0])
       .value((i) => X[i])(I);
 
     // Compute default domains.
@@ -89,7 +91,7 @@ export function Histogram<T>({
     const yScale = d3.scaleLinear(yDomain, yRange);
     const xAxis = d3
       .axisBottom(xScale)
-      .ticks(4, d3.format(",%"))
+      .ticks(5, d3.format(",%"))
       .tickSizeOuter(0);
     const yAxis = d3.axisLeft(yScale).ticks(height / 40, yFormat);
     let yFormatFn = yScale.tickFormat(100, yFormat);

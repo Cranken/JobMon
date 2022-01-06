@@ -65,13 +65,14 @@ export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
   if (job.IsRunning) {
     histogramAvailable = false;
     reason = "Job is still running. No metric data available yet.";
-  } else if (job.NumNodes <= 1) {
-    histogramAvailable = false;
-    reason = "No histogram available for jobs with less than two nodes.";
-  } else if (job.StopTime - job.StartTime < 300) {
-    histogramAvailable = false;
-    reason = "No histogram available for short jobs (<5Min).";
   }
+  // } else if (job.NumNodes <= 1) {
+  //   histogramAvailable = false;
+  //   reason = "No histogram available for jobs with less than two nodes.";
+  // } else if (job.StopTime - job.StartTime < 300) {
+  //   histogramAvailable = false;
+  //   reason = "No histogram available for short jobs (<5Min).";
+  // }
 
   return (
     <LinkBox>
@@ -140,6 +141,7 @@ export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
                       height={180}
                       yLabel="Number of Nodes"
                       xLabel={dat.Config.DisplayName}
+                      xDomain={[0, dat.Config.MaxPerNode]}
                     />
                   </Center>
                 ))}

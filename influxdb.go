@@ -279,9 +279,7 @@ func quantileString(streamName string, q string, measurement string) string {
 
 func (db *DB) queryMetadataMeasurements(metric MetricConfig, job *JobMetadata) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement
-	aggFn := "mean"
 	if metric.AggFn != "" {
-		aggFn = metric.AggFn
 		measurement += "_" + metric.AggFn
 	}
 	query := fmt.Sprintf(`
@@ -291,7 +289,7 @@ func (db *DB) queryMetadataMeasurements(metric MetricConfig, job *JobMetadata) (
 		|> filter(fn: (r) => r["hostname"] =~ /%v/)
 		|> %v(column: "_value")
     |> group()
-	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, aggFn)
+	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, "mean")
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		log.Printf("Error at metadata query: %v\n", err)

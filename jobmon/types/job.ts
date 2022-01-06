@@ -46,8 +46,8 @@ export interface MetricConfig {
   Unit: string;
   DisplayName: string;
   SeparationKey: string;
-  MaxPerNode: string;
-  MaxPerType: string;
+  MaxPerNode: number;
+  MaxPerType: number;
   PThreadAggFn: PThreadAggFn;
 }
 

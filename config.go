@@ -37,8 +37,8 @@ type MetricConfig struct {
 	DisplayName    string
 	PostQueryOp    string
 	SeparationKey  string
-	MaxPerNode     string
-	MaxPerType     string
+	MaxPerNode     int
+	MaxPerType     int
 	PThreadAggFn   string
 }
 
