@@ -87,10 +87,10 @@ export class Unit {
         const prefix = Prefixes[bestPrefix];
         const exp = Math.pow(10, prefix.Exp);
         const value = this.value / exp;
-        return `${value} ${prefix.Short}${this.type.DisplayFormat}`;
+        return `${value.toFixed(2)} ${prefix.Short}${this.type.DisplayFormat}`;
       }
     }
-    return `${this.value} ${this.type.DisplayFormat}`;
+    return `${this.value.toFixed(2)} ${this.type.DisplayFormat}`;
   }
 }
 
