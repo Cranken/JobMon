@@ -20,7 +20,7 @@ import {
 } from "@chakra-ui/react";
 import { JobInfo } from "../../components/jobview/JobInfo";
 import { useCookies } from "react-cookie";
-import AnalysisPlots from "./../../components/charts/AnalysisCharts";
+import AnalysisPlots from "../../components/jobview/AnalysisView";
 
 export type SelectionMap = { [key: string]: boolean };
 
