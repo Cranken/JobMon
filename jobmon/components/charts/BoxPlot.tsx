@@ -1,11 +1,13 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import * as d3 from "d3";
 import { useEffect, useRef } from "react";
+import { Unit } from "../../types/units";
 
 export interface BoxPlotProps<T> {
   data: T[];
   x?: (d: T) => number; // given d in data, returns the (quantitative) x-value
   y?: (d: T) => number; // given d in data, returns the (quantitative) weight
+  unit?: string;
   thresholds?: number; // approximate number of bins to generate, or threshold function
   marginTop?: number; // top margin, in pixels
   marginRight?: number; // right margin, in pixels
@@ -40,11 +42,12 @@ export function BoxPlot<T>({
   data,
   x = () => 1, // given d in data, returns the (quantitative) x-value
   y = () => 1, // given d in data, returns the (quantitative) weight
+  unit = "",
   thresholds = 5, // approximate number of bins to generate, or threshold function
   marginTop = 20, // top margin, in pixels
-  marginRight = 30, // right margin, in pixels
+  marginRight = 10, // right margin, in pixels
   marginBottom = 30, // bottom margin, in pixels
-  marginLeft = 40, // left margin, in pixels
+  marginLeft = 80, // left margin, in pixels
   width = 640, // outer width of chart, in pixels
   height = 400, // outer height of chart, in pixels
   inset = 0.5, // left and right inset
@@ -118,7 +121,10 @@ export function BoxPlot<T>({
       .interpolate(d3.interpolateRound);
     const yScale = d3.scaleLinear(yDomain, yRange);
     const xAxis = d3.axisBottom(xScale).ticks(0, xFormat).tickSizeOuter(0);
-    const yAxis = d3.axisLeft(yScale).ticks(height / 40, yFormat);
+    const yAxis = d3
+      .axisLeft<number>(yScale)
+      .ticks(height / 40)
+      .tickFormat((val) => new Unit(val, unit).toString());
 
     const svg = d3
       .select(svgRef.current)

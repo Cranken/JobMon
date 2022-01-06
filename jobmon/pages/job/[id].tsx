@@ -10,7 +10,6 @@ import Control from "../../components/jobview/ViewControl";
 import {
   Box,
   Center,
-  Flex,
   Grid,
   Spinner,
   Tab,
@@ -18,11 +17,10 @@ import {
   TabPanel,
   TabPanels,
   Tabs,
-  useColorModeValue,
 } from "@chakra-ui/react";
 import { JobInfo } from "../../components/jobview/JobInfo";
-import { BoxPlot } from "../../components/charts/BoxPlot";
 import { useCookies } from "react-cookie";
+import AnalysisPlots from "./../../components/charts/AnalysisCharts";
 
 export type SelectionMap = { [key: string]: boolean };
 
@@ -36,7 +34,6 @@ const Job: NextPage = () => {
   const [startTime, setStartTime] = useState<Date>(new Date());
   const [stopTime, setStopTime] = useState<Date>(new Date());
   const [showQuantiles, setShowQuantiles] = useState(true);
-  const fillColor = useColorModeValue("#ddd", "#727272");
 
   const generateChartsMemo = useMemo(() => {
     const setTimeRange = (start: Date, end: Date) => {
@@ -143,20 +140,7 @@ const Job: NextPage = () => {
         <TabPanels>
           <TabPanel>{generateChartsMemo}</TabPanel>
           <TabPanel>
-            <Flex>
-              {data.Metadata.Data
-                ? data.Metadata.Data.map((val) => (
-                    <BoxPlot
-                      key={val.Config.Measurement}
-                      data={val.Data}
-                      y={(dat) => dat}
-                      width={window.document.body.clientWidth / 6}
-                      yLabel={val.Config.DisplayName}
-                      fill={fillColor}
-                    />
-                  ))
-                : null}
-            </Flex>
+            <AnalysisPlots data={data}></AnalysisPlots>
           </TabPanel>
         </TabPanels>
       </Tabs>

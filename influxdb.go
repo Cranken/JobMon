@@ -32,7 +32,7 @@ type MetricData struct {
 
 type JobMetadataData struct {
 	Config MetricConfig
-	Data   []float64
+	Data   map[string]float64
 }
 
 type QuantileData struct {
@@ -90,10 +90,10 @@ func (db *DB) GetJobMetadataMetrics(job *JobMetadata) (data []JobMetadataData, e
 				log.Printf("could not parse metadata data %v", err)
 				return
 			}
-			var tempData []float64
+			tempData := make(map[string]float64)
 			for _, v := range result {
 				for _, qr := range v {
-					tempData = append(tempData, qr["_value"].(float64))
+					tempData[qr["hostname"].(string)] = qr["_value"].(float64)
 				}
 			}
 			data = append(data, JobMetadataData{Config: m, Data: tempData})

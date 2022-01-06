@@ -75,18 +75,18 @@ export interface QuantilePoint {
 }
 
 export interface DataMap<T> {
-  [key: string]: T[];
+  [key: string]: T;
 }
 
 export interface MetricData {
   Config: MetricConfig;
-  Data: DataMap<MetricPoint>;
+  Data: DataMap<MetricPoint[]>;
 }
 
 export interface QuantileData {
   Config: MetricConfig;
   Quantiles: string[];
-  Data: DataMap<QuantilePoint>;
+  Data: DataMap<QuantilePoint[]>;
 }
 
 export interface JobData {
@@ -94,8 +94,7 @@ export interface JobData {
   MetricData: MetricData[];
   QuantileData: QuantileData[];
 }
-
 export interface JobMetadataData {
   Config: MetricConfig;
-  Data: number[];
+  Data: DataMap<number>;
 }
