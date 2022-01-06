@@ -134,7 +134,7 @@ export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
                     height="100%"
                   >
                     <Histogram
-                      data={dat.Data}
+                      data={Object.values(dat.Data)}
                       x={(d) => d}
                       width={1280 / 4}
                       height={180}
