@@ -55,9 +55,9 @@ export function LineChart<T>({
   defined = (_) => true, // for gaps in data
   curve = d3.curveLinear, // method of interpolation between points
   marginTop = 20, // top margin, in pixels
-  marginRight = 50, // right margin, in pixels
+  marginRight = 10, // right margin, in pixels
   marginBottom = 30, // bottom margin, in pixels
-  marginLeft = 50, // left margin, in pixels
+  marginLeft = 90, // left margin, in pixels
   width = 1200, // outer width, in pixels
   height = 400, // outer height, in pixels
   xDomain, // [xmin, xmax]
@@ -131,7 +131,10 @@ export function LineChart<T>({
       // .ticks(width / 80)
       .tickSizeOuter(0)
       .tickFormat((val) => val.toLocaleTimeString());
-    const yAxis = d3.axisLeft(yScale).ticks(height / 40, yFormat);
+    const yAxis = d3
+      .axisLeft<number>(yScale)
+      .ticks(height / 40)
+      .tickFormat((val) => new Unit(val, unit ?? "").toString());
 
     // Construct a line generator.
     const line = d3
