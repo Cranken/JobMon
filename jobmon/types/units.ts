@@ -26,6 +26,10 @@ const Units: UnitsType = {
     DisplayFormat: "B/s",
     UsePrefix: true,
   },
+  Byte: {
+    DisplayFormat: "B",
+    UsePrefix: true,
+  },
   Percentage: {
     DisplayFormat: "%",
     UsePrefix: false,
