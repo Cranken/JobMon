@@ -26,6 +26,10 @@ const Units: UnitsType = {
     DisplayFormat: "B/s",
     UsePrefix: true,
   },
+  Percentage: {
+    DisplayFormat: "%",
+    UsePrefix: false,
+  },
   None: {
     DisplayFormat: "",
     UsePrefix: false,
@@ -35,6 +39,7 @@ const Units: UnitsType = {
 interface Prefix {
   Short: string;
   Exp: number;
+  Base: number;
 }
 
 interface PrefixesType {
@@ -45,22 +50,47 @@ const Prefixes: PrefixesType = {
   kilo: {
     Short: "k",
     Exp: 3,
+    Base: 10,
   },
   mega: {
     Short: "M",
     Exp: 6,
+    Base: 10,
   },
   giga: {
     Short: "G",
     Exp: 9,
+    Base: 10,
   },
   tera: {
     Short: "T",
     Exp: 12,
+    Base: 10,
+  },
+  kibi: {
+    Short: "Ki",
+    Exp: 10,
+    Base: 2,
+  },
+  mebi: {
+    Short: "Mi",
+    Exp: 10,
+    Base: 2,
+  },
+  gibi: {
+    Short: "Gi",
+    Exp: 10,
+    Base: 2,
+  },
+  tebi: {
+    Short: "Ti",
+    Exp: 10,
+    Base: 2,
   },
   None: {
     Short: "",
     Exp: 0,
+    Base: 10,
   },
 };
 
@@ -70,7 +100,7 @@ export class Unit {
   constructor(val: number, unit: string) {
     const baseUnit = getBaseUnit(unit);
     const prefix = getPrefix(unit, baseUnit);
-    const exp = Math.pow(10, prefix.Exp);
+    const exp = Math.pow(prefix.Base, prefix.Exp);
 
     this.value = val * exp;
     this.type = baseUnit;
@@ -79,13 +109,13 @@ export class Unit {
   toString() {
     if (this.type.UsePrefix) {
       const bestPrefix = Object.keys(Prefixes).find((key) => {
-        const exp = Math.pow(10, Prefixes[key].Exp);
+        const exp = Math.pow(Prefixes[key].Base, Prefixes[key].Exp);
         const value = this.value / exp;
         return 1 <= value && value < 1000;
       });
       if (bestPrefix) {
         const prefix = Prefixes[bestPrefix];
-        const exp = Math.pow(10, prefix.Exp);
+        const exp = Math.pow(prefix.Base, prefix.Exp);
         const value = this.value / exp;
         return `${value.toFixed(2)} ${prefix.Short}${this.type.DisplayFormat}`;
       }
@@ -107,10 +137,8 @@ const getPrefix = (str: string, type: UnitType) => {
     if (typeIdx === -1) {
       return Prefixes.None;
     }
-    const potentialPrefixIdx = typeIdx === 0 ? 0 : typeIdx - 1;
-    const potentialPrefix = str.at(potentialPrefixIdx);
-    const prefix = Object.keys(Prefixes).find(
-      (val) => potentialPrefix === Prefixes[val].Short
+    const prefix = Object.keys(Prefixes).find((key) =>
+      str.includes(`${Prefixes[key].Short}${type.DisplayFormat}`)
     );
     return prefix ? Prefixes[prefix] : Prefixes.None;
   }
