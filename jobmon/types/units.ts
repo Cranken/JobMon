@@ -78,17 +78,17 @@ const Prefixes: PrefixesType = {
   },
   mebi: {
     Short: "Mi",
-    Exp: 10,
+    Exp: 20,
     Base: 2,
   },
   gibi: {
     Short: "Gi",
-    Exp: 10,
+    Exp: 30,
     Base: 2,
   },
   tebi: {
     Short: "Ti",
-    Exp: 10,
+    Exp: 40,
     Base: 2,
   },
   None: {
