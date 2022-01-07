@@ -14,9 +14,10 @@ import { Unit } from "../../types/units";
 
 interface AnalysisBoxPlotProps {
   data?: JobData;
+  autoScale: boolean;
 }
 
-export const AnalysisBoxPlot = ({ data }: AnalysisBoxPlotProps) => {
+export const AnalysisBoxPlot = ({ data, autoScale }: AnalysisBoxPlotProps) => {
   const fillColor = useColorModeValue("#ddd", "#727272");
   if (!data) {
     return null;
@@ -33,6 +34,8 @@ export const AnalysisBoxPlot = ({ data }: AnalysisBoxPlotProps) => {
         yLabel={val.Config.DisplayName}
         fill={fillColor}
         unit={val.Config.Unit}
+        yDomain={[0, val.Config.MaxPerNode]}
+        autoScale={autoScale}
       />
     );
   });
@@ -77,8 +80,9 @@ export const AnalysisTableView = ({ data }: AnalysisTableViewProps) => {
 
 interface AnalysisPlotsProps {
   data?: JobData;
+  autoScale: boolean;
 }
-export const AnalysisPlots = ({ data }: AnalysisPlotsProps) => {
+export const AnalysisPlots = ({ data, autoScale }: AnalysisPlotsProps) => {
   if (!data) {
     return null;
   }
@@ -87,7 +91,7 @@ export const AnalysisPlots = ({ data }: AnalysisPlotsProps) => {
   );
   return (
     <>
-      <AnalysisBoxPlot data={data}></AnalysisBoxPlot>
+      <AnalysisBoxPlot data={data} autoScale={autoScale}></AnalysisBoxPlot>
       <AnalysisTableView data={data}></AnalysisTableView>
     </>
   );

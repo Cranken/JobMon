@@ -32,6 +32,7 @@ export interface BoxPlotProps<T> {
   insetRight?: number; // inset right edge of bar
   fill?: string; // fill color of boxes
   jitter?: number; // amount of random jitter for outlier dots, in pixels
+  autoScale?: boolean;
 }
 
 // Typescript version based on chart released under:
@@ -64,6 +65,7 @@ export function BoxPlot<T>({
   stroke = "currentColor", // stroke color of whiskers, median, outliers
   fill = "#ddd", // fill color of boxes
   jitter = 4, // amount of random jitter for outlier dots, in pixels
+  autoScale = true,
 }: BoxPlotProps<T>) {
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -109,7 +111,7 @@ export function BoxPlot<T>({
 
     // Compute default domains.
     if (xDomain === undefined) xDomain = [0, 1];
-    if (yDomain === undefined)
+    if (yDomain === undefined || yDomain[1] === 0 || autoScale)
       yDomain = [
         (d3.min(I, (d) => Y[d]) ?? 0) * 0.85,
         (d3.max(I, (d) => Y[d]) ?? 0) * 1.15,

@@ -34,33 +34,11 @@ const Job: NextPage = () => {
   const [startTime, setStartTime] = useState<Date>(new Date());
   const [stopTime, setStopTime] = useState<Date>(new Date());
   const [showQuantiles, setShowQuantiles] = useState(true);
-
-  const generateChartsMemo = useMemo(() => {
-    const setTimeRange = (start: Date, end: Date) => {
-      setStartTime(start);
-      setStopTime(end);
-    };
-    return showQuantiles ? (
-      <QuantileDataCharts
-        key="quantile-charts"
-        quantiles={data?.QuantileData}
-        startTime={startTime}
-        stopTime={stopTime}
-        setTimeRange={setTimeRange}
-        isLoading={isLoading}
-      />
-    ) : (
-      <MetricDataCharts
-        key="metric-charts"
-        metrics={data?.MetricData}
-        nodeSelection={selected}
-        startTime={startTime}
-        stopTime={stopTime}
-        setTimeRange={setTimeRange}
-        isLoading={isLoading}
-      />
-    );
-  }, [data, selected, startTime, stopTime, showQuantiles, isLoading]);
+  const [autoScale, setAutoscale] = useState(true);
+  const setTimeRange = (start: Date, end: Date) => {
+    setStartTime(start);
+    setStopTime(end);
+  };
 
   useEffect(() => {
     if (data?.Metadata.NodeList !== undefined) {
@@ -129,18 +107,44 @@ const Job: NextPage = () => {
           stopTime={stopTime}
           showQuantiles={showQuantiles}
           setShowQuantiles={setShowQuantiles}
+          autoScale={autoScale}
+          setAutoScale={setAutoscale}
         />
       </Grid>
-      <Tabs>
+      <Tabs isLazy>
         <TabList>
           <Tab>Timeline</Tab>
           <Tab>Analysis</Tab>
         </TabList>
 
         <TabPanels>
-          <TabPanel>{generateChartsMemo}</TabPanel>
+          {/* <TabPanel>{generateChartsMemo}</TabPanel> */}
           <TabPanel>
-            <AnalysisPlots data={data}></AnalysisPlots>
+            {showQuantiles ? (
+              <QuantileDataCharts
+                key="quantile-charts"
+                quantiles={data?.QuantileData}
+                startTime={startTime}
+                stopTime={stopTime}
+                setTimeRange={setTimeRange}
+                isLoading={isLoading}
+                autoScale={autoScale}
+              />
+            ) : (
+              <MetricDataCharts
+                key="metric-charts"
+                metrics={data?.MetricData}
+                nodeSelection={selected}
+                startTime={startTime}
+                stopTime={stopTime}
+                setTimeRange={setTimeRange}
+                isLoading={isLoading}
+                autoScale={autoScale}
+              />
+            )}
+          </TabPanel>
+          <TabPanel>
+            <AnalysisPlots data={data} autoScale={autoScale}></AnalysisPlots>
           </TabPanel>
         </TabPanels>
       </Tabs>

@@ -10,6 +10,7 @@ interface QuantileDataChartsProps {
   stopTime?: Date;
   setTimeRange?: (start: Date, end: Date) => void;
   isLoading: boolean;
+  autoScale: boolean;
 }
 
 export const QuantileDataCharts = ({
@@ -18,6 +19,7 @@ export const QuantileDataCharts = ({
   stopTime,
   setTimeRange,
   isLoading,
+  autoScale,
 }: QuantileDataChartsProps) => {
   if (!quantiles) {
     return <div>No quantiles</div>;
@@ -45,6 +47,13 @@ export const QuantileDataCharts = ({
     for (const quantile of Object.keys(metric.Data)) {
       metricData = metricData.concat(metric.Data[quantile]);
     }
+    let yDomain: [number, number] | undefined = undefined;
+    if (!autoScale) {
+      const max = metric.Config.MaxPerNode;
+      if (max !== 0) {
+        yDomain = [0, max];
+      }
+    }
 
     chartElements.push(
       <Flex
@@ -69,6 +78,7 @@ export const QuantileDataCharts = ({
           unit={metric.Config.Unit}
           yLabel={metric.Config.DisplayName}
           showTooltipSummary={false}
+          yDomain={yDomain}
         />
       </Flex>
     );

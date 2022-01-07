@@ -1,4 +1,4 @@
-import { Button, Flex } from "@chakra-ui/react";
+import { Button, Flex, Stack } from "@chakra-ui/react";
 import React from "react";
 import { JobMetadata } from "../../types/job";
 import TimeControl from "./TimeControl";
@@ -11,6 +11,8 @@ interface ControlProps {
   setStopTime: (t: Date) => void;
   showQuantiles: boolean;
   setShowQuantiles: (b: boolean) => void;
+  autoScale: boolean;
+  setAutoScale: (b: boolean) => void;
 }
 
 export const ViewControl = ({
@@ -21,9 +23,11 @@ export const ViewControl = ({
   setStopTime,
   showQuantiles,
   setShowQuantiles,
+  autoScale,
+  setAutoScale,
 }: ControlProps) => {
   return (
-    <Flex>
+    <Stack>
       <TimeControl
         metadata={metadata}
         startTime={startTime}
@@ -31,10 +35,15 @@ export const ViewControl = ({
         setStartTime={setStartTime}
         setStopTime={setStopTime}
       />
-      <Button fontSize="sm" onClick={() => setShowQuantiles(!showQuantiles)}>
-        Toggle Quantile View
-      </Button>
-    </Flex>
+      <Stack direction="row" gap={1}>
+        <Button fontSize="sm" onClick={() => setShowQuantiles(!showQuantiles)}>
+          Toggle Quantile View
+        </Button>
+        <Button fontSize="sm" onClick={() => setAutoScale(!autoScale)}>
+          Toggle Automatic Scaling
+        </Button>
+      </Stack>
+    </Stack>
   );
 };
 

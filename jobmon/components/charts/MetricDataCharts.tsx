@@ -10,6 +10,7 @@ interface MetricDataChartsProps {
   stopTime?: Date;
   setTimeRange?: (start: Date, end: Date) => void;
   isLoading: boolean;
+  autoScale: boolean;
 }
 
 export const MetricDataCharts = ({
@@ -19,6 +20,7 @@ export const MetricDataCharts = ({
   stopTime,
   setTimeRange,
   isLoading,
+  autoScale,
 }: MetricDataChartsProps) => {
   if (!metrics) {
     return <div>No metrics</div>;
@@ -98,6 +100,16 @@ export const MetricDataCharts = ({
         }
       }
     }
+    let yDomain: [number, number] | undefined = undefined;
+    if (!autoScale) {
+      const max =
+        nodeSelection.length === 1
+          ? metric.Config.MaxPerType
+          : metric.Config.MaxPerNode;
+      if (max !== 0) {
+        yDomain = [0, max];
+      }
+    }
 
     chartElements.push(
       <Flex
@@ -118,6 +130,7 @@ export const MetricDataCharts = ({
           title={title}
           unit={metric.Config.Unit}
           yLabel={metric.Config.DisplayName}
+          yDomain={yDomain}
         />
       </Flex>
     );
