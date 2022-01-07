@@ -84,7 +84,18 @@ func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	// Get all for now
 	jobs := store.GetAll()
 
-	jobListData := JobListData{Jobs: jobs, Config: JobListConfig{Metrics: config.Metrics, Partitions: config.Partitions}}
+	metrics := make(map[string]struct{})
+	for _, v := range config.Metrics {
+		for _, mc := range v {
+			metrics[mc.Measurement] = struct{}{}
+		}
+	}
+	keys := make([]string, 0, len(metrics))
+	for k := range metrics {
+		keys = append(keys, k)
+	}
+
+	jobListData := JobListData{Jobs: jobs, Config: JobListConfig{Metrics: keys, Partitions: config.Partitions}}
 	data, err := json.Marshal(&jobListData)
 	if err != nil {
 		log.Printf("Could not marshal jobs to json")

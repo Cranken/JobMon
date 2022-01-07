@@ -16,7 +16,7 @@ type Configuration struct {
 	DBOrg           string
 	DBBucket        string
 	DefaultTTL      int
-	Metrics         []MetricConfig
+	Metrics         map[string][]MetricConfig
 	CacheSize       int
 	Prefetch        bool
 	SampleInterval  string

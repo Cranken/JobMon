@@ -41,7 +41,7 @@ type JobListData struct {
 }
 
 type JobListConfig struct {
-	Metrics    []MetricConfig
+	Metrics    []string
 	Partitions []string
 }
 

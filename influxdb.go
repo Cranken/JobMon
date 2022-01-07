@@ -20,7 +20,7 @@ type DB struct {
 	tasks                 []domain.Task
 	org                   string
 	bucket                string
-	metrics               []MetricConfig
+	metrics               map[string][]MetricConfig
 	defaultSampleInterval string
 	metricQuantiles       []string
 }
@@ -67,16 +67,16 @@ func (db *DB) Close() {
 }
 
 func (db *DB) GetJobData(job *JobMetadata) (data JobData, err error) {
-	return db.getJobData(job, db.metrics, "")
+	return db.getJobData(job, db.metrics[job.Partition], "")
 }
 
 func (db *DB) GetNodeJobData(job *JobMetadata, node string) (data JobData, err error) {
-	return db.getJobData(job, db.metrics, node)
+	return db.getJobData(job, db.metrics[job.Partition], node)
 }
 
 func (db *DB) GetJobMetadataMetrics(job *JobMetadata) (data []JobMetadataData, err error) {
 	var wg sync.WaitGroup
-	for _, m := range db.metrics {
+	for _, m := range db.metrics[job.Partition] {
 		wg.Add(1)
 		go func(m MetricConfig) {
 			defer wg.Done()
@@ -335,19 +335,21 @@ func (db *DB) updateAggregationTasks() (err error) {
 	}
 
 	missingMetricTasks := []MetricConfig{}
-	for _, metric := range db.metrics {
-		if metric.AggFn != "" {
-			name := metric.Measurement + "_" + metric.AggFn
-			found := false
-			for _, task := range tasks {
-				if task.Name == name {
-					db.tasks = append(db.tasks, task)
-					found = true
-					break
+	for _, partition := range db.metrics {
+		for _, metric := range partition {
+			if metric.AggFn != "" {
+				name := metric.Measurement + "_" + metric.AggFn
+				found := false
+				for _, task := range tasks {
+					if task.Name == name {
+						db.tasks = append(db.tasks, task)
+						found = true
+						break
+					}
 				}
-			}
-			if !found {
-				missingMetricTasks = append(missingMetricTasks, metric)
+				if !found {
+					missingMetricTasks = append(missingMetricTasks, metric)
+				}
 			}
 		}
 	}

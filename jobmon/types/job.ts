@@ -26,7 +26,7 @@ export interface JobListData {
 }
 
 export interface JobListConfig {
-  Metrics: MetricConfig[];
+  Metrics: string[];
   Partitions: string[];
 }
 

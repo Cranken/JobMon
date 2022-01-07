@@ -28,9 +28,7 @@ export const Jobs = () => {
 
   useEffect(() => {
     let newMetrics: SelectionMap = {};
-    jobListData?.Config.Metrics.forEach(
-      (val) => (newMetrics[val.Measurement] = false)
-    );
+    jobListData?.Config.Metrics.forEach((val) => (newMetrics[val] = false));
     const savedMetrics = localStorage.getItem("displayMetrics")?.split(",");
     if (savedMetrics) {
       savedMetrics.forEach((val) => (newMetrics[val] = true));
