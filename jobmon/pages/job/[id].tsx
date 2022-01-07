@@ -190,9 +190,13 @@ export const useGetJobData: (
       if (!res.ok && (res.status === 401 || res.status === 403)) {
         removeCookie("Authorization");
       } else {
-        res.json().then((data) => {
+        res.json().then((data: JobData) => {
           setJobCache((prevState) => {
-            prevState[node ? node : "all"] = data;
+            let key = node;
+            if (data.Metadata.NumNodes === 1) {
+              key = data.Metadata.NodeList;
+            }
+            prevState[key ? key : "all"] = data;
             return prevState;
           });
           setJobData(data);
