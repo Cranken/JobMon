@@ -48,8 +48,11 @@ const Job: NextPage = () => {
         allHostSelection[val] = true;
       });
       setSelection(allHostSelection);
+      if (data.Metadata.NumNodes === 1) {
+        setShowQuantiles(false);
+      }
     }
-  }, [data?.Metadata.NodeList]);
+  }, [data?.Metadata.NodeList, data?.Metadata.NumNodes]);
 
   useEffect(() => {
     if (data?.Metadata.StartTime) {

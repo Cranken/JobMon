@@ -36,9 +36,14 @@ export const ViewControl = ({
         setStopTime={setStopTime}
       />
       <Stack direction="row" gap={1}>
-        <Button fontSize="sm" onClick={() => setShowQuantiles(!showQuantiles)}>
-          Toggle Quantile View
-        </Button>
+        {metadata.NumNodes !== 1 ? (
+          <Button
+            fontSize="sm"
+            onClick={() => setShowQuantiles(!showQuantiles)}
+          >
+            Toggle Quantile View
+          </Button>
+        ) : null}
         <Button fontSize="sm" onClick={() => setAutoScale(!autoScale)}>
           Toggle Automatic Scaling
         </Button>

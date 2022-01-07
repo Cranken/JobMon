@@ -128,6 +128,10 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		return
 	}
 
+	if job.NumNodes == 1 {
+		node = job.NodeList
+	}
+
 	var jobData JobData
 	if node == "" {
 		jobData, err = jobCache.Get(&job)
