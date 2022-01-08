@@ -21,7 +21,6 @@ type Configuration struct {
 	Prefetch        bool
 	SampleInterval  string
 	MetricQuantiles []string
-	JobListMetrics  []string
 	JWTSecret       string
 	StoreFile       string
 	LocalUsers      map[string]LocalUser

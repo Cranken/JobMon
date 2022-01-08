@@ -33,4 +33,7 @@ services:
       DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET}
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN}
     ports:
-      - 8086:3001
+      - ${INFLUXDB_PORT}:8086
+    volumes:
+      - ./data:/var/lib/influxdb2
+      - ./config:/etc/influxdb2
