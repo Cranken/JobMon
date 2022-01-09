@@ -1,10 +1,13 @@
-package main
+package persistent_store
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
+	"jobmon/config"
+	"jobmon/db"
+	"jobmon/job"
 	"log"
 	"os"
 	"sort"
@@ -12,78 +15,39 @@ import (
 	"time"
 )
 
-type JobMetadata struct {
-	Id           int
-	UserId       int
-	UserName     string
-	GroupId      int
-	GroupName    string
-	ClusterId    string
-	NumNodes     int
-	NumTasks     int
-	TasksPerNode int
-	GPUsPerNode  int
-	NodeList     string
-	StartTime    int
-	StopTime     int
-	IsRunning    bool
-	JobName      string
-	Account      string
-	TTL          int
-	Partition    string
-	JobScript    string
-	Data         []JobMetadataData
-}
-
-type JobListData struct {
-	Jobs   []JobMetadata
-	Config JobListConfig
-}
-
-type JobListConfig struct {
-	Metrics    []string
-	Partitions []string
-}
-
-type StopJob struct {
-	StopTime int
-}
-
 type Store struct {
-	Jobs           map[int]JobMetadata
+	Jobs           map[int]job.JobMetadata
 	SessionStorage map[string]string
 	defaultTTL     int
 	mut            sync.Mutex
-	db             *DB
+	database       *db.DB
 	storefile      string
 }
 
-type JobPred func(*JobMetadata) bool
+type JobPred func(*job.JobMetadata) bool
 
-func (s *Store) Init(config Configuration, db *DB) {
-	s.storefile = config.StoreFile
-	s.db = db
-	s.defaultTTL = config.DefaultTTL
+func (s *Store) Init(c config.Configuration, database *db.DB) {
+	s.storefile = c.StoreFile
+	s.database = database
+	s.defaultTTL = c.DefaultTTL
 	data, err := os.ReadFile(s.storefile)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		log.Fatalf("Could not read store file: %v\n Error: %v\n", s.storefile, err)
 	}
-	s.mut.Lock()
 	json.Unmarshal(data, s)
 	if s.Jobs == nil {
-		s.Jobs = make(map[int]JobMetadata)
+		s.Jobs = make(map[int]job.JobMetadata)
 	}
 	if s.SessionStorage == nil {
 		s.SessionStorage = make(map[string]string)
 	}
-	s.mut.Unlock()
 	s.removeExpiredJobs()
 	s.addDataToIncompleteJobs()
 
 	go s.startExpiredJobsTimer()
 }
 
-func (s *Store) Put(job JobMetadata) {
+func (s *Store) Put(job job.JobMetadata) {
 	go func() {
 		if job.TTL == 0 {
 			job.TTL = s.defaultTTL
@@ -94,7 +58,7 @@ func (s *Store) Put(job JobMetadata) {
 	}()
 }
 
-func (s *Store) Get(id int) (JobMetadata, error) {
+func (s *Store) Get(id int) (job.JobMetadata, error) {
 	job, pres := s.Jobs[id]
 	var err error
 	if !pres {
@@ -103,12 +67,12 @@ func (s *Store) Get(id int) (JobMetadata, error) {
 	return job, err
 }
 
-func (s *Store) GetAll() []JobMetadata {
-	return s.GetAllByPred(func(_ *JobMetadata) bool { return true })
+func (s *Store) GetAll() []job.JobMetadata {
+	return s.GetAllByPred(func(_ *job.JobMetadata) bool { return true })
 }
 
-func (s *Store) GetAllByPred(pred JobPred) []JobMetadata {
-	jobs := make([]JobMetadata, 0, len(s.Jobs))
+func (s *Store) GetAllByPred(pred JobPred) []job.JobMetadata {
+	jobs := make([]job.JobMetadata, 0, len(s.Jobs))
 	for _, v := range s.Jobs {
 		if pred(&v) {
 			jobs = append(jobs, v)
@@ -122,7 +86,7 @@ func (s *Store) GetAllByPred(pred JobPred) []JobMetadata {
 	return jobs
 }
 
-func (s *Store) StopJob(id int, stopJob StopJob) JobMetadata {
+func (s *Store) StopJob(id int, stopJob job.StopJob) job.JobMetadata {
 	s.mut.Lock()
 	job := s.Jobs[id]
 	job.StopTime = stopJob.StopTime
@@ -131,14 +95,6 @@ func (s *Store) StopJob(id int, stopJob StopJob) JobMetadata {
 	s.mut.Unlock()
 	s.addDataToIncompleteJobs()
 	return s.Jobs[id]
-}
-
-func (j *JobMetadata) expired() bool {
-	now := int(time.Now().Unix())
-	if j.TTL == 0 {
-		return false
-	}
-	return j.StopTime+j.TTL < now
 }
 
 func (s *Store) startExpiredJobsTimer() {
@@ -152,7 +108,7 @@ func (s *Store) startExpiredJobsTimer() {
 func (s *Store) removeExpiredJobs() {
 	s.mut.Lock()
 	for id, j := range s.Jobs {
-		if !j.IsRunning && j.expired() {
+		if !j.IsRunning && j.Expired() {
 			delete(s.Jobs, id)
 		}
 	}
@@ -164,7 +120,7 @@ func (s *Store) addDataToIncompleteJobs() {
 	defer s.mut.Unlock()
 	for i, j := range s.Jobs {
 		if j.Data == nil {
-			data, err := db.GetJobMetadataMetrics(&j)
+			data, err := (*s.database).GetJobMetadataMetrics(&j)
 			if err == nil {
 				j.Data = data
 				s.Jobs[i] = j

@@ -1,4 +1,4 @@
-module scs/jobmon
+module jobmon
 
 go 1.17
 
@@ -8,7 +8,6 @@ require github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 
 require (
 	github.com/deepmap/oapi-codegen v1.9.0 // indirect
-	github.com/flosch/pongo2/v4 v4.0.2 // indirect
 	github.com/influxdata/influxdb-client-go v1.4.0
 	github.com/influxdata/influxdb-client-go/v2 v2.6.0 // indirect
 	github.com/influxdata/line-protocol v0.0.0-20210922203350-b1ad95c89adf // indirect

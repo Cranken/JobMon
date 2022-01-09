@@ -1,8 +1,10 @@
-package main
+package db
 
 import (
 	"context"
 	"fmt"
+	conf "jobmon/config"
+	"jobmon/job"
 	"log"
 	"strings"
 	"sync"
@@ -12,7 +14,16 @@ import (
 	"github.com/influxdata/influxdb-client-go/v2/domain"
 )
 
-type DB struct {
+type DB interface {
+	Init(c conf.Configuration)
+	Close()
+	GetJobData(job *job.JobMetadata) (data JobData, err error)
+	GetNodeJobData(job *job.JobMetadata, node string) (data JobData, err error)
+	GetJobMetadataMetrics(job *job.JobMetadata) (data []job.JobMetadataData, err error)
+	RunAggregation()
+}
+
+type InfluxDB struct {
 	client                influxdb2.Client
 	queryAPI              api.QueryAPI
 	tasksAPI              api.TasksAPI
@@ -20,36 +31,31 @@ type DB struct {
 	tasks                 []domain.Task
 	org                   string
 	bucket                string
-	metrics               map[string][]MetricConfig
+	metrics               map[string][]conf.MetricConfig
 	defaultSampleInterval string
 	metricQuantiles       []string
 }
 
 type MetricData struct {
-	Config MetricConfig
+	Config conf.MetricConfig
 	Data   map[string][]QueryResult
 }
 
-type JobMetadataData struct {
-	Config MetricConfig
-	Data   map[string]float64
-}
-
 type QuantileData struct {
-	Config    MetricConfig
+	Config    conf.MetricConfig
 	Quantiles []string
 	Data      map[string][]QueryResult
 }
 
 type JobData struct {
-	Metadata     *JobMetadata
+	Metadata     *job.JobMetadata
 	MetricData   []MetricData
 	QuantileData []QuantileData
 }
 
 type QueryResult map[string]interface{}
 
-func (db *DB) Init(c Configuration) {
+func (db *InfluxDB) Init(c conf.Configuration) {
 	db.client = influxdb2.NewClient(c.DBHost, c.DBToken)
 	db.queryAPI = db.client.QueryAPI(c.DBOrg)
 	db.tasksAPI = db.client.TasksAPI()
@@ -62,25 +68,25 @@ func (db *DB) Init(c Configuration) {
 	go db.updateAggregationTasks()
 }
 
-func (db *DB) Close() {
+func (db *InfluxDB) Close() {
 	db.client.Close()
 }
 
-func (db *DB) GetJobData(job *JobMetadata) (data JobData, err error) {
+func (db *InfluxDB) GetJobData(job *job.JobMetadata) (data JobData, err error) {
 	return db.getJobData(job, db.metrics[job.Partition], "")
 }
 
-func (db *DB) GetNodeJobData(job *JobMetadata, node string) (data JobData, err error) {
+func (db *InfluxDB) GetNodeJobData(job *job.JobMetadata, node string) (data JobData, err error) {
 	return db.getJobData(job, db.metrics[job.Partition], node)
 }
 
-func (db *DB) GetJobMetadataMetrics(job *JobMetadata) (data []JobMetadataData, err error) {
+func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMetadataData, err error) {
 	var wg sync.WaitGroup
-	for _, m := range db.metrics[job.Partition] {
+	for _, m := range db.metrics[j.Partition] {
 		wg.Add(1)
-		go func(m MetricConfig) {
+		go func(m conf.MetricConfig) {
 			defer wg.Done()
-			tempRes, err := db.queryMetadataMeasurements(m, job)
+			tempRes, err := db.queryMetadataMeasurements(m, j)
 			if err != nil {
 				log.Printf("could not get metadata data %v", err)
 				return
@@ -96,14 +102,14 @@ func (db *DB) GetJobMetadataMetrics(job *JobMetadata) (data []JobMetadataData, e
 					tempData[qr["hostname"].(string)] = qr["_value"].(float64)
 				}
 			}
-			data = append(data, JobMetadataData{Config: m, Data: tempData})
+			data = append(data, job.JobMetadataData{Config: m, Data: tempData})
 		}(m)
 	}
 	wg.Wait()
 	return
 }
 
-func (db *DB) getJobData(job *JobMetadata, metrics []MetricConfig, node string) (data JobData, err error) {
+func (db *InfluxDB) getJobData(job *job.JobMetadata, metrics []conf.MetricConfig, node string) (data JobData, err error) {
 	if job.IsRunning {
 		return data, fmt.Errorf("job is still running")
 	}
@@ -112,7 +118,7 @@ func (db *DB) getJobData(job *JobMetadata, metrics []MetricConfig, node string) 
 	var wg sync.WaitGroup
 	for _, m := range metrics {
 		wg.Add(2)
-		go func(m MetricConfig) {
+		go func(m conf.MetricConfig) {
 			result, err := db.query(m, job, node)
 			defer wg.Done()
 			if err != nil {
@@ -122,7 +128,7 @@ func (db *DB) getJobData(job *JobMetadata, metrics []MetricConfig, node string) 
 			metricData = append(metricData, MetricData{Config: m, Data: result})
 		}(m)
 
-		go func(m MetricConfig) {
+		go func(m conf.MetricConfig) {
 			tempRes, err := db.queryQuantileMeasurement(m, job, db.metricQuantiles)
 			defer wg.Done()
 			if err != nil {
@@ -144,7 +150,7 @@ func (db *DB) getJobData(job *JobMetadata, metrics []MetricConfig, node string) 
 	return data, err
 }
 
-func (db *DB) query(metric MetricConfig, job *JobMetadata, node string) (result map[string][]QueryResult, err error) {
+func (db *InfluxDB) query(metric conf.MetricConfig, job *job.JobMetadata, node string) (result map[string][]QueryResult, err error) {
 	var queryResult *api.QueryTableResult
 	if metric.AggFn != "" && node == "" {
 		queryResult, err = db.queryAggregateMeasurement(metric, job)
@@ -172,7 +178,7 @@ func (db *DB) query(metric MetricConfig, job *JobMetadata, node string) (result 
 	return result, err
 }
 
-func (db *DB) querySimpleMeasurement(metric MetricConfig, job *JobMetadata, node string) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, job *job.JobMetadata, node string) (result *api.QueryTableResult, err error) {
 	nodeList := job.NodeList
 	if node != "" {
 		nodeList = node
@@ -217,7 +223,7 @@ func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (
 	return
 }
 
-func (db *DB) queryAggregateMeasurement(metric MetricConfig, job *JobMetadata) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, job *job.JobMetadata) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement + "_" + metric.AggFn
 	query := fmt.Sprintf(`
 		from(bucket: "%v")
@@ -233,7 +239,7 @@ func (db *DB) queryAggregateMeasurement(metric MetricConfig, job *JobMetadata) (
 	return
 }
 
-func (db *DB) queryQuantileMeasurement(metric MetricConfig, job *JobMetadata, quantiles []string) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, job *job.JobMetadata, quantiles []string) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement
 	if metric.AggFn != "" {
 		measurement += "_" + metric.AggFn
@@ -277,7 +283,7 @@ func quantileString(streamName string, q string, measurement string) string {
 		streamName, q, q, measurement)
 }
 
-func (db *DB) queryMetadataMeasurements(metric MetricConfig, job *JobMetadata) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) queryMetadataMeasurements(metric conf.MetricConfig, job *job.JobMetadata) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement
 	if metric.AggFn != "" {
 		measurement += "_" + metric.AggFn
@@ -297,7 +303,7 @@ func (db *DB) queryMetadataMeasurements(metric MetricConfig, job *JobMetadata) (
 	return
 }
 
-func (db *DB) createTask(taskName string, taskStr string, orgId string) (task *domain.Task, err error) {
+func (db *InfluxDB) createTask(taskName string, taskStr string, orgId string) (task *domain.Task, err error) {
 	task, err = db.tasksAPI.CreateTaskWithEvery(context.Background(), taskName, taskStr, "5m", orgId)
 	if err != nil {
 		log.Printf("Could not create task: %v\n", err)
@@ -307,7 +313,7 @@ func (db *DB) createTask(taskName string, taskStr string, orgId string) (task *d
 	return
 }
 
-func (db *DB) createAggregationTask(metric MetricConfig, orgId string) (task *domain.Task, err error) {
+func (db *InfluxDB) createAggregationTask(metric conf.MetricConfig, orgId string) (task *domain.Task, err error) {
 	taskName := metric.Measurement + "_" + metric.AggFn
 	sampleInterval := metric.SampleInterval
 	if sampleInterval == "" {
@@ -327,14 +333,14 @@ func (db *DB) createAggregationTask(metric MetricConfig, orgId string) (task *do
 	return db.createTask(taskName, query, orgId)
 }
 
-func (db *DB) updateAggregationTasks() (err error) {
+func (db *InfluxDB) updateAggregationTasks() (err error) {
 	tasks, err := db.tasksAPI.FindTasks(context.Background(), nil)
 	if err != nil {
 		log.Printf("Could not get tasks from influxdb: %v\n", err)
 		return
 	}
 
-	missingMetricTasks := []MetricConfig{}
+	missingMetricTasks := []conf.MetricConfig{}
 	for _, partition := range db.metrics {
 		for _, metric := range partition {
 			if metric.AggFn != "" {
@@ -359,14 +365,14 @@ func (db *DB) updateAggregationTasks() (err error) {
 		return
 	}
 	for _, metric := range missingMetricTasks {
-		go func(metric MetricConfig) {
+		go func(metric conf.MetricConfig) {
 			_, err = db.createAggregationTask(metric, *org.Id)
 		}(metric)
 	}
 	return
 }
 
-func (db *DB) RunTasks() {
+func (db *InfluxDB) RunAggregation() {
 	for _, task := range db.tasks {
 		go func(task *domain.Task) {
 			db.tasksAPI.RunManually(context.Background(), task)

@@ -1,7 +1,10 @@
-package main
+package auth
 
 import (
 	"fmt"
+	"jobmon/config"
+	"jobmon/persistent_store"
+	"jobmon/utils"
 	"net/http"
 	"strings"
 	"time"
@@ -34,18 +37,18 @@ type UserClaims struct {
 
 type AuthManager struct {
 	hmacSampleSecret []byte
-	store            *Store
-	localUsers       map[string]LocalUser
+	store            *persistent_store.Store
+	localUsers       map[string]config.LocalUser
 }
 
 const EXPIRATIONTIME = 60 * 60 * 24 * 7
 const ISSUER = "monitoring-backend"
 
-func Protected(h httprouter.Handle, authLevel string) httprouter.Handle {
+func (authManager *AuthManager) Protected(h httprouter.Handle, authLevel string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		token, err := r.Cookie("Authorization")
 		if err != nil {
-			allowCors(r, w.Header())
+			utils.AllowCors(r, w.Header())
 			http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -53,7 +56,7 @@ func Protected(h httprouter.Handle, authLevel string) httprouter.Handle {
 
 		parts := strings.Split(token.Value, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			allowCors(r, w.Header())
+			utils.AllowCors(r, w.Header())
 			http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -61,7 +64,7 @@ func Protected(h httprouter.Handle, authLevel string) httprouter.Handle {
 
 		user, err := authManager.validate(parts[1])
 		if err != nil {
-			allowCors(r, w.Header())
+			utils.AllowCors(r, w.Header())
 			http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -70,7 +73,7 @@ func Protected(h httprouter.Handle, authLevel string) httprouter.Handle {
 		if user.Role == authLevel || user.Role == ADMIN {
 			h(w, r, ps)
 		} else {
-			allowCors(r, w.Header())
+			utils.AllowCors(r, w.Header())
 			http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
 			w.WriteHeader(http.StatusForbidden)
 			return
@@ -78,7 +81,7 @@ func Protected(h httprouter.Handle, authLevel string) httprouter.Handle {
 	}
 }
 
-func (auth *AuthManager) Init(c Configuration, store *Store) {
+func (auth *AuthManager) Init(c config.Configuration, store *persistent_store.Store) {
 	auth.hmacSampleSecret = []byte(c.JWTSecret)
 	auth.store = store
 	auth.localUsers = c.LocalUsers

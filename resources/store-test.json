@@ -1,0 +1,46 @@
+{
+  "Jobs": {
+    "1": {
+      "Id": 1,
+      "UserId": 123,
+      "UserName": "user123",
+      "GroupId": 321,
+      "GroupName": "group123",
+      "ClusterId": "cluster",
+      "NumNodes": 1,
+      "NumTasks": 2,
+      "TasksPerNode": 2,
+      "GPUsPerNode": 0,
+      "NodeList": "cluster123",
+      "StartTime": 1641458813,
+      "StopTime": 1641461020,
+      "IsRunning": false,
+      "JobName": "job",
+      "Account": "user",
+      "TTL": 0,
+      "Partition": "main",
+      "JobScript": "",
+      "Data": [
+        {
+          "Config": {
+            "Type": "cpu",
+            "Measurement": "flops_dp",
+            "AggFn": "sum",
+            "SampleInterval": "",
+            "Unit": "MFLOP/s",
+            "DisplayName": "FLOP/S",
+            "PostQueryOp": "",
+            "SeparationKey": "",
+            "MaxPerNode": 5836000,
+            "MaxPerType": 76000,
+            "PThreadAggFn": ""
+          },
+          "Data": {
+            "cluster123": 123456
+          }
+        }
+      ]
+    }
+  },
+  "SessionStorage": {}
+}
