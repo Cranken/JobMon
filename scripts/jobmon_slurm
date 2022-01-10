@@ -1,0 +1,111 @@
+#!/usr/bin/bash
+
+###
+# Get job information from slurm resource management system
+###
+function KMS_slurm() {
+
+    # Predefined Slurm environmen variables
+    # * SLURM_CLUSTER_NAME
+    # * SLURM_JOB_ACCOUNT
+    # * SLURM_JOB_DERIVED_EC
+    # * SLURM_JOB_EXIT_CODE
+    # * SLURM_JOB_EXIT_CODE2
+    # * SLURM_JOB_GID
+    # * SLURM_JOB_GROUP
+    # * SLURM_JOB_ID
+    # * SLURM_JOBID
+    # * SLURM_JOB_NAME
+    # * SLURM_JOB_NODELIST
+    # * SLURM_JOB_PARTITION
+    # * SLURM_JOB_UID
+    # * SLURM_JOB_USER
+    # * SLURM_SCRIPT_CONTEXT
+
+    # Read information from scontrol
+    local JOB_DETAILS=$(scontrol --details --oneliner show job="${SLURM_JOB_ID}")
+
+    # Node list
+    local -a NODELIST_ARRAY=(
+        $(scontrol show hostnames "${SLURM_JOB_NODELIST}")
+    )
+    local NODELIST_CSV="$(
+        printf '%s|' "${NODELIST_ARRAY[@]}"
+    )"
+    NODELIST_CSV="${NODELIST_CSV%|}"
+
+    # Number of nodes
+    local REGEX_NUM_NODES='(^|[[:space:]])NumNodes=([[:digit:]]+)([[:space:]]|$)'
+    if [[ "${JOB_DETAILS}" =~ ${REGEX_NUM_NODES} ]]; then
+       local NUM_NODES="${BASH_REMATCH[2]}"
+    fi
+
+    # Number of tasks
+    local REGEX_NUM_TASKS='(^|[[:space:]])NumTasks=([[:digit:]]+)([[:space:]]|$)'
+    if [[ "${JOB_DETAILS}" =~ ${REGEX_NUM_TASKS} ]]; then
+        local NUM_TASKS="${BASH_REMATCH[2]}"
+    fi 
+
+    # Tasks per node
+    local REGEX_TASKS_PER_NODE='(^|[[:space:]])NtasksPerN:B:S:C=([[:digit:]]+):'
+    if [[ "${JOB_DETAILS}" =~ ${REGEX_TASKS_PER_NODE} ]]; then
+        local TASKS_PER_NODE="${BASH_REMATCH[2]}"
+    fi
+
+    # GPUs per node
+    local -i GPUS_PER_NODE=0
+    local REGEX_GPUS_PER_NODE='(^|[[:space:]])GRES=gpu:([[:digit:]]+)[(]'
+    if [[ "${JOB_DETAILS}" =~ ${REGEX_GPUS_PER_NODE} ]]; then
+        local GPUS_PER_NODE="${BASH_REMATCH[2]}"
+    fi
+
+    # Send information
+    local API_URL="http://backend:3000/api"
+    local X_AUTH_TOKEN="Bearer <API_TOKEN>"
+
+
+    # decide whether start or stop event
+    if   [[ "${SLURM_SCRIPT_CONTEXT}" == prolog_slurmctld ]]; then
+        curl -X 'PUT' \
+            "${API_URL}/job_start" \
+            --cookie "Authorization=${X_AUTH_TOKEN}" \
+            -d "{
+                   \"Id\": ${SLURM_JOB_ID},
+                   \"userName\": \"${SLURM_JOB_USER}\",
+                   \"userId\": ${SLURM_JOB_UID},
+                   \"groupName\": \"${SLURM_JOB_GROUP}\",
+                   \"groupId\": ${SLURM_JOB_GID},
+                   \"account\": \"${SLURM_JOB_ACCOUNT}\",
+                   \"jobName\": \"${SLURM_JOB_NAME}\",
+                   \"clusterId\": \"${SLURM_CLUSTER_NAME}\",
+                   \"partition\": \"${SLURM_JOB_PARTITION}\",
+                   \"numNodes\": ${NUM_NODES},
+                   \"numTasks\": ${NUM_TASKS},
+                   \"tasksPerNode\": ${TASKS_PER_NODE},
+                   \"GPUsPerNode\": ${GPUS_PER_NODE},
+                   \"startTime\": $(date +%s) ,
+                   \"nodeList\": \"${NODELIST_CSV}\",
+                   \"isRunning\": true,
+                   \"jobScript\": \"noJobSript\",
+                   \"projectId\": \"noProject\"
+               }"
+    elif [[ "${SLURM_SCRIPT_CONTEXT}" == epilog_slurmctld ]]; then
+        curl -X 'PATCH' \
+            "${API_URL}/job_stop/${SLURM_JOB_ID}" \
+            --cookie "Authorization=${X_AUTH_TOKEN}" \
+            -d "{
+                    \"exitCode\": ${SLURM_JOB_EXIT_CODE},
+                    \"stopTime\": $(date +%s)
+                }"
+    else
+        return 1
+    fi
+}
+
+COMMAND_LINE_PARAMETER=( "$@" )
+
+KMS_slurm
+
+# Cleanup
+unset KMS_slurm
+unset COMMAND_LINE_PARAMETER
