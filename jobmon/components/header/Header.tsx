@@ -13,8 +13,8 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  Spacer,
   Stack,
+  Text,
   Textarea,
   Tooltip,
   useColorMode,
@@ -67,13 +67,14 @@ export const Header = () => {
         <Modal isOpen={isOpen} onClose={onClose}>
           <ModalOverlay />
           <ModalContent>
-            <ModalHeader>Modal Title</ModalHeader>
+            <ModalHeader>Debug Menu</ModalHeader>
             <ModalCloseButton />
             <ModalBody>
               <Stack gap={2}>
                 <Button onClick={() => generateApiKey()}>
                   Generate API Key
                 </Button>
+                <Text>This will invalidate the existing API Key</Text>
                 <Textarea value={apiKey} isReadOnly>
                   test
                 </Textarea>
@@ -108,7 +109,7 @@ export const Header = () => {
         </Box>
         <Flex flexGrow={1} justify={"end"} gap={2}>
           {isAuthenticated ? (
-            <Tooltip label="Logout">
+            <Tooltip label="Admin Debug Menu">
               <Button bg={buttonBg} onClick={onOpen}>
                 <SettingsIcon />
               </Button>
