@@ -101,7 +101,7 @@ func (auth *AuthManager) validate(tokenStr string) (user UserInfo, err error) {
 	claims, ok := token.Claims.(*UserClaims)
 	if ok && token.Valid {
 		if claims.VerifyExpiresAt(jwt.TimeFunc().Unix(), true) && claims.VerifyIssuer(ISSUER, true) {
-			if _, ok := auth.store.SessionStorage[claims.Username]; ok {
+			if storeToken, ok := auth.store.SessionStorage[claims.Username]; ok && storeToken == tokenStr {
 				return claims.UserInfo, nil
 			} else {
 				err = fmt.Errorf("session was revoked")
@@ -119,6 +119,9 @@ func (auth *AuthManager) GenerateJWT(user UserInfo, remember bool) (string, erro
 	expirationTime := EXPIRATIONTIME * time.Second
 	if remember {
 		expirationTime = time.Hour * 24 * 365
+	}
+	if user.Role == JOBCONTROL {
+		expirationTime *= 10 // Slurm API should "never" expire
 	}
 	claims := UserClaims{
 		user,
