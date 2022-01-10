@@ -1,12 +1,15 @@
 package persistent_store
 
 import (
+	"jobmon/config"
+	database "jobmon/db"
+	"jobmon/utils"
 	"testing"
 )
 
 func TestGetJob(t *testing.T) {
-	config := Configuration{StoreFile: "resources/store-test.json", DefaultTTL: 100}
-	var db DB = &MockDB{}
+	config := config.Configuration{StoreFile: "../resources/store-test.json", DefaultTTL: 100}
+	var db database.DB = &utils.MockDB{}
 	store := Store{}
 	store.Init(config, &db)
 

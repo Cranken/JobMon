@@ -3,6 +3,7 @@ package lru_cache
 import (
 	"jobmon/config"
 	"jobmon/db"
+	"jobmon/job"
 	"jobmon/utils"
 	"testing"
 )
@@ -31,8 +32,8 @@ func TestPutCleanup(t *testing.T) {
 
 func TestPutCleanupAfterAccess(t *testing.T) {
 	cache := LRUCache{}
-	config := Configuration{CacheSize: 3}
-	var db DB = &MockDB{}
+	config := config.Configuration{CacheSize: 3}
+	var db db.DB = &utils.MockDB{}
 	cache.Init(config, &db)
 
 	cache.put(Item{id: 1})
@@ -51,13 +52,13 @@ func TestPutCleanupAfterAccess(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	cache := LRUCache{}
-	config := Configuration{CacheSize: 3}
-	var db DB = &MockDB{}
+	config := config.Configuration{CacheSize: 3}
+	var db db.DB = &utils.MockDB{}
 	cache.Init(config, &db)
 
-	job := JobMetadata{Id: 1}
+	job := job.JobMetadata{Id: 1}
 	cache.Get(&job)
-	if db.(*MockDB).Calls != 1 {
+	if db.(*utils.MockDB).Calls != 1 {
 		t.Fatalf("Did not retrieve job data from db")
 	}
 
@@ -65,7 +66,7 @@ func TestGet(t *testing.T) {
 	if dat.Metadata.Id != 1 {
 		t.Fatalf("Retrieved wrong item from cache")
 	}
-	if db.(*MockDB).Calls != 1 {
+	if db.(*utils.MockDB).Calls != 1 {
 		t.Fatalf("Called db on cached item")
 	}
 }
