@@ -150,7 +150,7 @@ export const JobListItem = ({
               <Divider orientation="vertical" borderColor={borderColor} />
             </Center>
           </Stack>
-          <Box>
+          <Box pr={5}>
             {!histogramAvailable ? (
               <Center h="100%">
                 <Box>
