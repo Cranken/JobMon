@@ -6,12 +6,8 @@ interface RadarChartProps<T> {
   data: T[];
   value: (d: T) => number;
   title: (d: T) => string;
-  width?: number;
-  height?: number;
-  marginTop?: number;
-  marginRight?: number;
-  marginBottom?: number;
-  marginLeft?: number;
+  size?: number;
+  margin: number;
   numSpirals?: number;
   stroke?: string;
 }
@@ -20,12 +16,8 @@ export function RadarChart<T>({
   data,
   value,
   title,
-  width = 350,
-  height = 350,
-  marginTop = 80,
-  marginLeft = 80,
-  marginRight = 80,
-  marginBottom = 80,
+  size = 350,
+  margin = 80,
   numSpirals = 4,
   stroke = "currentColor",
 }: RadarChartProps<T>) {
@@ -38,10 +30,9 @@ export function RadarChart<T>({
     const values = d3.map(data, value);
     const titles = d3.map(data, title);
 
-    const xRange = [marginLeft, width - marginRight];
-    const yRange = [marginTop, height - marginBottom];
-    const xScale = d3.scaleLinear([-1, 1], xRange);
-    const yScale = d3.scaleLinear([-1, 1], yRange);
+    const range = [margin, size - margin];
+    const xScale = d3.scaleLinear([-1, 1], range);
+    const yScale = d3.scaleLinear([-1, 1], range);
 
     const angles = d3.range(
       -Math.PI / 2,
@@ -51,9 +42,9 @@ export function RadarChart<T>({
 
     const svg = d3
       .select(svgRef.current)
-      .attr("width", width)
-      .attr("height", height)
-      .attr("viewBox", [0, 0, width, height])
+      .attr("width", size)
+      .attr("height", size)
+      .attr("viewBox", [0, 0, size, size])
       .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
 
     let xPos: number[] = [];

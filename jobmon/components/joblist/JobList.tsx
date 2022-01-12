@@ -160,8 +160,8 @@ export const JobListItem = ({
                     data={radarChartData}
                     value={(d) => d.val / d.max}
                     title={(d) => d.title}
-                    width={400}
-                    height={400}
+                    size={350}
+                    margin={60}
                   ></RadarChart>
                 </Center>
                 {sortedData.map((dat) => (
