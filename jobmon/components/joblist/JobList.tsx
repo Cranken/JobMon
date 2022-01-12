@@ -41,7 +41,7 @@ export const JobList = ({
   jobs.sort((a, b) => (a.StartTime < b.StartTime ? 1 : -1));
   return (
     <Center>
-      <Stack w={width ?? "1280px"}>
+      <Stack>
         {jobs.map((job) => (
           <JobListItem
             key={job.Id}
@@ -103,49 +103,47 @@ export const JobListItem = ({
   return (
     <LinkBox>
       <LinkOverlay href={job.IsRunning ? undefined : `/job/${job.Id}`}>
-        <Grid
-          templateColumns="repeat(7, 1fr)"
+        <Stack
+          direction="row"
           gap={2}
           border="1px"
           borderColor={borderColor}
           borderRadius={5}
         >
-          <GridItem colSpan={2}>
-            <Flex height="100%">
-              <Stack textAlign="start" m={5} pl={5}>
-                <Heading size="sm" textDecoration="underline">
-                  {job.Id}
-                </Heading>
-                <Text>
-                  User: {job.UserName} ({job.GroupName})
-                </Text>
-                <Text>Partition: {job.Partition}</Text>
-                <Text>Name: {job.JobName}</Text>
-                <Stack direction="row" justify="space-between">
-                  <Text>Nodes: {job.NumNodes}</Text>
-                  {job.GPUsPerNode !== 0 ? (
-                    <Text>GPUs: {job.GPUsPerNode * job.NumNodes}</Text>
-                  ) : null}
-                </Stack>
-                <Text>
-                  Start: {new Date(job.StartTime * 1000).toLocaleString()}
-                </Text>
-                {job.IsRunning ? (
-                  <Box>
-                    <Tag colorScheme="green">Running</Tag>
-                  </Box>
-                ) : (
-                  <Text>
-                    End: {new Date(job.StopTime * 1000).toLocaleString()}
-                  </Text>
-                )}
+          <Stack m="auto" direction="row" height="100%" borderRight="1px">
+            <Stack textAlign="start" m={5} pl={5}>
+              <Heading size="sm" textDecoration="underline">
+                {job.Id}
+              </Heading>
+              <Text>
+                User: {job.UserName} ({job.GroupName})
+              </Text>
+              <Text>Partition: {job.Partition}</Text>
+              <Text>Name: {job.JobName}</Text>
+              <Stack direction="row" justify="space-between">
+                <Text>Nodes: {job.NumNodes}</Text>
+                {job.GPUsPerNode !== 0 ? (
+                  <Text>GPUs: {job.GPUsPerNode * job.NumNodes}</Text>
+                ) : null}
               </Stack>
-              <Center height="90%" m="auto">
-                <Divider orientation="vertical" borderColor={borderColor} />
-              </Center>
-            </Flex>
-          </GridItem>
-          <GridItem colSpan={5}>
+              <Text>
+                Start: {new Date(job.StartTime * 1000).toLocaleString()}
+              </Text>
+              {job.IsRunning ? (
+                <Box>
+                  <Tag colorScheme="green">Running</Tag>
+                </Box>
+              ) : (
+                <Text>
+                  End: {new Date(job.StopTime * 1000).toLocaleString()}
+                </Text>
+              )}
+            </Stack>
+            <Center height="90%">
+              <Divider orientation="vertical" borderColor={borderColor} />
+            </Center>
+          </Stack>
+          <Box>
             {!histogramAvailable ? (
               <Center h="100%">
                 <Box>
@@ -157,11 +155,15 @@ export const JobListItem = ({
               </Center>
             ) : (
               <Stack direction="row" gap={2} h="100%">
-                <RadarChart
-                  data={radarChartData}
-                  value={(d) => d.val / d.max}
-                  title={(d) => d.title}
-                ></RadarChart>
+                <Center width="100%" height="100%">
+                  <RadarChart
+                    data={radarChartData}
+                    value={(d) => d.val / d.max}
+                    title={(d) => d.title}
+                    width={400}
+                    height={400}
+                  ></RadarChart>
+                </Center>
                 {sortedData.map((dat) => (
                   <Center
                     key={dat.Config.Measurement}
@@ -171,7 +173,7 @@ export const JobListItem = ({
                     <Histogram
                       data={Object.values(dat.Data)}
                       x={(d) => d}
-                      width={1280 / 4}
+                      width={300}
                       height={180}
                       yLabel="Number of Nodes"
                       xLabel={dat.Config.DisplayName}
@@ -181,8 +183,8 @@ export const JobListItem = ({
                 ))}
               </Stack>
             )}
-          </GridItem>
-        </Grid>
+          </Box>
+        </Stack>
       </LinkOverlay>
     </LinkBox>
   );

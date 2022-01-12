@@ -13,19 +13,21 @@ interface RadarChartProps<T> {
   marginBottom?: number;
   marginLeft?: number;
   numSpirals?: number;
+  stroke?: string;
 }
 
 export function RadarChart<T>({
   data,
   value,
   title,
-  width = 1200,
-  height = 1200,
-  marginTop = 200,
-  marginLeft = 200,
-  marginRight = 200,
-  marginBottom = 200,
+  width = 350,
+  height = 350,
+  marginTop = 80,
+  marginLeft = 80,
+  marginRight = 80,
+  marginBottom = 80,
   numSpirals = 4,
+  stroke = "currentColor",
 }: RadarChartProps<T>) {
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -33,7 +35,6 @@ export function RadarChart<T>({
     if (!data || !svgRef.current) {
       return;
     }
-    console.log(data);
     const values = d3.map(data, value);
     const titles = d3.map(data, title);
 
@@ -71,7 +72,8 @@ export function RadarChart<T>({
         .attr("x2", xScale(coord[0]))
         .attr("y1", yScale(0))
         .attr("y2", yScale(coord[1]))
-        .attr("stroke", "rgba(255,255,255,0.5)");
+        .attr("stroke", stroke)
+        .attr("stroke-opacity", "0.5");
 
       // Legend
       const text = svg
@@ -85,8 +87,8 @@ export function RadarChart<T>({
           })`
         )
         .attr("text-anchor", "middle")
-        .attr("fill", "currentColor")
-        .attr("style", "font-size: 2em")
+        .attr("fill", stroke)
+        .attr("style", "font-size: 0.7em")
         .text(titles[i]);
     });
 
@@ -105,7 +107,9 @@ export function RadarChart<T>({
             .y((angle) => yScale(scale * Math.sin(angle)))(angles)
         )
         .attr("fill", "none")
-        .attr("stroke", "rgba(255,255,255,0.3)");
+        .attr("stroke", stroke)
+        .attr("stroke-opacity", "0.3");
+      // .attr("stroke", "rgba(255,255,255,0.3)");
     }
 
     // Actual values
@@ -119,8 +123,10 @@ export function RadarChart<T>({
           .x((idx) => xScale(xPos[idx]))
           .y((idx) => yScale(yPos[idx]))(d3.range(xPos.length))
       )
-      .attr("stroke", "rgba(255,255,255,0.2)")
-      .attr("fill", "rgba(255,255,255,0.2)");
+      .attr("stroke", stroke)
+      .attr("stroke-opacity", "0.3")
+      .attr("fill", stroke)
+      .attr("fill-opacity", "0.3");
 
     // Dot at end of lines
     for (let i = 0; i < values.length; i++) {
@@ -128,8 +134,9 @@ export function RadarChart<T>({
         .append("circle")
         .attr("cx", xScale(xPos[i]))
         .attr("cy", yScale(yPos[i]))
-        .attr("r", 10)
-        .attr("fill", "rgba(255,255,255,0.8)");
+        .attr("r", 3)
+        .attr("fill", stroke)
+        .attr("fill-opacity", "0.8");
     }
 
     return () => {
