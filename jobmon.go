@@ -102,7 +102,7 @@ func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		keys = append(keys, k)
 	}
 
-	jobListData := job.JobListData{Jobs: jobs, Config: job.JobListConfig{Metrics: keys, Partitions: config.Partitions}}
+	jobListData := job.JobListData{Jobs: jobs, Config: job.JobListConfig{Metrics: keys, Partitions: config.Partitions, RadarChartMetrics: config.RadarChartMetrics}}
 	data, err := json.Marshal(&jobListData)
 	if err != nil {
 		log.Printf("Could not marshal jobs to json")

@@ -21,10 +21,10 @@ export function RadarChart<T>({
   title,
   width = 1200,
   height = 1200,
-  marginTop = 100,
-  marginLeft = 100,
-  marginRight = 100,
-  marginBottom = 100,
+  marginTop = 200,
+  marginLeft = 200,
+  marginRight = 200,
+  marginBottom = 200,
   numSpirals = 4,
 }: RadarChartProps<T>) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -128,7 +128,7 @@ export function RadarChart<T>({
         .append("circle")
         .attr("cx", xScale(xPos[i]))
         .attr("cy", yScale(yPos[i]))
-        .attr("r", 7)
+        .attr("r", 10)
         .attr("fill", "rgba(255,255,255,0.8)");
     }
 

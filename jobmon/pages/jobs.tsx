@@ -85,6 +85,7 @@ export const Jobs = () => {
       key="joblist"
       jobs={jobListData.Jobs.filter(filter)}
       displayMetrics={displayMetrics}
+      radarChartMetrics={jobListData.Config.RadarChartMetrics}
     />
   );
 

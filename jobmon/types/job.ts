@@ -28,6 +28,7 @@ export interface JobListData {
 export interface JobListConfig {
   Metrics: string[];
   Partitions: string[];
+  RadarChartMetrics: string[];
 }
 
 export enum CollectionType {

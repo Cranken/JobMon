@@ -18,10 +18,13 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 import { Histogram } from "../charts/Histogram";
+import { RadarChart } from "../charts/RadarChart";
+import * as d3 from "d3";
 
 interface JobListProps {
   jobs: JobMetadata[];
   displayMetrics: string[];
+  radarChartMetrics: string[];
   filter?: (job: JobMetadata) => boolean;
   sortBy?: string;
   width?: string;
@@ -31,6 +34,7 @@ interface JobListProps {
 export const JobList = ({
   jobs,
   displayMetrics,
+  radarChartMetrics,
   width,
   height,
 }: JobListProps) => {
@@ -39,7 +43,12 @@ export const JobList = ({
     <Center>
       <Stack w={width ?? "1280px"}>
         {jobs.map((job) => (
-          <JobListItem key={job.Id} job={job} displayMetrics={displayMetrics} />
+          <JobListItem
+            key={job.Id}
+            job={job}
+            displayMetrics={displayMetrics}
+            radarChartMetrics={radarChartMetrics}
+          />
         ))}
       </Stack>
     </Center>
@@ -49,9 +58,14 @@ export const JobList = ({
 interface JobListItemProps {
   job: JobMetadata;
   displayMetrics: string[];
+  radarChartMetrics: string[];
 }
 
-export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
+export const JobListItem = ({
+  job,
+  displayMetrics,
+  radarChartMetrics,
+}: JobListItemProps) => {
   const borderColor = useColorModeValue("gray.200", "whiteAlpha.300");
   let sortedData: JobMetadataData[] = [];
   if (job.Data) {
@@ -73,6 +87,18 @@ export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
   //   histogramAvailable = false;
   //   reason = "No histogram available for short jobs (<5Min).";
   // }
+  const radarChartData = job.Data.filter((val) =>
+    radarChartMetrics.includes(val.Config.Measurement)
+  ).map((val) => {
+    const mean = d3.mean(Object.values(val.Data)) ?? 1;
+    const max = Math.max(val.Config.MaxPerNode, val.Config.MaxPerType);
+    return {
+      val: mean,
+      max: max !== 0 ? max : mean,
+      title: val.Config.DisplayName,
+    };
+  });
+  radarChartData.sort((a, b) => (a.title < b.title ? -1 : 1));
 
   return (
     <LinkBox>
@@ -90,11 +116,14 @@ export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
                 <Heading size="sm" textDecoration="underline">
                   {job.Id}
                 </Heading>
-                <Text>User: {job.UserName}</Text>
+                <Text>
+                  User: {job.UserName} ({job.GroupName})
+                </Text>
                 <Text>Partition: {job.Partition}</Text>
+                <Text>Name: {job.JobName}</Text>
                 <Stack direction="row" justify="space-between">
                   <Text>Nodes: {job.NumNodes}</Text>
-                  {job.Partition === "accelerated" ? (
+                  {job.GPUsPerNode !== 0 ? (
                     <Text>GPUs: {job.GPUsPerNode * job.NumNodes}</Text>
                   ) : null}
                 </Stack>
@@ -128,6 +157,11 @@ export const JobListItem = ({ job, displayMetrics }: JobListItemProps) => {
               </Center>
             ) : (
               <Stack direction="row" gap={2} h="100%">
+                <RadarChart
+                  data={radarChartData}
+                  value={(d) => d.val / d.max}
+                  title={(d) => d.title}
+                ></RadarChart>
                 {sortedData.map((dat) => (
                   <Center
                     key={dat.Config.Measurement}

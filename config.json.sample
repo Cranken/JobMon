@@ -11,6 +11,7 @@
   "SampleInterval": "30s", // Interval between metric points
   "MetricQuantiles": ["0.25", "0.5", "0.75"], // Which quantiles to show in frontend
   "Partitions": ["cpuonly", "accelerated"], // Available Partition names
+  "RadarChartMetrics": ["flops_dp", "mem_bw", "ib_recv", "ib_xmit"], // Define which metrics are shown in job list radar chart
   "Metrics": {
     "cpuonly": [ // Config per Partition; Object Key = Partition name
       {

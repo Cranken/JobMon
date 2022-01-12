@@ -43,8 +43,9 @@ type JobListData struct {
 }
 
 type JobListConfig struct {
-	Metrics    []string
-	Partitions []string
+	Metrics           []string
+	Partitions        []string
+	RadarChartMetrics []string
 }
 
 func (j *JobMetadata) Expired() bool {
