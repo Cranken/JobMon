@@ -328,8 +328,10 @@ func (db *InfluxDB) createAggregationTask(metric conf.MetricConfig, orgId string
 			|> aggregateWindow(every: %v, fn: %v, createEmpty: false)
 			|> set(key: "_measurement", value: "%v")
 			|> set(key: "_field", value: "%v")
-			|> to(bucket: "%v", org: "%v")
-	`, db.bucket, metric.Measurement, metric.Type, sampleInterval, metric.AggFn, taskName, taskName, db.bucket, db.org)
+	`, db.bucket, metric.Measurement, metric.Type, sampleInterval, metric.AggFn, taskName, taskName)
+	query += metric.PostQueryOp
+	query +=
+		fmt.Sprintf(`|> to(bucket: "%v", org: "%v")`, db.bucket, db.org)
 	return db.createTask(taskName, query, orgId)
 }
 
