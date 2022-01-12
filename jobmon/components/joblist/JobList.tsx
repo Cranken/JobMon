@@ -13,6 +13,7 @@ import {
   LinkBox,
   LinkOverlay,
   Stack,
+  StackDivider,
   Tag,
   Text,
   useColorModeValue,
@@ -66,7 +67,7 @@ export const JobListItem = ({
   displayMetrics,
   radarChartMetrics,
 }: JobListItemProps) => {
-  const borderColor = useColorModeValue("gray.200", "whiteAlpha.300");
+  const borderColor = useColorModeValue("gray.300", "whiteAlpha.400");
   let sortedData: JobMetadataData[] = [];
   if (job.Data) {
     sortedData = job.Data.filter((val) =>
@@ -108,12 +109,15 @@ export const JobListItem = ({
       <LinkOverlay href={job.IsRunning ? undefined : `/job/${job.Id}`}>
         <Stack
           direction="row"
+          divider={
+            <StackDivider marginY="3% !important" borderColor={borderColor} />
+          }
           gap={2}
           border="1px"
           borderColor={borderColor}
           borderRadius={5}
         >
-          <Stack m="auto" direction="row" height="100%" borderRight="1px">
+          <Stack m="auto" direction="row" height="100%">
             <Stack textAlign="start" m={5} pl={5}>
               <Heading size="sm" textDecoration="underline">
                 {job.Id}
