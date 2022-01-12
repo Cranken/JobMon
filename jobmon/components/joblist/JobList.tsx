@@ -87,18 +87,21 @@ export const JobListItem = ({
   //   histogramAvailable = false;
   //   reason = "No histogram available for short jobs (<5Min).";
   // }
-  const radarChartData = job.Data.filter((val) =>
-    radarChartMetrics.includes(val.Config.Measurement)
-  ).map((val) => {
-    const mean = d3.mean(Object.values(val.Data)) ?? 1;
-    const max = Math.max(val.Config.MaxPerNode, val.Config.MaxPerType);
-    return {
-      val: mean,
-      max: max !== 0 ? max : mean,
-      title: val.Config.DisplayName,
-    };
-  });
-  radarChartData.sort((a, b) => (a.title < b.title ? -1 : 1));
+  let radarChartData: any[] = [];
+  if (job.Data) {
+    radarChartData = job.Data.filter((val) =>
+      radarChartMetrics.includes(val.Config.Measurement)
+    ).map((val) => {
+      const mean = d3.mean(Object.values(val.Data)) ?? 1;
+      const max = Math.max(val.Config.MaxPerNode, val.Config.MaxPerType);
+      return {
+        val: mean,
+        max: max !== 0 ? max : mean,
+        title: val.Config.DisplayName,
+      };
+    });
+    radarChartData.sort((a, b) => (a.title < b.title ? -1 : 1));
+  }
 
   return (
     <LinkBox>
@@ -155,15 +158,17 @@ export const JobListItem = ({
               </Center>
             ) : (
               <Stack direction="row" gap={2} h="100%">
-                <Center width="100%" height="100%">
-                  <RadarChart
-                    data={radarChartData}
-                    value={(d) => d.val / d.max}
-                    title={(d) => d.title}
-                    size={350}
-                    margin={60}
-                  ></RadarChart>
-                </Center>
+                {job.IsRunning ? null : (
+                  <Center width="100%" height="100%">
+                    <RadarChart
+                      data={radarChartData}
+                      value={(d) => d.val / d.max}
+                      title={(d) => d.title}
+                      size={350}
+                      margin={60}
+                    ></RadarChart>
+                  </Center>
+                )}
                 {sortedData.map((dat) => (
                   <Center
                     key={dat.Config.Measurement}
