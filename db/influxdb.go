@@ -296,6 +296,7 @@ func (db *InfluxDB) queryMetadataMeasurements(metric conf.MetricConfig, job *job
 		|> %v(column: "_value")
     |> group()
 	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, "mean")
+	query += metric.PostQueryOp
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		log.Printf("Error at metadata query: %v\n", err)
@@ -328,10 +329,8 @@ func (db *InfluxDB) createAggregationTask(metric conf.MetricConfig, orgId string
 			|> aggregateWindow(every: %v, fn: %v, createEmpty: false)
 			|> set(key: "_measurement", value: "%v")
 			|> set(key: "_field", value: "%v")
-	`, db.bucket, metric.Measurement, metric.Type, sampleInterval, metric.AggFn, taskName, taskName)
-	query += metric.PostQueryOp
-	query +=
-		fmt.Sprintf(`|> to(bucket: "%v", org: "%v")`, db.bucket, db.org)
+			|> to(bucket: "%v", org: "%v")
+	`, db.bucket, metric.Measurement, metric.Type, sampleInterval, metric.AggFn, taskName, taskName, db.bucket, db.org)
 	return db.createTask(taskName, query, orgId)
 }
 
