@@ -293,10 +293,12 @@ func (db *InfluxDB) queryMetadataMeasurements(metric conf.MetricConfig, job *job
 		|> range(start: %v, stop: %v)
 		|> filter(fn: (r) => r["_measurement"] == "%v")
 		|> filter(fn: (r) => r["hostname"] =~ /%v/)
+	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList)
+	query += metric.PostQueryOp
+	query += fmt.Sprintf(`
 		|> %v(column: "_value")
     |> group()
-	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, "mean")
-	query += metric.PostQueryOp
+	`, "mean")
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		log.Printf("Error at metadata query: %v\n", err)
