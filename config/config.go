@@ -35,6 +35,7 @@ type MetricConfig struct {
 	SampleInterval string
 	Unit           string
 	DisplayName    string
+	FilterFunc     string
 	PostQueryOp    string
 	SeparationKey  string
 	MaxPerNode     int

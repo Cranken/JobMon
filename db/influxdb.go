@@ -194,8 +194,9 @@ func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, job *job.Jo
 		|> filter(fn: (r) => r["_measurement"] == "%v")
 	  |> filter(fn: (r) => r["type"] == "%v")
 		|> filter(fn: (r) => r["hostname"] =~ /%v/)
+		%v
 		|> truncateTimeColumn(unit: %v)
-	`, db.bucket, job.StartTime, job.StopTime, metric.Measurement, metric.Type, nodeList, db.defaultSampleInterval)
+	`, db.bucket, job.StartTime, job.StopTime, metric.Measurement, metric.Type, nodeList, metric.FilterFunc, db.defaultSampleInterval)
 	query += metric.PostQueryOp
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
@@ -235,7 +236,8 @@ func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, job *job
 		|> range(start: %v, stop: %v)
 		|> filter(fn: (r) => r["_measurement"] == "%v")
 		|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList)
+		%v
+	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, metric.FilterFunc)
 	query += metric.PostQueryOp
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
@@ -259,9 +261,10 @@ func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, job *job.
 			|> range(start: %v, stop: %v)
 			|> filter(fn: (r) => r["_measurement"] == "%v")
 			|> filter(fn: (r) => r["hostname"] =~ /%v/)
+			%v
 			|> truncateTimeColumn(unit: %v)
 			|> group(columns: ["_time"], mode: "by")`,
-		db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, db.defaultSampleInterval)
+		db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, metric.FilterFunc, db.defaultSampleInterval)
 
 	for i, q := range quantiles {
 		query += "\n" + quantileString(tempKeys[i], q, measurement)
@@ -298,7 +301,8 @@ func (db *InfluxDB) queryMetadataMeasurements(metric conf.MetricConfig, job *job
 		|> range(start: %v, stop: %v)
 		|> filter(fn: (r) => r["_measurement"] == "%v")
 		|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList)
+		%v
+	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, metric.FilterFunc)
 	query += metric.PostQueryOp
 	query += fmt.Sprintf(`
 		|> %v(column: "_value")
@@ -332,12 +336,13 @@ func (db *InfluxDB) createAggregationTask(metric conf.MetricConfig, orgId string
 			|> range(start: -task.every)
 			|> filter(fn: (r) => r["_measurement"] == "%v")
 			|> filter(fn: (r) => r.type == "%v")
+			%v
 			|> group(columns: ["_measurement", "hostname"], mode:"by")
 			|> aggregateWindow(every: %v, fn: %v, createEmpty: false)
 			|> set(key: "_measurement", value: "%v")
 			|> set(key: "_field", value: "%v")
 			|> to(bucket: "%v", org: "%v")
-	`, db.bucket, metric.Measurement, metric.Type, sampleInterval, metric.AggFn, taskName, taskName, db.bucket, db.org)
+	`, db.bucket, metric.Measurement, metric.Type, metric.FilterFunc, sampleInterval, metric.AggFn, taskName, taskName, db.bucket, db.org)
 	return db.createTask(taskName, query, orgId)
 }
 
