@@ -34,6 +34,10 @@ const Units: UnitsType = {
     DisplayFormat: "%",
     UsePrefix: false,
   },
+  Packets: {
+    DisplayFormat: "Packet/s",
+    UsePrefix: false,
+  },
   None: {
     DisplayFormat: "",
     UsePrefix: false,
