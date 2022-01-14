@@ -99,7 +99,12 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 			tempData := make(map[string]float64)
 			for _, v := range result {
 				for _, qr := range v {
-					tempData[qr["hostname"].(string)] = qr["_value"].(float64)
+					dat, ok := qr["_value"].(float64)
+					if !ok {
+						tempData[qr["hostname"].(string)] = 0
+					} else {
+						tempData[qr["hostname"].(string)] = dat
+					}
 				}
 			}
 			data = append(data, job.JobMetadataData{Config: m, Data: tempData})
