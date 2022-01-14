@@ -114,21 +114,28 @@ export class Unit {
     this.type = baseUnit;
   }
 
-  toString() {
+  toString(prefix?: string) {
+    let best = this.bestPrefix();
+    best = prefix ? prefix : best;
+    if (best) {
+      const prefix = Prefixes[best];
+      const exp = Math.pow(prefix.Base, prefix.Exp);
+      const value = this.value / exp;
+      return `${value.toFixed(2)} ${prefix.Short}${this.type.DisplayFormat}`;
+    }
+    return `${this.value.toFixed(2)} ${this.type.DisplayFormat}`;
+  }
+
+  bestPrefix() {
+    let prefix;
     if (this.type.UsePrefix) {
-      const bestPrefix = Object.keys(Prefixes).find((key) => {
+      prefix = Object.keys(Prefixes).find((key) => {
         const exp = Math.pow(Prefixes[key].Base, Prefixes[key].Exp);
         const value = this.value / exp;
         return 1 <= value && value < 1000;
       });
-      if (bestPrefix) {
-        const prefix = Prefixes[bestPrefix];
-        const exp = Math.pow(prefix.Base, prefix.Exp);
-        const value = this.value / exp;
-        return `${value.toFixed(2)} ${prefix.Short}${this.type.DisplayFormat}`;
-      }
     }
-    return `${this.value.toFixed(2)} ${this.type.DisplayFormat}`;
+    return prefix;
   }
 }
 

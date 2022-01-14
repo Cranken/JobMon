@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+import * as d3 from "d3";
 import { Center, Flex, Grid, Spinner } from "@chakra-ui/react";
 import { MetricData, MetricPoint } from "../../types/job";
 import { Unit } from "../../types/units";
@@ -47,12 +49,9 @@ export const MetricDataCharts = ({
     }
     let z;
     let title;
+    let max;
     if (nodeSelection.length === 1 && metric.Config.Type !== "node") {
       z = (d: MetricPoint) => d["type-id"];
-      title = ((unitStr: string) => {
-        return (d: MetricPoint) =>
-          `${d["type-id"]}: ${new Unit(d._value, unitStr).toString()}`;
-      })(metric.Config.Unit);
       const pThreadCount = Object.keys(metric.Data).length / 2;
       for (const node of Object.keys(metric.Data)) {
         if (metric.Config.Type === "cpu") {
@@ -81,6 +80,12 @@ export const MetricDataCharts = ({
           metricData = metricData.concat(metric.Data[node]);
         }
       }
+      max = d3.max(d3.map(metricData, (d) => d._value)) ?? 0;
+      const maxPrefix = new Unit(max, metric.Config.Unit).bestPrefix();
+      title = ((unitStr: string, maxPrefix?: string) => {
+        return (d: MetricPoint) =>
+          `${d["type-id"]}: ${new Unit(d._value, unitStr).toString(maxPrefix)}`;
+      })(metric.Config.Unit, maxPrefix);
     } else {
       const key = (
         nodeSelection.length === 1 && metric.Config.SeparationKey !== ""
@@ -90,15 +95,21 @@ export const MetricDataCharts = ({
       z = ((key: keyof MetricPoint) => {
         return (d: MetricPoint) => d[key]?.toString() ?? "";
       })(key);
-      title = ((key: keyof MetricPoint, unitStr: string) => {
-        return (d: MetricPoint) =>
-          `${d[key]}: ${new Unit(d._value, unitStr).toString()}`;
-      })(key, metric.Config.Unit);
       for (const node of Object.keys(metric.Data)) {
         if (key !== "hostname" || nodeSelection.indexOf(node) > -1) {
           metricData = metricData.concat(metric.Data[node]);
         }
       }
+      max = d3.max(d3.map(metricData, (d) => d._value)) ?? 0;
+      const maxPrefix = new Unit(max, metric.Config.Unit).bestPrefix();
+      title = ((
+        key: keyof MetricPoint,
+        unitStr: string,
+        maxPrefix?: string
+      ) => {
+        return (d: MetricPoint) =>
+          `${d[key]}: ${new Unit(d._value, unitStr).toString(maxPrefix)}`;
+      })(key, metric.Config.Unit, maxPrefix);
     }
     let yDomain: [number, number] | undefined = undefined;
     if (!autoScale) {

@@ -122,6 +122,11 @@ export function LineChart<T>({
 
     const I = d3.range(X.length).filter((i) => zSet.has(Z[i]));
 
+    let prefix: string | undefined;
+    if (yDomain) {
+      prefix = new Unit(yDomain[1], unit ?? "").bestPrefix();
+    }
+
     // Construct scales and axes.
     const xScale = d3.scaleUtc(xDomain, xRange);
     const yScale = d3.scaleLinear(yDomain, yRange);
@@ -134,7 +139,7 @@ export function LineChart<T>({
     const yAxis = d3
       .axisLeft<number>(yScale)
       .ticks(height / 40)
-      .tickFormat((val) => new Unit(val, unit ?? "").toString());
+      .tickFormat((val) => new Unit(val, unit ?? "").toString(prefix));
 
     // Construct a line generator.
     const line = d3
@@ -299,8 +304,10 @@ export function LineChart<T>({
         const sum = d3.sum(pointValues);
         const mean = d3.mean(pointValues);
 
-        addLine(`Mean: ${mean ? new Unit(mean, unit ?? "").toString() : 0}`);
-        addLine(`Sum: ${new Unit(sum, unit ?? "").toString()}`);
+        addLine(
+          `Mean: ${mean ? new Unit(mean, unit ?? "").toString(prefix) : 0}`
+        );
+        addLine(`Sum: ${new Unit(sum, unit ?? "").toString(prefix)}`);
       }
       if (values.length > 6) {
         for (let idx = 0; idx < 6; idx++) {

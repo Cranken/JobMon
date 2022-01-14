@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+import * as d3 from "d3";
 import { QuantileData } from "../../types/job";
 import { LineChart } from "./LineChart";
 import { QuantilePoint } from "./../../types/job";
@@ -47,12 +49,16 @@ export const QuantileDataCharts = ({
     for (const quantile of Object.keys(metric.Data)) {
       metricData = metricData.concat(metric.Data[quantile]);
     }
+    const max = d3.max(d3.map(metricData, (d) => d._value)) ?? 0;
+    const maxPrefix = new Unit(max, metric.Config.Unit).bestPrefix();
     let yDomain: [number, number] | undefined = undefined;
     if (!autoScale) {
       const max = metric.Config.MaxPerNode;
       if (max !== 0) {
         yDomain = [0, max];
       }
+    } else {
+      yDomain = [0, max];
     }
 
     chartElements.push(
@@ -71,10 +77,10 @@ export const QuantileDataCharts = ({
           xDomain={xDomain}
           setTimeRange={setTimeRange}
           width={document.body.clientWidth / 2}
-          title={((unitStr: string) => {
+          title={((unitStr: string, maxPrefix?: string) => {
             return (d: QuantilePoint) =>
-              `${d._field}: ${new Unit(d._value, unitStr).toString()}`;
-          })(metric.Config.Unit)}
+              `${d._field}: ${new Unit(d._value, unitStr).toString(maxPrefix)}`;
+          })(metric.Config.Unit, maxPrefix)}
           unit={metric.Config.Unit}
           yLabel={metric.Config.DisplayName}
           showTooltipSummary={false}
