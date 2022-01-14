@@ -114,13 +114,13 @@ const parseSelection = (
   setChecked: SetFn,
   nodePrefix: string
 ) => {
-  const parts = str.split(",");
+  const parts = str.split(" ");
   if (parts.length > 0) {
     const selected = parts.flatMap(parsePart);
     let map: SelectionMap = {};
     map["all"] = false;
     for (const node of selected) {
-      const padding = 4 - node.length;
+      const padding = Math.max(4 - node.length, 0);
       const nodeName = nodePrefix + "0".repeat(padding) + node;
       map[nodeName] = true;
     }
@@ -129,12 +129,14 @@ const parseSelection = (
 };
 
 const parsePart = (s: string) => {
+  let matches = s.match(/((?:\[)(?<range>\d+-\d+)(?:\]))|(?<single>\d+)/);
   let nodes: string[] = [];
-  if (s.length > 0) {
-    const parts = s.split("-");
-    if (parts.length === 1) {
-      nodes.push(parts[0]);
-    } else if (parts.length === 2) {
+  if (matches !== null && matches.groups) {
+    console.log(matches);
+    if (matches.groups["single"]) {
+      nodes.push(matches.groups["single"]);
+    } else if (matches.groups["range"]) {
+      const parts = matches.groups["range"].split("-");
       const lower = parseInt(parts[0]);
       const upper = parseInt(parts[1]);
       if (lower !== NaN && upper !== NaN) {

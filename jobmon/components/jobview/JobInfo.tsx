@@ -10,6 +10,8 @@ interface JobInfoProps {
 }
 
 export const JobInfo = ({ metadata, setChecked, nodes }: JobInfoProps) => {
+  const prefixMatch = metadata.NodeList.split("|")[0].match(/([a-zA-Z]+)(\d*)/);
+  const prefix = prefixMatch ? prefixMatch[1] : metadata.ClusterId;
   return (
     <Grid templateColumns="repeat(2, 1fr)" w="100%">
       <Stack>
@@ -21,11 +23,7 @@ export const JobInfo = ({ metadata, setChecked, nodes }: JobInfoProps) => {
         <Text>End: {new Date(metadata.StopTime * 1000).toLocaleString()}</Text>
       </Stack>
       <Stack>
-        <Selection
-          setChecked={setChecked}
-          items={nodes}
-          nodePrefix={metadata.ClusterId}
-        />
+        <Selection setChecked={setChecked} items={nodes} nodePrefix={prefix} />
       </Stack>
     </Grid>
   );
