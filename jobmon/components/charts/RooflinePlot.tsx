@@ -5,7 +5,7 @@ import { useRef } from "react";
 import { DataMap } from "../../types/job";
 import { Unit } from "../../types/units";
 
-export interface RooflinePlotProps<T> {
+export interface RooflinePlotProps {
   flops: DataMap<number>; // given d in data, returns the (temporal) x-value
   flops_max: number;
   flops_unit: string;
@@ -24,11 +24,7 @@ export interface RooflinePlotProps<T> {
   yRange?: [number, number]; // [bottom, top]
 }
 
-// Typescript version based on chart released under:
-// Copyright 2021 Observable, Inc.
-// Released under the ISC license.
-// https://observablehq.com/@d3/line-chart
-export function RooflinePlot<T>({
+export function RooflinePlot({
   flops,
   flops_max,
   flops_unit,
@@ -45,7 +41,7 @@ export function RooflinePlot<T>({
   xRange = [marginLeft, width - marginRight], // [left, right]
   yDomain, // [ymin, ymax]
   yRange = [height - marginBottom, marginTop], // [bottom, top]
-}: RooflinePlotProps<T>) {
+}: RooflinePlotProps) {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
