@@ -326,6 +326,7 @@ func (db *InfluxDB) createTask(taskName string, taskStr string, orgId string) (t
 }
 
 func (db *InfluxDB) createAggregationTask(metric conf.MetricConfig, orgId string) (task *domain.Task, err error) {
+	measurement := metric.Measurement + "_" + metric.AggFn
 	taskName := db.bucket + "_" + metric.Measurement + "_" + metric.AggFn
 	sampleInterval := metric.SampleInterval
 	if sampleInterval == "" {
@@ -342,7 +343,7 @@ func (db *InfluxDB) createAggregationTask(metric conf.MetricConfig, orgId string
 			|> set(key: "_measurement", value: "%v")
 			|> set(key: "_field", value: "%v")
 			|> to(bucket: "%v", org: "%v")
-	`, db.bucket, metric.Measurement, metric.Type, metric.FilterFunc, sampleInterval, metric.AggFn, taskName, taskName, db.bucket, db.org)
+	`, db.bucket, metric.Measurement, metric.Type, metric.FilterFunc, sampleInterval, metric.AggFn, measurement, measurement, db.bucket, db.org)
 	return db.createTask(taskName, query, orgId)
 }
 
