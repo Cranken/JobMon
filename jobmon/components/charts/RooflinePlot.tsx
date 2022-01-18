@@ -68,7 +68,7 @@ export function RooflinePlot({
     });
 
     // Compute default domains.
-    if (xDomain === undefined) xDomain = [1, d3.max(opInt) ?? 100];
+    if (xDomain === undefined) xDomain = [1, Math.max(d3.max(opInt) ?? 0, 100)];
     if (yDomain === undefined)
       yDomain = [10, Math.max(d3.max(flop) ?? 0, flops_max)];
 
@@ -141,10 +141,12 @@ export function RooflinePlot({
     }
 
     nodes.forEach((_, i) => {
+      const x = Math.max(xScale(opInt.at(i) ?? 1), xScale(xDomain?.at(0) ?? 1));
+      const y = Math.min(yScale(flop.at(i) ?? 1), yScale(yDomain?.at(0) ?? 1));
       svg
         .append("circle")
-        .attr("cx", xScale(opInt[i]))
-        .attr("cy", yScale(flop[i]))
+        .attr("cx", x)
+        .attr("cy", y)
         .attr("r", 4)
         .attr("fill", "currentColor");
     });

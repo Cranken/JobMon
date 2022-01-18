@@ -21,6 +21,7 @@ import {
 import { Histogram } from "../charts/Histogram";
 import { RadarChart } from "../charts/RadarChart";
 import * as d3 from "d3";
+import RooflinePlot from "../charts/RooflinePlot";
 
 interface JobListProps {
   jobs: JobMetadata[];
@@ -103,6 +104,10 @@ export const JobListItem = ({
     });
     radarChartData.sort((a, b) => (a.title < b.title ? -1 : 1));
   }
+  const flopsData = job.Data.find(
+    (val) => val.Config.Measurement === "flops_dp"
+  );
+  const membwData = job.Data.find((val) => val.Config.Measurement === "mem_bw");
 
   return (
     <LinkBox>
@@ -171,6 +176,20 @@ export const JobListItem = ({
                       size={350}
                       margin={60}
                     ></RadarChart>
+                    {flopsData && membwData ? (
+                      <Center w={600} h={350}>
+                        <RooflinePlot
+                          flops={flopsData.Data}
+                          flops_max={flopsData.Config.MaxPerNode}
+                          flops_unit={flopsData.Config.Unit}
+                          mem_bw={membwData.Data}
+                          mem_bw_max={membwData.Config.MaxPerNode}
+                          mem_bw_unit={flopsData.Config.Unit}
+                          width={600}
+                          height={350}
+                        ></RooflinePlot>
+                      </Center>
+                    ) : null}
                   </Center>
                 )}
                 {sortedData.map((dat) => (
