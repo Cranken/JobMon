@@ -75,13 +75,15 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	}
 	w.WriteHeader(200)
 
-	jobMetadata := store.StopJob(id, stopJob)
+	jobMetadata, err := store.StopJob(id, stopJob)
 
-	db.RunAggregation()
-	if config.Prefetch {
-		go func() {
-			jobCache.Get(&jobMetadata)
-		}()
+	if err != nil {
+		db.RunAggregation()
+		if config.Prefetch {
+			go func() {
+				jobCache.Get(&jobMetadata)
+			}()
+		}
 	}
 }
 
