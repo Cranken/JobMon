@@ -90,6 +90,8 @@ export const JobListItem = ({
   //   reason = "No histogram available for short jobs (<5Min).";
   // }
   let radarChartData: any[] = [];
+  let flopsData;
+  let membwData;
   if (job.Data) {
     radarChartData = job.Data.filter((val) =>
       radarChartMetrics.includes(val.Config.Measurement)
@@ -103,11 +105,10 @@ export const JobListItem = ({
       };
     });
     radarChartData.sort((a, b) => (a.title < b.title ? -1 : 1));
+
+    flopsData = job.Data.find((val) => val.Config.Measurement === "flops_dp");
+    membwData = job.Data.find((val) => val.Config.Measurement === "mem_bw");
   }
-  const flopsData = job.Data.find(
-    (val) => val.Config.Measurement === "flops_dp"
-  );
-  const membwData = job.Data.find((val) => val.Config.Measurement === "mem_bw");
 
   return (
     <LinkBox>
