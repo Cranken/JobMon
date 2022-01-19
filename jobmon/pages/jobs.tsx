@@ -69,6 +69,10 @@ export const Jobs = () => {
     localStorage.setItem("displayMetrics", selected.join(","));
   };
 
+  let partitions = new Set<string>();
+  jobListData.Jobs.forEach((j) =>
+    j.Partition !== "" ? partitions.add(j.Partition) : null
+  );
   let elements = [];
   elements.push(
     <JobFilter
@@ -78,7 +82,7 @@ export const Jobs = () => {
       stopTime={[new Date(stopTime), setStopTime]}
       numNodes={[numNodes, setNumNodes]}
       metrics={[metrics, setChecked]}
-      partitions={[jobListData.Config.Partitions, partition, setPartition]}
+      partitions={[Array.from(partitions), partition, setPartition]}
       numGpu={[numGpu, setNumGpu]}
       isRunning={[showIsRunning, setShowIsRunning]}
       joblistLimit={[joblistLimit, setJoblistLimit]}
