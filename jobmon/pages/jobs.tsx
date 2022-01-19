@@ -95,6 +95,7 @@ export const Jobs = () => {
     (partition === "" ? true : partition === job.Partition) &&
     checkBetween(numGpu[0], numGpu[1], job.GPUsPerNode * job.NumNodes) &&
     (!job.IsRunning || showIsRunning);
+  const filteredJobs = jobListData.Jobs.filter(filter);
 
   const displayMetrics = Object.keys(metrics).filter((val) => metrics[val]);
 
@@ -102,7 +103,7 @@ export const Jobs = () => {
     <Box ref={joblistRef}>
       <JobList
         key="joblist"
-        jobs={jobListData.Jobs.filter(filter)}
+        jobs={filteredJobs}
         displayMetrics={displayMetrics}
         radarChartMetrics={jobListData.Config.RadarChartMetrics}
         limit={joblistLimit}
@@ -111,7 +112,7 @@ export const Jobs = () => {
     </Box>
   );
 
-  const pages = jobListData.Jobs.length / joblistLimit;
+  const pages = filteredJobs.length / joblistLimit;
   elements.push(
     <JoblistPageSelection
       key="pageselection"
