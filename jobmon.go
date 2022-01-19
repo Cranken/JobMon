@@ -32,7 +32,7 @@ func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 	utils.AllowCors(r, w.Header())
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("Could not read http request body")
+		log.Printf("JobStart: Could not read http request body")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -40,7 +40,7 @@ func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 	var j job.JobMetadata
 	err = json.Unmarshal(body, &j)
 	if err != nil {
-		log.Printf("Could not unmarshal http request body")
+		log.Printf("JobStart: Could not unmarshal http request body %v\n", string(body))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
