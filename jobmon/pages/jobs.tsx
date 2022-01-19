@@ -116,7 +116,7 @@ export const Jobs = () => {
     <JoblistPageSelection
       key="pageselection"
       currentPage={page}
-      pages={!isNaN(pages) && isFinite(pages) ? pages : 1}
+      pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
       setPage={setPage}
     ></JoblistPageSelection>
   );
