@@ -29,22 +29,24 @@ interface JobListProps {
   radarChartMetrics: string[];
   filter?: (job: JobMetadata) => boolean;
   sortBy?: string;
-  width?: string;
-  height?: string;
+  limit: number;
+  page: number;
 }
 
 export const JobList = ({
   jobs,
   displayMetrics,
   radarChartMetrics,
-  width,
-  height,
+  limit,
+  page,
 }: JobListProps) => {
   jobs.sort((a, b) => (a.StartTime < b.StartTime ? 1 : -1));
+  const slice =
+    limit !== 0 ? jobs.slice(limit * page, limit * page + limit) : jobs;
   return (
     <Center>
       <Stack>
-        {jobs.map((job) => (
+        {slice.map((job) => (
           <JobListItem
             key={job.Id}
             job={job}
@@ -76,11 +78,14 @@ export const JobListItem = ({
     ).sort((a, b) => (a.Config.Measurement < b.Config.Measurement ? -1 : 1));
   }
 
-  let histogramAvailable = true;
+  let dataAvailable = true;
   let reason = "";
   if (job.IsRunning) {
-    histogramAvailable = false;
+    dataAvailable = false;
     reason = "Job is still running. No metric data available yet.";
+  } else if (!job.Data) {
+    dataAvailable = false;
+    reason = "No metadata for job available.";
   }
   // } else if (job.NumNodes <= 1) {
   //   histogramAvailable = false;
@@ -123,7 +128,7 @@ export const JobListItem = ({
           borderColor={borderColor}
           borderRadius={5}
         >
-          <Stack m="auto" direction="row" height="100%">
+          <Stack m="auto" direction="row" height="100%" flexGrow={1}>
             <Stack textAlign="start" m={5} pl={5}>
               <Heading size="sm" textDecoration="underline">
                 {job.Id}
@@ -157,7 +162,7 @@ export const JobListItem = ({
             </Center>
           </Stack>
           <Box pr={5}>
-            {!histogramAvailable ? (
+            {!dataAvailable ? (
               <Center h="100%">
                 <Box>
                   <Alert status="info">
@@ -170,13 +175,15 @@ export const JobListItem = ({
               <Stack direction="row" gap={2} h="100%">
                 {job.IsRunning ? null : (
                   <Center width="100%" height="100%">
-                    <RadarChart
-                      data={radarChartData}
-                      value={(d) => d.val / d.max}
-                      title={(d) => d.title}
-                      size={350}
-                      margin={60}
-                    ></RadarChart>
+                    {radarChartData ? (
+                      <RadarChart
+                        data={radarChartData}
+                        value={(d) => d.val / d.max}
+                        title={(d) => d.title}
+                        size={350}
+                        margin={60}
+                      ></RadarChart>
+                    ) : null}
                     {flopsData && membwData ? (
                       <Center w={600} h={350}>
                         <RooflinePlot

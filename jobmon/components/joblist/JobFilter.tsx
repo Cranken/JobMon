@@ -37,13 +37,15 @@ import style from "./JobFilter.module.css";
 type SetFn = (val: SelectionMap) => void;
 
 interface JobFilterProps {
-  userName: [string, Dispatch<SetStateAction<string>>];
-  startTime: [Date, Dispatch<SetStateAction<Date>>];
-  stopTime: [Date, Dispatch<SetStateAction<Date>>];
-  numNodes: [number[], Dispatch<SetStateAction<number[]>>];
+  userName: [string, (value: string) => void];
+  startTime: [Date, (value: Date) => void];
+  stopTime: [Date, (value: Date) => void];
+  numNodes: [number[], (value: number[]) => void];
   metrics: [SelectionMap, SetFn];
-  partitions: [string[], string, Dispatch<SetStateAction<string>>];
-  numGpu: [number[], Dispatch<SetStateAction<number[]>>];
+  partitions: [string[], string, (value: string) => void];
+  numGpu: [number[], (value: number[]) => void];
+  isRunning: [boolean, (value: boolean) => void];
+  joblistLimit: [number, (value: number) => void];
 }
 
 export const JobFilter = ({
@@ -54,6 +56,8 @@ export const JobFilter = ({
   metrics,
   partitions,
   numGpu,
+  isRunning,
+  joblistLimit,
 }: JobFilterProps) => {
   const timezoneOffsetMsec = new Date().getTimezoneOffset() * 60 * 1000;
   const getDateString = (d: Date) =>
@@ -84,18 +88,28 @@ export const JobFilter = ({
                   mr={5}
                   onChange={(ev) => userName[1](ev.target.value)}
                 />
-                <Select
-                  maxW="30ch"
-                  value={partitions[1]}
-                  onChange={(e) => partitions[2](e.target.value)}
-                >
-                  <option value="">All partitions</option>
-                  {partitions[0].map((part) => (
-                    <option key={part} value={part}>
-                      {part}
-                    </option>
-                  ))}
-                </Select>
+                <Flex gap={2}>
+                  <Select
+                    maxW="30ch"
+                    value={partitions[1]}
+                    onChange={(e) => partitions[2](e.target.value)}
+                  >
+                    <option value="">Show All Partitions</option>
+                    {partitions[0].map((part) => (
+                      <option key={part} value={part}>
+                        {part}
+                      </option>
+                    ))}
+                  </Select>
+                  <Select
+                    maxW="30ch"
+                    value={isRunning[0] ? "true" : "false"}
+                    onChange={(e) => isRunning[1](e.target.value === "true")}
+                  >
+                    <option value="true">Show Running Jobs</option>
+                    <option value="false">Hide Running Jobs</option>
+                  </Select>
+                </Flex>
                 <Stack direction="row" gap={6}>
                   <Box flexGrow={1}>
                     <Flex justify="space-between" align="center">
@@ -236,32 +250,51 @@ export const JobFilter = ({
               </Flex>
             </TabPanel>
             <TabPanel>
-              <Accordion allowToggle>
-                <AccordionItem>
-                  <h2>
-                    <AccordionButton>
-                      <Box flex="1" textAlign="left">
-                        Select metrics shown in histograms
-                      </Box>
-                    </AccordionButton>
-                  </h2>
-                  <AccordionPanel>
-                    <Stack>
-                      {Object.keys(metrics[0]).map((val) => (
-                        <Checkbox
-                          key={val}
-                          isChecked={metrics[0][val]}
-                          onChange={(e) =>
-                            metrics[1]({ [val]: e.target.checked })
-                          }
-                        >
-                          {val}
-                        </Checkbox>
-                      ))}
-                    </Stack>
-                  </AccordionPanel>
-                </AccordionItem>
-              </Accordion>
+              <Stack>
+                <Accordion allowToggle>
+                  <AccordionItem>
+                    <h2>
+                      <AccordionButton>
+                        <Box flex="1" textAlign="left">
+                          Select metrics shown in histograms
+                        </Box>
+                      </AccordionButton>
+                    </h2>
+                    <AccordionPanel>
+                      <Stack>
+                        {Object.keys(metrics[0]).map((val) => (
+                          <Checkbox
+                            key={val}
+                            isChecked={metrics[0][val]}
+                            onChange={(e) =>
+                              metrics[1]({ [val]: e.target.checked })
+                            }
+                          >
+                            {val}
+                          </Checkbox>
+                        ))}
+                      </Stack>
+                    </AccordionPanel>
+                  </AccordionItem>
+                </Accordion>
+                <Stack direction="row" align="center">
+                  <Text>Set limit of visible jobs per page:</Text>
+                  <Container>
+                    <Select
+                      value={joblistLimit[0]}
+                      onChange={(e) =>
+                        joblistLimit[1](parseInt(e.target.value))
+                      }
+                      maxW="15ch"
+                    >
+                      <option value={0}>Show All</option>
+                      <option value={10}>Show 10</option>
+                      <option value={25}>Show 25</option>
+                      <option value={50}>Show 50</option>
+                    </Select>
+                  </Container>
+                </Stack>
+              </Stack>
             </TabPanel>
           </TabPanels>
         </Tabs>
