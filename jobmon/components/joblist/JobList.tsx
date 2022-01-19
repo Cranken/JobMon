@@ -79,23 +79,6 @@ export const JobListItem = ({
       displayMetrics.includes(val.Config.Measurement)
     ).sort((a, b) => (a.Config.Measurement < b.Config.Measurement ? -1 : 1));
   }
-
-  let dataAvailable = true;
-  let reason = "";
-  if (job.IsRunning) {
-    dataAvailable = false;
-    reason = "Job is still running. No metric data available yet.";
-  } else if (!job.Data) {
-    dataAvailable = false;
-    reason = "No metadata for job available.";
-  }
-  // } else if (job.NumNodes <= 1) {
-  //   histogramAvailable = false;
-  //   reason = "No histogram available for jobs with less than two nodes.";
-  // } else if (job.StopTime - job.StartTime < 300) {
-  //   histogramAvailable = false;
-  //   reason = "No histogram available for short jobs (<5Min).";
-  // }
   let radarChartData: any[] = [];
   let flopsData;
   let membwData;
@@ -116,6 +99,28 @@ export const JobListItem = ({
     flopsData = job.Data.find((val) => val.Config.Measurement === "flops_dp");
     membwData = job.Data.find((val) => val.Config.Measurement === "mem_bw");
   }
+
+  let dataAvailable = true;
+  let reason = "";
+  if (job.IsRunning) {
+    dataAvailable = false;
+    reason = "Job is still running. No metric data available yet.";
+  } else if (
+    !job.Data ||
+    radarChartData.length === 0 ||
+    !flopsData ||
+    !membwData
+  ) {
+    dataAvailable = false;
+    reason = "No metadata for job available.";
+  }
+  // } else if (job.NumNodes <= 1) {
+  //   histogramAvailable = false;
+  //   reason = "No histogram available for jobs with less than two nodes.";
+  // } else if (job.StopTime - job.StartTime < 300) {
+  //   histogramAvailable = false;
+  //   reason = "No histogram available for short jobs (<5Min).";
+  // }
 
   return (
     <LinkBox>
