@@ -109,7 +109,9 @@ export const JobListItem = ({
     !job.Data ||
     radarChartData.length === 0 ||
     !flopsData ||
-    !membwData
+    Object.keys(flopsData.Data).length === 0 ||
+    !membwData ||
+    Object.keys(membwData.Data).length === 0
   ) {
     dataAvailable = false;
     reason = "No metadata for job available.";
