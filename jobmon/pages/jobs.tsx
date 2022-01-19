@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import JobFilter from "../components/joblist/JobFilter";
 import JobList from "../components/joblist/JobList";
 import { checkBetween, useStorageState } from "../utils/utils";
 import { JobListData, JobMetadata } from "./../types/job";
 import { useRouter } from "next/router";
 import { useCookies } from "react-cookie";
-import { Center, Spinner } from "@chakra-ui/react";
+import { Box, Center, Spinner } from "@chakra-ui/react";
 import { SelectionMap } from "./job/[id]";
+import JoblistPageSelection from "../components/joblist/JoblistPageSelection";
 
 export const Jobs = () => {
   const router = useRouter();
@@ -26,6 +27,8 @@ export const Jobs = () => {
     true
   );
   const [joblistLimit, setJoblistLimit] = useStorageState("joblistLimit", 25);
+  const [page, setPage] = useState(1);
+  const joblistRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const { user } = router.query;
@@ -33,6 +36,16 @@ export const Jobs = () => {
       setUserId(user as string);
     }
   }, [router]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [joblistLimit]);
+
+  useEffect(() => {
+    if (joblistRef.current) {
+      joblistRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [page]);
 
   if (!jobListData) {
     return (
@@ -86,14 +99,26 @@ export const Jobs = () => {
   const displayMetrics = Object.keys(metrics).filter((val) => metrics[val]);
 
   elements.push(
-    <JobList
-      key="joblist"
-      jobs={jobListData.Jobs.filter(filter)}
-      displayMetrics={displayMetrics}
-      radarChartMetrics={jobListData.Config.RadarChartMetrics}
-      limit={joblistLimit}
-      page={0}
-    />
+    <Box ref={joblistRef}>
+      <JobList
+        key="joblist"
+        jobs={jobListData.Jobs.filter(filter)}
+        displayMetrics={displayMetrics}
+        radarChartMetrics={jobListData.Config.RadarChartMetrics}
+        limit={joblistLimit}
+        page={page}
+      />
+    </Box>
+  );
+
+  const pages = jobListData.Jobs.length / joblistLimit;
+  elements.push(
+    <JoblistPageSelection
+      key="pageselection"
+      currentPage={page}
+      pages={!isNaN(pages) && isFinite(pages) ? pages : 1}
+      setPage={setPage}
+    ></JoblistPageSelection>
   );
 
   return <React.Fragment>{elements}</React.Fragment>;
