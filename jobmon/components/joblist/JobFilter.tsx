@@ -75,20 +75,57 @@ export const JobFilter = ({
         <Tabs w="100%">
           <TabList>
             <Tab>Job Data</Tab>
-            <Tab>Time</Tab>
             <Tab>Settings</Tab>
           </TabList>
           <TabPanels>
             <TabPanel>
               <Stack>
-                <Input
-                  value={userName[0]}
-                  placeholder="User Id"
-                  maxW="15ch"
-                  mr={5}
-                  onChange={(ev) => userName[1](ev.target.value)}
-                />
-                <Flex gap={2}>
+                <Flex gap={3}>
+                  <Input
+                    value={userName[0]}
+                    placeholder="User Id"
+                    maxW="15ch"
+                    onChange={(ev) => userName[1](ev.target.value)}
+                  />
+                  <Flex
+                    justify="center"
+                    align="center"
+                    borderWidth="1px"
+                    borderRadius="lg"
+                    h={10}
+                    px={2}
+                    w="fit-content"
+                  >
+                    <Text mr={2}>Filter between:</Text>
+                    <input
+                      className={style["time-input"]}
+                      type="datetime-local"
+                      min="2021-10-01T00:00"
+                      value={getDateString(startTime[0])}
+                      onChange={(ev) => startTime[1](new Date(ev.target.value))}
+                    />
+                    <Spacer mx={1} />
+                    <Text mr={2}>and:</Text>
+                    <input
+                      className={style["time-input"]}
+                      type="datetime-local"
+                      min="2021-10-01T00:00"
+                      value={getDateString(stopTime[0])}
+                      onChange={(ev) => stopTime[1](new Date(ev.target.value))}
+                    />
+                    <Spacer mx={1} />
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        startTime[1](new Date("2021-10-01"));
+                        stopTime[1](new Date());
+                      }}
+                    >
+                      Reset
+                    </Button>
+                  </Flex>
+                </Flex>
+                <Flex gap={3}>
                   <Select
                     maxW="30ch"
                     value={partitions[1]}
@@ -209,45 +246,6 @@ export const JobFilter = ({
                   </Box>
                 </Stack>
               </Stack>
-            </TabPanel>
-            <TabPanel>
-              <Flex
-                justify="center"
-                align="center"
-                borderWidth="1px"
-                borderRadius="lg"
-                h={10}
-                px={2}
-                w="fit-content"
-              >
-                <Text mr={2}>Filter between:</Text>
-                <input
-                  className={style["time-input"]}
-                  type="datetime-local"
-                  min="2021-10-01T00:00"
-                  value={getDateString(startTime[0])}
-                  onChange={(ev) => startTime[1](new Date(ev.target.value))}
-                />
-                <Spacer mx={1} />
-                <Text mr={2}>and:</Text>
-                <input
-                  className={style["time-input"]}
-                  type="datetime-local"
-                  min="2021-10-01T00:00"
-                  value={getDateString(stopTime[0])}
-                  onChange={(ev) => stopTime[1](new Date(ev.target.value))}
-                />
-                <Spacer mx={1} />
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    startTime[1](new Date("2021-10-01"));
-                    stopTime[1](new Date());
-                  }}
-                >
-                  Reset
-                </Button>
-              </Flex>
             </TabPanel>
             <TabPanel>
               <Stack>
