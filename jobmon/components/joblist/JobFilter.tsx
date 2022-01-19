@@ -288,7 +288,6 @@ export const JobFilter = ({
                       maxW="15ch"
                     >
                       <option value={0}>Show All</option>
-                      <option value={2}>Show 2</option>
                       <option value={10}>Show 10</option>
                       <option value={25}>Show 25</option>
                       <option value={50}>Show 50</option>
