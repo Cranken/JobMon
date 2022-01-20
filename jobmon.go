@@ -45,7 +45,7 @@ func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 		return
 	}
 
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 	store.Put(j)
 }
 
@@ -53,7 +53,7 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	utils.AllowCors(r, w.Header())
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("Could not read http request body")
+		log.Printf("JobStop: Could not read http request body")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -61,7 +61,7 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	var stopJob job.StopJob
 	err = json.Unmarshal(body, &stopJob)
 	if err != nil {
-		log.Printf("Could not parse json from http request body")
+		log.Printf("JobStop: Could not parse json from http request body %v", string(body))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -69,11 +69,11 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	strId := params.ByName("id")
 	id, err := strconv.Atoi(strId)
 	if err != nil {
-		log.Printf("Id is not a valid integer")
+		log.Printf("JobStop: Id is not a valid integer %v", strId)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 
 	jobMetadata, err := store.StopJob(id, stopJob)
 
@@ -212,7 +212,7 @@ func Login(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 }
 
 func Logout(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -240,7 +240,7 @@ func Logout(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	authManager.Logout(dat.Username)
 
 	http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 }
 
 func GenerateAPIKey(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
