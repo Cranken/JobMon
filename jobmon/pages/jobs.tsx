@@ -30,6 +30,19 @@ export const Jobs = () => {
   const [page, setPage] = useState(1);
   const joblistRef = useRef<HTMLDivElement>(null);
 
+  const filter = (job: JobMetadata) =>
+    job.UserName.startsWith(userName) &&
+    checkBetween(
+      new Date(startTime),
+      new Date(stopTime),
+      new Date(job.StartTime * 1000)
+    ) &&
+    checkBetween(numNodes[0], numNodes[1], job.NumNodes) &&
+    (partition === "" ? true : partition === job.Partition) &&
+    checkBetween(numGpu[0], numGpu[1], job.GPUsPerNode * job.NumNodes) &&
+    (!job.IsRunning || showIsRunning);
+  const filteredJobs = jobListData?.Jobs?.filter(filter) ?? [];
+
   useEffect(() => {
     const { user } = router.query;
     if (user?.length ?? 0 > 0) {
@@ -39,7 +52,7 @@ export const Jobs = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [joblistLimit]);
+  }, [joblistLimit, filteredJobs?.length]);
 
   useEffect(() => {
     if (joblistRef.current) {
@@ -88,18 +101,6 @@ export const Jobs = () => {
       joblistLimit={[joblistLimit, setJoblistLimit]}
     />
   );
-  const filter = (job: JobMetadata) =>
-    job.UserName.startsWith(userName) &&
-    checkBetween(
-      new Date(startTime),
-      new Date(stopTime),
-      new Date(job.StartTime * 1000)
-    ) &&
-    checkBetween(numNodes[0], numNodes[1], job.NumNodes) &&
-    (partition === "" ? true : partition === job.Partition) &&
-    checkBetween(numGpu[0], numGpu[1], job.GPUsPerNode * job.NumNodes) &&
-    (!job.IsRunning || showIsRunning);
-  const filteredJobs = jobListData.Jobs.filter(filter);
 
   const displayMetrics = Object.keys(metrics).filter((val) => metrics[val]);
 
