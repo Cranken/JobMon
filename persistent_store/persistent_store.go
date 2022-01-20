@@ -122,7 +122,7 @@ func (s *Store) addDataToIncompleteJobs() {
 	s.mut.Lock()
 	defer s.mut.Unlock()
 	for i, j := range s.Jobs {
-		if j.Data == nil {
+		if j.Data == nil && !j.IsRunning {
 			data, err := (*s.database).GetJobMetadataMetrics(&j)
 			if err == nil {
 				j.Data = data
