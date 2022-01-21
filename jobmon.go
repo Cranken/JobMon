@@ -87,16 +87,18 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Success"))
 
-	jobMetadata, err := store.StopJob(id, stopJob)
+	go func() {
+		jobMetadata, err := store.StopJob(id, stopJob)
 
-	if err != nil {
-		db.RunAggregation()
-		if config.Prefetch {
-			go func() {
-				jobCache.Get(&jobMetadata)
-			}()
+		if err != nil {
+			db.RunAggregation()
+			if config.Prefetch {
+				go func() {
+					jobCache.Get(&jobMetadata)
+				}()
+			}
 		}
-	}
+	}()
 }
 
 func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
