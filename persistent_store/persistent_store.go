@@ -18,21 +18,19 @@ import (
 type Store struct {
 	Jobs           map[int]job.JobMetadata
 	SessionStorage map[string]string
-	defaultTTL     int
 	mut            sync.Mutex
 	database       *db.DB
-	storefile      string
+	config         config.Configuration
 }
 
 type JobPred func(*job.JobMetadata) bool
 
 func (s *Store) Init(c config.Configuration, database *db.DB) {
-	s.storefile = c.StoreFile
+	s.config = c
 	s.database = database
-	s.defaultTTL = c.DefaultTTL
-	data, err := os.ReadFile(s.storefile)
+	data, err := os.ReadFile(s.config.StoreFile)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		log.Fatalf("Could not read store file: %v\n Error: %v\n", s.storefile, err)
+		log.Fatalf("Could not read store file: %v\n Error: %v\n", s.config.StoreFile, err)
 	}
 	json.Unmarshal(data, s)
 	if s.Jobs == nil {
@@ -41,16 +39,16 @@ func (s *Store) Init(c config.Configuration, database *db.DB) {
 	if s.SessionStorage == nil {
 		s.SessionStorage = make(map[string]string)
 	}
-	s.removeExpiredJobs()
+	s.startCleanJobsTimer()
 	s.addDataToIncompleteJobs()
 
-	go s.startExpiredJobsTimer()
+	go s.startCleanJobsTimer()
 }
 
 func (s *Store) Put(job job.JobMetadata) {
 	go func() {
 		if job.TTL == 0 {
-			job.TTL = s.defaultTTL
+			job.TTL = s.config.DefaultTTL
 		}
 		s.mut.Lock()
 		s.Jobs[job.Id] = job
@@ -101,11 +99,12 @@ func (s *Store) StopJob(id int, stopJob job.StopJob) (job job.JobMetadata, err e
 	return s.Jobs[id], nil
 }
 
-func (s *Store) startExpiredJobsTimer() {
+func (s *Store) startCleanJobsTimer() {
 	ticker := time.NewTicker(12 * time.Hour)
 	for {
 		<-ticker.C
 		s.removeExpiredJobs()
+		s.finishOvertimeJobs()
 	}
 }
 
@@ -117,6 +116,21 @@ func (s *Store) removeExpiredJobs() {
 		}
 	}
 	s.mut.Unlock()
+}
+
+func (s *Store) finishOvertimeJobs() {
+	for _, j := range s.Jobs {
+		if j.IsRunning {
+			partition, ok := s.config.Partitions[j.Partition]
+			maxTime := 86400
+			if ok {
+				maxTime = partition.MaxTime
+			}
+			if j.Overtime(maxTime) {
+				s.StopJob(j.Id, job.StopJob{StopTime: j.StartTime + maxTime, ExitCode: 1})
+			}
+		}
+	}
 }
 
 func (s *Store) addMetadataToJob(job *job.JobMetadata) error {
@@ -149,5 +163,5 @@ func (s *Store) Flush() {
 	if err != nil {
 		log.Printf("Could not marshal store into json: %v\n", err)
 	}
-	os.WriteFile(s.storefile, data, 0644)
+	os.WriteFile(s.config.StoreFile, data, 0644)
 }

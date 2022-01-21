@@ -46,7 +46,6 @@ type JobListData struct {
 
 type JobListConfig struct {
 	Metrics           []string
-	Partitions        []string
 	RadarChartMetrics []string
 }
 
@@ -56,4 +55,9 @@ func (j *JobMetadata) Expired() bool {
 		return false
 	}
 	return j.StopTime+j.TTL < now
+}
+
+func (j *JobMetadata) Overtime(maxTime int) bool {
+	now := int(time.Now().Unix())
+	return j.StartTime+maxTime > now
 }

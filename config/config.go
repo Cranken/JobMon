@@ -24,7 +24,7 @@ type Configuration struct {
 	JWTSecret         string
 	StoreFile         string
 	LocalUsers        map[string]LocalUser
-	Partitions        []string
+	Partitions        map[string]PartitionConfig
 	RadarChartMetrics []string
 }
 
@@ -41,6 +41,10 @@ type MetricConfig struct {
 	MaxPerNode     int
 	MaxPerType     int
 	PThreadAggFn   string
+}
+
+type PartitionConfig struct {
+	MaxTime int
 }
 
 type LocalUser struct {
