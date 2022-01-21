@@ -104,6 +104,13 @@ export const AnalysisTableView = ({ data }: AnalysisTableViewProps) => {
             }}
           >
             Node
+            {sortBy === "node" ? (
+              descending ? (
+                <ChevronDownIcon boxSize={5} />
+              ) : (
+                <ChevronUpIcon boxSize={5} />
+              )
+            ) : null}
           </Th>
           {data.Metadata.Data.map((val) => (
             <Th
