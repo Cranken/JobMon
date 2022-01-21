@@ -39,7 +39,8 @@ func (s *Store) Init(c config.Configuration, database *db.DB) {
 	if s.SessionStorage == nil {
 		s.SessionStorage = make(map[string]string)
 	}
-	s.startCleanJobsTimer()
+	s.removeExpiredJobs()
+	s.finishOvertimeJobs()
 	s.addDataToIncompleteJobs()
 
 	go s.startCleanJobsTimer()
