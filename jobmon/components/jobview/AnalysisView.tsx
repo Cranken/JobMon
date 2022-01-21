@@ -12,6 +12,8 @@ import {
 import { JobData } from "../../types/job";
 import { BoxPlot } from "../charts/BoxPlot";
 import { Unit } from "../../types/units";
+import { useState } from "react";
+import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
 
 interface AnalysisBoxPlotProps {
   data?: JobData;
@@ -47,10 +49,33 @@ interface AnalysisTableViewProps {
   data?: JobData;
 }
 export const AnalysisTableView = ({ data }: AnalysisTableViewProps) => {
-  if (!data) {
+  const [sortBy, setSortBy] = useState("node");
+  const [descending, setDescending] = useState(true);
+  if (!data || !data.Metadata.Data) {
     return null;
   }
-  const rows = data.Metadata.NodeList.split("|").map((node) => {
+  let nodes: string[] = [];
+  if (sortBy !== "node") {
+    const metric = data.Metadata.Data.find(
+      (val) => val.Config.Measurement === sortBy
+    );
+    console.log(metric);
+    if (metric) {
+      nodes = Object.keys(metric?.Data ?? {});
+      nodes.sort((a, b) => (metric?.Data[a] < metric?.Data[b] ? 1 : -1));
+      if (!descending) {
+        nodes.reverse();
+      }
+    }
+  }
+  if (nodes.length === 0) {
+    nodes = data.Metadata.NodeList.split("|");
+    if (!descending) {
+      nodes.reverse();
+    }
+  }
+
+  const rows = nodes.map((node) => {
     const nodeData = data.Metadata.Data.flatMap(
       (val) => new Unit(val.Data[node], val.Config.Unit)
     );
@@ -68,9 +93,40 @@ export const AnalysisTableView = ({ data }: AnalysisTableViewProps) => {
     <Table>
       <Thead>
         <Tr>
-          <Th>Node</Th>
+          <Th
+            onClick={() => {
+              if (sortBy === "node") {
+                setDescending(!descending);
+              } else {
+                setDescending(true);
+              }
+              setSortBy("node");
+            }}
+          >
+            Node
+          </Th>
           {data.Metadata.Data.map((val) => (
-            <Th key={val.Config.Measurement}>{val.Config.DisplayName}</Th>
+            <Th
+              cursor="pointer"
+              onClick={() => {
+                if (sortBy === val.Config.Measurement) {
+                  setDescending(!descending);
+                } else {
+                  setDescending(true);
+                }
+                setSortBy(val.Config.Measurement);
+              }}
+              key={val.Config.Measurement}
+            >
+              {val.Config.DisplayName}
+              {sortBy === val.Config.Measurement ? (
+                descending ? (
+                  <ChevronDownIcon boxSize={5} />
+                ) : (
+                  <ChevronUpIcon boxSize={5} />
+                )
+              ) : null}
+            </Th>
           ))}
         </Tr>
       </Thead>

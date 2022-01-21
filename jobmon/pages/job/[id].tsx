@@ -120,8 +120,8 @@ const Job: NextPage = () => {
       <Tabs isLazy>
         <TabList>
           <Tab>Timeline</Tab>
-          <Tab>Node Table</Tab>
           <Tab>Box Plots</Tab>
+          <Tab>Node Table</Tab>
           <Tab>Roofline</Tab>
         </TabList>
 
