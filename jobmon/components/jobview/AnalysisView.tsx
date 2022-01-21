@@ -83,7 +83,7 @@ interface AnalysisPlotsProps {
   autoScale: boolean;
 }
 export const AnalysisPlots = ({ data, autoScale }: AnalysisPlotsProps) => {
-  if (!data) {
+  if (!data || !data.Metadata.Data) {
     return null;
   }
   data.Metadata.Data.sort((a, b) =>

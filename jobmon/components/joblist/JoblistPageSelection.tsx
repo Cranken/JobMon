@@ -30,7 +30,7 @@ export const JoblistPageSelection = ({
         {currentPage !== 1 && currentPage !== pages ? (
           <Button colorScheme="teal">{currentPage}</Button>
         ) : null}
-        {pages !== 1 ? (
+        {pages > 1 ? (
           <Button
             colorScheme={currentPage === pages ? "teal" : "gray"}
             onClick={() => setPage(pages)}
