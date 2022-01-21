@@ -13,11 +13,8 @@ export const Jobs = () => {
   const router = useRouter();
   const jobListData = useGetJobs();
   const [userName, setUserId] = useStorageState("username", "");
-  const [startTime, setStartTime] = useStorageState(
-    "startTime",
-    new Date("2021-10-01")
-  );
-  const [stopTime, setStopTime] = useStorageState("stopTime", new Date());
+  const [startTime, setStartTime] = useState(new Date("2021-10-01"));
+  const [stopTime, setStopTime] = useState(new Date());
   const [numNodes, setNumNodes] = useStorageState("numNodes", [1, 192]);
   const [metrics, setMetrics] = useStorageState<SelectionMap>("metrics", {});
   const [partition, setPartition] = useStorageState("partition", "");
