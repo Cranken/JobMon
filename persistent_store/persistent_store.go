@@ -94,6 +94,7 @@ func (s *Store) StopJob(id int, stopJob job.StopJob) (job job.JobMetadata, err e
 		return job, fmt.Errorf("can't stop job: %v, not found", id)
 	}
 	job.StopTime = stopJob.StopTime
+	job.ExitCode = stopJob.ExitCode
 	job.IsRunning = false
 	s.Jobs[id] = job
 	s.addDataToIncompleteJobs()

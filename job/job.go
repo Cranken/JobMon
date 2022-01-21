@@ -25,6 +25,7 @@ type JobMetadata struct {
 	TTL          int
 	Partition    string
 	JobScript    string
+	ExitCode     int
 	Data         []JobMetadataData
 }
 
@@ -34,6 +35,7 @@ type JobMetadataData struct {
 }
 
 type StopJob struct {
+	ExitCode int
 	StopTime int
 }
 
