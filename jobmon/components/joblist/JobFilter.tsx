@@ -218,7 +218,7 @@ export const JobFilter = ({
                         maxW="10ch"
                         value={numGpu[0][1]}
                         min={numGpu[0][0]}
-                        max={256}
+                        max={224}
                         onChange={(_, val) => numGpu[1]([numGpu[0][0], val])}
                       >
                         <NumberInputField />

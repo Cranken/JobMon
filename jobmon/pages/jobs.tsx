@@ -21,7 +21,7 @@ export const Jobs = () => {
   const [numNodes, setNumNodes] = useStorageState("numNodes", [1, 192]);
   const [metrics, setMetrics] = useStorageState<SelectionMap>("metrics", {});
   const [partition, setPartition] = useStorageState("partition", "");
-  const [numGpu, setNumGpu] = useStorageState("numGpu", [0, 128]);
+  const [numGpu, setNumGpu] = useStorageState("numGpu", [0, 224]);
   const [showIsRunning, setShowIsRunning] = useStorageState(
     "showIsRunning",
     true
