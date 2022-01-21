@@ -7,6 +7,7 @@ import {
   Th,
   Tbody,
   Td,
+  Wrap,
 } from "@chakra-ui/react";
 import { JobData } from "../../types/job";
 import { BoxPlot } from "../charts/BoxPlot";
@@ -39,7 +40,7 @@ export const AnalysisBoxPlot = ({ data, autoScale }: AnalysisBoxPlotProps) => {
       />
     );
   });
-  return <Flex>{elements}</Flex>;
+  return <Wrap>{elements}</Wrap>;
 };
 
 interface AnalysisTableViewProps {
@@ -77,24 +78,3 @@ export const AnalysisTableView = ({ data }: AnalysisTableViewProps) => {
     </Table>
   );
 };
-
-interface AnalysisPlotsProps {
-  data?: JobData;
-  autoScale: boolean;
-}
-export const AnalysisPlots = ({ data, autoScale }: AnalysisPlotsProps) => {
-  if (!data || !data.Metadata.Data) {
-    return null;
-  }
-  data.Metadata.Data.sort((a, b) =>
-    a.Config.DisplayName < b.Config.DisplayName ? -1 : 1
-  );
-  return (
-    <>
-      <AnalysisBoxPlot data={data} autoScale={autoScale}></AnalysisBoxPlot>
-      <AnalysisTableView data={data}></AnalysisTableView>
-    </>
-  );
-};
-
-export default AnalysisPlots;

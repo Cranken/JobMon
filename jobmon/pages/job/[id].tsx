@@ -20,7 +20,10 @@ import {
 } from "@chakra-ui/react";
 import { JobInfo } from "../../components/jobview/JobInfo";
 import { useCookies } from "react-cookie";
-import AnalysisPlots from "../../components/jobview/AnalysisView";
+import {
+  AnalysisBoxPlot,
+  AnalysisTableView,
+} from "../../components/jobview/AnalysisView";
 
 export type SelectionMap = { [key: string]: boolean };
 
@@ -117,7 +120,9 @@ const Job: NextPage = () => {
       <Tabs isLazy>
         <TabList>
           <Tab>Timeline</Tab>
-          <Tab>Analysis</Tab>
+          <Tab>Node Table</Tab>
+          <Tab>Box Plots</Tab>
+          <Tab>Roofline</Tab>
         </TabList>
 
         <TabPanels>
@@ -147,7 +152,13 @@ const Job: NextPage = () => {
             )}
           </TabPanel>
           <TabPanel>
-            <AnalysisPlots data={data} autoScale={autoScale}></AnalysisPlots>
+            <AnalysisBoxPlot
+              data={data}
+              autoScale={autoScale}
+            ></AnalysisBoxPlot>
+          </TabPanel>
+          <TabPanel>
+            <AnalysisTableView data={data}></AnalysisTableView>
           </TabPanel>
         </TabPanels>
       </Tabs>
