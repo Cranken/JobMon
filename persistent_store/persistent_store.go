@@ -87,8 +87,6 @@ func (s *Store) GetAllByPred(pred JobPred) []job.JobMetadata {
 }
 
 func (s *Store) StopJob(id int, stopJob job.StopJob) (job job.JobMetadata, err error) {
-	s.mut.Lock()
-	defer s.mut.Unlock()
 	job, ok := s.Jobs[id]
 	if !ok {
 		return job, fmt.Errorf("can't stop job: %v, not found", id)
@@ -96,8 +94,10 @@ func (s *Store) StopJob(id int, stopJob job.StopJob) (job job.JobMetadata, err e
 	job.StopTime = stopJob.StopTime
 	job.ExitCode = stopJob.ExitCode
 	job.IsRunning = false
+	s.mut.Lock()
 	s.Jobs[id] = job
-	s.addDataToIncompleteJobs()
+	s.mut.Unlock()
+	s.addMetadataToJob(&job)
 	return s.Jobs[id], nil
 }
 
@@ -117,6 +117,17 @@ func (s *Store) removeExpiredJobs() {
 		}
 	}
 	s.mut.Unlock()
+}
+
+func (s *Store) addMetadataToJob(job *job.JobMetadata) error {
+	data, err := (*s.database).GetJobMetadataMetrics(job)
+	if err == nil {
+		s.mut.Lock()
+		job.Data = data
+		s.Jobs[job.Id] = *job
+		s.mut.Unlock()
+	}
+	return err
 }
 
 func (s *Store) addDataToIncompleteJobs() {
