@@ -59,5 +59,5 @@ func (j *JobMetadata) Expired() bool {
 
 func (j *JobMetadata) Overtime(maxTime int) bool {
 	now := int(time.Now().Unix())
-	return j.StartTime+maxTime > now
+	return j.StartTime+maxTime < now
 }
