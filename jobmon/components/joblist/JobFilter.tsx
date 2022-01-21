@@ -230,9 +230,9 @@ export const JobFilter = ({
                     </Flex>
                     <Box w="100%">
                       <RangeSlider
-                        defaultValue={[0, 192]}
+                        defaultValue={[0, 224]}
                         min={0}
-                        max={128}
+                        max={224}
                         value={numGpu[0]}
                         onChange={(val) => numGpu[1](val)}
                       >
