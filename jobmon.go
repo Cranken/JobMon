@@ -32,20 +32,25 @@ func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 	utils.AllowCors(r, w.Header())
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("JobStart: Could not read http request body")
+		errStr := fmt.Sprintln("JobStart: Could not read http request body")
+		log.Println(errStr)
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(errStr))
 		return
 	}
 
 	var j job.JobMetadata
 	err = json.Unmarshal(body, &j)
 	if err != nil {
-		log.Printf("JobStart: Could not unmarshal http request body %v\n", string(body))
+		errStr := fmt.Sprintf("JobStart: Could not unmarshal http request body %v\n", string(body))
+		log.Println(errStr)
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(errStr))
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte{})
 	store.Put(j)
 }
 
@@ -53,27 +58,34 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	utils.AllowCors(r, w.Header())
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("JobStop: Could not read http request body")
+		errStr := fmt.Sprintln("JobStop: Could not read http request body")
+		log.Println(errStr)
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(errStr))
 		return
 	}
 
 	var stopJob job.StopJob
 	err = json.Unmarshal(body, &stopJob)
 	if err != nil {
-		log.Printf("JobStop: Could not parse json from http request body %v", string(body))
+		errStr := fmt.Sprintf("JobStop: Could not parse json from http request body %v", string(body))
+		log.Println(errStr)
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(errStr))
 		return
 	}
 
 	strId := params.ByName("id")
 	id, err := strconv.Atoi(strId)
 	if err != nil {
-		log.Printf("JobStop: Id is not a valid integer %v", strId)
+		errStr := fmt.Sprintf("JobStop: Id is not a valid integer %v", strId)
+		log.Println(errStr)
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(errStr))
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Success"))
 
 	jobMetadata, err := store.StopJob(id, stopJob)
 
