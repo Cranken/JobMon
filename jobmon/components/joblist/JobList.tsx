@@ -40,7 +40,6 @@ export const JobList = ({
   limit,
   page,
 }: JobListProps) => {
-  jobs.sort((a, b) => (a.StartTime < b.StartTime ? 1 : -1));
   const slice =
     limit !== 0
       ? jobs.slice(limit * (page - 1), limit * (page - 1) + limit)

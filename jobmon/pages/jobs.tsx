@@ -25,8 +25,10 @@ export const Jobs = () => {
   );
   const [joblistLimit, setJoblistLimit] = useStorageState("joblistLimit", 25);
   const [page, setPage] = useState(1);
-  const joblistRef = useRef<HTMLDivElement>(null);
+  const [sortBy, setSortBy] = useState("StartTime");
+  const [sortByDescending, setSortByDescending] = useState(true);
 
+  const joblistRef = useRef<HTMLDivElement>(null);
   const filter = (job: JobMetadata) =>
     job.UserName.startsWith(userName) &&
     checkBetween(
@@ -96,10 +98,36 @@ export const Jobs = () => {
       numGpu={[numGpu, setNumGpu]}
       isRunning={[showIsRunning, setShowIsRunning]}
       joblistLimit={[joblistLimit, setJoblistLimit]}
+      sortBy={[sortBy, setSortBy]}
+      sortByDescending={[sortByDescending, setSortByDescending]}
     />
   );
 
   const displayMetrics = Object.keys(metrics).filter((val) => metrics[val]);
+  if (sortBy !== "joblength") {
+    filteredJobs.sort((a, b) =>
+      a[sortBy as keyof JobMetadata] < b[sortBy as keyof JobMetadata] ? 1 : -1
+    );
+  } else {
+    filteredJobs.sort((a, b) => {
+      if (a.IsRunning && b.IsRunning) {
+        return (
+          Math.abs(a.StopTime - a.StartTime) -
+          Math.abs(b.StopTime - b.StartTime)
+        );
+      }
+      if (a.IsRunning) {
+        return -1;
+      }
+      if (b.IsRunning) {
+        return 1;
+      }
+      return a.StartTime < b.StartTime ? 1 : -1;
+    });
+  }
+  if (!sortByDescending) {
+    filteredJobs.reverse();
+  }
 
   elements.push(
     <Box ref={joblistRef}>
