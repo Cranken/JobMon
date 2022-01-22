@@ -70,20 +70,13 @@ export const JobFilter = ({
     new Date(d.getTime() - timezoneOffsetMsec).toISOString().slice(0, 16);
   return (
     <Center>
-      <Flex
-        w="50%"
-        borderWidth="1px"
-        borderRadius="lg"
-        padding="3ch"
-        margin="2ch"
-        minHeight="22vh"
-      >
-        <Tabs w="100%">
+      <Stack w="50%" borderWidth="1px" borderRadius="lg" padding={5} margin={4}>
+        <Tabs>
           <TabList>
             <Tab>Job Data</Tab>
-            <Tab>Settings</Tab>
+            <Tab>Time</Tab>
           </TabList>
-          <TabPanels>
+          <TabPanels borderBottom="1px" borderColor="inherit">
             <TabPanel>
               <Stack>
                 <Flex gap={3}>
@@ -93,45 +86,6 @@ export const JobFilter = ({
                     maxW="15ch"
                     onChange={(ev) => userName[1](ev.target.value)}
                   />
-                  <Flex
-                    justify="center"
-                    align="center"
-                    borderWidth="1px"
-                    borderRadius="lg"
-                    h={10}
-                    px={2}
-                    w="fit-content"
-                  >
-                    <Text mr={2}>Filter between:</Text>
-                    <input
-                      className={style["time-input"]}
-                      type="datetime-local"
-                      min="2021-10-01T00:00"
-                      value={getDateString(startTime[0])}
-                      onChange={(ev) => startTime[1](new Date(ev.target.value))}
-                    />
-                    <Spacer mx={1} />
-                    <Text mr={2}>and:</Text>
-                    <input
-                      className={style["time-input"]}
-                      type="datetime-local"
-                      min="2021-10-01T00:00"
-                      value={getDateString(stopTime[0])}
-                      onChange={(ev) => stopTime[1](new Date(ev.target.value))}
-                    />
-                    <Spacer mx={1} />
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        startTime[1](new Date("2021-10-01"));
-                        stopTime[1](new Date());
-                      }}
-                    >
-                      Reset
-                    </Button>
-                  </Flex>
-                </Flex>
-                <Flex gap={3}>
                   <Select
                     maxW="30ch"
                     value={partitions[1]}
@@ -251,89 +205,85 @@ export const JobFilter = ({
                     </Box>
                   </Box>
                 </Stack>
-                <Stack direction="row" justify="space-between">
-                  <Stack flexGrow={1} direction="row" align="center">
-                    <Text>Set limit of visible jobs per page:</Text>
-                    <Select
-                      value={joblistLimit[0]}
-                      onChange={(e) =>
-                        joblistLimit[1](parseInt(e.target.value))
-                      }
-                      maxW="15ch"
-                    >
-                      <option value={0}>Show All</option>
-                      <option value={10}>Show 10</option>
-                      <option value={25}>Show 25</option>
-                      <option value={50}>Show 50</option>
-                    </Select>
-                  </Stack>
-                  <Stack
-                    flexGrow={1}
-                    direction="row"
-                    align="center"
-                    justify="end"
-                  >
-                    <Text>Sort by:</Text>
-                    <Select
-                      value={sortBy[0]}
-                      onChange={(e) => sortBy[1](e.target.value)}
-                      maxW="25ch"
-                    >
-                      <option value={"joblength"}>Job Length</option>
-                      <option value={"StartTime"}>Start Time</option>
-                      <option value={"StopTime"}>Stop Time</option>
-                      <option value={"NumNodes"}>Number of Nodes</option>
-                      <option value={"Id"}>Job Id</option>
-                    </Select>
-                    <IconButton
-                      aria-label="sort-order"
-                      variant="ghost"
-                      onClick={() => sortByDescending[1](!sortByDescending[0])}
-                      icon={
-                        sortByDescending[0] ? (
-                          <ChevronDownIcon boxSize={6} />
-                        ) : (
-                          <ChevronUpIcon boxSize={6} />
-                        )
-                      }
-                    />
-                  </Stack>
-                </Stack>
               </Stack>
             </TabPanel>
             <TabPanel>
               <Stack>
-                {/* <Accordion allowToggle>
-                  <AccordionItem>
-                    <h2>
-                      <AccordionButton>
-                        <Box flex="1" textAlign="left">
-                          Select metrics shown in histograms
-                        </Box>
-                      </AccordionButton>
-                    </h2>
-                    <AccordionPanel>
-                      <Stack>
-                        {Object.keys(metrics[0]).map((val) => (
-                          <Checkbox
-                            key={val}
-                            isChecked={metrics[0][val]}
-                            onChange={(e) =>
-                              metrics[1]({ [val]: e.target.checked })
-                            }
-                          >
-                            {val}
-                          </Checkbox>
-                        ))}
-                      </Stack>
-                    </AccordionPanel>
-                  </AccordionItem>
-                </Accordion> */}
+                <Flex justify="center" align="center" h={10} w="fit-content">
+                  <Text mr={2}>Filter start time between:</Text>
+                  <input
+                    className={style["time-input"]}
+                    type="datetime-local"
+                    min="2021-10-01T00:00"
+                    value={getDateString(startTime[0])}
+                    onChange={(ev) => startTime[1](new Date(ev.target.value))}
+                  />
+                  <Spacer mx={1} />
+                  <Text mr={2}>and:</Text>
+                  <input
+                    className={style["time-input"]}
+                    type="datetime-local"
+                    min="2021-10-01T00:00"
+                    value={getDateString(stopTime[0])}
+                    onChange={(ev) => stopTime[1](new Date(ev.target.value))}
+                  />
+                  <Spacer mx={1} />
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      startTime[1](new Date("2021-10-01"));
+                      stopTime[1](new Date());
+                    }}
+                  >
+                    Reset
+                  </Button>
+                </Flex>
               </Stack>
             </TabPanel>
           </TabPanels>
         </Tabs>
-      </Flex>
+        <Stack direction="row" justify="space-between">
+          <Stack flexGrow={1} direction="row" align="center">
+            <Text>Set limit of visible jobs per page:</Text>
+            <Select
+              value={joblistLimit[0]}
+              onChange={(e) => joblistLimit[1](parseInt(e.target.value))}
+              maxW="15ch"
+            >
+              <option value={0}>Show All</option>
+              <option value={10}>Show 10</option>
+              <option value={25}>Show 25</option>
+              <option value={50}>Show 50</option>
+            </Select>
+          </Stack>
+          <Stack flexGrow={1} direction="row" align="center" justify="end">
+            <Text>Sort by:</Text>
+            <Select
+              value={sortBy[0]}
+              onChange={(e) => sortBy[1](e.target.value)}
+              maxW="25ch"
+            >
+              <option value={"joblength"}>Job Length</option>
+              <option value={"StartTime"}>Start Time</option>
+              <option value={"StopTime"}>Stop Time</option>
+              <option value={"NumNodes"}>Number of Nodes</option>
+              <option value={"Id"}>Job Id</option>
+            </Select>
+            <IconButton
+              aria-label="sort-order"
+              variant="ghost"
+              onClick={() => sortByDescending[1](!sortByDescending[0])}
+              icon={
+                sortByDescending[0] ? (
+                  <ChevronDownIcon boxSize={6} />
+                ) : (
+                  <ChevronUpIcon boxSize={6} />
+                )
+              }
+            />
+          </Stack>
+        </Stack>
+      </Stack>
     </Center>
   );
 };
