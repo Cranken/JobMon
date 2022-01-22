@@ -94,6 +94,7 @@ export const AnalysisTableView = ({ data }: AnalysisTableViewProps) => {
       <Thead>
         <Tr>
           <Th
+            cursor="pointer"
             onClick={() => {
               if (sortBy === "node") {
                 setDescending(!descending);
