@@ -8,6 +8,7 @@ import (
 	"log"
 	"strings"
 	"sync"
+	"time"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
@@ -17,8 +18,8 @@ import (
 type DB interface {
 	Init(c conf.Configuration)
 	Close()
-	GetJobData(job *job.JobMetadata) (data JobData, err error)
-	GetNodeJobData(job *job.JobMetadata, node string) (data JobData, err error)
+	GetJobData(job *job.JobMetadata, sampleInterval time.Duration) (data JobData, err error)
+	GetNodeJobData(job *job.JobMetadata, node string, sampleInterval time.Duration) (data JobData, err error)
 	GetJobMetadataMetrics(job *job.JobMetadata) (data []job.JobMetadataData, err error)
 	RunAggregation()
 }
@@ -48,9 +49,11 @@ type QuantileData struct {
 }
 
 type JobData struct {
-	Metadata     *job.JobMetadata
-	MetricData   []MetricData
-	QuantileData []QuantileData
+	Metadata        *job.JobMetadata
+	MetricData      []MetricData
+	QuantileData    []QuantileData
+	SampleInterval  float64
+	SampleIntervals []float64
 }
 
 type QueryResult map[string]interface{}
@@ -72,12 +75,12 @@ func (db *InfluxDB) Close() {
 	db.client.Close()
 }
 
-func (db *InfluxDB) GetJobData(job *job.JobMetadata) (data JobData, err error) {
-	return db.getJobData(job, db.metrics[job.Partition], "")
+func (db *InfluxDB) GetJobData(job *job.JobMetadata, sampleInterval time.Duration) (data JobData, err error) {
+	return db.getJobData(job, db.metrics[job.Partition], "", sampleInterval)
 }
 
-func (db *InfluxDB) GetNodeJobData(job *job.JobMetadata, node string) (data JobData, err error) {
-	return db.getJobData(job, db.metrics[job.Partition], node)
+func (db *InfluxDB) GetNodeJobData(job *job.JobMetadata, node string, sampleInterval time.Duration) (data JobData, err error) {
+	return db.getJobData(job, db.metrics[job.Partition], node, sampleInterval)
 }
 
 func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMetadataData, err error) {
@@ -114,7 +117,7 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 	return
 }
 
-func (db *InfluxDB) getJobData(job *job.JobMetadata, metrics []conf.MetricConfig, node string) (data JobData, err error) {
+func (db *InfluxDB) getJobData(job *job.JobMetadata, metrics []conf.MetricConfig, node string, sampleInterval time.Duration) (data JobData, err error) {
 	if job.IsRunning {
 		return data, fmt.Errorf("job is still running")
 	}
@@ -124,7 +127,7 @@ func (db *InfluxDB) getJobData(job *job.JobMetadata, metrics []conf.MetricConfig
 	for _, m := range metrics {
 		wg.Add(2)
 		go func(m conf.MetricConfig) {
-			result, err := db.query(m, job, node)
+			result, err := db.query(m, job, node, sampleInterval)
 			defer wg.Done()
 			if err != nil {
 				log.Printf("could not get metric data %v", err)
@@ -134,7 +137,7 @@ func (db *InfluxDB) getJobData(job *job.JobMetadata, metrics []conf.MetricConfig
 		}(m)
 
 		go func(m conf.MetricConfig) {
-			tempRes, err := db.queryQuantileMeasurement(m, job, db.metricQuantiles)
+			tempRes, err := db.queryQuantileMeasurement(m, job, db.metricQuantiles, sampleInterval)
 			defer wg.Done()
 			if err != nil {
 				log.Printf("could not get quantile data %v", err)
@@ -155,7 +158,7 @@ func (db *InfluxDB) getJobData(job *job.JobMetadata, metrics []conf.MetricConfig
 	return data, err
 }
 
-func (db *InfluxDB) query(metric conf.MetricConfig, job *job.JobMetadata, node string) (result map[string][]QueryResult, err error) {
+func (db *InfluxDB) query(metric conf.MetricConfig, job *job.JobMetadata, node string, sampleInterval time.Duration) (result map[string][]QueryResult, err error) {
 	var queryResult *api.QueryTableResult
 	if metric.AggFn != "" && node == "" {
 		queryResult, err = db.queryAggregateMeasurement(metric, job)
@@ -163,7 +166,7 @@ func (db *InfluxDB) query(metric conf.MetricConfig, job *job.JobMetadata, node s
 			result, err = parseQueryResult(queryResult, "hostname")
 		}
 	} else if node != "" {
-		queryResult, err = db.querySimpleMeasurement(metric, job, node)
+		queryResult, err = db.querySimpleMeasurement(metric, job, node, sampleInterval)
 		if err == nil {
 			separationKey := "hostname"
 			if metric.Type != "node" {
@@ -175,7 +178,7 @@ func (db *InfluxDB) query(metric conf.MetricConfig, job *job.JobMetadata, node s
 			result, err = parseQueryResult(queryResult, separationKey)
 		}
 	} else {
-		queryResult, err = db.querySimpleMeasurement(metric, job, node)
+		queryResult, err = db.querySimpleMeasurement(metric, job, node, sampleInterval)
 		if err == nil {
 			result, err = parseQueryResult(queryResult, "hostname")
 		}
@@ -183,7 +186,7 @@ func (db *InfluxDB) query(metric conf.MetricConfig, job *job.JobMetadata, node s
 	return result, err
 }
 
-func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, job *job.JobMetadata, node string) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, job *job.JobMetadata, node string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
 	nodeList := job.NodeList
 	if node != "" {
 		nodeList = node
@@ -194,9 +197,10 @@ func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, job *job.Jo
 		|> filter(fn: (r) => r["_measurement"] == "%v")
 	  |> filter(fn: (r) => r["type"] == "%v")
 		|> filter(fn: (r) => r["hostname"] =~ /%v/)
+		|> aggregateWindow(every: %s, fn: mean)
 		%v
 		|> truncateTimeColumn(unit: %v)
-	`, db.bucket, job.StartTime, job.StopTime, metric.Measurement, metric.Type, nodeList, metric.FilterFunc, db.defaultSampleInterval)
+	`, db.bucket, job.StartTime, job.StopTime, metric.Measurement, metric.Type, nodeList, sampleInterval, metric.FilterFunc, db.defaultSampleInterval)
 	query += metric.PostQueryOp
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
@@ -246,7 +250,7 @@ func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, job *job
 	return
 }
 
-func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, job *job.JobMetadata, quantiles []string) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, job *job.JobMetadata, quantiles []string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement
 	if metric.AggFn != "" {
 		measurement += "_" + metric.AggFn
@@ -261,10 +265,11 @@ func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, job *job.
 			|> range(start: %v, stop: %v)
 			|> filter(fn: (r) => r["_measurement"] == "%v")
 			|> filter(fn: (r) => r["hostname"] =~ /%v/)
+		  |> aggregateWindow(every: %s, fn: mean)
 			%v
 			|> truncateTimeColumn(unit: %v)
 			|> group(columns: ["_time"], mode: "by")`,
-		db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, metric.FilterFunc, db.defaultSampleInterval)
+		db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, sampleInterval, metric.FilterFunc, db.defaultSampleInterval)
 
 	for i, q := range quantiles {
 		query += "\n" + quantileString(tempKeys[i], q, measurement)

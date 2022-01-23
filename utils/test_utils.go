@@ -4,6 +4,7 @@ import (
 	"jobmon/config"
 	database "jobmon/db"
 	"jobmon/job"
+	"time"
 )
 
 type MockDB struct {
@@ -18,12 +19,12 @@ func (db *MockDB) Close() {
 	db.Calls += 1
 }
 
-func (db *MockDB) GetJobData(j *job.JobMetadata) (data database.JobData, err error) {
+func (db *MockDB) GetJobData(j *job.JobMetadata, sampleInterval time.Duration) (data database.JobData, err error) {
 	db.Calls += 1
 	return database.JobData{Metadata: j}, nil
 }
 
-func (db *MockDB) GetNodeJobData(j *job.JobMetadata, node string) (data database.JobData, err error) {
+func (db *MockDB) GetNodeJobData(j *job.JobMetadata, node string, sampleInterval time.Duration) (data database.JobData, err error) {
 	db.Calls += 1
 	return database.JobData{Metadata: j}, nil
 }

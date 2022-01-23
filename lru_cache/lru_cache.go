@@ -7,6 +7,7 @@ import (
 	"jobmon/db"
 	"jobmon/job"
 	"sync"
+	"time"
 )
 
 type LRUCache struct {
@@ -27,7 +28,7 @@ func (c *LRUCache) Init(config conf.Configuration, db *db.DB) {
 	c.db = db
 }
 
-func (c *LRUCache) Get(j *job.JobMetadata) (data db.JobData, err error) {
+func (c *LRUCache) Get(j *job.JobMetadata, sampleInterval time.Duration) (data db.JobData, err error) {
 	c.mut.Lock()
 	defer c.mut.Unlock()
 
@@ -35,7 +36,7 @@ func (c *LRUCache) Get(j *job.JobMetadata) (data db.JobData, err error) {
 	if err == nil {
 		return data, err
 	}
-	data, err = (*c.db).GetJobData(j)
+	data, err = (*c.db).GetJobData(j, sampleInterval)
 	if err == nil {
 		c.put(Item{id: j.Id, data: data})
 	}

@@ -2,8 +2,12 @@ package job
 
 import (
 	"jobmon/config"
+	"math"
 	"time"
 )
+
+const DEFAULT_MAX_POINTS_PER_JOB = 200
+const DEFAULT_MIN_POINTS_PER_JOB = 50
 
 type JobMetadata struct {
 	Id           int
@@ -60,4 +64,24 @@ func (j *JobMetadata) Expired() bool {
 func (j *JobMetadata) Overtime(maxTime int) bool {
 	now := int(time.Now().Unix())
 	return j.StartTime+maxTime < now
+}
+
+func (j *JobMetadata) CalculateSampleIntervals(metricSampleInterval time.Duration) (intervals []float64, bestAvailableInterval float64) {
+	defaultIntervals := []float64{30, 60, 120, 300, 600, 1800}
+	duration := float64(j.StopTime - j.StartTime)
+	datapoints := duration / metricSampleInterval.Seconds()
+	factor := math.Ceil(datapoints / DEFAULT_MAX_POINTS_PER_JOB)
+	bestInterval := factor * metricSampleInterval.Seconds()
+	bestAvailableInterval = metricSampleInterval.Seconds()
+	for _, v := range defaultIntervals {
+		if math.Abs(v-bestInterval) < math.Abs(bestAvailableInterval-bestInterval) {
+			bestAvailableInterval = v
+		}
+	}
+	for _, v := range defaultIntervals {
+		if metricSampleInterval.Seconds() <= v && v <= bestAvailableInterval {
+			intervals = append(intervals, v)
+		}
+	}
+	return
 }

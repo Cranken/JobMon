@@ -52,7 +52,7 @@ export function LineChart<T>({
   z = (_) => "default",
   title = (_) => "",
   unit,
-  defined = (_) => true, // for gaps in data
+  defined, // for gaps in data
   curve = d3.curveLinear, // method of interpolation between points
   marginTop = 20, // top margin, in pixels
   marginRight = 10, // right margin, in pixels

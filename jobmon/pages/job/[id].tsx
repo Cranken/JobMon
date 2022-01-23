@@ -24,16 +24,22 @@ import {
   AnalysisBoxPlot,
   AnalysisTableView,
 } from "../../components/jobview/AnalysisView";
+import { URLSearchParams } from "url";
 
 export type SelectionMap = { [key: string]: boolean };
 
 const Job: NextPage = () => {
   const router = useRouter();
   const jobId = router.query["id"];
+  const [sampleInterval, setSampleInterval] = useState<number>();
   const [selection, setSelection] = useState<SelectionMap>({});
   const selected = Object.keys(selection).filter((val) => selection[val]);
   const node = selected.length === 1 ? selected[0] : undefined;
-  const [data, isLoading] = useGetJobData(parseInt(jobId as string), node);
+  const [data, isLoading] = useGetJobData(
+    parseInt(jobId as string),
+    node,
+    sampleInterval
+  );
   const [startTime, setStartTime] = useState<Date>(new Date());
   const [stopTime, setStopTime] = useState<Date>(new Date());
   const [showQuantiles, setShowQuantiles] = useState(true);
@@ -42,6 +48,7 @@ const Job: NextPage = () => {
     setStartTime(start);
     setStopTime(end);
   };
+  console.log(data);
 
   useEffect(() => {
     if (data?.Metadata.NodeList !== undefined) {
@@ -56,6 +63,12 @@ const Job: NextPage = () => {
       }
     }
   }, [data?.Metadata.NodeList, data?.Metadata.NumNodes]);
+
+  useEffect(() => {
+    if (data?.SampleInterval) {
+      setSampleInterval(data.SampleInterval);
+    }
+  }, [data]);
 
   useEffect(() => {
     if (data?.Metadata.StartTime) {
@@ -115,6 +128,9 @@ const Job: NextPage = () => {
           setShowQuantiles={setShowQuantiles}
           autoScale={autoScale}
           setAutoScale={setAutoscale}
+          sampleInterval={sampleInterval}
+          sampleIntervals={data.SampleIntervals}
+          setSampleInterval={setSampleInterval}
         />
       </Grid>
       <Tabs isLazy>
@@ -169,10 +185,12 @@ export default Job;
 
 export const useGetJobData: (
   id: number | undefined,
-  node?: string
+  node?: string,
+  sampleInterval?: number
 ) => [JobData | undefined, boolean] = (
   id: number | undefined,
-  node?: string
+  node?: string,
+  sampleInterval?: number
 ) => {
   const [jobData, setJobData] = useState<JobData>();
   const [isLoading, setIsLoading] = useState(true);
@@ -182,22 +200,25 @@ export const useGetJobData: (
     if (!id) {
       return;
     }
-    let URL = process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}`;
+    let url = new URL(process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}`);
+    if (sampleInterval) {
+      url.searchParams.append("sampleInterval", sampleInterval.toString());
+    }
     if (node && node != "" && !node.includes("|")) {
-      URL += `?node=${node}`;
-      if (node in jobCache) {
-        setJobData(jobCache[node]);
+      url.searchParams.append("node", node);
+      if (sampleInterval?.toString() ?? "" + node in jobCache) {
+        setJobData(jobCache[sampleInterval?.toString() ?? "" + node]);
         setIsLoading(false);
         return;
       }
     }
-    if (!node && "all" in jobCache) {
-      setJobData(jobCache["all"]);
+    if (!node && (sampleInterval?.toString() ?? "" + "all") in jobCache) {
+      setJobData(jobCache[sampleInterval?.toString() ?? "" + "all"]);
       setIsLoading(false);
       return;
     }
     setIsLoading(true);
-    fetch(URL, { credentials: "include" }).then((res) => {
+    fetch(url.toString(), { credentials: "include" }).then((res) => {
       if (!res.ok && (res.status === 401 || res.status === 403)) {
         removeCookie("Authorization");
       } else {
@@ -207,7 +228,11 @@ export const useGetJobData: (
             if (data.Metadata.NumNodes === 1) {
               key = data.Metadata.NodeList;
             }
-            prevState[key ? key : "all"] = data;
+            prevState[
+              key
+                ? data.SampleInterval.toString() + key
+                : data.SampleInterval.toString() ?? "" + "all"
+            ] = data;
             return prevState;
           });
           setJobData(data);
@@ -215,6 +240,6 @@ export const useGetJobData: (
         });
       }
     });
-  }, [id, node, jobCache, removeCookie]);
+  }, [id, node, jobCache, removeCookie, sampleInterval]);
   return [jobData, isLoading];
 };

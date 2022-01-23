@@ -94,7 +94,10 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 			db.RunAggregation()
 			if config.Prefetch {
 				go func() {
-					jobCache.Get(&jobMetadata)
+					dur, _ := time.ParseDuration(config.SampleInterval)
+					_, secs := jobMetadata.CalculateSampleIntervals(dur)
+					bestInterval := time.Duration(secs) * time.Second
+					jobCache.Get(&jobMetadata, bestInterval)
 				}()
 			}
 		}
@@ -155,17 +158,33 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		node = j.NodeList
 	}
 
+	dur, _ := time.ParseDuration(config.SampleInterval)
+	intervals, secs := j.CalculateSampleIntervals(dur)
+	bestInterval := time.Duration(secs) * time.Second
+
+	sampleInterval := bestInterval
+	querySampleInterval := r.URL.Query().Get("sampleInterval")
+	if querySampleInterval != "" {
+		parsedDuration, err := time.ParseDuration(querySampleInterval + "s")
+		if err == nil {
+			sampleInterval = parsedDuration
+		}
+	}
+
 	var jobData database.JobData
-	if node == "" {
-		jobData, err = jobCache.Get(&j)
+	if node == "" && querySampleInterval == "" {
+		jobData, err = jobCache.Get(&j, bestInterval)
 	} else {
-		jobData, err = db.GetNodeJobData(&j, node)
+		jobData, err = db.GetNodeJobData(&j, node, sampleInterval)
 	}
 	if err != nil {
 		log.Printf("Could not get job metric data: %v\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	jobData.SampleInterval = sampleInterval.Seconds()
+	jobData.SampleIntervals = intervals
 
 	jsonData, err := json.Marshal(&jobData)
 	if err != nil {

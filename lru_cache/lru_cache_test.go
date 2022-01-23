@@ -6,6 +6,7 @@ import (
 	"jobmon/job"
 	"jobmon/utils"
 	"testing"
+	"time"
 )
 
 func TestPutCleanup(t *testing.T) {
@@ -57,12 +58,12 @@ func TestGet(t *testing.T) {
 	cache.Init(config, &db)
 
 	job := job.JobMetadata{Id: 1}
-	cache.Get(&job)
+	cache.Get(&job, 30*time.Second)
 	if db.(*utils.MockDB).Calls != 1 {
 		t.Fatalf("Did not retrieve job data from db")
 	}
 
-	dat, _ := cache.Get(&job)
+	dat, _ := cache.Get(&job, 30*time.Second)
 	if dat.Metadata.Id != 1 {
 		t.Fatalf("Retrieved wrong item from cache")
 	}

@@ -93,6 +93,8 @@ export interface JobData {
   Metadata: JobMetadata;
   MetricData: MetricData[];
   QuantileData: QuantileData[];
+  SampleInterval: number;
+  SampleIntervals: number[];
 }
 export interface JobMetadataData {
   Config: MetricConfig;
