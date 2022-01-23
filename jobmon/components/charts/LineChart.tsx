@@ -109,8 +109,7 @@ export function LineChart<T>({
     const X = d3.map(filteredData, x);
     const Y = d3.map(filteredData, y);
     const Z = d3.map(filteredData, z);
-    if (defined === undefined)
-      defined = (_, index) => !isDate(X[index]) && !isNaN(Y[index]);
+    if (defined === undefined) defined = (_, index) => !isNaN(Y[index]);
     const D = d3.map(filteredData, defined);
 
     // Compute default domains.

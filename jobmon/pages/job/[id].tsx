@@ -48,7 +48,6 @@ const Job: NextPage = () => {
     setStartTime(start);
     setStopTime(end);
   };
-  console.log(data);
 
   useEffect(() => {
     if (data?.Metadata.NodeList !== undefined) {
@@ -205,15 +204,17 @@ export const useGetJobData: (
       url.searchParams.append("sampleInterval", sampleInterval.toString());
     }
     if (node && node != "" && !node.includes("|")) {
+      const key = (sampleInterval?.toString() ?? "") + node;
       url.searchParams.append("node", node);
-      if (sampleInterval?.toString() ?? "" + node in jobCache) {
-        setJobData(jobCache[sampleInterval?.toString() ?? "" + node]);
+      if (key in jobCache) {
+        setJobData(jobCache[key]);
         setIsLoading(false);
         return;
       }
     }
-    if (!node && (sampleInterval?.toString() ?? "" + "all") in jobCache) {
-      setJobData(jobCache[sampleInterval?.toString() ?? "" + "all"]);
+    const key = (sampleInterval?.toString() ?? "") + "all";
+    if (!node && key in jobCache) {
+      setJobData(jobCache[key]);
       setIsLoading(false);
       return;
     }
@@ -231,7 +232,7 @@ export const useGetJobData: (
             prevState[
               key
                 ? data.SampleInterval.toString() + key
-                : data.SampleInterval.toString() ?? "" + "all"
+                : (data.SampleInterval.toString() ?? "") + "all"
             ] = data;
             return prevState;
           });

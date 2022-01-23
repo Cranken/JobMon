@@ -132,7 +132,6 @@ const parsePart = (s: string) => {
   let matches = s.match(/((?:\[)(?<range>\d+-\d+)(?:\]))|(?<single>\d+)/);
   let nodes: string[] = [];
   if (matches !== null && matches.groups) {
-    console.log(matches);
     if (matches.groups["single"]) {
       nodes.push(matches.groups["single"]);
     } else if (matches.groups["range"]) {

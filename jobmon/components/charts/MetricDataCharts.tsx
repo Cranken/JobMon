@@ -133,7 +133,7 @@ export const MetricDataCharts = ({
         <LineChart
           data={metricData}
           x={(d: MetricPoint) => new Date(d._time)}
-          y={(d: MetricPoint) => d._value}
+          y={(d: MetricPoint) => d._value ?? 0}
           z={z}
           xDomain={xDomain}
           setTimeRange={setTimeRange}

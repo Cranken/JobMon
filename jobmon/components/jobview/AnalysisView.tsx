@@ -59,7 +59,6 @@ export const AnalysisTableView = ({ data }: AnalysisTableViewProps) => {
     const metric = data.Metadata.Data.find(
       (val) => val.Config.Measurement === sortBy
     );
-    console.log(metric);
     if (metric) {
       nodes = Object.keys(metric?.Data ?? {});
       nodes.sort((a, b) => (metric?.Data[a] < metric?.Data[b] ? 1 : -1));

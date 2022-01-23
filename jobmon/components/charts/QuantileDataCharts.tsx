@@ -72,7 +72,7 @@ export const QuantileDataCharts = ({
         <LineChart
           data={metricData}
           x={(d: QuantilePoint) => new Date(d._time)}
-          y={(d: QuantilePoint) => d._value}
+          y={(d: QuantilePoint) => d._value ?? 0}
           z={(d: QuantilePoint) => d._field}
           xDomain={xDomain}
           setTimeRange={setTimeRange}
