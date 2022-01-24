@@ -111,7 +111,7 @@ export const Jobs = () => {
   } else {
     filteredJobs.sort((a, b) => {
       if (a.IsRunning && b.IsRunning) {
-        return (
+        return -(
           Math.abs(a.StopTime - a.StartTime) -
           Math.abs(b.StopTime - b.StartTime)
         );
