@@ -40,7 +40,7 @@ export const Jobs = () => {
     (partition === "" ? true : partition === job.Partition) &&
     checkBetween(numGpu[0], numGpu[1], job.GPUsPerNode * job.NumNodes) &&
     (!job.IsRunning || showIsRunning);
-  const filteredJobs = jobListData?.Jobs?.filter(filter) ?? [];
+  let filteredJobs = jobListData?.Jobs?.filter(filter) ?? [];
 
   useEffect(() => {
     const { user } = router.query;
@@ -108,25 +108,31 @@ export const Jobs = () => {
     filteredJobs.sort((a, b) =>
       a[sortBy as keyof JobMetadata] < b[sortBy as keyof JobMetadata] ? 1 : -1
     );
+    if (!sortByDescending) {
+      filteredJobs.reverse();
+    }
   } else {
     filteredJobs.sort((a, b) => {
-      if (a.IsRunning && b.IsRunning) {
+      if (!a.IsRunning && !b.IsRunning) {
         return -(
           Math.abs(a.StopTime - a.StartTime) -
           Math.abs(b.StopTime - b.StartTime)
         );
       }
-      if (a.IsRunning) {
+      if (a.IsRunning && !b.IsRunning) {
         return -1;
       }
-      if (b.IsRunning) {
+      if (b.IsRunning && !a.IsRunning) {
         return 1;
       }
       return a.StartTime < b.StartTime ? 1 : -1;
     });
-  }
-  if (!sortByDescending) {
-    filteredJobs.reverse();
+    const running = filteredJobs.filter((j) => j.IsRunning);
+    const finished = filteredJobs.filter((j) => !j.IsRunning);
+    if (!sortByDescending) {
+      finished.reverse();
+    }
+    filteredJobs = [...finished, ...running];
   }
 
   elements.push(
