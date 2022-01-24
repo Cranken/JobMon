@@ -195,10 +195,10 @@ export const JobListItem = ({
                     {flopsData && membwData ? (
                       <Center w={600} h={350}>
                         <RooflinePlot
-                          flops={flopsData.Data}
+                          flops={Object.values(flopsData.Data)}
                           flops_max={flopsData.Config.MaxPerNode}
                           flops_unit={flopsData.Config.Unit}
-                          mem_bw={membwData.Data}
+                          mem_bw={Object.values(membwData.Data)}
                           mem_bw_max={membwData.Config.MaxPerNode}
                           mem_bw_unit={flopsData.Config.Unit}
                           width={600}

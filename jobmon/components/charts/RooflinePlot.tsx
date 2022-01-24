@@ -6,10 +6,10 @@ import { DataMap } from "../../types/job";
 import { Unit } from "../../types/units";
 
 export interface RooflinePlotProps {
-  flops: DataMap<number>; // given d in data, returns the (temporal) x-value
+  flops: number[]; // given d in data, returns the (temporal) x-value
   flops_max: number;
   flops_unit: string;
-  mem_bw: DataMap<number>; // given d in data, returns the (quantitative) y-value,
+  mem_bw: number[]; // given d in data, returns the (quantitative) y-value,
   mem_bw_max: number;
   mem_bw_unit: string;
   marginTop?: number; // top margin, in pixels
@@ -53,12 +53,13 @@ export function RooflinePlot({
     xRange = [marginLeft, width - marginRight]; // [left, right]
 
     // Compute data
-    const nodes = Object.keys(flops);
     let opInt: number[] = [];
     let flop: number[] = [];
-    nodes.forEach((node) => {
-      const f = flops[node];
-      const m = mem_bw[node];
+    flops.forEach((f, i) => {
+      const m = mem_bw[i];
+      if (isNaN(f) || isNaN(m)) {
+        return;
+      }
       const opIntensitiy = f / m;
       if (isNaN(opIntensitiy) || !isFinite(opIntensitiy)) {
         return;
@@ -158,7 +159,7 @@ export function RooflinePlot({
         .attr("stroke-dasharray", "20");
     }
 
-    nodes.forEach((_, i) => {
+    flops.forEach((_, i) => {
       const x = Math.max(xScale(opInt.at(i) ?? 1), xScale(xDomain?.at(0) ?? 1));
       const y = Math.min(yScale(flop.at(i) ?? 1), yScale(yDomain?.at(0) ?? 1));
       svg
