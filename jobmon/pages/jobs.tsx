@@ -25,7 +25,7 @@ export const Jobs = () => {
   );
   const [joblistLimit, setJoblistLimit] = useStorageState("joblistLimit", 25);
   const [page, setPage] = useState(1);
-  const [sortBy, setSortBy] = useState("StartTime");
+  const [sortBy, setSortBy] = useStorageState("sortyBy", "StartTime");
   const [sortByDescending, setSortByDescending] = useState(true);
 
   const joblistRef = useRef<HTMLDivElement>(null);
