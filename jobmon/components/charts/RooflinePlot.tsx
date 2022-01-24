@@ -31,7 +31,7 @@ export function RooflinePlot({
   mem_bw,
   mem_bw_max,
   mem_bw_unit,
-  marginTop = 20, // top margin, in pixels
+  marginTop = 30, // top margin, in pixels
   marginRight = 10, // right margin, in pixels
   marginBottom = 30, // bottom margin, in pixels
   marginLeft = 110, // left margin, in pixels
@@ -94,7 +94,16 @@ export function RooflinePlot({
     svg
       .append("g")
       .attr("transform", `translate(0,${height - marginBottom})`)
-      .call(xAxis);
+      .call(xAxis)
+      .call((g) =>
+        g
+          .append("text")
+          .attr("x", width - marginRight)
+          .attr("y", 27)
+          .attr("fill", "currentColor")
+          .attr("text-anchor", "end")
+          .text("Operational Intensity [FLOP/Byte]")
+      );
 
     svg
       .append("g")
@@ -107,6 +116,15 @@ export function RooflinePlot({
           .clone()
           .attr("x2", width - marginLeft - marginRight)
           .attr("stroke-opacity", 0.1)
+      )
+      .call((g) =>
+        g
+          .append("text")
+          .attr("x", 0)
+          .attr("y", marginTop / 2)
+          .attr("fill", "currentColor")
+          .attr("text-anchor", "middle")
+          .text("Floating Point Operations per Second [FLOP/s]")
       );
 
     // Roof
