@@ -137,7 +137,7 @@ const Job: NextPage = () => {
           <Tab>Timeline</Tab>
           <Tab>Box Plots</Tab>
           <Tab>Node Table</Tab>
-          <Tab>Roofline</Tab>
+          {/* <Tab>Roofline</Tab> */}
         </TabList>
 
         <TabPanels>
