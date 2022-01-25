@@ -69,7 +69,8 @@ export function RooflinePlot({
     });
 
     // Compute default domains.
-    if (xDomain === undefined) xDomain = [1, Math.max(d3.max(opInt) ?? 0, 100)];
+    if (xDomain === undefined)
+      xDomain = [0.01, Math.max(d3.max(opInt) ?? 0, 100)];
     if (yDomain === undefined)
       yDomain = [10, Math.max(d3.max(flop) ?? 0, flops_max)];
 
@@ -78,7 +79,7 @@ export function RooflinePlot({
     const yScale = d3.scaleLog(yDomain, yRange).nice();
     const xAxis = d3
       .axisBottom<number>(xScale)
-      .ticks(5)
+      .ticks(3)
       .tickFormat((val) => val.toString());
     const yAxis = d3
       .axisLeft<number>(yScale)
@@ -167,7 +168,8 @@ export function RooflinePlot({
         .attr("cx", x)
         .attr("cy", y)
         .attr("r", 4)
-        .attr("fill", "currentColor");
+        .attr("fill", "red")
+        .attr("fill-opacity", "0.3");
     });
 
     return () => {
