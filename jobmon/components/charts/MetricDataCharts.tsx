@@ -142,6 +142,7 @@ export const MetricDataCharts = ({
           unit={metric.Config.Unit}
           yLabel={metric.Config.DisplayName}
           yDomain={yDomain}
+          showTooltipSum={metric.Config.AggFn === "sum"}
         />
       </Flex>
     );

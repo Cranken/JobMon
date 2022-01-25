@@ -38,7 +38,8 @@ export interface LineChartProps<T> {
   colors?: string[] | readonly string[];
   fill?: string; // Fill area between fillBoundKeys
   fillBoundKeys?: [string, string]; // Fill the area between [lower, upper]
-  showTooltipSummary?: boolean;
+  showTooltipMean?: boolean;
+  showTooltipSum?: boolean;
 }
 
 // Typescript version based on chart released under:
@@ -77,7 +78,8 @@ export function LineChart<T>({
   colors = d3.schemeTableau10, // array of categorical colors
   fill = "#ff000020",
   fillBoundKeys,
-  showTooltipSummary = true,
+  showTooltipMean = true,
+  showTooltipSum = false,
 }: LineChartProps<T>) {
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -298,15 +300,19 @@ export function LineChart<T>({
         lastY -= text.node()?.getBBox().height ?? 0;
       };
 
-      if (showTooltipSummary) {
+      if (showTooltipMean || showTooltipSum) {
         const pointValues = values.map((a) => y(a));
-        const sum = d3.sum(pointValues);
-        const mean = d3.mean(pointValues);
+        if (showTooltipMean) {
+          const mean = d3.mean(pointValues);
+          addLine(
+            `Mean: ${mean ? new Unit(mean, unit ?? "").toString(prefix) : 0}`
+          );
+        }
 
-        addLine(
-          `Mean: ${mean ? new Unit(mean, unit ?? "").toString(prefix) : 0}`
-        );
-        addLine(`Sum: ${new Unit(sum, unit ?? "").toString(prefix)}`);
+        if (showTooltipSum) {
+          const sum = d3.sum(pointValues);
+          addLine(`Sum: ${new Unit(sum, unit ?? "").toString(prefix)}`);
+        }
       }
       if (values.length > 6) {
         for (let idx = 0; idx < 6; idx++) {
