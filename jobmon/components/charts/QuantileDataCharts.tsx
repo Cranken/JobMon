@@ -83,7 +83,8 @@ export const QuantileDataCharts = ({
           })(metric.Config.Unit, maxPrefix)}
           unit={metric.Config.Unit}
           yLabel={metric.Config.DisplayName}
-          showTooltipSum={metric.Config.AggFn === "sum"}
+          showTooltipSum={false}
+          showTooltipMean={false}
           yDomain={yDomain}
         />
       </Flex>
