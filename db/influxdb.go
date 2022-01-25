@@ -84,6 +84,9 @@ func (db *InfluxDB) GetNodeJobData(job *job.JobMetadata, node string, sampleInte
 }
 
 func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMetadataData, err error) {
+	if j.IsRunning {
+		return data, fmt.Errorf("job is still running")
+	}
 	var wg sync.WaitGroup
 	for _, m := range db.metrics[j.Partition] {
 		wg.Add(1)
