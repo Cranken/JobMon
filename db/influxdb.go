@@ -94,12 +94,12 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 			defer wg.Done()
 			tempRes, err := db.queryMetadataMeasurements(m, j)
 			if err != nil {
-				log.Printf("could not get metadata data %v", err)
+				log.Printf("Job %v: could not get metadata data %v", j.Id, err)
 				return
 			}
 			result, err := parseQueryResult(tempRes, "_field")
 			if err != nil {
-				log.Printf("could not parse metadata data %v", err)
+				log.Printf("Job %v: could not parse metadata data %v", j.Id, err)
 				return
 			}
 			tempData := make(map[string]float64)
@@ -133,7 +133,7 @@ func (db *InfluxDB) getJobData(job *job.JobMetadata, metrics []conf.MetricConfig
 			result, err := db.query(m, job, node, sampleInterval)
 			defer wg.Done()
 			if err != nil {
-				log.Printf("could not get metric data %v", err)
+				log.Printf("Job %v: could not get metric data %v", job.Id, err)
 				return
 			}
 			metricData = append(metricData, MetricData{Config: m, Data: result})
@@ -143,12 +143,12 @@ func (db *InfluxDB) getJobData(job *job.JobMetadata, metrics []conf.MetricConfig
 			tempRes, err := db.queryQuantileMeasurement(m, job, db.metricQuantiles, sampleInterval)
 			defer wg.Done()
 			if err != nil {
-				log.Printf("could not get quantile data %v", err)
+				log.Printf("Job %v: could not get quantile data %v", job.Id, err)
 				return
 			}
 			result, err := parseQueryResult(tempRes, "_field")
 			if err != nil {
-				log.Printf("could not parse quantile data %v", err)
+				log.Printf("Job %v: could not parse quantile data %v", job.Id, err)
 				return
 			}
 			quantileData = append(quantileData, QuantileData{Config: m, Data: result, Quantiles: db.metricQuantiles})
