@@ -94,9 +94,11 @@ func (s *Store) StopJob(id int, stopJob job.StopJob) (job job.JobMetadata, err e
 	job.ExitCode = stopJob.ExitCode
 	job.IsRunning = false
 	s.mut.Lock()
-	defer s.mut.Unlock()
 	s.Jobs[id] = job
+	s.mut.Unlock()
 	s.addMetadataToJob(&job)
+	s.mut.Lock()
+	defer s.mut.Unlock()
 	return s.Jobs[id], nil
 }
 
