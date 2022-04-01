@@ -56,6 +56,8 @@ func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 
 func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	utils.AllowCors(r, w.Header())
+
+	// Parse job information
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		errStr := fmt.Sprintln("JobStop: Could not read http request body")
@@ -87,10 +89,12 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Success"))
 
+	// Mark job as stopped in store
 	go func() {
 		jobMetadata, err := store.StopJob(id, stopJob)
 
 		if err != nil {
+			// Run aggregation tasks to calculate metadata metrics and (if enabled) prefetch job data
 			db.RunAggregation()
 			if config.Prefetch {
 				go func() {
@@ -147,6 +151,7 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 
 	// TODO: Check user authorization/authentification
 
+	// Get job metadata from store
 	j, err := store.Get(id)
 	if err != nil {
 		log.Printf("Could not get job meta data")
@@ -158,6 +163,7 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		node = j.NodeList
 	}
 
+	// Calculate best sample interval
 	dur, _ := time.ParseDuration(config.SampleInterval)
 	intervals, secs := j.CalculateSampleIntervals(dur)
 	bestInterval := time.Duration(secs) * time.Second
@@ -171,6 +177,7 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		}
 	}
 
+	// Get job data
 	var jobData database.JobData
 	if node == "" && querySampleInterval == "" {
 		jobData, err = jobCache.Get(&j, bestInterval)
@@ -186,6 +193,7 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	jobData.SampleInterval = sampleInterval.Seconds()
 	jobData.SampleIntervals = intervals
 
+	// Send data
 	jsonData, err := json.Marshal(&jobData)
 	if err != nil {
 		log.Printf("Could not marshal job to json")

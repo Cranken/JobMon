@@ -7,7 +7,6 @@ import (
 )
 
 const DEFAULT_MAX_POINTS_PER_JOB = 200
-const DEFAULT_MIN_POINTS_PER_JOB = 50
 
 type JobMetadata struct {
 	Id           int
@@ -53,6 +52,8 @@ type JobListConfig struct {
 	RadarChartMetrics []string
 }
 
+// Check if job TTL has expired.
+// If TTL == 0 then the job will never expire
 func (j *JobMetadata) Expired() bool {
 	now := int(time.Now().Unix())
 	if j.TTL == 0 {
@@ -61,11 +62,13 @@ func (j *JobMetadata) Expired() bool {
 	return j.StopTime+j.TTL < now
 }
 
+// Check if job exceeds given maxTime from its start time until now
 func (j *JobMetadata) Overtime(maxTime int) bool {
 	now := int(time.Now().Unix())
 	return j.StartTime+maxTime < now
 }
 
+// Calculate the sample interval which displays the closest amount of samples in relation to DEFAULT_MAX_POINTS_PER_JOB
 func (j *JobMetadata) CalculateSampleIntervals(metricSampleInterval time.Duration) (intervals []float64, bestAvailableInterval float64) {
 	defaultIntervals := []float64{30, 60, 120, 300, 600, 1800}
 	duration := float64(j.StopTime - j.StartTime)

@@ -28,6 +28,7 @@ func (c *LRUCache) Init(config conf.Configuration, db *db.DB) {
 	c.db = db
 }
 
+// Get job data for the given sample interval from cache by job metadata
 func (c *LRUCache) Get(j *job.JobMetadata, sampleInterval time.Duration) (data db.JobData, err error) {
 	c.mut.Lock()
 	defer c.mut.Unlock()

@@ -46,6 +46,7 @@ func (s *Store) Init(c config.Configuration, database *db.DB) {
 	go s.startCleanJobsTimer()
 }
 
+// Add job metadata to store
 func (s *Store) Put(job job.JobMetadata) {
 	go func() {
 		if job.TTL == 0 {
@@ -57,6 +58,7 @@ func (s *Store) Put(job job.JobMetadata) {
 	}()
 }
 
+// Get job metadata by job id
 func (s *Store) Get(id int) (job.JobMetadata, error) {
 	job, pres := s.Jobs[id]
 	var err error
@@ -66,10 +68,12 @@ func (s *Store) Get(id int) (job.JobMetadata, error) {
 	return job, err
 }
 
+// Get metadata of all jobs
 func (s *Store) GetAll() []job.JobMetadata {
 	return s.GetAllByPred(func(_ *job.JobMetadata) bool { return true })
 }
 
+// Get metadata of all jobs that fulfill the given predicate
 func (s *Store) GetAllByPred(pred JobPred) []job.JobMetadata {
 	jobs := make([]job.JobMetadata, 0, len(s.Jobs))
 	for _, v := range s.Jobs {
@@ -85,6 +89,7 @@ func (s *Store) GetAllByPred(pred JobPred) []job.JobMetadata {
 	return jobs
 }
 
+// Mark the given job as stopped
 func (s *Store) StopJob(id int, stopJob job.StopJob) (job job.JobMetadata, err error) {
 	s.mut.Lock()
 	defer s.mut.Unlock()
@@ -119,6 +124,7 @@ func (s *Store) removeExpiredJobs() {
 	s.mut.Unlock()
 }
 
+// Mark jobs as stopped if they exceed their maximum allowed wall clock time
 func (s *Store) finishOvertimeJobs() {
 	for _, j := range s.Jobs {
 		if j.IsRunning {

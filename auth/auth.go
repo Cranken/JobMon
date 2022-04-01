@@ -44,6 +44,7 @@ type AuthManager struct {
 const EXPIRATIONTIME = 60 * 60 * 24 * 7
 const ISSUER = "monitoring-backend"
 
+// Create protected route which requires given authentication level
 func (authManager *AuthManager) Protected(h httprouter.Handle, authLevel string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		token, err := r.Cookie("Authorization")
@@ -115,6 +116,7 @@ func (auth *AuthManager) validate(tokenStr string) (user UserInfo, err error) {
 	return
 }
 
+// Generate a JWT for the given user. Parameter 'remember' specifies if the JWT should be valid for a year
 func (auth *AuthManager) GenerateJWT(user UserInfo, remember bool) (string, error) {
 	expirationTime := EXPIRATIONTIME * time.Second
 	if remember {
@@ -139,6 +141,7 @@ func (auth *AuthManager) GenerateJWT(user UserInfo, remember bool) (string, erro
 	return ret, err
 }
 
+// Append JWT cookie to the http response
 func (auth *AuthManager) AppendJWT(user UserInfo, remember bool, w http.ResponseWriter) (err error) {
 	token, err := auth.GenerateJWT(user, remember)
 	if err != nil {
@@ -153,6 +156,7 @@ func (auth *AuthManager) AppendJWT(user UserInfo, remember bool, w http.Response
 	return
 }
 
+// Check if given username and password are correct
 func (auth *AuthManager) AuthUser(username string, password string) (user UserInfo, err error) {
 	if val, ok := auth.localUsers[username]; ok && password == val.Password {
 		user = UserInfo{Role: val.Role, Username: username}
@@ -162,6 +166,7 @@ func (auth *AuthManager) AuthUser(username string, password string) (user UserIn
 	return
 }
 
+// Log given user out of active sessions
 func (auth *AuthManager) Logout(username string) {
 	delete(auth.store.SessionStorage, username)
 }
