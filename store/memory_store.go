@@ -1,4 +1,4 @@
-package persistent_store
+package store
 
 import (
 	"encoding/json"
@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-type Store struct {
+type MemoryStore struct {
 	Jobs           map[int]job.JobMetadata
 	SessionStorage map[string]string
 	mut            sync.Mutex
@@ -25,7 +25,7 @@ type Store struct {
 
 type JobPred func(*job.JobMetadata) bool
 
-func (s *Store) Init(c config.Configuration, database *db.DB) {
+func (s *MemoryStore) Init(c config.Configuration, database *db.DB) {
 	s.config = c
 	s.database = database
 	data, err := os.ReadFile(s.config.StoreFile)
@@ -46,8 +46,7 @@ func (s *Store) Init(c config.Configuration, database *db.DB) {
 	go s.startCleanJobsTimer()
 }
 
-// Add job metadata to store
-func (s *Store) Put(job job.JobMetadata) {
+func (s *MemoryStore) PutJob(job job.JobMetadata) {
 	go func() {
 		if job.TTL == 0 {
 			job.TTL = s.config.DefaultTTL
@@ -58,8 +57,7 @@ func (s *Store) Put(job job.JobMetadata) {
 	}()
 }
 
-// Get job metadata by job id
-func (s *Store) Get(id int) (job.JobMetadata, error) {
+func (s *MemoryStore) GetJob(id int) (job.JobMetadata, error) {
 	job, pres := s.Jobs[id]
 	var err error
 	if !pres {
@@ -68,13 +66,11 @@ func (s *Store) Get(id int) (job.JobMetadata, error) {
 	return job, err
 }
 
-// Get metadata of all jobs
-func (s *Store) GetAll() []job.JobMetadata {
-	return s.GetAllByPred(func(_ *job.JobMetadata) bool { return true })
+func (s *MemoryStore) GetAllJobs() []job.JobMetadata {
+	return s.GetJobsByPred(func(_ *job.JobMetadata) bool { return true })
 }
 
-// Get metadata of all jobs that fulfill the given predicate
-func (s *Store) GetAllByPred(pred JobPred) []job.JobMetadata {
+func (s *MemoryStore) GetJobsByPred(pred JobPred) []job.JobMetadata {
 	jobs := make([]job.JobMetadata, 0, len(s.Jobs))
 	for _, v := range s.Jobs {
 		if pred(&v) {
@@ -89,8 +85,7 @@ func (s *Store) GetAllByPred(pred JobPred) []job.JobMetadata {
 	return jobs
 }
 
-// Mark the given job as stopped
-func (s *Store) StopJob(id int, stopJob job.StopJob) (job job.JobMetadata, err error) {
+func (s *MemoryStore) StopJob(id int, stopJob job.StopJob) (job job.JobMetadata, err error) {
 	s.mut.Lock()
 	defer s.mut.Unlock()
 	job, ok := s.Jobs[id]
@@ -105,7 +100,7 @@ func (s *Store) StopJob(id int, stopJob job.StopJob) (job job.JobMetadata, err e
 	return s.Jobs[id], nil
 }
 
-func (s *Store) startCleanJobsTimer() {
+func (s *MemoryStore) startCleanJobsTimer() {
 	ticker := time.NewTicker(12 * time.Hour)
 	for {
 		<-ticker.C
@@ -114,7 +109,7 @@ func (s *Store) startCleanJobsTimer() {
 	}
 }
 
-func (s *Store) removeExpiredJobs() {
+func (s *MemoryStore) removeExpiredJobs() {
 	s.mut.Lock()
 	for id, j := range s.Jobs {
 		if !j.IsRunning && j.Expired() {
@@ -125,7 +120,7 @@ func (s *Store) removeExpiredJobs() {
 }
 
 // Mark jobs as stopped if they exceed their maximum allowed wall clock time
-func (s *Store) finishOvertimeJobs() {
+func (s *MemoryStore) finishOvertimeJobs() {
 	for _, j := range s.Jobs {
 		if j.IsRunning {
 			partition, ok := s.config.Partitions[j.Partition]
@@ -140,7 +135,7 @@ func (s *Store) finishOvertimeJobs() {
 	}
 }
 
-func (s *Store) addMetadataToJob(job *job.JobMetadata) error {
+func (s *MemoryStore) addMetadataToJob(job *job.JobMetadata) error {
 	data, err := (*s.database).GetJobMetadataMetrics(job)
 	if err == nil {
 		job.Data = data
@@ -149,7 +144,7 @@ func (s *Store) addMetadataToJob(job *job.JobMetadata) error {
 	return err
 }
 
-func (s *Store) addDataToIncompleteJobs() {
+func (s *MemoryStore) addDataToIncompleteJobs() {
 	s.mut.Lock()
 	defer s.mut.Unlock()
 	for i, j := range s.Jobs {
@@ -163,7 +158,20 @@ func (s *Store) addDataToIncompleteJobs() {
 	}
 }
 
-func (s *Store) Flush() {
+func (s *MemoryStore) GetUserSessionToken(username string) (string, bool) {
+	token, ok := s.SessionStorage[username]
+	return token, ok
+}
+
+func (s *MemoryStore) SetUserSessionToken(username string, token string) {
+	s.SessionStorage[username] = token
+}
+
+func (s *MemoryStore) RemoveUserSessionToken(username string) {
+	delete(s.SessionStorage, username)
+}
+
+func (s *MemoryStore) Flush() {
 	data, err := json.MarshalIndent(s, "", "    ")
 	if err != nil {
 		log.Printf("Could not marshal store into json: %v\n", err)

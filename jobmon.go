@@ -9,7 +9,7 @@ import (
 	database "jobmon/db"
 	"jobmon/job"
 	cache "jobmon/lru_cache"
-	ps "jobmon/persistent_store"
+	jobstore "jobmon/store"
 	"jobmon/utils"
 	"log"
 	"net/http"
@@ -22,7 +22,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-var store = ps.Store{}
+var store jobstore.Store
 var config = conf.Configuration{}
 var db database.DB
 var jobCache = cache.LRUCache{}
@@ -51,7 +51,7 @@ func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte{})
-	store.Put(j)
+	store.PutJob(j)
 }
 
 func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -112,7 +112,7 @@ func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	utils.AllowCors(r, w.Header())
 	// TODO: Check auth and get by e.g. project id, ...
 	// Get all for now
-	jobs := store.GetAll()
+	jobs := store.GetAllJobs()
 
 	metrics := make(map[string]struct{})
 	for _, v := range config.Metrics {
@@ -152,7 +152,7 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	// TODO: Check user authorization/authentification
 
 	// Get job metadata from store
-	j, err := store.Get(id)
+	j, err := store.GetJob(id)
 	if err != nil {
 		log.Printf("Could not get job meta data")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -213,7 +213,7 @@ func Search(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 
 	id, err := strconv.Atoi(searchTerm)
 	if err == nil {
-		_, err := store.Get(id)
+		_, err := store.GetJob(id)
 		if err == nil {
 			w.Write([]byte(fmt.Sprintf("job:%v", id)))
 			return
@@ -297,6 +297,7 @@ func GenerateAPIKey(w http.ResponseWriter, r *http.Request, params httprouter.Pa
 
 func main() {
 	db = &database.InfluxDB{}
+	store = &jobstore.MemoryStore{}
 	config.Init()
 	db.Init(config)
 	store.Init(config, &db)

@@ -1,4 +1,4 @@
-package persistent_store
+package store
 
 import (
 	"jobmon/config"
@@ -10,10 +10,10 @@ import (
 func TestGetJob(t *testing.T) {
 	config := config.Configuration{StoreFile: "../resources/store-test.json", DefaultTTL: 100}
 	var db database.DB = &utils.MockDB{}
-	store := Store{}
+	store := MemoryStore{}
 	store.Init(config, &db)
 
-	job, err := store.Get(1)
+	job, err := store.GetJob(1)
 	if err != nil {
 		t.Fatalf("Could not get job from store")
 	}

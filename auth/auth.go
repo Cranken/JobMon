@@ -3,7 +3,7 @@ package auth
 import (
 	"fmt"
 	"jobmon/config"
-	"jobmon/persistent_store"
+	"jobmon/store"
 	"jobmon/utils"
 	"net/http"
 	"strings"
@@ -37,7 +37,7 @@ type UserClaims struct {
 
 type AuthManager struct {
 	hmacSampleSecret []byte
-	store            *persistent_store.Store
+	store            *store.Store
 	localUsers       map[string]config.LocalUser
 }
 
@@ -82,7 +82,7 @@ func (authManager *AuthManager) Protected(h httprouter.Handle, authLevel string)
 	}
 }
 
-func (auth *AuthManager) Init(c config.Configuration, store *persistent_store.Store) {
+func (auth *AuthManager) Init(c config.Configuration, store *store.Store) {
 	auth.hmacSampleSecret = []byte(c.JWTSecret)
 	auth.store = store
 	auth.localUsers = c.LocalUsers
@@ -102,7 +102,7 @@ func (auth *AuthManager) validate(tokenStr string) (user UserInfo, err error) {
 	claims, ok := token.Claims.(*UserClaims)
 	if ok && token.Valid {
 		if claims.VerifyExpiresAt(jwt.TimeFunc().Unix(), true) && claims.VerifyIssuer(ISSUER, true) {
-			if storeToken, ok := auth.store.SessionStorage[claims.Username]; ok && storeToken == tokenStr {
+			if storeToken, ok := (*auth.store).GetUserSessionToken(claims.Username); ok && storeToken == tokenStr {
 				return claims.UserInfo, nil
 			} else {
 				err = fmt.Errorf("session was revoked")
@@ -136,7 +136,7 @@ func (auth *AuthManager) GenerateJWT(user UserInfo, remember bool) (string, erro
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	ret, err := token.SignedString(auth.hmacSampleSecret)
 	if err == nil {
-		auth.store.SessionStorage[user.Username] = ret
+		(*auth.store).SetUserSessionToken(user.Username, ret)
 	}
 	return ret, err
 }
@@ -168,5 +168,5 @@ func (auth *AuthManager) AuthUser(username string, password string) (user UserIn
 
 // Log given user out of active sessions
 func (auth *AuthManager) Logout(username string) {
-	delete(auth.store.SessionStorage, username)
+	(*auth.store).RemoveUserSessionToken(username)
 }
