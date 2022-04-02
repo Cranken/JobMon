@@ -11,7 +11,7 @@ ADD config ./config
 ADD db ./db
 ADD job ./job
 ADD lru_cache ./lru_cache
-ADD persistent_store ./persistent_store
+ADD store ./store
 ADD utils ./utils
 
 COPY jobmon.go ./
