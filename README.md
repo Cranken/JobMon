@@ -30,6 +30,10 @@ The frontend should be available at: http://localhost:3000
 
 After setting the values in the .env and config.json file docker-compose can be used for easy deployment of the stack.
 
+The .env file specifies the frontend database authentication keys as well as the ports the docker containers will run on.
+
+The config.json contains the configuration for the backend as well as the metrics.
+
 ```
 docker-compose up [-d]
 ```

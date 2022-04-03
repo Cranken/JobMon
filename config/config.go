@@ -11,45 +11,75 @@ import (
 const CONFIG_FILE = "config.json"
 
 type Configuration struct {
-	DBHost            string
-	DBToken           string
-	DBOrg             string
-	DBBucket          string
-	DefaultTTL        int
-	Metrics           map[string][]MetricConfig
-	CacheSize         int
-	Prefetch          bool
-	SampleInterval    string
-	MetricQuantiles   []string
-	JWTSecret         string
-	StoreFile         string
-	LocalUsers        map[string]LocalUser
-	Partitions        map[string]PartitionConfig
+	// Complete URL of InfluxDB, i.e. protocol, address and port
+	DBHost string
+	// InfluxDB access token to bucket
+	DBToken string
+	// Org the InfluxDB bucket belongs to
+	DBOrg string
+	// InfluxDB bucket
+	DBBucket string
+
+	// Default time to live of jobs
+	DefaultTTL int
+	// Per partition metric config
+	Metrics map[string][]MetricConfig
+	// Job data LRU cache size
+	CacheSize int
+	// Prefetch job data into LRU cache upon job completion
+	Prefetch bool
+	// Sample interval of the metrics as configured in the metric collector
+	SampleInterval string
+	// Quantiles the frontend will display; Will be moved to frontend config
+	MetricQuantiles []string
+	// Secret to use when generating the JWT
+	JWTSecret string
+	// Path to the file the job metadata store should use
+	StoreFile string
+	// Authentication for local users; Key is username and value is the config
+	LocalUsers map[string]LocalUser
+	// Per partition configurations
+	Partitions map[string]PartitionConfig
+	// Metrics to display in the radar chart; Will be moved to frontend config
 	RadarChartMetrics []string
 }
 
 type MetricConfig struct {
-	Type           string
-	Measurement    string
-	AggFn          string
+	// Metric type, e.g. "cpu", "node", "socket", "accelerator"
+	Type string
+	// Measurement name in Influxdb
+	Measurement string
+	// Aggregation function to use in aggregation of per device(cpu, socket, accelerator) data to node data
+	AggFn string
+	// Sample interval of the metric
 	SampleInterval string
-	Unit           string
-	DisplayName    string
-	FilterFunc     string
-	PostQueryOp    string
-	SeparationKey  string
-	MaxPerNode     int
-	MaxPerType     int
-	PThreadAggFn   string
+	// Unit; supported units are: "FLOP/s", "Bit/s", "°C", "B/s", "B", "%", ""
+	Unit string
+	// Display name for the metric
+	DisplayName string
+	// Custom filter function
+	FilterFunc string
+	// Influxdb Flux query string executed after the query but before the parsing.
+	PostQueryOp string
+	// Custom separation key to use in parsing
+	SeparationKey string
+	// Max value per node
+	MaxPerNode int
+	// max value per type
+	MaxPerType int
+	// Which aggregation function to use when aggregating pthreads and their corresponding hyperthread
+	PThreadAggFn string
 }
 
 type PartitionConfig struct {
+	// Maximum wall clock time for a job in the partition
 	MaxTime int
 }
 
 type LocalUser struct {
 	Password string
-	Role     string
+	// Role can be "job-control", "user", "admin"
+	Role string
 }
 
 func (c *Configuration) Init() {
