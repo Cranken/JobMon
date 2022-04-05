@@ -2,7 +2,6 @@
 import * as d3 from "d3";
 import React, { useEffect } from "react";
 import { useRef } from "react";
-import { DataMap } from "../../types/job";
 import { Unit } from "../../types/units";
 
 export interface RooflinePlotProps {

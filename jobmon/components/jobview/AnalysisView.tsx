@@ -1,5 +1,4 @@
 import {
-  Flex,
   useColorModeValue,
   Table,
   Thead,

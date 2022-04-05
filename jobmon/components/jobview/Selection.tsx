@@ -8,11 +8,10 @@ import {
   Button,
   Text,
   Input,
-  Spacer,
   Stack,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { SelectionMap } from "../../pages/job/[id]";
+import { SelectionMap } from "../../types/helpers";
 
 type Items = { [key: string]: boolean };
 type SetFn = (val: SelectionMap) => void;

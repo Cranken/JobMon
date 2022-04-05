@@ -1,7 +1,7 @@
 import { JobMetadata } from "./../../types/job";
 import { Grid, Stack, Text } from "@chakra-ui/react";
 import Selection from "./Selection";
-import { SelectionMap } from "../../pages/job/[id]";
+import { SelectionMap } from "../../types/helpers";
 
 interface JobInfoProps {
   metadata: JobMetadata;
