@@ -3,9 +3,9 @@ import React, { useMemo } from "react";
 import { useEffect } from "react";
 import { useState } from "react";
 import { JobData } from "../../types/job";
-import MetricDataCharts from "../../components/charts/MetricDataCharts";
+import MetricDataCharts from "../../components/jobview/MetricDataCharts";
 import { useRouter } from "next/router";
-import QuantileDataCharts from "../../components/charts/QuantileDataCharts";
+import QuantileDataCharts from "../../components/jobview/QuantileDataCharts";
 import Control from "../../components/jobview/ViewControl";
 import {
   Box,
@@ -24,9 +24,7 @@ import {
   AnalysisBoxPlot,
   AnalysisTableView,
 } from "../../components/jobview/AnalysisView";
-import { URLSearchParams } from "url";
-
-export type SelectionMap = { [key: string]: boolean };
+import { SelectionMap } from "../../types/helpers";
 
 const Job: NextPage = () => {
   const router = useRouter();
