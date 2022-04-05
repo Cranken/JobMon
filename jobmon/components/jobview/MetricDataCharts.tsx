@@ -3,7 +3,7 @@ import * as d3 from "d3";
 import { Center, Flex, Grid, Spinner } from "@chakra-ui/react";
 import { MetricData, MetricPoint } from "../../types/job";
 import { Unit } from "../../types/units";
-import { LineChart } from "./LineChart";
+import { LineChart } from "../charts/LineChart";
 
 interface MetricDataChartsProps {
   metrics: MetricData[] | undefined;

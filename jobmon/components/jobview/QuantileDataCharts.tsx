@@ -1,10 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import * as d3 from "d3";
 import { QuantileData } from "../../types/job";
-import { LineChart } from "./LineChart";
-import { QuantilePoint } from "./../../types/job";
-import { Center, Container, Flex, Grid, Spinner } from "@chakra-ui/react";
-import { Unit } from "./../../types/units";
+import { LineChart } from "../charts/LineChart";
+import { QuantilePoint } from "../../types/job";
+import { Center, Flex, Grid, Spinner } from "@chakra-ui/react";
+import { Unit } from "../../types/units";
 
 interface QuantileDataChartsProps {
   quantiles: QuantileData[] | undefined;
