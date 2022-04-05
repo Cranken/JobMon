@@ -1,12 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import JobFilter from "../components/joblist/JobFilter";
+import JobFilter from "../components/joblist/job-filter/JobFilter";
 import JobList from "../components/joblist/JobList";
 import { checkBetween, useStorageState } from "../utils/utils";
 import { JobListData, JobMetadata } from "./../types/job";
 import { useRouter } from "next/router";
 import { useCookies } from "react-cookie";
 import { Box, Center, Spinner } from "@chakra-ui/react";
-import { SelectionMap } from "./job/[id]";
 import JoblistPageSelection from "../components/joblist/JoblistPageSelection";
 
 export const Jobs = () => {
@@ -16,7 +15,6 @@ export const Jobs = () => {
   const [startTime, setStartTime] = useState(new Date("2021-10-01"));
   const [stopTime, setStopTime] = useState(new Date());
   const [numNodes, setNumNodes] = useStorageState("numNodes", [1, 192]);
-  const [metrics, setMetrics] = useStorageState<SelectionMap>("metrics", {});
   const [partition, setPartition] = useStorageState("partition", "");
   const [numGpu, setNumGpu] = useStorageState("numGpu", [0, 224]);
   const [showIsRunning, setShowIsRunning] = useStorageState(
@@ -67,20 +65,6 @@ export const Jobs = () => {
     );
   }
 
-  const setChecked = (val: SelectionMap) => {
-    const newMetrics = { ...metrics };
-    Object.keys(val).forEach((key) => {
-      if (key in metrics) {
-        newMetrics[key] = val[key];
-      }
-      if (metrics !== newMetrics) {
-        setMetrics(newMetrics);
-      }
-    });
-    const selected = Object.keys(newMetrics).filter((val) => newMetrics[val]);
-    localStorage.setItem("displayMetrics", selected.join(","));
-  };
-
   let partitions = new Set<string>();
   jobListData.Jobs.forEach((j) =>
     j.Partition !== "" ? partitions.add(j.Partition) : null
@@ -93,7 +77,6 @@ export const Jobs = () => {
       startTime={[new Date(startTime), setStartTime]}
       stopTime={[new Date(stopTime), setStopTime]}
       numNodes={[numNodes, setNumNodes]}
-      metrics={[metrics, setChecked]}
       partitions={[Array.from(partitions), partition, setPartition]}
       numGpu={[numGpu, setNumGpu]}
       isRunning={[showIsRunning, setShowIsRunning]}
@@ -103,7 +86,6 @@ export const Jobs = () => {
     />
   );
 
-  const displayMetrics = Object.keys(metrics).filter((val) => metrics[val]);
   if (sortBy !== "joblength") {
     filteredJobs.sort((a, b) =>
       a[sortBy as keyof JobMetadata] < b[sortBy as keyof JobMetadata] ? 1 : -1
@@ -140,7 +122,6 @@ export const Jobs = () => {
       <JobList
         key="joblist"
         jobs={filteredJobs}
-        displayMetrics={displayMetrics}
         radarChartMetrics={jobListData.Config.RadarChartMetrics}
         limit={joblistLimit}
         page={page}

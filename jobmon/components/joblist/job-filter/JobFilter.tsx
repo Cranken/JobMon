@@ -22,28 +22,17 @@ import {
   NumberInput,
   NumberInputField,
   NumberInputStepper,
-  Checkbox,
-  Accordion,
-  AccordionItem,
-  AccordionPanel,
-  AccordionIcon,
-  AccordionButton,
   Select,
-  Container,
   IconButton,
 } from "@chakra-ui/react";
-import { Dispatch, SetStateAction, useState } from "react";
-import { SelectionMap } from "../../pages/job/[id]";
 
 import style from "./JobFilter.module.css";
-type SetFn = (val: SelectionMap) => void;
 
 interface JobFilterProps {
   userName: [string, (value: string) => void];
   startTime: [Date, (value: Date) => void];
   stopTime: [Date, (value: Date) => void];
   numNodes: [number[], (value: number[]) => void];
-  metrics: [SelectionMap, SetFn];
   partitions: [string[], string, (value: string) => void];
   numGpu: [number[], (value: number[]) => void];
   isRunning: [boolean, (value: boolean) => void];
@@ -57,7 +46,6 @@ export const JobFilter = ({
   startTime,
   stopTime,
   numNodes,
-  metrics,
   partitions,
   numGpu,
   isRunning,

@@ -1,14 +1,10 @@
-import { JobMetadata, JobMetadataData } from "./../../types/job";
-import styles from "./JobList.module.css";
+import { JobMetadata } from "./../../types/job";
 import {
   Alert,
   AlertIcon,
   Box,
   Center,
   Divider,
-  Flex,
-  Grid,
-  GridItem,
   Heading,
   LinkBox,
   LinkOverlay,
@@ -18,14 +14,12 @@ import {
   Text,
   useColorModeValue,
 } from "@chakra-ui/react";
-import { Histogram } from "../charts/Histogram";
 import { RadarChart } from "../charts/RadarChart";
 import * as d3 from "d3";
 import RooflinePlot from "../charts/RooflinePlot";
 
 interface JobListProps {
   jobs: JobMetadata[];
-  displayMetrics: string[];
   radarChartMetrics: string[];
   filter?: (job: JobMetadata) => boolean;
   sortBy?: string;
@@ -35,7 +29,6 @@ interface JobListProps {
 
 export const JobList = ({
   jobs,
-  displayMetrics,
   radarChartMetrics,
   limit,
   page,
@@ -51,7 +44,6 @@ export const JobList = ({
           <JobListItem
             key={job.Id}
             job={job}
-            displayMetrics={displayMetrics}
             radarChartMetrics={radarChartMetrics}
           />
         ))}
@@ -62,22 +54,11 @@ export const JobList = ({
 
 interface JobListItemProps {
   job: JobMetadata;
-  displayMetrics: string[];
   radarChartMetrics: string[];
 }
 
-export const JobListItem = ({
-  job,
-  displayMetrics,
-  radarChartMetrics,
-}: JobListItemProps) => {
+export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
   const borderColor = useColorModeValue("gray.300", "whiteAlpha.400");
-  let sortedData: JobMetadataData[] = [];
-  if (job.Data) {
-    sortedData = job.Data.filter((val) =>
-      displayMetrics.includes(val.Config.Measurement)
-    ).sort((a, b) => (a.Config.Measurement < b.Config.Measurement ? -1 : 1));
-  }
   let radarChartData: any[] = [];
   let flopsData;
   let membwData;
@@ -115,13 +96,6 @@ export const JobListItem = ({
     dataAvailable = false;
     reason = "No metadata for job available.";
   }
-  // } else if (job.NumNodes <= 1) {
-  //   histogramAvailable = false;
-  //   reason = "No histogram available for jobs with less than two nodes.";
-  // } else if (job.StopTime - job.StartTime < 300) {
-  //   histogramAvailable = false;
-  //   reason = "No histogram available for short jobs (<5Min).";
-  // }
 
   return (
     <LinkBox>
@@ -208,23 +182,6 @@ export const JobListItem = ({
                     ) : null}
                   </Center>
                 )}
-                {sortedData.map((dat) => (
-                  <Center
-                    key={dat.Config.Measurement}
-                    width="100%"
-                    height="100%"
-                  >
-                    <Histogram
-                      data={Object.values(dat.Data)}
-                      x={(d) => d}
-                      width={300}
-                      height={180}
-                      yLabel="Number of Nodes"
-                      xLabel={dat.Config.DisplayName}
-                      xDomain={[0, dat.Config.MaxPerNode]}
-                    />
-                  </Center>
-                ))}
               </Stack>
             )}
           </Box>
