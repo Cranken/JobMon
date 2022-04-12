@@ -46,6 +46,16 @@ export interface LineChartProps<T> {
 // Copyright 2021 Observable, Inc.
 // Released under the ISC license.
 // https://observablehq.com/@d3/line-chart
+
+/**
+ * Renders a line chart based on the given data
+ * @param data - Array of data to be displayed. If multiple lines should be drawn, this parameter is the concatenation of the data of the individual lines
+ * @param x - Mapping function of data value to Date object
+ * @param y - Mapping function of data value to quantitative y-value
+ * @param z - Mapping function to differentiate the lines based on the data value objects
+ * @param title - Mapping function of data value to tooltip string
+ *
+ */
 export function LineChart<T>({
   data,
   x = (_) => new Date(), // given d in data, returns the (temporal) x-value

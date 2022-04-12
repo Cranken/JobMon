@@ -23,6 +23,15 @@ export interface RooflinePlotProps {
   yRange?: [number, number]; // [bottom, top]
 }
 
+/**
+ * Renders a roofine plot based on the given data
+ * @param flops - Array of flops values
+ * @param flops_max - Maximum value of flops
+ * @param flops_unit - Unit of flops values
+ * @param mem_bw - Array of memory bandwidth values
+ * @param mem_bw_max - Maximum value of memory bandwidth
+ *
+ */
 export function RooflinePlot({
   flops,
   flops_max,

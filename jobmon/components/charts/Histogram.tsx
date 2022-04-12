@@ -2,6 +2,13 @@
 import * as d3 from "d3";
 import { useEffect, useRef } from "react";
 
+/**
+ * Renders a histogram based on the given data
+ * @param data - Array of data to be displayed
+ * @param x - Mapping function of data value to quantitative x-value
+ * @param y - Mapping function of data value to quantitative weight
+ *
+ */
 export interface HistogramProps<T> {
   data: T[];
   x?: (d: T) => number; // given d in data, returns the (quantitative) x-value

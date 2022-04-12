@@ -12,6 +12,13 @@ interface RadarChartProps<T> {
   stroke?: string;
 }
 
+/**
+ * Renders a radar chart based on the given data
+ * @param data - Array of data to be displayed
+ * @param x - Mapping function of data value to quantitative value. Should be between [0,1], i.e. scaled between 0 and the maximum
+ * @param y - Mapping function of data value to label
+ *
+ */
 export function RadarChart<T>({
   data,
   value,
