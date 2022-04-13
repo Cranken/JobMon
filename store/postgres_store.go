@@ -39,6 +39,7 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 		s.removeExpiredJobs()
 		s.finishOvertimeJobs()
 	}()
+	go s.startCleanJobsTimer()
 }
 
 func (s *PostgresStore) Migrate(source *Store) {
@@ -142,7 +143,9 @@ func (s *PostgresStore) RemoveTag(id int, tag job.JobTag) error {
 func (s *PostgresStore) removeExpiredJobs() {
 	now := int(time.Now().Unix())
 	deadline := now - s.config.DefaultTTL
-	s.db.NewDelete().Model((*job.JobMetadata)(nil)).Where("is_running=false").Where("ttl!=0").Where("stop_time<?", deadline).Exec(context.Background())
+	s.db.NewDelete().Model((*job.JobMetadata)(nil)).
+		Where("is_running=false").Where("ttl!=0").Where("stop_time<?", deadline).
+		Exec(context.Background())
 }
 
 func (s *PostgresStore) finishOvertimeJobs() {
@@ -150,11 +153,30 @@ func (s *PostgresStore) finishOvertimeJobs() {
 	for k, pc := range s.config.Partitions {
 		deadline := now - pc.MaxTime
 		var jobs []job.JobMetadata
-		err := s.db.NewSelect().Model(&jobs).Where("is_running=true").Where("partition=?", k).Where("start_time<?", deadline).Scan(context.Background())
+		err := s.db.NewSelect().Model(&jobs).
+			Where("is_running=true").Where("partition=?", k).Where("start_time<?", deadline).
+			Scan(context.Background())
 		if err == nil && len(jobs) > 0 {
 			for _, j := range jobs {
 				s.StopJob(j.Id, job.StopJob{StopTime: j.StartTime + pc.MaxTime, ExitCode: 1})
 			}
 		}
 	}
+}
+
+func (s *PostgresStore) startCleanJobsTimer() {
+	ticker := time.NewTicker(12 * time.Hour)
+	for {
+		<-ticker.C
+		s.removeExpiredJobs()
+		s.finishOvertimeJobs()
+	}
+}
+
+func (s *PostgresStore) GetJobCountByColumn(column string) (ColumnCount, error) {
+	m := make([]map[string]interface{}, 0)
+	err := s.db.NewSelect().Model((*job.JobMetadata)(nil)).
+		Column(column).ColumnExpr("count(?)", column).Group(column).Order("count DESC").
+		Scan(context.Background(), &m)
+	return m, err
 }

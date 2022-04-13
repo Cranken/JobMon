@@ -205,3 +205,8 @@ func (s *MemoryStore) addDataToIncompleteJobs() {
 		}
 	}
 }
+
+func (s *MemoryStore) GetJobCountByColumn(column string) (ColumnCount, error) {
+	// NYI
+	return nil, fmt.Errorf("NYI")
+}
