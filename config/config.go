@@ -20,6 +20,9 @@ type Configuration struct {
 	// InfluxDB bucket
 	DBBucket string
 
+	// Configuration for the job store
+	JobStore JobStoreConfig
+
 	// Default time to live of jobs
 	DefaultTTL int
 	// Per partition metric config
@@ -34,8 +37,6 @@ type Configuration struct {
 	MetricQuantiles []string
 	// Secret to use when generating the JWT
 	JWTSecret string
-	// Path to the file the job metadata store should use
-	StoreFile string
 	// Authentication for local users; Key is username and value is the config
 	LocalUsers map[string]LocalUser
 	// Per partition configurations
@@ -83,6 +84,25 @@ type LocalUser struct {
 	Password string
 	// Role can be "job-control", "user", "admin"
 	Role string
+}
+
+type JobStoreConfig struct {
+	// Supported types: "memory", "postgres"; Defaults to "memory"
+	Type string
+
+	// Memory store config
+	// Path to the file the job metadata store should use
+	MemFilePath string
+
+	// Postgres store config:
+	// Postgres host address
+	PSQLHost string
+	// Postgres username
+	PSQLUsername string
+	// Postgres password
+	PSQLPassword string
+	// Postgres db for job metadata store
+	PSQLDB string
 }
 
 func (c *Configuration) Init() {
