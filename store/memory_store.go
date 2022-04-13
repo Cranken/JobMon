@@ -28,9 +28,9 @@ type JobPred func(*job.JobMetadata) bool
 func (s *MemoryStore) Init(c config.Configuration, database *db.DB) {
 	s.config = c
 	s.database = database
-	data, err := os.ReadFile(s.config.StoreFile)
+	data, err := os.ReadFile(s.config.JobStore.MemFilePath)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		log.Fatalf("Could not read store file: %v\n Error: %v\n", s.config.StoreFile, err)
+		log.Fatalf("Could not read store file: %v\n Error: %v\n", s.config.JobStore.MemFilePath, err)
 	}
 	json.Unmarshal(data, s)
 	if s.Jobs == nil {
@@ -66,11 +66,11 @@ func (s *MemoryStore) GetJob(id int) (job.JobMetadata, error) {
 	return job, err
 }
 
-func (s *MemoryStore) GetAllJobs() []job.JobMetadata {
+func (s *MemoryStore) GetAllJobs() ([]job.JobMetadata, error) {
 	return s.GetJobsByPred(func(_ *job.JobMetadata) bool { return true })
 }
 
-func (s *MemoryStore) GetJobsByPred(pred JobPred) []job.JobMetadata {
+func (s *MemoryStore) GetJobsByPred(pred JobPred) ([]job.JobMetadata, error) {
 	jobs := make([]job.JobMetadata, 0, len(s.Jobs))
 	for _, v := range s.Jobs {
 		if pred(&v) {
@@ -82,22 +82,51 @@ func (s *MemoryStore) GetJobsByPred(pred JobPred) []job.JobMetadata {
 		return jobs[i].Id < jobs[j].Id
 	})
 
-	return jobs
+	return jobs, nil
 }
 
-func (s *MemoryStore) StopJob(id int, stopJob job.StopJob) (job job.JobMetadata, err error) {
+func (s *MemoryStore) StopJob(id int, stopJob job.StopJob) error {
 	s.mut.Lock()
 	defer s.mut.Unlock()
 	job, ok := s.Jobs[id]
 	if !ok {
-		return job, fmt.Errorf("can't stop job: %v, not found", id)
+		return fmt.Errorf("can't stop job: %v, not found", id)
 	}
 	job.StopTime = stopJob.StopTime
 	job.ExitCode = stopJob.ExitCode
 	job.IsRunning = false
 	s.Jobs[id] = job
-	s.addMetadataToJob(&job)
-	return s.Jobs[id], nil
+	return s.FetchJobMetadataData(&job)
+}
+
+func (s *MemoryStore) FetchJobMetadataData(job *job.JobMetadata) error {
+	data, err := (*s.database).GetJobMetadataMetrics(job)
+	if err == nil {
+		job.Data = data
+		s.Jobs[job.Id] = *job
+	}
+	return err
+}
+
+func (s *MemoryStore) GetUserSessionToken(username string) (string, bool) {
+	token, ok := s.SessionStorage[username]
+	return token, ok
+}
+
+func (s *MemoryStore) SetUserSessionToken(username string, token string) {
+	s.SessionStorage[username] = token
+}
+
+func (s *MemoryStore) RemoveUserSessionToken(username string) {
+	delete(s.SessionStorage, username)
+}
+
+func (s *MemoryStore) Flush() {
+	data, err := json.MarshalIndent(s, "", "    ")
+	if err != nil {
+		log.Printf("Could not marshal store into json: %v\n", err)
+	}
+	os.WriteFile(s.config.JobStore.MemFilePath, data, 0644)
 }
 
 func (s *MemoryStore) startCleanJobsTimer() {
@@ -135,15 +164,6 @@ func (s *MemoryStore) finishOvertimeJobs() {
 	}
 }
 
-func (s *MemoryStore) addMetadataToJob(job *job.JobMetadata) error {
-	data, err := (*s.database).GetJobMetadataMetrics(job)
-	if err == nil {
-		job.Data = data
-		s.Jobs[job.Id] = *job
-	}
-	return err
-}
-
 func (s *MemoryStore) addDataToIncompleteJobs() {
 	s.mut.Lock()
 	defer s.mut.Unlock()
@@ -156,25 +176,4 @@ func (s *MemoryStore) addDataToIncompleteJobs() {
 			}
 		}
 	}
-}
-
-func (s *MemoryStore) GetUserSessionToken(username string) (string, bool) {
-	token, ok := s.SessionStorage[username]
-	return token, ok
-}
-
-func (s *MemoryStore) SetUserSessionToken(username string, token string) {
-	s.SessionStorage[username] = token
-}
-
-func (s *MemoryStore) RemoveUserSessionToken(username string) {
-	delete(s.SessionStorage, username)
-}
-
-func (s *MemoryStore) Flush() {
-	data, err := json.MarshalIndent(s, "", "    ")
-	if err != nil {
-		log.Printf("Could not marshal store into json: %v\n", err)
-	}
-	os.WriteFile(s.config.StoreFile, data, 0644)
 }

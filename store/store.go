@@ -15,11 +15,11 @@ type Store interface {
 	// Get job metadata by job id
 	GetJob(id int) (job.JobMetadata, error)
 	// Get metadata of all jobs
-	GetAllJobs() []job.JobMetadata
-	// Get metadata of all jobs that fulfill the given predicate
-	GetJobsByPred(pred JobPred) []job.JobMetadata
+	GetAllJobs() ([]job.JobMetadata, error)
 	// Mark the given job as stopped
-	StopJob(id int, stopJob job.StopJob) (job job.JobMetadata, err error)
+	StopJob(id int, stopJob job.StopJob) error
+	// Fetches performance metadata for the job
+	FetchJobMetadataData(job *job.JobMetadata) error
 
 	// Get user session token from session storage
 	GetUserSessionToken(username string) (string, bool)
@@ -27,4 +27,9 @@ type Store interface {
 	SetUserSessionToken(username string, token string)
 	// Removes the user session token from the active sessions
 	RemoveUserSessionToken(username string)
+}
+
+type UserSession struct {
+	Username string `bun:",pk"`
+	Token    string
 }

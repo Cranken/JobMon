@@ -9,7 +9,7 @@ import (
 const DEFAULT_MAX_POINTS_PER_JOB = 200
 
 type JobMetadata struct {
-	Id           int
+	Id           int `bun:",pk"`
 	UserId       int
 	UserName     string
 	GroupId      int

@@ -91,17 +91,20 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 
 	// Mark job as stopped in store
 	go func() {
-		jobMetadata, err := store.StopJob(id, stopJob)
+		err := store.StopJob(id, stopJob)
 
 		if err != nil {
 			// Run aggregation tasks to calculate metadata metrics and (if enabled) prefetch job data
 			db.RunAggregation()
 			if config.Prefetch {
 				go func() {
-					dur, _ := time.ParseDuration(config.SampleInterval)
-					_, secs := jobMetadata.CalculateSampleIntervals(dur)
-					bestInterval := time.Duration(secs) * time.Second
-					jobCache.Get(&jobMetadata, bestInterval)
+					jobMetadata, err := store.GetJob(id)
+					if err == nil {
+						dur, _ := time.ParseDuration(config.SampleInterval)
+						_, secs := jobMetadata.CalculateSampleIntervals(dur)
+						bestInterval := time.Duration(secs) * time.Second
+						jobCache.Get(&jobMetadata, bestInterval)
+					}
 				}()
 			}
 		}
@@ -112,7 +115,12 @@ func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	utils.AllowCors(r, w.Header())
 	// TODO: Check auth and get by e.g. project id, ...
 	// Get all for now
-	jobs := store.GetAllJobs()
+	jobs, err := store.GetAllJobs()
+	if err != nil {
+		log.Printf("Could not get jobs")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	metrics := make(map[string]struct{})
 	for _, v := range config.Metrics {
@@ -296,9 +304,16 @@ func GenerateAPIKey(w http.ResponseWriter, r *http.Request, params httprouter.Pa
 }
 
 func main() {
-	db = &database.InfluxDB{}
-	store = &jobstore.MemoryStore{}
 	config.Init()
+	db = &database.InfluxDB{}
+
+	switch config.JobStore.Type {
+	case "postgres":
+		store = &jobstore.PostgresStore{}
+	default:
+		store = &jobstore.MemoryStore{}
+	}
+
 	db.Init(config)
 	store.Init(config, &db)
 	jobCache.Init(config, &db)
