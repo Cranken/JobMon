@@ -24,7 +24,7 @@ import {
 import { useState } from "react";
 import { useCookies } from "react-cookie";
 import { MdLogout } from "react-icons/md";
-import { useIsAuthenticated } from "../../utils/auth";
+import { useIsAuthenticated, UserRole } from "../../utils/auth";
 import { useGetUser } from "./../../utils/auth";
 
 export const Header = () => {
@@ -90,11 +90,18 @@ export const Header = () => {
         </Modal>
       </>
       <Flex bg={headerBg} p={2}>
-        <Flex flexGrow={1}>
+        <Flex flexGrow={1} gap={2}>
           {isAuthenticated ? (
-            <Link href="/jobs">
-              <Button bg={buttonBg}>Home</Button>
-            </Link>
+            <>
+              <Link href="/jobs">
+                <Button bg={buttonBg}>Home</Button>
+              </Link>
+              {user.Role === UserRole.Admin ? (
+                <Link href="/statistics">
+                  <Button bg={buttonBg}>Statistics</Button>
+                </Link>
+              ) : null}
+            </>
           ) : null}
         </Flex>
         <Box flexGrow={1}>
@@ -108,7 +115,7 @@ export const Header = () => {
           ) : null}
         </Box>
         <Flex flexGrow={1} justify={"end"} gap={2}>
-          {isAuthenticated ? (
+          {isAuthenticated && user.Role === UserRole.Admin ? (
             <Tooltip label="Admin Debug Menu">
               <Button bg={buttonBg} onClick={onOpen}>
                 <SettingsIcon />
@@ -120,7 +127,7 @@ export const Header = () => {
               {colorMode === "light" ? <MoonIcon /> : <SunIcon />}
             </Button>
           </Tooltip>
-          {isAuthenticated && user.Role === "admin" ? (
+          {isAuthenticated && user.Role === UserRole.Admin ? (
             <Tooltip label="Logout">
               <Button bg={buttonBg} onClick={() => logout()}>
                 <Icon as={MdLogout} />

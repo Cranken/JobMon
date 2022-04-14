@@ -1,10 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import JobFilter from "../components/joblist/job-filter/JobFilter";
 import JobList from "../components/joblist/JobList";
-import { checkBetween, useStorageState } from "../utils/utils";
-import { JobListData, JobMetadata } from "./../types/job";
+import { checkBetween, useGetJobs, useStorageState } from "../utils/utils";
+import { JobMetadata } from "./../types/job";
 import { useRouter } from "next/router";
-import { useCookies } from "react-cookie";
 import { Box, Center, Spinner } from "@chakra-ui/react";
 import JoblistPageSelection from "../components/joblist/JoblistPageSelection";
 
@@ -140,23 +139,6 @@ export const Jobs = () => {
   );
 
   return <React.Fragment>{elements}</React.Fragment>;
-};
-
-export const useGetJobs = () => {
-  const [jobListData, setJobs] = useState<JobListData>();
-  const [_c, _s, removeCookie] = useCookies(["Authorization"]);
-  useEffect(() => {
-    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/jobs", {
-      credentials: "include",
-    }).then((res) => {
-      if (!res.ok && (res.status === 401 || res.status === 403)) {
-        removeCookie("Authorization");
-      } else {
-        res.json().then((data) => setJobs(data));
-      }
-    });
-  }, [removeCookie]);
-  return jobListData;
 };
 
 export default Jobs;

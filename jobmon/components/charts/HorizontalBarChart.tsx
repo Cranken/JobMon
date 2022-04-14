@@ -29,8 +29,8 @@ export function HorizontalBarChart<T>({
   marginTop = 20, // top margin, in pixels
   marginRight = 10, // right margin, in pixels
   marginBottom = 30, // bottom margin, in pixels
-  marginLeft = 90, // left margin, in pixels
-  width = 1200, // outer width, in pixels
+  marginLeft = 120, // left margin, in pixels
+  width = 1000, // outer width, in pixels
   height = 400, // outer height, in pixels
   xRange = [marginLeft, width - marginRight], // [left, right]
   yRange = [marginTop, height - marginBottom], // [bottom, top]
