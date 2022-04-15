@@ -25,7 +25,7 @@ export interface HistogramProps<T> {
   setTimeRange?: (start: Date, end: Date) => void;
   xRange?: [number, number]; // [left, right]
   xLabel?: string; // a label for the x-axis
-  xFormat?: (d: T) => string; // a format specifier string for the x-axis
+  xFormat?: ((d: T) => string) | string; // a format specifier string for the x-axis
   yDomain?: [number, number]; // [ymin, ymax]
   yRange?: [number, number]; // [bottom, top]
   yFormat?: string; // a format specifier string for the y-axis
@@ -35,6 +35,7 @@ export interface HistogramProps<T> {
   color?: string; // stroke color of line
   insetLeft?: number; // inset left edge of bar
   insetRight?: number; // inset right edge of bar
+  normalize?: boolean;
 }
 
 // Typescript version based on chart released under:
@@ -45,7 +46,7 @@ export function Histogram<T>({
   data,
   x = () => 1, // given d in data, returns the (quantitative) x-value
   y = () => 1, // given d in data, returns the (quantitative) weight
-  thresholds = 4, // approximate number of bins to generate, or threshold function
+  thresholds = 5, // approximate number of bins to generate, or threshold function
   marginTop = 20, // top margin, in pixels
   marginRight = 30, // right margin, in pixels
   marginBottom = 30, // bottom margin, in pixels
@@ -54,15 +55,16 @@ export function Histogram<T>({
   height = 400, // outer height of chart, in pixels
   insetLeft = 0.5, // inset left edge of bar
   insetRight = 0.5, // inset right edge of bar
-  xDomain = [0, 1], // [xmin, xmax]
+  xDomain, // [xmin, xmax]
   xRange = [marginLeft, width - marginRight], // [left, right]
   xLabel = "Bins", // a label for the x-axis
-  xFormat, // a format specifier string for the x-axis
+  xFormat = "", // a format specifier string for the x-axis
   yDomain, // [ymin, ymax]
   yRange = [height - marginBottom, marginTop], // [bottom, top]
   yLabel = "Frequency", // a label for the y-axis
   yFormat = "", // a format specifier string for the y-axis
   color = "currentColor", // bar fill color
+  normalize = false,
 }: HistogramProps<T>) {
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -71,34 +73,30 @@ export function Histogram<T>({
       return;
     }
     let X = d3.map(data, x);
-    const Y = d3.map(data, y);
+    const Y0 = d3.map(data, y);
     const I = d3.range(X.length);
 
-    let max = d3.max(X) ?? 1;
-    max = max < xDomain[1] ? xDomain[1] : max;
-    X = d3.map(X, (val) => val / (max + 0.0001));
-
-    xDomain = [0, 1];
-
-    // Compute bins.
     const bins = d3
       .bin()
-      .domain(xDomain)
-      .thresholds([0, 0.2, 0.4, 0.6, 0.8, 1.0])
+      .thresholds(thresholds)
       .value((i) => X[i])(I);
+    const Y = Array.from(bins, (I) => d3.sum(I, (i) => Y0[i]));
+    if (normalize) {
+      const total = d3.sum(Y);
+      for (let i = 0; i < Y.length; ++i) Y[i] /= total;
+    }
 
     // Compute default domains.
     if (xDomain === undefined)
       xDomain = [bins[0].x0 ?? 0, bins[bins.length - 1].x1 ?? 1];
-    if (yDomain === undefined)
-      yDomain = [0, d3.max(bins, (I) => d3.sum(I, (i) => Y[i])) ?? 1];
+    if (yDomain === undefined) yDomain = [0, d3.max(Y) ?? 1];
 
     // Construct scales and axes.
     const xScale = d3.scaleLinear(xDomain, xRange);
     const yScale = d3.scaleLinear(yDomain, yRange);
     const xAxis = d3
       .axisBottom(xScale)
-      .ticks(5, d3.format(",%"))
+      .ticks(width / 80)
       .tickSizeOuter(0);
     const yAxis = d3.axisLeft(yScale).ticks(height / 40, yFormat);
     let yFormatFn = yScale.tickFormat(100, yFormat);
