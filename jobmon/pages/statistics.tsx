@@ -1,4 +1,4 @@
-import { Box, Center, Grid, Spinner } from "@chakra-ui/react";
+import { Box, Center, Flex, Grid, Spinner, Stack } from "@chakra-ui/react";
 import {
   Panel,
   PanelManager,
@@ -28,17 +28,28 @@ export const Statistics = () => {
         ></PanelManager>
         <Grid templateColumns="repeat(2, 1fr)">
           {panels.map((panel, i) => (
-            <PanelControl
+            <Stack
+              border="1px"
+              borderColor="gray.700"
+              borderRadius="md"
+              m={2}
               key={panel.Position + panel.Attribute}
-              removePanel={removePanel}
-              panelConfig={panel}
-              setPanelAttribute={setPanelAttribute}
             >
+              <PanelControl
+                removePanel={removePanel}
+                panelConfig={panel}
+                setPanelAttribute={setPanelAttribute}
+              >
+                <option value="Partition">Partition</option>
+                <option value="UserName">Username</option>
+                <option value="NumNodes">Number of Nodes</option>
+                <option value="GroupName">Group Name</option>
+              </PanelControl>
               <StatItem
                 data={jobListData}
                 attribute={panel.Attribute}
               ></StatItem>
-            </PanelControl>
+            </Stack>
           ))}
         </Grid>
       </Box>

@@ -34,7 +34,7 @@ export const PanelManager = ({
   AddPanel,
 }: PanelManagerProps) => {
   return (
-    <Flex>
+    <Flex m={2}>
       <Menu>
         <MenuButton as={Button} rightIcon={<AddIcon w={3} />}>
           Panel
@@ -61,8 +61,13 @@ export const usePanels = <T,>(
 ] => {
   const [panels, setPanels] = useStorageState<PanelConfig<T>[]>(key, []);
   const addPanel = (p: PanelConfig<T>) => setPanels([...panels, p]);
-  const removePanel = (idx: number) =>
-    setPanels(panels.filter((_, i) => i !== idx));
+  const removePanel = (idx: number) => {
+    let lowerSlice = panels.slice(0, idx);
+    let upperSlice = panels.slice(idx + 1);
+    upperSlice.forEach((val) => val.Position--);
+
+    setPanels(lowerSlice.concat(upperSlice));
+  };
   const setPanelAttribute = (idx: number, p: keyof T) => {
     const newPanels = [...panels];
     newPanels[idx].Attribute = p;
