@@ -1,7 +1,7 @@
 import { JobListData } from "../../types/job";
 import { groupBy } from "../../utils/utils";
 import { JobMetadata } from "../../types/job";
-import { Box, Center } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 import { HorizontalBarChart } from "../charts/HorizontalBarChart";
 
 interface StatItemProps {
@@ -18,8 +18,7 @@ export const StatItem = ({ data, attribute }: StatItemProps) => {
     ]);
     tuples.sort((a, b) => b[1] - a[1]);
     return (
-      // <Center m={2}>
-      <Box maxH={800} maxW={1000} overflowY={"auto"}>
+      <Box maxH={800} maxW={1000} overflowY={"auto"} mx={2}>
         <HorizontalBarChart
           data={tuples.slice(0, 20)}
           column={(t) => t[0]}
@@ -27,7 +26,6 @@ export const StatItem = ({ data, attribute }: StatItemProps) => {
           yLabel={attribute}
         ></HorizontalBarChart>
       </Box>
-      // </Center>
     );
   } else {
     return null;
