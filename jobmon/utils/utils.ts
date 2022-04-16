@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useEffect } from "react";
+import { useCookies } from "react-cookie";
+import { DataMap, JobListData } from "../types/job";
 
 export const clamp = (val: number, min: number, max: number) =>
   Math.min(Math.max(val, min), max);
@@ -39,4 +41,37 @@ export function useStorageState<T>(
   }, [key]);
 
   return [state, setStorageState, clearState];
+}
+
+export const useGetJobs = () => {
+  const [jobListData, setJobs] = useState<JobListData>();
+  const [_c, _s, removeCookie] = useCookies(["Authorization"]);
+  useEffect(() => {
+    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/jobs", {
+      credentials: "include",
+    }).then((res) => {
+      if (!res.ok && (res.status === 401 || res.status === 403)) {
+        removeCookie("Authorization");
+      } else {
+        res.json().then((data) => setJobs(data));
+      }
+    });
+  }, [removeCookie]);
+  return jobListData;
+};
+
+export function groupBy<T>(
+  data: T[],
+  keyFunc: (obj: T) => string
+): DataMap<T[]> {
+  let groups: DataMap<T[]> = {};
+  data.forEach((obj) => {
+    const key = keyFunc(obj);
+    if (key in groups) {
+      groups[key].push(obj);
+    } else {
+      groups[key] = [obj];
+    }
+  });
+  return groups;
 }

@@ -1,7 +1,7 @@
 import base64url from "base64url";
 import { useCookies } from "react-cookie";
 
-enum Role {
+export enum UserRole {
   Admin = "admin",
   User = "user",
   JobControl = "job-control",
@@ -9,7 +9,7 @@ enum Role {
 
 interface AuthUser {
   Username: string;
-  Role: Role;
+  Role: UserRole;
 }
 
 export const useGetUser = () => {
