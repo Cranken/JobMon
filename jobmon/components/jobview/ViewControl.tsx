@@ -1,10 +1,11 @@
 import { Button, Flex, Select, Stack, Text } from "@chakra-ui/react";
 import React from "react";
-import { JobMetadata } from "../../types/job";
+import { JobData, JobMetadata } from "../../types/job";
+import { MetricSelection } from "./MetricSelection";
 import TimeControl from "./TimeControl";
 
 interface ControlProps {
-  metadata: JobMetadata;
+  jobdata: JobData;
   startTime: Date;
   stopTime: Date;
   setStartTime: (t: Date) => void;
@@ -16,10 +17,12 @@ interface ControlProps {
   sampleInterval: number | undefined;
   sampleIntervals: number[] | undefined;
   setSampleInterval: (v: number) => void;
+  selectedMetrics: string[];
+  setSelectedMetrics: (val: string[]) => void;
 }
 
 export const ViewControl = ({
-  metadata,
+  jobdata,
   startTime,
   stopTime,
   setStartTime,
@@ -31,18 +34,20 @@ export const ViewControl = ({
   sampleInterval,
   sampleIntervals,
   setSampleInterval,
+  selectedMetrics,
+  setSelectedMetrics,
 }: ControlProps) => {
   return (
     <Stack>
       <TimeControl
-        metadata={metadata}
+        metadata={jobdata.Metadata}
         startTime={startTime}
         stopTime={stopTime}
         setStartTime={setStartTime}
         setStopTime={setStopTime}
       />
       <Stack direction="row" gap={2}>
-        {metadata.NumNodes !== 1 ? (
+        {jobdata.Metadata.NumNodes !== 1 ? (
           <Button
             fontSize="sm"
             onClick={() => setShowQuantiles(!showQuantiles)}
@@ -53,6 +58,11 @@ export const ViewControl = ({
         <Button fontSize="sm" onClick={() => setAutoScale(!autoScale)}>
           Toggle Automatic Scaling
         </Button>
+        <MetricSelection
+          metrics={jobdata.MetricData.map((val) => val.Config.Measurement)}
+          selectedMetrics={selectedMetrics}
+          setSelectedMetrics={setSelectedMetrics}
+        ></MetricSelection>
         {sampleInterval && sampleIntervals ? (
           <Stack
             direction="row"

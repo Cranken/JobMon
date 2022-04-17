@@ -2,7 +2,7 @@ import type { NextPage } from "next";
 import React, { useMemo } from "react";
 import { useEffect } from "react";
 import { useState } from "react";
-import { JobData } from "../../types/job";
+import { JobData, JobMetadata } from "../../types/job";
 import MetricDataCharts from "../../components/jobview/MetricDataCharts";
 import { useRouter } from "next/router";
 import QuantileDataCharts from "../../components/jobview/QuantileDataCharts";
@@ -25,6 +25,7 @@ import {
   AnalysisTableView,
 } from "../../components/jobview/AnalysisView";
 import { SelectionMap } from "../../types/helpers";
+import { useStorageState } from "./../../utils/utils";
 
 const Job: NextPage = () => {
   const router = useRouter();
@@ -46,6 +47,7 @@ const Job: NextPage = () => {
     setStartTime(start);
     setStopTime(end);
   };
+  const [selectedMetrics, setSelectedMetrics] = useMetricSelection(data);
 
   useEffect(() => {
     if (data?.Metadata.NodeList !== undefined) {
@@ -116,7 +118,7 @@ const Job: NextPage = () => {
           nodes={selection}
         />
         <Control
-          metadata={data.Metadata}
+          jobdata={data}
           setStartTime={setStartTime}
           setStopTime={setStopTime}
           startTime={startTime}
@@ -128,6 +130,8 @@ const Job: NextPage = () => {
           sampleInterval={sampleInterval}
           sampleIntervals={data.SampleIntervals}
           setSampleInterval={setSampleInterval}
+          selectedMetrics={selectedMetrics}
+          setSelectedMetrics={setSelectedMetrics}
         />
       </Grid>
       <Tabs isLazy>
@@ -144,7 +148,9 @@ const Job: NextPage = () => {
             {showQuantiles ? (
               <QuantileDataCharts
                 key="quantile-charts"
-                quantiles={data?.QuantileData}
+                quantiles={data?.QuantileData.filter((m) =>
+                  selectedMetrics.includes(m.Config.Measurement)
+                )}
                 startTime={startTime}
                 stopTime={stopTime}
                 setTimeRange={setTimeRange}
@@ -154,7 +160,9 @@ const Job: NextPage = () => {
             ) : (
               <MetricDataCharts
                 key="metric-charts"
-                metrics={data?.MetricData}
+                metrics={data?.MetricData.filter((m) =>
+                  selectedMetrics.includes(m.Config.Measurement)
+                )}
                 nodeSelection={selected}
                 startTime={startTime}
                 stopTime={stopTime}
@@ -241,4 +249,40 @@ export const useGetJobData: (
     });
   }, [id, node, jobCache, removeCookie, sampleInterval]);
   return [jobData, isLoading];
+};
+
+interface PartitionMetricSelection {
+  [key: string]: string[];
+}
+
+const useMetricSelection = (
+  job: JobData | undefined
+): [string[], (val: string[]) => void] => {
+  const [selectedMetricsMap, setSelectedMetricsMap] =
+    useStorageState<PartitionMetricSelection>("selected-metrics", {});
+  const [selectedMetrics, setSelectedMetrics] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (job && job.Metadata) {
+      const partition = job.Metadata.Partition;
+      if (partition in selectedMetricsMap) {
+        setSelectedMetrics(selectedMetricsMap[partition]);
+      } else {
+        const newMap = { ...selectedMetricsMap };
+        newMap[partition] = job.MetricData.map((val) => val.Config.Measurement);
+        setSelectedMetrics(newMap[partition]);
+        setSelectedMetricsMap(newMap);
+      }
+    }
+  }, [job, selectedMetricsMap, setSelectedMetricsMap]);
+
+  const setSelection = (val: string[]) => {
+    if (job && job.Metadata) {
+      const newMap = { ...selectedMetricsMap };
+      newMap[job.Metadata.Partition] = val;
+      setSelectedMetricsMap(newMap);
+    }
+  };
+
+  return [selectedMetrics, setSelection];
 };
