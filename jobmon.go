@@ -116,9 +116,7 @@ func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	metrics := make(map[string]struct{})
 	for _, v := range config.Metrics {
-		for _, mc := range v {
-			metrics[mc.Measurement] = struct{}{}
-		}
+		metrics[v.Measurement] = struct{}{}
 	}
 	keys := make([]string, 0, len(metrics))
 	for k := range metrics {
@@ -157,10 +155,6 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		log.Printf("Could not get job meta data")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
-	}
-
-	if j.NumNodes == 1 {
-		node = j.NodeList
 	}
 
 	// Calculate best sample interval

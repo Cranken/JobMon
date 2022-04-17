@@ -23,7 +23,8 @@ type InfluxDB struct {
 	tasks                 []domain.Task
 	org                   string
 	bucket                string
-	metrics               map[string][]conf.MetricConfig
+	metrics               map[string]conf.MetricConfig
+	partitionConfig       map[string]conf.PartitionConfig
 	defaultSampleInterval string
 	metricQuantiles       []string
 }
@@ -56,7 +57,11 @@ func (db *InfluxDB) Init(c conf.Configuration) {
 	db.organizationsAPI = db.client.OrganizationsAPI()
 	db.bucket = c.DBBucket
 	db.org = c.DBOrg
-	db.metrics = c.Metrics
+	db.metrics = make(map[string]conf.MetricConfig)
+	for _, mc := range c.Metrics {
+		db.metrics[mc.Measurement] = mc
+	}
+	db.partitionConfig = c.Partitions
 	db.defaultSampleInterval = c.SampleInterval
 	db.metricQuantiles = c.MetricQuantiles
 	go db.updateAggregationTasks()
@@ -67,11 +72,11 @@ func (db *InfluxDB) Close() {
 }
 
 func (db *InfluxDB) GetJobData(job *job.JobMetadata, sampleInterval time.Duration) (data JobData, err error) {
-	return db.getJobData(job, db.metrics[job.Partition], "", sampleInterval)
+	return db.getJobData(job, "", sampleInterval)
 }
 
 func (db *InfluxDB) GetNodeJobData(job *job.JobMetadata, node string, sampleInterval time.Duration) (data JobData, err error) {
-	return db.getJobData(job, db.metrics[job.Partition], node, sampleInterval)
+	return db.getJobData(job, node, sampleInterval)
 }
 
 func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMetadataData, err error) {
@@ -82,7 +87,7 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 		return data, fmt.Errorf("job stop time is less or equal to start")
 	}
 	var wg sync.WaitGroup
-	for _, m := range db.metrics[j.Partition] {
+	for _, m := range db.partitionConfig[j.Partition].Metrics {
 		wg.Add(1)
 		go func(m conf.MetricConfig) {
 			defer wg.Done()
@@ -108,20 +113,20 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 				}
 			}
 			data = append(data, job.JobMetadataData{Config: m, Data: tempData})
-		}(m)
+		}(db.metrics[m])
 	}
 	wg.Wait()
 	return
 }
 
-func (db *InfluxDB) getJobData(job *job.JobMetadata, metrics []conf.MetricConfig, node string, sampleInterval time.Duration) (data JobData, err error) {
+func (db *InfluxDB) getJobData(job *job.JobMetadata, node string, sampleInterval time.Duration) (data JobData, err error) {
 	if job.IsRunning {
 		return data, fmt.Errorf("job is still running")
 	}
 	var metricData []MetricData
 	var quantileData []QuantileData
 	var wg sync.WaitGroup
-	for _, m := range metrics {
+	for _, m := range db.partitionConfig[job.Partition].Metrics {
 		wg.Add(2)
 		go func(m conf.MetricConfig) {
 			result, err := db.query(m, job, node, sampleInterval)
@@ -131,7 +136,7 @@ func (db *InfluxDB) getJobData(job *job.JobMetadata, metrics []conf.MetricConfig
 				return
 			}
 			metricData = append(metricData, MetricData{Config: m, Data: result})
-		}(m)
+		}(db.metrics[m])
 
 		go func(m conf.MetricConfig) {
 			tempRes, err := db.queryQuantileMeasurement(m, job, db.metricQuantiles, sampleInterval)
@@ -146,7 +151,7 @@ func (db *InfluxDB) getJobData(job *job.JobMetadata, metrics []conf.MetricConfig
 				return
 			}
 			quantileData = append(quantileData, QuantileData{Config: m, Data: result, Quantiles: db.metricQuantiles})
-		}(m)
+		}(db.metrics[m])
 	}
 	wg.Wait()
 	data.MetricData = metricData
@@ -358,21 +363,19 @@ func (db *InfluxDB) updateAggregationTasks() (err error) {
 	}
 
 	missingMetricTasks := []conf.MetricConfig{}
-	for _, partition := range db.metrics {
-		for _, metric := range partition {
-			if metric.AggFn != "" {
-				name := db.bucket + "_" + metric.Measurement + "_" + metric.AggFn
-				found := false
-				for _, task := range tasks {
-					if task.Name == name {
-						db.tasks = append(db.tasks, task)
-						found = true
-						break
-					}
+	for _, metric := range db.metrics {
+		if metric.AggFn != "" {
+			name := db.bucket + "_" + metric.Measurement + "_" + metric.AggFn
+			found := false
+			for _, task := range tasks {
+				if task.Name == name {
+					db.tasks = append(db.tasks, task)
+					found = true
+					break
 				}
-				if !found {
-					missingMetricTasks = append(missingMetricTasks, metric)
-				}
+			}
+			if !found {
+				missingMetricTasks = append(missingMetricTasks, metric)
 			}
 		}
 	}

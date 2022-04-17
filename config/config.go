@@ -23,7 +23,7 @@ type Configuration struct {
 	// Default time to live of jobs
 	DefaultTTL int
 	// Per partition metric config
-	Metrics map[string][]MetricConfig
+	Metrics []MetricConfig
 	// Job data LRU cache size
 	CacheSize int
 	// Prefetch job data into LRU cache upon job completion
@@ -74,6 +74,9 @@ type MetricConfig struct {
 type PartitionConfig struct {
 	// Maximum wall clock time for a job in the partition
 	MaxTime int
+	// Metrics the partition provides.
+	// Array of measurement names as specified in the global metric config
+	Metrics []string
 }
 
 type LocalUser struct {
