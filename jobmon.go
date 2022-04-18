@@ -289,6 +289,57 @@ func GenerateAPIKey(w http.ResponseWriter, r *http.Request, params httprouter.Pa
 	w.Write([]byte(jwt))
 }
 
+func AddTag(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	job, tag, ok := setTag(w, r)
+	if ok {
+		job.AddTag(tag)
+	}
+}
+
+func RemoveTag(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	job, tag, ok := setTag(w, r)
+	if ok {
+		job.RemoveTag(tag)
+	}
+}
+
+func setTag(w http.ResponseWriter, r *http.Request) (job job.JobMetadata, tag job.JobTag, ok bool) {
+	utils.AllowCors(r, w.Header())
+
+	jobStr := r.URL.Query().Get("job")
+
+	jobId, err := strconv.Atoi(jobStr)
+	if err != nil {
+		log.Printf("Could not parse job id")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Could not read http request body")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err = json.Unmarshal(body, &tag)
+	if err != nil {
+		log.Printf("Could not unmarshal http request body")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	job, err = store.GetJob(jobId)
+	if err != nil {
+		log.Printf("Could not get job with id: %v", jobId)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	ok = true
+	return
+}
+
 func main() {
 	db = &database.InfluxDB{}
 	store = &jobstore.MemoryStore{}
@@ -307,6 +358,8 @@ func main() {
 	router.POST("/api/login", Login)
 	router.POST("/api/logout", authManager.Protected(Logout, auth.USER))
 	router.POST("/api/generateAPIKey", authManager.Protected(GenerateAPIKey, auth.ADMIN))
+	router.POST("/api/tags/add_tag", authManager.Protected(AddTag, auth.USER))
+	router.POST("/api/tags/remove_tag", authManager.Protected(RemoveTag, auth.USER))
 
 	registerCleanup()
 

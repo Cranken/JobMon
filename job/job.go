@@ -29,6 +29,7 @@ type JobMetadata struct {
 	Partition    string
 	JobScript    string
 	ExitCode     int
+	Tags         []JobTag
 	Data         []JobMetadataData
 }
 
@@ -50,6 +51,10 @@ type JobListData struct {
 type JobListConfig struct {
 	Metrics           []string
 	RadarChartMetrics []string
+}
+
+type JobTag struct {
+	Name string
 }
 
 // Check if job TTL has expired.
@@ -87,4 +92,23 @@ func (j *JobMetadata) CalculateSampleIntervals(metricSampleInterval time.Duratio
 		}
 	}
 	return
+}
+
+func (j *JobMetadata) AddTag(tag JobTag) {
+	for _, jt := range j.Tags {
+		if jt.Name == tag.Name {
+			return
+		}
+	}
+	j.Tags = append(j.Tags, tag)
+}
+
+func (j *JobMetadata) RemoveTag(tag JobTag) {
+	var newTags []JobTag
+	for _, jt := range j.Tags {
+		if jt.Name != tag.Name {
+			newTags = append(newTags, jt)
+		}
+	}
+	j.Tags = newTags
 }
