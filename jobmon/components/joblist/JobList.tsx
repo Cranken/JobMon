@@ -13,6 +13,7 @@ import {
   Tag,
   Text,
   useColorModeValue,
+  Wrap,
 } from "@chakra-ui/react";
 import { RadarChart } from "../charts/RadarChart";
 import * as d3 from "d3";
@@ -138,6 +139,13 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
                   End: {new Date(job.StopTime * 1000).toLocaleString()}
                 </Text>
               )}
+              {job.Tags && job.Tags.length > 0 ? (
+                <Wrap>
+                  {job.Tags.map((tag) => (
+                    <Tag key={tag.Name}>{tag.Name}</Tag>
+                  ))}
+                </Wrap>
+              ) : null}
             </Stack>
             <Center height="90%">
               <Divider orientation="vertical" borderColor={borderColor} />
