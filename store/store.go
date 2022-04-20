@@ -13,13 +13,13 @@ type Store interface {
 	// Add job metadata to store
 	PutJob(job job.JobMetadata)
 	// Get job metadata by job id
-	GetJob(id int) (job.JobMetadata, error)
+	GetJob(id int) (*job.JobMetadata, error)
 	// Get metadata of all jobs
-	GetAllJobs() []job.JobMetadata
+	GetAllJobs() []*job.JobMetadata
 	// Get metadata of all jobs that fulfill the given predicate
-	GetJobsByPred(pred JobPred) []job.JobMetadata
+	GetJobsByPred(pred JobPred) []*job.JobMetadata
 	// Mark the given job as stopped
-	StopJob(id int, stopJob job.StopJob) (job job.JobMetadata, err error)
+	StopJob(id int, stopJob job.StopJob) (job *job.JobMetadata, err error)
 
 	// Get user session token from session storage
 	GetUserSessionToken(username string) (string, bool)

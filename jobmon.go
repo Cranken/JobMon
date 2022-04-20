@@ -101,7 +101,7 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 					dur, _ := time.ParseDuration(config.SampleInterval)
 					_, secs := jobMetadata.CalculateSampleIntervals(dur)
 					bestInterval := time.Duration(secs) * time.Second
-					jobCache.Get(&jobMetadata, bestInterval)
+					jobCache.Get(jobMetadata, bestInterval)
 				}()
 			}
 		}
@@ -174,9 +174,9 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	// Get job data
 	var jobData database.JobData
 	if node == "" && querySampleInterval == "" {
-		jobData, err = jobCache.Get(&j, bestInterval)
+		jobData, err = jobCache.Get(j, bestInterval)
 	} else {
-		jobData, err = db.GetNodeJobData(&j, node, sampleInterval)
+		jobData, err = db.GetNodeJobData(j, node, sampleInterval)
 	}
 	if err != nil {
 		log.Printf("Could not get job metric data: %v\n", err)
@@ -290,20 +290,20 @@ func GenerateAPIKey(w http.ResponseWriter, r *http.Request, params httprouter.Pa
 }
 
 func AddTag(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	job, tag, ok := setTag(w, r)
+	job, tag, ok := parseTag(w, r)
 	if ok {
 		job.AddTag(tag)
 	}
 }
 
 func RemoveTag(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	job, tag, ok := setTag(w, r)
+	job, tag, ok := parseTag(w, r)
 	if ok {
 		job.RemoveTag(tag)
 	}
 }
 
-func setTag(w http.ResponseWriter, r *http.Request) (job job.JobMetadata, tag job.JobTag, ok bool) {
+func parseTag(w http.ResponseWriter, r *http.Request) (job *job.JobMetadata, tag job.JobTag, ok bool) {
 	utils.AllowCors(r, w.Header())
 
 	jobStr := r.URL.Query().Get("job")

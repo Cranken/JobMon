@@ -16,7 +16,7 @@ import (
 )
 
 type MemoryStore struct {
-	Jobs           map[int]job.JobMetadata
+	Jobs           map[int]*job.JobMetadata
 	SessionStorage map[string]string
 	mut            sync.Mutex
 	database       *db.DB
@@ -34,7 +34,7 @@ func (s *MemoryStore) Init(c config.Configuration, database *db.DB) {
 	}
 	json.Unmarshal(data, s)
 	if s.Jobs == nil {
-		s.Jobs = make(map[int]job.JobMetadata)
+		s.Jobs = make(map[int]*job.JobMetadata)
 	}
 	if s.SessionStorage == nil {
 		s.SessionStorage = make(map[string]string)
@@ -52,12 +52,12 @@ func (s *MemoryStore) PutJob(job job.JobMetadata) {
 			job.TTL = s.config.DefaultTTL
 		}
 		s.mut.Lock()
-		s.Jobs[job.Id] = job
+		s.Jobs[job.Id] = &job
 		s.mut.Unlock()
 	}()
 }
 
-func (s *MemoryStore) GetJob(id int) (job.JobMetadata, error) {
+func (s *MemoryStore) GetJob(id int) (*job.JobMetadata, error) {
 	job, pres := s.Jobs[id]
 	var err error
 	if !pres {
@@ -66,14 +66,14 @@ func (s *MemoryStore) GetJob(id int) (job.JobMetadata, error) {
 	return job, err
 }
 
-func (s *MemoryStore) GetAllJobs() []job.JobMetadata {
+func (s *MemoryStore) GetAllJobs() []*job.JobMetadata {
 	return s.GetJobsByPred(func(_ *job.JobMetadata) bool { return true })
 }
 
-func (s *MemoryStore) GetJobsByPred(pred JobPred) []job.JobMetadata {
-	jobs := make([]job.JobMetadata, 0, len(s.Jobs))
+func (s *MemoryStore) GetJobsByPred(pred JobPred) []*job.JobMetadata {
+	jobs := make([]*job.JobMetadata, 0, len(s.Jobs))
 	for _, v := range s.Jobs {
-		if pred(&v) {
+		if pred(v) {
 			jobs = append(jobs, v)
 		}
 	}
@@ -85,7 +85,7 @@ func (s *MemoryStore) GetJobsByPred(pred JobPred) []job.JobMetadata {
 	return jobs
 }
 
-func (s *MemoryStore) StopJob(id int, stopJob job.StopJob) (job job.JobMetadata, err error) {
+func (s *MemoryStore) StopJob(id int, stopJob job.StopJob) (job *job.JobMetadata, err error) {
 	s.mut.Lock()
 	defer s.mut.Unlock()
 	job, ok := s.Jobs[id]
@@ -96,7 +96,7 @@ func (s *MemoryStore) StopJob(id int, stopJob job.StopJob) (job job.JobMetadata,
 	job.ExitCode = stopJob.ExitCode
 	job.IsRunning = false
 	s.Jobs[id] = job
-	s.addMetadataToJob(&job)
+	s.addMetadataToJob(job)
 	return s.Jobs[id], nil
 }
 
@@ -139,7 +139,7 @@ func (s *MemoryStore) addMetadataToJob(job *job.JobMetadata) error {
 	data, err := (*s.database).GetJobMetadataMetrics(job)
 	if err == nil {
 		job.Data = data
-		s.Jobs[job.Id] = *job
+		s.Jobs[job.Id] = job
 	}
 	return err
 }
@@ -149,7 +149,7 @@ func (s *MemoryStore) addDataToIncompleteJobs() {
 	defer s.mut.Unlock()
 	for i, j := range s.Jobs {
 		if j.Data == nil && !j.IsRunning {
-			data, err := (*s.database).GetJobMetadataMetrics(&j)
+			data, err := (*s.database).GetJobMetadataMetrics(j)
 			if err == nil {
 				j.Data = data
 				s.Jobs[i] = j

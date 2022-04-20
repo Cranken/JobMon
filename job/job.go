@@ -44,7 +44,7 @@ type StopJob struct {
 }
 
 type JobListData struct {
-	Jobs   []JobMetadata
+	Jobs   []*JobMetadata
 	Config JobListConfig
 }
 
