@@ -37,3 +37,8 @@ func (db *MockDB) GetJobMetadataMetrics(job *job.JobMetadata) (data []job.JobMet
 func (db *MockDB) RunAggregation() {
 	db.Calls += 1
 }
+
+func (db *MockDB) GetDataRetentionTime() (int64, error) {
+	db.Calls += 1
+	return 128, nil
+}

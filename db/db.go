@@ -17,4 +17,6 @@ type DB interface {
 	GetJobMetadataMetrics(job *job.JobMetadata) (data []job.JobMetadataData, err error)
 	// Run aggregation tasks in the Influxdb
 	RunAggregation()
+	// Get job data retention time
+	GetDataRetentionTime() (int64, error)
 }

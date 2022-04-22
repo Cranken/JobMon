@@ -119,6 +119,29 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 	return
 }
 
+func (db *InfluxDB) RunAggregation() {
+	for _, task := range db.tasks {
+		go func(task *domain.Task) {
+			db.tasksAPI.RunManually(context.Background(), task)
+		}(&task)
+	}
+}
+
+func (db *InfluxDB) GetDataRetentionTime() (int64, error) {
+	bucket, err := db.client.BucketsAPI().FindBucketByName(context.Background(), db.bucket)
+	if err != nil {
+		return 0, err
+	}
+	if len(bucket.RetentionRules) > 1 {
+		return 0, fmt.Errorf("more than one retention rule found")
+	}
+	// No retention rule ^= store forever
+	if len(bucket.RetentionRules) == 0 {
+		return -1, nil
+	}
+	return bucket.RetentionRules[0].EverySeconds, nil
+}
+
 func (db *InfluxDB) getJobData(job *job.JobMetadata, node string, sampleInterval time.Duration) (data JobData, err error) {
 	if job.IsRunning {
 		return data, fmt.Errorf("job is still running")
@@ -390,12 +413,4 @@ func (db *InfluxDB) updateAggregationTasks() (err error) {
 		}(metric)
 	}
 	return
-}
-
-func (db *InfluxDB) RunAggregation() {
-	for _, task := range db.tasks {
-		go func(task *domain.Task) {
-			db.tasksAPI.RunManually(context.Background(), task)
-		}(&task)
-	}
 }
