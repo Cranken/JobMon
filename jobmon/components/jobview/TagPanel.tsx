@@ -36,14 +36,20 @@ export const TagPanel = ({ job }: TagPanelProps) => {
   }, [job.Tags]);
   const addTag = (name: string) => {
     const tag: JobTag = { Name: name };
-    addJobTag(job.Id, tag);
-    setTags([...tags, tag]);
+    addJobTag(job.Id, tag).then((resp) => {
+      if (resp.status === 200) {
+        setTags([...tags, tag]);
+      }
+    });
   };
   const removeTag = (name: string) => {
     const tag: JobTag = { Name: name };
-    removeJobTag(job.Id, tag);
-    const filteredTags = job.Tags.filter((t) => t.Name !== tag.Name);
-    setTags(filteredTags);
+    removeJobTag(job.Id, tag).then((resp) => {
+      if (resp.status === 200) {
+        const filteredTags = tags.filter((t) => t.Name !== tag.Name);
+        setTags(filteredTags);
+      }
+    });
   };
   const elements: JSX.Element[] = [];
   elements.push(
@@ -125,10 +131,10 @@ export const TagPanel = ({ job }: TagPanelProps) => {
     </>
   );
 
-  if (job.Tags?.length > 0) {
+  if (tags?.length > 0) {
     elements.push(
       <>
-        {job.Tags.map((tag) => (
+        {tags.map((tag) => (
           <Tag key={tag.Name}>{tag.Name}</Tag>
         ))}
       </>

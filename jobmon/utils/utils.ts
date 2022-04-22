@@ -81,7 +81,7 @@ export const addJobTag = (jobId: number, tag: JobTag) => {
     process.env.NEXT_PUBLIC_BACKEND_URL + `/api/tags/add_tag?job=${jobId}`
   );
 
-  setJobTag(url.toString(), tag);
+  return setJobTag(url.toString(), tag);
 };
 
 export const removeJobTag = (jobId: number, tag: JobTag) => {
@@ -89,11 +89,11 @@ export const removeJobTag = (jobId: number, tag: JobTag) => {
     process.env.NEXT_PUBLIC_BACKEND_URL + `/api/tags/remove_tag?job=${jobId}`
   );
 
-  setJobTag(url.toString(), tag);
+  return setJobTag(url.toString(), tag);
 };
 
 const setJobTag = (url: string, tag: JobTag) => {
-  fetch(url, {
+  return fetch(url, {
     credentials: "include",
     method: "POST",
     body: JSON.stringify(tag),
