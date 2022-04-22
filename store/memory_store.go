@@ -23,7 +23,7 @@ type MemoryStore struct {
 	config         config.Configuration
 }
 
-type JobPred func(*job.JobMetadata) bool
+type JobPred func(job.JobMetadata) bool
 
 func (s *MemoryStore) Init(c config.Configuration, database *db.DB) {
 	s.config = c
@@ -57,24 +57,24 @@ func (s *MemoryStore) PutJob(job job.JobMetadata) {
 	}()
 }
 
-func (s *MemoryStore) GetJob(id int) (*job.JobMetadata, error) {
-	job, pres := s.Jobs[id]
-	var err error
-	if !pres {
-		err = fmt.Errorf("job with id: %v not found", id)
-	}
-	return job, err
+func (s *MemoryStore) GetJob(id int) (job.JobMetadata, error) {
+	pJob, err := s.getJobReference(id)
+	return *pJob, err
 }
 
-func (s *MemoryStore) GetAllJobs() []*job.JobMetadata {
-	return s.GetJobsByPred(func(_ *job.JobMetadata) bool { return true })
+func (s *MemoryStore) UpdateJob(job job.JobMetadata) {
+	s.PutJob(job)
 }
 
-func (s *MemoryStore) GetJobsByPred(pred JobPred) []*job.JobMetadata {
-	jobs := make([]*job.JobMetadata, 0, len(s.Jobs))
+func (s *MemoryStore) GetAllJobs() []job.JobMetadata {
+	return s.GetJobsByPred(func(_ job.JobMetadata) bool { return true })
+}
+
+func (s *MemoryStore) GetJobsByPred(pred JobPred) []job.JobMetadata {
+	jobs := make([]job.JobMetadata, 0, len(s.Jobs))
 	for _, v := range s.Jobs {
-		if pred(v) {
-			jobs = append(jobs, v)
+		if pred(*v) {
+			jobs = append(jobs, *v)
 		}
 	}
 
@@ -85,19 +85,44 @@ func (s *MemoryStore) GetJobsByPred(pred JobPred) []*job.JobMetadata {
 	return jobs
 }
 
-func (s *MemoryStore) StopJob(id int, stopJob job.StopJob) (job *job.JobMetadata, err error) {
+func (s *MemoryStore) StopJob(id int, stopJob job.StopJob) (job job.JobMetadata, err error) {
 	s.mut.Lock()
 	defer s.mut.Unlock()
-	job, ok := s.Jobs[id]
+	pJob, ok := s.Jobs[id]
 	if !ok {
 		return job, fmt.Errorf("can't stop job: %v, not found", id)
 	}
 	job.StopTime = stopJob.StopTime
 	job.ExitCode = stopJob.ExitCode
 	job.IsRunning = false
-	s.Jobs[id] = job
-	s.addMetadataToJob(job)
-	return s.Jobs[id], nil
+	s.Jobs[id] = pJob
+	s.addMetadataToJob(pJob)
+	return *s.Jobs[id], nil
+}
+
+func (s *MemoryStore) AddTag(id int, tag job.JobTag) {
+	job, err := s.getJobReference(id)
+	if err != nil {
+		return
+	}
+	job.AddTag(tag)
+}
+
+func (s *MemoryStore) RemoveTag(id int, tag job.JobTag) {
+	job, err := s.getJobReference(id)
+	if err != nil {
+		return
+	}
+	job.RemoveTag(tag)
+}
+
+func (s *MemoryStore) getJobReference(id int) (*job.JobMetadata, error) {
+	job, pres := s.Jobs[id]
+	var err error
+	if !pres {
+		err = fmt.Errorf("job with id: %v not found", id)
+	}
+	return job, err
 }
 
 func (s *MemoryStore) startCleanJobsTimer() {
