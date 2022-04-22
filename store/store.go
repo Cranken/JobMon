@@ -32,10 +32,6 @@ type Store interface {
 	SetUserSessionToken(username string, token string)
 	// Removes the user session token from the active sessions
 	RemoveUserSessionToken(username string)
-
-	// Get the number of jobs by column/attribute, e.g. by username.
-	// Returns an array of maps of [column_name, count]
-	GetJobCountByColumn(column string) (ColumnCount, error)
 }
 
 type UserSession struct {

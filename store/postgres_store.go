@@ -172,11 +172,3 @@ func (s *PostgresStore) startCleanJobsTimer() {
 		s.finishOvertimeJobs()
 	}
 }
-
-func (s *PostgresStore) GetJobCountByColumn(column string) (ColumnCount, error) {
-	m := make([]map[string]interface{}, 0)
-	err := s.db.NewSelect().Model((*job.JobMetadata)(nil)).
-		Column(column).ColumnExpr("count(?)", column).Group(column).Order("count DESC").
-		Scan(context.Background(), &m)
-	return m, err
-}
