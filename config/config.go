@@ -23,8 +23,6 @@ type Configuration struct {
 	// Configuration for the job store
 	JobStore JobStoreConfig
 
-	// Default time to live of jobs
-	DefaultTTL int
 	// Per partition metric config
 	Metrics []MetricConfig
 	// Job data LRU cache size
@@ -93,6 +91,8 @@ type JobStoreConfig struct {
 	// Memory store config
 	// Path to the file the job metadata store should use
 	MemFilePath string
+	// Default time to live of jobs
+	MemDefaultTTL int
 
 	// Postgres store config:
 	// Postgres host address

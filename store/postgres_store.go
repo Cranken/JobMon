@@ -36,7 +36,7 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 	s.db.NewCreateTable().Model((*job.JobMetadata)(nil)).Exec(context.Background())
 	s.db.NewCreateTable().Model((*UserSession)(nil)).Exec(context.Background())
 	go func() {
-		s.removeExpiredJobs()
+		// s.removeExpiredJobs()
 		s.finishOvertimeJobs()
 	}()
 	go s.startCleanJobsTimer()
@@ -59,9 +59,9 @@ func (s *PostgresStore) Migrate(source *Store) {
 }
 
 func (s *PostgresStore) PutJob(job job.JobMetadata) error {
-	if job.TTL == 0 {
-		job.TTL = s.config.DefaultTTL
-	}
+	// if job.TTL == 0 {
+	// 	job.TTL = s.config.DefaultTTL
+	// }
 	_, err := s.db.NewInsert().Model(&job).Exec(context.Background())
 	return err
 }
@@ -140,13 +140,13 @@ func (s *PostgresStore) RemoveTag(id int, tag job.JobTag) error {
 	return s.UpdateJob(job)
 }
 
-func (s *PostgresStore) removeExpiredJobs() {
-	now := int(time.Now().Unix())
-	deadline := now - s.config.DefaultTTL
-	s.db.NewDelete().Model((*job.JobMetadata)(nil)).
-		Where("is_running=false").Where("ttl!=0").Where("stop_time<?", deadline).
-		Exec(context.Background())
-}
+// func (s *PostgresStore) removeExpiredJobs() {
+// 	now := int(time.Now().Unix())
+// 	deadline := now - s.config.DefaultTTL
+// 	s.db.NewDelete().Model((*job.JobMetadata)(nil)).
+// 		Where("is_running=false").Where("ttl!=0").Where("stop_time<?", deadline).
+// 		Exec(context.Background())
+// }
 
 func (s *PostgresStore) finishOvertimeJobs() {
 	now := int(time.Now().Unix())
@@ -168,7 +168,7 @@ func (s *PostgresStore) startCleanJobsTimer() {
 	ticker := time.NewTicker(12 * time.Hour)
 	for {
 		<-ticker.C
-		s.removeExpiredJobs()
+		// s.removeExpiredJobs()
 		s.finishOvertimeJobs()
 	}
 }

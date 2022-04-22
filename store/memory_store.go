@@ -49,7 +49,7 @@ func (s *MemoryStore) Init(c config.Configuration, database *db.DB) {
 func (s *MemoryStore) PutJob(job job.JobMetadata) error {
 	go func() {
 		if job.TTL == 0 {
-			job.TTL = s.config.DefaultTTL
+			job.TTL = s.config.JobStore.MemDefaultTTL
 		}
 		s.mut.Lock()
 		s.Jobs[job.Id] = &job

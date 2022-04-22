@@ -8,7 +8,7 @@ import (
 )
 
 func TestGetJob(t *testing.T) {
-	config := config.Configuration{JobStore: config.JobStoreConfig{MemFilePath: "../resources/store-test.json"}, DefaultTTL: 100}
+	config := config.Configuration{JobStore: config.JobStoreConfig{MemFilePath: "../resources/store-test.json", MemDefaultTTL: 100}}
 	var db database.DB = &utils.MockDB{}
 	store := MemoryStore{}
 	store.Init(config, &db)
