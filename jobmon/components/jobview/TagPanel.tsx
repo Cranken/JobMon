@@ -19,7 +19,7 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { addJobTag } from "../../utils/utils";
-import { JobMetadata, JobTag } from "./../../types/job";
+import { JobMetadata } from "./../../types/job";
 import { removeJobTag } from "./../../utils/utils";
 
 interface TagPanelProps {
@@ -29,24 +29,22 @@ interface TagPanelProps {
 export const TagPanel = ({ job }: TagPanelProps) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [addTagText, setAddTagText] = useState("");
-  const [tags, setTags] = useState<JobTag[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
   const borderColor = useColorModeValue("gray.300", "whiteAlpha.400");
   useEffect(() => {
     setTags(job.Tags);
   }, [job.Tags]);
-  const addTag = (name: string) => {
-    const tag: JobTag = { Name: name };
+  const addTag = (tag: string) => {
     addJobTag(job.Id, tag).then((resp) => {
       if (resp.status === 200) {
         setTags([...tags, tag]);
       }
     });
   };
-  const removeTag = (name: string) => {
-    const tag: JobTag = { Name: name };
+  const removeTag = (tag: string) => {
     removeJobTag(job.Id, tag).then((resp) => {
       if (resp.status === 200) {
-        const filteredTags = tags.filter((t) => t.Name !== tag.Name);
+        const filteredTags = tags.filter((t) => t !== tag);
         setTags(filteredTags);
       }
     });
@@ -70,18 +68,18 @@ export const TagPanel = ({ job }: TagPanelProps) => {
                   border="1px"
                   borderColor={borderColor}
                   borderRadius="md"
-                  key={tag.Name}
+                  key={tag}
                   justify="space-between"
                   align="center"
                   p={1}
                 >
-                  <Tag>{tag.Name}</Tag>
+                  <Tag>{tag}</Tag>
                   <IconButton
                     aria-label={"remove-tag"}
                     icon={<MinusIcon />}
                     variant="ghost"
                     size="sm"
-                    onClick={() => removeTag(tag.Name)}
+                    onClick={() => removeTag(tag)}
                   ></IconButton>
                 </Flex>
               ))}
@@ -135,7 +133,7 @@ export const TagPanel = ({ job }: TagPanelProps) => {
     elements.push(
       <>
         {tags.map((tag) => (
-          <Tag key={tag.Name}>{tag.Name}</Tag>
+          <Tag key={tag}>{tag}</Tag>
         ))}
       </>
     );

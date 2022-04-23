@@ -100,7 +100,7 @@ func (s *MemoryStore) StopJob(id int, stopJob job.StopJob) error {
 	return nil
 }
 
-func (s *MemoryStore) AddTag(id int, tag job.JobTag) error {
+func (s *MemoryStore) AddTag(id int, tag string) error {
 	job, err := s.getJobReference(id)
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func (s *MemoryStore) AddTag(id int, tag job.JobTag) error {
 	return nil
 }
 
-func (s *MemoryStore) RemoveTag(id int, tag job.JobTag) error {
+func (s *MemoryStore) RemoveTag(id int, tag string) error {
 	job, err := s.getJobReference(id)
 	if err != nil {
 		return err

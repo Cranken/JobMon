@@ -301,6 +301,7 @@ func AddTag(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	job, tag, ok := parseTag(w, r)
 	if ok {
 		store.AddTag(job.Id, tag)
+		jobCache.UpdateJob(job.Id)
 	}
 }
 
@@ -308,10 +309,11 @@ func RemoveTag(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 	job, tag, ok := parseTag(w, r)
 	if ok {
 		store.RemoveTag(job.Id, tag)
+		jobCache.UpdateJob(job.Id)
 	}
 }
 
-func parseTag(w http.ResponseWriter, r *http.Request) (job job.JobMetadata, tag job.JobTag, ok bool) {
+func parseTag(w http.ResponseWriter, r *http.Request) (job job.JobMetadata, tag string, ok bool) {
 	utils.AllowCors(r, w.Header())
 
 	jobStr := r.URL.Query().Get("job")
@@ -361,7 +363,7 @@ func main() {
 
 	db.Init(config)
 	store.Init(config, &db)
-	jobCache.Init(config, &db)
+	jobCache.Init(config, &db, &store)
 	authManager.Init(config, &store)
 
 	router := httprouter.New()

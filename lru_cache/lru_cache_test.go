@@ -4,6 +4,7 @@ import (
 	"jobmon/config"
 	"jobmon/db"
 	"jobmon/job"
+	"jobmon/store"
 	"jobmon/utils"
 	"testing"
 	"time"
@@ -13,7 +14,8 @@ func TestPutCleanup(t *testing.T) {
 	cache := LRUCache{}
 	config := config.Configuration{CacheSize: 3}
 	var db db.DB = &utils.MockDB{}
-	cache.Init(config, &db)
+	var store store.Store = &store.MemoryStore{}
+	cache.Init(config, &db, &store)
 
 	if cache.list.Len() != 0 {
 		t.Fatalf("List length is not 0")
@@ -35,7 +37,8 @@ func TestPutCleanupAfterAccess(t *testing.T) {
 	cache := LRUCache{}
 	config := config.Configuration{CacheSize: 3}
 	var db db.DB = &utils.MockDB{}
-	cache.Init(config, &db)
+	var store store.Store = &store.MemoryStore{}
+	cache.Init(config, &db, &store)
 
 	cache.put(Item{id: 1})
 	cache.put(Item{id: 2})
@@ -55,7 +58,8 @@ func TestGet(t *testing.T) {
 	cache := LRUCache{}
 	config := config.Configuration{CacheSize: 3}
 	var db db.DB = &utils.MockDB{}
-	cache.Init(config, &db)
+	var store store.Store = &store.MemoryStore{}
+	cache.Init(config, &db, &store)
 
 	job := job.JobMetadata{Id: 1}
 	cache.Get(&job, 30*time.Second)

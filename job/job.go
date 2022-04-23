@@ -29,7 +29,7 @@ type JobMetadata struct {
 	Partition    string
 	JobScript    string
 	ExitCode     int
-	Tags         []JobTag
+	Tags         []string `bun:",array"`
 	Data         []JobMetadataData
 }
 
@@ -94,19 +94,19 @@ func (j *JobMetadata) CalculateSampleIntervals(metricSampleInterval time.Duratio
 	return
 }
 
-func (j *JobMetadata) AddTag(tag JobTag) {
+func (j *JobMetadata) AddTag(tag string) {
 	for _, jt := range j.Tags {
-		if jt.Name == tag.Name {
+		if jt == tag {
 			return
 		}
 	}
 	j.Tags = append(j.Tags, tag)
 }
 
-func (j *JobMetadata) RemoveTag(tag JobTag) {
-	var newTags []JobTag
+func (j *JobMetadata) RemoveTag(tag string) {
+	var newTags []string
 	for _, jt := range j.Tags {
-		if jt.Name != tag.Name {
+		if jt != tag {
 			newTags = append(newTags, jt)
 		}
 	}

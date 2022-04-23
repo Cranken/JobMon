@@ -16,15 +16,17 @@ type Store interface {
 	GetJob(id int) (job.JobMetadata, error)
 	// Get metadata of all jobs
 	GetAllJobs() ([]job.JobMetadata, error)
+	// Get jobs filtered by filter
+	GetFilteredJobs(filter job.JobFilter) ([]job.JobMetadata, error)
 	// Mark the given job as stopped
 	StopJob(id int, stopJob job.StopJob) error
 	// Updates the job metadata
 	UpdateJob(job job.JobMetadata) error
 
 	// Add tag to job
-	AddTag(id int, tag job.JobTag) error
+	AddTag(id int, tag string) error
 	// Remove tag from job
-	RemoveTag(id int, tag job.JobTag) error
+	RemoveTag(id int, tag string) error
 
 	// Get user session token from session storage
 	GetUserSessionToken(username string) (string, bool)
