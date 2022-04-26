@@ -117,9 +117,8 @@ export const Jobs = () => {
   }
 
   elements.push(
-    <Box ref={joblistRef}>
+    <Box key="joblist" ref={joblistRef}>
       <JobList
-        key="joblist"
         jobs={filteredJobs}
         radarChartMetrics={jobListData.Config.RadarChartMetrics}
         limit={joblistLimit}

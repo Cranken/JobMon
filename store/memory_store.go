@@ -68,22 +68,12 @@ func (s *MemoryStore) UpdateJob(job job.JobMetadata) error {
 }
 
 func (s *MemoryStore) GetAllJobs() ([]job.JobMetadata, error) {
-	return s.GetJobsByPred(func(_ job.JobMetadata) bool { return true })
+	return s.getJobsByPred(func(_ job.JobMetadata) bool { return true })
 }
 
-func (s *MemoryStore) GetJobsByPred(pred JobPred) ([]job.JobMetadata, error) {
-	jobs := make([]job.JobMetadata, 0, len(s.Jobs))
-	for _, v := range s.Jobs {
-		if pred(*v) {
-			jobs = append(jobs, *v)
-		}
-	}
-
-	sort.Slice(jobs, func(i, j int) bool {
-		return jobs[i].Id < jobs[j].Id
-	})
-
-	return jobs, nil
+func (s *MemoryStore) GetFilteredJobs(filter job.JobFilter) ([]job.JobMetadata, error) {
+	// NYI
+	return s.getJobsByPred(func(_ job.JobMetadata) bool { return true })
 }
 
 func (s *MemoryStore) StopJob(id int, stopJob job.StopJob) error {
@@ -100,7 +90,7 @@ func (s *MemoryStore) StopJob(id int, stopJob job.StopJob) error {
 	return nil
 }
 
-func (s *MemoryStore) AddTag(id int, tag string) error {
+func (s *MemoryStore) AddTag(id int, tag *job.JobTag) error {
 	job, err := s.getJobReference(id)
 	if err != nil {
 		return err
@@ -109,7 +99,7 @@ func (s *MemoryStore) AddTag(id int, tag string) error {
 	return nil
 }
 
-func (s *MemoryStore) RemoveTag(id int, tag string) error {
+func (s *MemoryStore) RemoveTag(id int, tag *job.JobTag) error {
 	job, err := s.getJobReference(id)
 	if err != nil {
 		return err
@@ -137,6 +127,21 @@ func (s *MemoryStore) Flush() {
 		log.Printf("Could not marshal store into json: %v\n", err)
 	}
 	os.WriteFile(s.config.JobStore.MemFilePath, data, 0644)
+}
+
+func (s *MemoryStore) getJobsByPred(pred JobPred) ([]job.JobMetadata, error) {
+	jobs := make([]job.JobMetadata, 0, len(s.Jobs))
+	for _, v := range s.Jobs {
+		if pred(*v) {
+			jobs = append(jobs, *v)
+		}
+	}
+
+	sort.Slice(jobs, func(i, j int) bool {
+		return jobs[i].Id < jobs[j].Id
+	})
+
+	return jobs, nil
 }
 
 func (s *MemoryStore) getJobReference(id int) (*job.JobMetadata, error) {

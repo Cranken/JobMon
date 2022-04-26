@@ -29,7 +29,7 @@ type JobMetadata struct {
 	Partition    string
 	JobScript    string
 	ExitCode     int
-	Tags         []string `bun:",array"`
+	Tags         []*JobTag `bun:"m2m:job_to_tags,join:Job=Tag"`
 	Data         []JobMetadataData
 }
 
@@ -54,7 +54,17 @@ type JobListConfig struct {
 }
 
 type JobTag struct {
-	Name string
+	Id        int64 `bun:",pk,autoincrement"`
+	Name      string
+	Type      string
+	CreatedBy string
+}
+
+type JobToTags struct {
+	JobId int          `bun:",pk"`
+	Job   *JobMetadata `bun:"rel:belongs-to,join:job_id=id"`
+	TagId int64        `bun:",pk"`
+	Tag   *JobTag      `bun:"rel:belongs-to,join:tag_id=id"`
 }
 
 // Check if job TTL has expired.
@@ -94,7 +104,7 @@ func (j *JobMetadata) CalculateSampleIntervals(metricSampleInterval time.Duratio
 	return
 }
 
-func (j *JobMetadata) AddTag(tag string) {
+func (j *JobMetadata) AddTag(tag *JobTag) {
 	for _, jt := range j.Tags {
 		if jt == tag {
 			return
@@ -103,8 +113,8 @@ func (j *JobMetadata) AddTag(tag string) {
 	j.Tags = append(j.Tags, tag)
 }
 
-func (j *JobMetadata) RemoveTag(tag string) {
-	var newTags []string
+func (j *JobMetadata) RemoveTag(tag *JobTag) {
+	var newTags []*JobTag
 	for _, jt := range j.Tags {
 		if jt != tag {
 			newTags = append(newTags, jt)

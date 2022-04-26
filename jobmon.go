@@ -13,6 +13,7 @@ import (
 	"jobmon/utils"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
@@ -28,7 +29,7 @@ var db database.DB
 var jobCache = cache.LRUCache{}
 var authManager = auth.AuthManager{}
 
-func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params, _ auth.UserInfo) {
 	utils.AllowCors(r, w.Header())
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -54,7 +55,7 @@ func JobStart(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 	store.PutJob(j)
 }
 
-func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params, _ auth.UserInfo) {
 	utils.AllowCors(r, w.Header())
 
 	// Parse job information
@@ -111,7 +112,7 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	}()
 }
 
-func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params, user auth.UserInfo) {
 	utils.AllowCors(r, w.Header())
 	// TODO: Check auth and get by e.g. project id, ...
 	// Get all for now
@@ -141,7 +142,7 @@ func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Write(data)
 }
 
-func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params, user auth.UserInfo) {
 	utils.AllowCors(r, w.Header())
 	start := time.Now()
 
@@ -160,7 +161,7 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	// Get job metadata from store
 	j, err := store.GetJob(id)
 	if err != nil {
-		log.Printf("Could not get job meta data")
+		log.Printf("Could not get job meta data: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -209,7 +210,7 @@ func GetJob(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	w.Write(jsonData)
 }
 
-func Search(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func Search(w http.ResponseWriter, r *http.Request, params httprouter.Params, user auth.UserInfo) {
 	utils.AllowCors(r, w.Header())
 	searchTerm := params.ByName("term")
 
@@ -258,7 +259,7 @@ func Login(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func Logout(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func Logout(w http.ResponseWriter, r *http.Request, params httprouter.Params, _ auth.UserInfo) {
 	utils.AllowCors(r, w.Header())
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -286,7 +287,7 @@ func Logout(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func GenerateAPIKey(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func GenerateAPIKey(w http.ResponseWriter, r *http.Request, params httprouter.Params, _ auth.UserInfo) {
 	utils.AllowCors(r, w.Header())
 	jwt, err := authManager.GenerateJWT(auth.UserInfo{Role: auth.JOBCONTROL, Username: "api"}, true)
 	if err != nil {
@@ -297,23 +298,37 @@ func GenerateAPIKey(w http.ResponseWriter, r *http.Request, params httprouter.Pa
 	w.Write([]byte(jwt))
 }
 
-func AddTag(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func AddTag(w http.ResponseWriter, r *http.Request, params httprouter.Params, user auth.UserInfo) {
 	job, tag, ok := parseTag(w, r)
 	if ok {
-		store.AddTag(job.Id, tag)
+		tag.CreatedBy = user.Username
+		tag.Type = user.Role
+		store.AddTag(job.Id, &tag)
+		jobCache.UpdateJob(job.Id)
+
+		jsonData, err := json.Marshal(&tag)
+		if err != nil {
+			log.Printf("Could not marshal tag to json")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Write(jsonData)
+	}
+}
+
+func RemoveTag(w http.ResponseWriter, r *http.Request, params httprouter.Params, user auth.UserInfo) {
+	job, tag, ok := parseTag(w, r)
+	if ok {
+		err := store.RemoveTag(job.Id, &tag)
+		if err != nil {
+			log.Println(err)
+		}
 		jobCache.UpdateJob(job.Id)
 	}
 }
 
-func RemoveTag(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	job, tag, ok := parseTag(w, r)
-	if ok {
-		store.RemoveTag(job.Id, tag)
-		jobCache.UpdateJob(job.Id)
-	}
-}
-
-func parseTag(w http.ResponseWriter, r *http.Request) (job job.JobMetadata, tag string, ok bool) {
+func parseTag(w http.ResponseWriter, r *http.Request) (job job.JobMetadata, tag job.JobTag, ok bool) {
 	utils.AllowCors(r, w.Header())
 
 	jobStr := r.URL.Query().Get("job")

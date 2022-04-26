@@ -24,9 +24,9 @@ type Store interface {
 	UpdateJob(job job.JobMetadata) error
 
 	// Add tag to job
-	AddTag(id int, tag string) error
+	AddTag(id int, tag *job.JobTag) error
 	// Remove tag from job
-	RemoveTag(id int, tag string) error
+	RemoveTag(id int, tag *job.JobTag) error
 
 	// Get user session token from session storage
 	GetUserSessionToken(username string) (string, bool)

@@ -44,8 +44,10 @@ type AuthManager struct {
 const EXPIRATIONTIME = 60 * 60 * 24 * 7
 const ISSUER = "monitoring-backend"
 
+type APIHandle func(http.ResponseWriter, *http.Request, httprouter.Params, UserInfo)
+
 // Create protected route which requires given authentication level
-func (authManager *AuthManager) Protected(h httprouter.Handle, authLevel string) httprouter.Handle {
+func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		token, err := r.Cookie("Authorization")
 		if err != nil {
@@ -72,7 +74,7 @@ func (authManager *AuthManager) Protected(h httprouter.Handle, authLevel string)
 		}
 
 		if user.Role == authLevel || user.Role == ADMIN {
-			h(w, r, ps)
+			h(w, r, ps, user)
 		} else {
 			utils.AllowCors(r, w.Header())
 			http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})

@@ -26,7 +26,6 @@ import {
 } from "../../components/jobview/AnalysisView";
 import { SelectionMap } from "../../types/helpers";
 import { useStorageState } from "./../../utils/utils";
-import { JobTag } from "./../../types/job";
 
 const Job: NextPage = () => {
   const router = useRouter();

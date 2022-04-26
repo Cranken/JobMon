@@ -17,7 +17,7 @@ export interface JobMetadata {
   Account: string;
   Partition: string;
   JobScript: string;
-  Tags: string[];
+  Tags: JobTag[];
   Data: JobMetadataData[];
 }
 
@@ -101,3 +101,11 @@ export interface JobMetadataData {
   Config: MetricConfig;
   Data: DataMap<number>;
 }
+
+export interface JobTag {
+  Id: number;
+  Name: string;
+  Type: string;
+  CreatedBy: string;
+}
+

@@ -63,32 +63,28 @@ export const Header = () => {
   };
   return (
     <header>
-      <>
-        <Modal isOpen={isOpen} onClose={onClose}>
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>Debug Menu</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <Stack gap={2}>
-                <Button onClick={() => generateApiKey()}>
-                  Generate API Key
-                </Button>
-                <Text>This will invalidate the existing API Key</Text>
-                <Textarea value={apiKey} isReadOnly>
-                  test
-                </Textarea>
-              </Stack>
-            </ModalBody>
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Debug Menu</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Stack gap={2}>
+              <Button onClick={() => generateApiKey()}>Generate API Key</Button>
+              <Text>This will invalidate the existing API Key</Text>
+              <Textarea value={apiKey} isReadOnly>
+                test
+              </Textarea>
+            </Stack>
+          </ModalBody>
 
-            <ModalFooter>
-              <Button colorScheme="blue" mr={3} onClick={onClose}>
-                Close
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      </>
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={onClose}>
+              Close
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
       <Flex bg={headerBg} p={2}>
         <Flex flexGrow={1} gap={2}>
           {isAuthenticated ? (

@@ -33,6 +33,9 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 		pgdriver.WithDatabase(c.JobStore.PSQLDB),
 		pgdriver.WithApplicationName("jobmon-backend")))
 	s.db = bun.NewDB(psqldb, pgdialect.New())
+	s.db.RegisterModel((*job.JobToTags)(nil))
+	s.db.NewCreateTable().Model((*job.JobToTags)(nil)).Exec(context.Background())
+	s.db.NewCreateTable().Model((*job.JobTag)(nil)).Exec(context.Background())
 	s.db.NewCreateTable().Model((*job.JobMetadata)(nil)).Exec(context.Background())
 	s.db.NewCreateTable().Model((*UserSession)(nil)).Exec(context.Background())
 	go func() {
@@ -64,7 +67,7 @@ func (s *PostgresStore) PutJob(job job.JobMetadata) error {
 
 func (s *PostgresStore) GetJob(id int) (job job.JobMetadata, err error) {
 	job.Id = id
-	err = s.db.NewSelect().Model(&job).WherePK().Scan(context.Background())
+	err = s.db.NewSelect().Model(&job).WherePK().Relation("Tags").Scan(context.Background())
 	return job, err
 }
 
@@ -118,22 +121,20 @@ func (s *PostgresStore) UpdateJob(job job.JobMetadata) error {
 	return err
 }
 
-func (s *PostgresStore) AddTag(id int, tag string) error {
-	job, err := s.GetJob(id)
+func (s *PostgresStore) AddTag(id int, tag *job.JobTag) error {
+	_, err := s.db.NewInsert().Model(tag).Exec(context.Background())
 	if err != nil {
 		return err
 	}
-	job.AddTag(tag)
-	return s.UpdateJob(job)
+	j2t := job.JobToTags{JobId: id, TagId: tag.Id}
+	_, err = s.db.NewInsert().Model(&j2t).Exec(context.Background())
+	return err
 }
 
-func (s *PostgresStore) RemoveTag(id int, tag string) error {
-	job, err := s.GetJob(id)
-	if err != nil {
+func (s *PostgresStore) RemoveTag(id int, tag *job.JobTag) error {
+	j2t := job.JobToTags{JobId: id, TagId: tag.Id}
+	_, err := s.db.NewDelete().Model(&j2t).WherePK().Exec(context.Background())
 		return err
-	}
-	job.RemoveTag(tag)
-	return s.UpdateJob(job)
 }
 
 func (s *PostgresStore) finishOvertimeJobs() {

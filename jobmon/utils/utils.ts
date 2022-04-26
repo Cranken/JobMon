@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useEffect } from "react";
 import { useCookies } from "react-cookie";
-import { DataMap, JobListData } from "../types/job";
+import { DataMap, JobListData, JobTag } from "../types/job";
 
 export const clamp = (val: number, min: number, max: number) =>
   Math.min(Math.max(val, min), max);
@@ -81,10 +81,10 @@ export const addJobTag = (jobId: number, tag: string) => {
     process.env.NEXT_PUBLIC_BACKEND_URL + `/api/tags/add_tag?job=${jobId}`
   );
 
-  return setJobTag(url.toString(), tag);
+  return setJobTag(url.toString(), { Name: tag } as JobTag);
 };
 
-export const removeJobTag = (jobId: number, tag: string) => {
+export const removeJobTag = (jobId: number, tag: JobTag) => {
   const url = new URL(
     process.env.NEXT_PUBLIC_BACKEND_URL + `/api/tags/remove_tag?job=${jobId}`
   );
@@ -92,7 +92,7 @@ export const removeJobTag = (jobId: number, tag: string) => {
   return setJobTag(url.toString(), tag);
 };
 
-const setJobTag = (url: string, tag: string) => {
+const setJobTag = (url: string, tag: JobTag) => {
   return fetch(url, {
     credentials: "include",
     method: "POST",
