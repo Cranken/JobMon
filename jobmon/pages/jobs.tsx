@@ -1,17 +1,23 @@
 import React, { useEffect, useRef, useState } from "react";
 import JobFilter from "../components/joblist/job-filter/JobFilter";
 import JobList from "../components/joblist/JobList";
-import { checkBetween, useGetJobs, useStorageState } from "../utils/utils";
-import { JobMetadata } from "./../types/job";
+import {
+  checkBetween,
+  dateToUnix,
+  useGetJobs,
+  useStorageState,
+} from "../utils/utils";
+import { JobSearchParams, JobMetadata, JobTag } from "./../types/job";
 import { useRouter } from "next/router";
 import { Box, Center, Spinner } from "@chakra-ui/react";
 import JoblistPageSelection from "../components/joblist/JoblistPageSelection";
 
 export const Jobs = () => {
   const router = useRouter();
-  const jobListData = useGetJobs();
   const [userName, setUserId] = useStorageState("username", "");
-  const [startTime, setStartTime] = useState(new Date("2021-10-01"));
+  const [startTime, setStartTime] = useState(
+    new Date(Math.floor(Date.now()) - 60 * 60 * 24 * 14 * 1000)
+  );
   const [stopTime, setStopTime] = useState(new Date());
   const [numNodes, setNumNodes] = useStorageState("numNodes", [1, 192]);
   const [partition, setPartition] = useStorageState("partition", "");
@@ -24,6 +30,10 @@ export const Jobs = () => {
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useStorageState("sortyBy", "StartTime");
   const [sortByDescending, setSortByDescending] = useState(true);
+  const [params, setParams] = useState<JobSearchParams>({
+    Time: [dateToUnix(startTime), dateToUnix(stopTime)],
+  });
+  const jobListData = useGetJobs(params);
 
   const joblistRef = useRef<HTMLDivElement>(null);
   const filter = (job: JobMetadata) =>
@@ -56,6 +66,13 @@ export const Jobs = () => {
     }
   }, [page]);
 
+  useEffect(() => {
+    setParams({
+      ...params,
+      Time: [dateToUnix(startTime), dateToUnix(stopTime)],
+    });
+  }, [startTime, stopTime]);
+
   if (!jobListData) {
     return (
       <Center>
@@ -65,7 +82,7 @@ export const Jobs = () => {
   }
 
   let partitions = new Set<string>();
-  jobListData.Jobs.forEach((j) =>
+  jobListData?.Jobs?.forEach((j) =>
     j.Partition !== "" ? partitions.add(j.Partition) : null
   );
   let elements = [];
@@ -73,8 +90,8 @@ export const Jobs = () => {
     <JobFilter
       key="jobfilter"
       userName={[userName, setUserId]}
-      startTime={[new Date(startTime), setStartTime]}
-      stopTime={[new Date(stopTime), setStopTime]}
+      startTime={[startTime, setStartTime]}
+      stopTime={[stopTime, setStopTime]}
       numNodes={[numNodes, setNumNodes]}
       partitions={[Array.from(partitions), partition, setPartition]}
       numGpu={[numGpu, setNumGpu]}

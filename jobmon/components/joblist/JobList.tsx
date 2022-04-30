@@ -142,7 +142,7 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
               {job.Tags && job.Tags.length > 0 ? (
                 <Wrap>
                   {job.Tags.map((tag) => (
-                    <Tag key={tag}>{tag}</Tag>
+                    <Tag key={tag.Name}>{tag.Name}</Tag>
                   ))}
                 </Wrap>
               ) : null}

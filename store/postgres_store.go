@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"database/sql"
+	"fmt"
 	"jobmon/config"
 	"jobmon/db"
 	"jobmon/job"
@@ -76,6 +77,25 @@ func (s *PostgresStore) GetAllJobs() (jobs []job.JobMetadata, err error) {
 	return jobs, err
 }
 
+func (s *PostgresStore) GetFilteredJobs(filter job.JobFilter) (jobs []job.JobMetadata, err error) {
+	query := s.db.NewSelect().Model(&jobs).Relation("Tags")
+	query = appendTagFilter(query, filter.Tags, s.db)
+	query = appendValueFilter(query, filter.UserId, "user_id")
+	query = appendValueFilter(query, filter.UserName, "user_name")
+	query = appendValueFilter(query, filter.GroupId, "group_id")
+	query = appendValueFilter(query, filter.GroupName, "group_name")
+	query = appendValueFilter(query, filter.IsRunning, "is_running")
+	query = appendValueFilter(query, filter.Partition, "partition")
+	query = appendRangeFilter(query, filter.NumNodes, "num_nodes")
+	query = appendRangeFilter(query, filter.NumTasks, "num_tasks")
+	query = appendRangeFilter(query, filter.Time, "start_time")
+	err = query.Scan(context.Background())
+	if err != nil {
+		return
+	}
+	return
+}
+
 func (s *PostgresStore) StopJob(id int, stopJob job.StopJob) error {
 	job := job.JobMetadata{}
 	job.Id = id
@@ -134,7 +154,7 @@ func (s *PostgresStore) AddTag(id int, tag *job.JobTag) error {
 func (s *PostgresStore) RemoveTag(id int, tag *job.JobTag) error {
 	j2t := job.JobToTags{JobId: id, TagId: tag.Id}
 	_, err := s.db.NewDelete().Model(&j2t).WherePK().Exec(context.Background())
-		return err
+	return err
 }
 
 func (s *PostgresStore) finishOvertimeJobs() {
@@ -159,4 +179,41 @@ func (s *PostgresStore) startCleanJobsTimer() {
 		<-ticker.C
 		s.finishOvertimeJobs()
 	}
+}
+
+func appendValueFilter[V int | string | bool](query *bun.SelectQuery, val *V, key string) *bun.SelectQuery {
+	if val != nil {
+		query = query.Where(fmt.Sprintf("%s=?", key), *val)
+	}
+	return query
+}
+
+func appendRangeFilter(query *bun.SelectQuery, val *job.RangeFilter, key string) *bun.SelectQuery {
+	if val != nil {
+		if val.From != nil {
+			query = query.Where(fmt.Sprintf("job_metadata.%s >= ?", key), *val.From)
+		}
+		if val.To != nil {
+			query = query.Where(fmt.Sprintf("job_metadata.%s <= ?", key), *val.To)
+		}
+	}
+	return query
+}
+
+func appendTagFilter(query *bun.SelectQuery, tags *[]job.JobTag, db *bun.DB) *bun.SelectQuery {
+	if tags != nil {
+		var tagIds []int64
+		for _, jt := range *tags {
+			tagIds = append(tagIds, jt.Id)
+		}
+		subq := db.NewSelect().Model((*job.JobMetadata)(nil)).
+			Join("INNER JOIN job_to_tags ON job_to_tags.job_id = job_metadata.id").
+			Join("INNER JOIN job_tags ON job_tags.id = job_to_tags.tag_id").
+			Where("job_tags.id IN (?)", bun.In(tagIds)).
+			Group("job_metadata.id").
+			Having("COUNT(DISTINCT job_tags.id) = ?", len(tagIds))
+			// Workaround; use subquery as "main" query
+		query.ModelTableExpr("").TableExpr("(?) AS job_metadata", subq)
+	}
+	return query
 }

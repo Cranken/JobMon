@@ -17,6 +17,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -114,11 +115,13 @@ func JobStop(w http.ResponseWriter, r *http.Request, params httprouter.Params, _
 
 func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params, user auth.UserInfo) {
 	utils.AllowCors(r, w.Header())
+	filter := parseGetJobParams(r.URL.Query())
+	jobs, err := store.GetFilteredJobs(filter)
 	// TODO: Check auth and get by e.g. project id, ...
 	// Get all for now
-	jobs, err := store.GetAllJobs()
+	// jobs, err := store.GetAllJobs()
 	if err != nil {
-		log.Printf("Could not get jobs")
+		log.Printf("Could not get jobs %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -381,6 +384,12 @@ func main() {
 	jobCache.Init(config, &db, &store)
 	authManager.Init(config, &store)
 
+	// var memStore jobstore.Store
+	// memStore = &jobstore.MemoryStore{}
+	// memStore.Init(config, &db)
+
+	// store.(*jobstore.PostgresStore).Migrate(&memStore)
+
 	router := httprouter.New()
 	router.PUT("/api/job_start", authManager.Protected(JobStart, auth.JOBCONTROL))
 	router.PATCH("/api/job_stop/:id", authManager.Protected(JobStop, auth.JOBCONTROL))
@@ -408,4 +417,74 @@ func registerCleanup() {
 		db.Close()
 		os.Exit(0)
 	}()
+}
+
+func parseGetJobParams(params url.Values) (filter job.JobFilter) {
+	parseRangeFilter := func(str string) (rf *job.RangeFilter) {
+		parts := strings.Split(str, ",")
+		if len(parts) != 2 {
+			return nil
+		}
+		rf = &job.RangeFilter{}
+		if p0, err := strconv.Atoi(parts[0]); err == nil {
+			rf.From = &p0
+		}
+		if p1, err := strconv.Atoi(parts[1]); err == nil {
+			rf.To = &p1
+		}
+		return
+	}
+	if str := params.Get("UserId"); str != "" {
+		i, err := strconv.Atoi(str)
+		if err != nil {
+			filter.UserId = &i
+		}
+	}
+	if str := params.Get("UserName"); str != "" {
+		filter.UserName = &str
+	}
+	if str := params.Get("GroupId"); str != "" {
+		i, err := strconv.Atoi(str)
+		if err != nil {
+			filter.GroupId = &i
+		}
+	}
+	if str := params.Get("GroupName"); str != "" {
+		filter.GroupName = &str
+	}
+	if str := params.Get("IsRunning"); str != "" {
+		if str == "true" {
+			v := true
+			filter.IsRunning = &v
+		}
+		if str == "false" {
+			v := false
+			filter.IsRunning = &v
+		}
+	}
+	if str := params.Get("Partition"); str != "" {
+		filter.Partition = &str
+	}
+
+	if str := params.Get("NumNodes"); str != "" {
+		filter.NumNodes = parseRangeFilter(str)
+	}
+	if str := params.Get("NumTasks"); str != "" {
+		filter.NumTasks = parseRangeFilter(str)
+	}
+	if str := params.Get("Time"); str != "" {
+		filter.Time = parseRangeFilter(str)
+	}
+	if str := params.Get("Tags"); str != "" {
+		tags := strings.Split(str, ",")
+		tagIds := make([]job.JobTag, 0)
+		for _, v := range tags {
+			i, err := strconv.Atoi(v)
+			if err == nil {
+				tagIds = append(tagIds, job.JobTag{Id: int64(i)})
+			}
+		}
+		filter.Tags = &tagIds
+	}
+	return filter
 }

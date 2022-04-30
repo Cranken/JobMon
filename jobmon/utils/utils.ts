@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useEffect } from "react";
 import { useCookies } from "react-cookie";
 import { DataMap, JobListData, JobTag } from "../types/job";
+import { JobSearchParams } from "./../types/job";
 
 export const clamp = (val: number, min: number, max: number) =>
   Math.min(Math.max(val, min), max);
@@ -43,11 +44,23 @@ export function useStorageState<T>(
   return [state, setStorageState, clearState];
 }
 
-export const useGetJobs = () => {
+export const useGetJobs = (filter: JobSearchParams) => {
   const [jobListData, setJobs] = useState<JobListData>();
   const [_c, _s, removeCookie] = useCookies(["Authorization"]);
   useEffect(() => {
-    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/jobs", {
+    const url = new URL(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/jobs");
+    Object.keys(filter).forEach((val) => {
+      if (val === "Tags") {
+        const ids = filter.Tags?.map((t) => t.Id);
+        url.searchParams.append(val, ids?.toString() ?? "");
+      } else {
+        url.searchParams.append(
+          val,
+          filter[val as keyof JobSearchParams]?.toString() ?? ""
+        );
+      }
+    });
+    fetch(url.toString(), {
       credentials: "include",
     }).then((res) => {
       if (!res.ok && (res.status === 401 || res.status === 403)) {
@@ -56,7 +69,7 @@ export const useGetJobs = () => {
         res.json().then((data) => setJobs(data));
       }
     });
-  }, [removeCookie]);
+  }, [removeCookie, filter]);
   return jobListData;
 };
 
@@ -98,4 +111,8 @@ const setJobTag = (url: string, tag: JobTag) => {
     method: "POST",
     body: JSON.stringify(tag),
   });
+};
+
+export const dateToUnix = (d: Date) => {
+  return parseInt((d.getTime() / 1000).toFixed(0));
 };

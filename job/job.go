@@ -67,6 +67,24 @@ type JobToTags struct {
 	Tag   *JobTag      `bun:"rel:belongs-to,join:tag_id=id"`
 }
 
+type JobFilter struct {
+	UserId    *int
+	UserName  *string
+	GroupId   *int
+	GroupName *string
+	IsRunning *bool
+	Partition *string
+	NumNodes  *RangeFilter
+	NumTasks  *RangeFilter
+	Time      *RangeFilter
+	Tags      *[]JobTag
+}
+
+type RangeFilter struct {
+	From *int
+	To   *int
+}
+
 // Check if job TTL has expired.
 // If TTL == 0 then the job will never expire
 func (j *JobMetadata) Expired() bool {
@@ -121,4 +139,16 @@ func (j *JobMetadata) RemoveTag(tag *JobTag) {
 		}
 	}
 	j.Tags = newTags
+}
+
+func (t *JobTag) IsIn(tags []*JobTag) bool {
+	if tags == nil {
+		return false
+	}
+	for _, jt := range tags {
+		if jt.Id == t.Id {
+			return true
+		}
+	}
+	return false
 }

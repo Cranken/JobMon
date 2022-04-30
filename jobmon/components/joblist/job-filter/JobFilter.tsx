@@ -132,7 +132,11 @@ export const JobFilter = ({
                   <Button
                     size="sm"
                     onClick={() => {
-                      startTime[1](new Date("2021-10-01"));
+                      startTime[1](
+                        new Date(
+                          Math.floor(Date.now()) - 60 * 60 * 24 * 14 * 1000
+                        )
+                      );
                       stopTime[1](new Date());
                     }}
                   >

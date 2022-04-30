@@ -109,3 +109,17 @@ export interface JobTag {
   CreatedBy: string;
 }
 
+export interface JobSearchParams {
+  UserId?: number;
+  UserName?: string;
+  GroupId?: number;
+  GroupName?: string;
+  IsRunning?: boolean;
+  Partition?: string;
+  NumNodes?: RangeFilter;
+  NumTasks?: RangeFilter;
+  Time?: RangeFilter;
+  Tags?: JobTag[];
+}
+
+type RangeFilter = [number | undefined, number | undefined];
