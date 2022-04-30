@@ -44,22 +44,24 @@ export function useStorageState<T>(
   return [state, setStorageState, clearState];
 }
 
-export const useGetJobs = (filter: JobSearchParams) => {
+export const useGetJobs = (filter?: JobSearchParams) => {
   const [jobListData, setJobs] = useState<JobListData>();
   const [_c, _s, removeCookie] = useCookies(["Authorization"]);
   useEffect(() => {
     const url = new URL(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/jobs");
-    Object.keys(filter).forEach((val) => {
-      if (val === "Tags") {
-        const ids = filter.Tags?.map((t) => t.Id);
-        url.searchParams.append(val, ids?.toString() ?? "");
-      } else {
-        url.searchParams.append(
-          val,
-          filter[val as keyof JobSearchParams]?.toString() ?? ""
-        );
-      }
-    });
+    if (filter) {
+      Object.keys(filter).forEach((val) => {
+        if (val === "Tags") {
+          const ids = filter.Tags?.map((t) => t.Id);
+          url.searchParams.append(val, ids?.toString() ?? "");
+        } else {
+          url.searchParams.append(
+            val,
+            filter[val as keyof JobSearchParams]?.toString() ?? ""
+          );
+        }
+      });
+    }
     fetch(url.toString(), {
       credentials: "include",
     }).then((res) => {
