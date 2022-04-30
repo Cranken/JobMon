@@ -38,14 +38,12 @@ export const ViewControl = ({
   setSelectedMetrics,
 }: ControlProps) => {
   return (
-    <Stack>
-      <TimeControl
-        metadata={jobdata.Metadata}
-        startTime={startTime}
-        stopTime={stopTime}
-        setStartTime={setStartTime}
-        setStopTime={setStopTime}
-      />
+    <Stack px={3}>
+      <MetricSelection
+        metrics={jobdata.MetricData.map((val) => val.Config.Measurement)}
+        selectedMetrics={selectedMetrics}
+        setSelectedMetrics={setSelectedMetrics}
+      ></MetricSelection>
       <Stack direction="row" gap={2}>
         {jobdata.Metadata.NumNodes !== 1 ? (
           <Button
@@ -58,19 +56,8 @@ export const ViewControl = ({
         <Button fontSize="sm" onClick={() => setAutoScale(!autoScale)}>
           Toggle Automatic Scaling
         </Button>
-        <MetricSelection
-          metrics={jobdata.MetricData.map((val) => val.Config.Measurement)}
-          selectedMetrics={selectedMetrics}
-          setSelectedMetrics={setSelectedMetrics}
-        ></MetricSelection>
         {sampleInterval && sampleIntervals ? (
-          <Stack
-            direction="row"
-            flexGrow={1}
-            align="center"
-            justify="end"
-            pr={3}
-          >
+          <Stack direction="row" flexGrow={1} align="center" justify="end">
             <Text>Select sample interval in seconds:</Text>
             <Select
               maxW="15ch"
@@ -86,6 +73,13 @@ export const ViewControl = ({
           </Stack>
         ) : null}
       </Stack>
+      <TimeControl
+        metadata={jobdata.Metadata}
+        startTime={startTime}
+        stopTime={stopTime}
+        setStartTime={setStartTime}
+        setStopTime={setStopTime}
+      />
     </Stack>
   );
 };

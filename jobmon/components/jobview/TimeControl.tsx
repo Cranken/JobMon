@@ -32,7 +32,7 @@ const TimeControl = ({
   }, [startTime, stopTime]);
 
   return (
-    <Flex maxH={10} align="center" paddingX={3} w="100%">
+    <Flex maxH={10} align="center" w="100%">
       <Box mr={5} w="100%">
         <Range
           min={defaultTime[0]}
