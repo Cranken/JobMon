@@ -1,3 +1,4 @@
+import { MetricConfig } from "./../../types/job";
 import {
   Checkbox,
   CheckboxGroup,
@@ -11,7 +12,7 @@ import {
 } from "@chakra-ui/react";
 
 interface MetricSelectionProps {
-  metrics: string[];
+  metrics: MetricConfig[];
   selectedMetrics: string[];
   setSelectedMetrics: (val: string[]) => void;
 }
@@ -38,14 +39,14 @@ export const MetricSelection = ({
             value={selectedMetrics}
             onChange={(val) => setSelectedMetrics(val as string[])}
           >
-            <Grid templateColumns="repeat(3, 5fr)" wrap="wrap">
+            <Grid templateColumns="repeat(3, 10fr)" wrap="wrap" gap={2}>
               {metrics.map((metric) => (
                 <Checkbox
-                  key={metric}
-                  value={metric}
-                  isChecked={selectedMetrics.includes(metric)}
+                  key={metric.Measurement}
+                  value={metric.Measurement}
+                  isChecked={selectedMetrics.includes(metric.Measurement)}
                 >
-                  {metric}
+                  {metric.DisplayName}
                 </Checkbox>
               ))}
             </Grid>
