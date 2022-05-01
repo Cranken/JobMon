@@ -384,6 +384,15 @@ func main() {
 	jobCache.Init(config, &db, &store)
 	authManager.Init(config, &store)
 
+	// part := "accelerated"
+	// jobs, err := store.GetFilteredJobs(job.JobFilter{Partition: &part})
+	// if err == nil {
+	// 	for _, jm := range jobs {
+	// 		s := job.StopJob{StopTime: jm.StopTime, ExitCode: jm.ExitCode}
+	// 		store.StopJob(jm.Id, s)
+	// 	}
+	// }
+
 	// var memStore jobstore.Store
 	// memStore = &jobstore.MemoryStore{}
 	// memStore.Init(config, &db)

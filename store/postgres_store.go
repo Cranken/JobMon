@@ -97,8 +97,10 @@ func (s *PostgresStore) GetFilteredJobs(filter job.JobFilter) (jobs []job.JobMet
 }
 
 func (s *PostgresStore) StopJob(id int, stopJob job.StopJob) error {
-	job := job.JobMetadata{}
-	job.Id = id
+	job, err := s.GetJob(id)
+	if err != nil {
+		return err
+	}
 	job.IsRunning = false
 	job.StopTime = stopJob.StopTime
 	job.ExitCode = stopJob.ExitCode

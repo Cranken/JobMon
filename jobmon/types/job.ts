@@ -99,7 +99,7 @@ export interface JobData {
 }
 export interface JobMetadataData {
   Config: MetricConfig;
-  Data: DataMap<number>;
+  Data: number;
 }
 
 export interface JobTag {

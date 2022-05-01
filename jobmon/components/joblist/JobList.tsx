@@ -67,18 +67,17 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
     radarChartData = job.Data.filter((val) =>
       radarChartMetrics.includes(val.Config.Measurement)
     ).map((val) => {
-      const mean = d3.mean(Object.values(val.Data)) ?? 1;
       const max = Math.max(val.Config.MaxPerNode, val.Config.MaxPerType);
       return {
-        val: mean,
-        max: max !== 0 ? max : mean,
+        val: val.Data,
+        max: max !== 0 ? max : val.Data,
         title: val.Config.DisplayName,
       };
     });
     radarChartData.sort((a, b) => (a.title < b.title ? -1 : 1));
 
-    flopsData = job.Data.find((val) => val.Config.Measurement === "flops_dp");
-    membwData = job.Data.find((val) => val.Config.Measurement === "mem_bw");
+    // flopsData = job.Data.find((val) => val.Config.Measurement === "flops_dp");
+    // membwData = job.Data.find((val) => val.Config.Measurement === "mem_bw");
   }
 
   let dataAvailable = true;
@@ -88,11 +87,11 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
     reason = "Job is still running. No metric data available yet.";
   } else if (
     !job.Data ||
-    radarChartData.length === 0 ||
-    !flopsData ||
-    Object.keys(flopsData.Data).length === 0 ||
-    !membwData ||
-    Object.keys(membwData.Data).length === 0
+    radarChartData.length === 0
+    // !flopsData ||
+    // Object.keys(flopsData.Data).length === 0 ||
+    // !membwData ||
+    // Object.keys(membwData.Data).length === 0
   ) {
     dataAvailable = false;
     reason = "No metadata for job available.";
@@ -174,7 +173,7 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
                         margin={60}
                       ></RadarChart>
                     ) : null}
-                    {flopsData && membwData ? (
+                    {/* {flopsData && membwData ? (
                       <Center w={600} h={350}>
                         <RooflinePlot
                           flops={Object.values(flopsData.Data)}
@@ -187,7 +186,7 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
                           height={350}
                         ></RooflinePlot>
                       </Center>
-                    ) : null}
+                    ) : null} */}
                   </Center>
                 )}
               </Stack>

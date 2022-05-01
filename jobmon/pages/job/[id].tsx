@@ -103,6 +103,8 @@ const Job: NextPage = () => {
     });
   };
 
+  console.log(data);
+
   return (
     <Box m={5}>
       <Grid
@@ -148,7 +150,7 @@ const Job: NextPage = () => {
             {showQuantiles ? (
               <QuantileDataCharts
                 key="quantile-charts"
-                quantiles={data?.QuantileData.filter((m) =>
+                quantiles={data?.QuantileData?.filter((m) =>
                   selectedMetrics.includes(m.Config.Measurement)
                 )}
                 startTime={startTime}

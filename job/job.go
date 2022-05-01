@@ -35,7 +35,7 @@ type JobMetadata struct {
 
 type JobMetadataData struct {
 	Config config.MetricConfig
-	Data   map[string]float64
+	Data   float64
 }
 
 type StopJob struct {

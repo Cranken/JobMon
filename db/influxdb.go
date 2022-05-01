@@ -96,23 +96,17 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 				log.Printf("Job %v: could not get metadata data %v", j.Id, err)
 				return
 			}
-			result, err := parseQueryResult(tempRes, "_field")
+			result, err := parseQueryResult(tempRes, "result")
 			if err != nil {
 				log.Printf("Job %v: could not parse metadata data %v", j.Id, err)
 				return
 			}
-			tempData := make(map[string]float64)
-			for _, v := range result {
-				for _, qr := range v {
-					dat, ok := qr["_value"].(float64)
-					if !ok {
-						tempData[qr["hostname"].(string)] = 0
-					} else {
-						tempData[qr["hostname"].(string)] = dat
-					}
+			if res, ok := result["_result"]; ok && len(result) == 1 {
+				val := res[0]["_value"]
+				if val != nil {
+					data = append(data, job.JobMetadataData{Config: m, Data: val.(float64)})
 				}
 			}
-			data = append(data, job.JobMetadataData{Config: m, Data: tempData})
 		}(db.metrics[m])
 	}
 	wg.Wait()
@@ -247,7 +241,11 @@ func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (
 			tableRows = []QueryResult{}
 		}
 		tableRows = append(tableRows, row)
-		curNode = row[separationKey].(string)
+		if val, ok := row[separationKey]; ok {
+			curNode = val.(string)
+		} else {
+			log.Println(row)
+		}
 	}
 	result[curNode] = tableRows
 
@@ -338,6 +336,7 @@ func (db *InfluxDB) queryMetadataMeasurements(metric conf.MetricConfig, job *job
 	query += fmt.Sprintf(`
 		|> %v(column: "_value")
     |> group()
+		|> mean(column: "_value")
 	`, "mean")
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
