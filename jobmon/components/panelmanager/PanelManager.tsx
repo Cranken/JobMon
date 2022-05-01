@@ -1,77 +1,76 @@
-import { AddIcon } from "@chakra-ui/icons";
 import {
-  Button,
-  Flex,
-  IconButton,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuList,
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
+  Box,
+  Center,
+  Checkbox,
+  CheckboxGroup,
+  Grid,
 } from "@chakra-ui/react";
-import { useStorageState } from "../../utils/utils";
 
-export enum Panel {
-  BarChart = "Bar Chart",
-  HorizontalBarChart = "Horizontal Bar Chart",
-  LineChart = "Line Chart",
-  Histogram = "Histogram",
-  BoxPlot = "Box Plot",
-}
+export const OPanel = {
+  Partition: "Partition",
+  Username: "Username",
+  NumNodes: "Number of Nodes",
+  GroupName: "Groupname",
+  JobLength: "Job Length",
+  ComputeTime: "Compute Time",
+} as const;
+
+export type Panel = keyof typeof OPanel;
 
 export interface PanelConfig<T> {
   Position: number;
   Type: Panel;
-  Attribute: keyof T;
 }
 
 interface PanelManagerProps {
-  AllowedPanels: Panel[];
-  AddPanel: (p: Panel) => void;
+  selectedPanels: Panel[];
+  setSelectedPanels: (p: Panel[]) => void;
 }
 
 export const PanelManager = ({
-  AllowedPanels,
-  AddPanel,
+  selectedPanels,
+  setSelectedPanels,
 }: PanelManagerProps) => {
   return (
-    <Flex m={2}>
-      <Menu>
-        <MenuButton as={Button} rightIcon={<AddIcon w={3} />}>
-          Panel
-        </MenuButton>
-        <MenuList>
-          {AllowedPanels.map((panel) => (
-            <MenuItem key={panel} onClick={() => AddPanel(panel)}>
-              {panel}
-            </MenuItem>
-          ))}
-        </MenuList>
-      </Menu>
-    </Flex>
+    <Center>
+      <Accordion allowToggle mb={2} w="25%">
+        <AccordionItem>
+          <h2>
+            <AccordionButton>
+              <Box flex="1" textAlign="left">
+                Metrics
+              </Box>
+              <AccordionIcon />
+            </AccordionButton>
+          </h2>
+          <AccordionPanel pb={4}>
+            <CheckboxGroup
+              defaultValue={selectedPanels}
+              value={selectedPanels}
+              onChange={(val) =>
+                setSelectedPanels(val.map((val) => val as Panel))
+              }
+            >
+              <Grid templateColumns="repeat(3, 10fr)" wrap="wrap" gap={2}>
+                {Object.keys(OPanel).map((panel) => (
+                  <Checkbox
+                    key={panel}
+                    value={panel}
+                    isChecked={selectedPanels.includes(panel as Panel)}
+                  >
+                    {OPanel[panel as Panel]}
+                  </Checkbox>
+                ))}
+              </Grid>
+            </CheckboxGroup>
+          </AccordionPanel>
+        </AccordionItem>
+      </Accordion>
+    </Center>
   );
-};
-
-export const usePanels = <T,>(
-  key: string
-): [
-  PanelConfig<T>[],
-  (p: PanelConfig<T>) => void,
-  (idx: number, p: keyof T) => void,
-  (idx: number) => void
-] => {
-  const [panels, setPanels] = useStorageState<PanelConfig<T>[]>(key, []);
-  const addPanel = (p: PanelConfig<T>) => setPanels([...panels, p]);
-  const removePanel = (idx: number) => {
-    let lowerSlice = panels.slice(0, idx);
-    let upperSlice = panels.slice(idx + 1);
-    upperSlice.forEach((val) => val.Position--);
-
-    setPanels(lowerSlice.concat(upperSlice));
-  };
-  const setPanelAttribute = (idx: number, p: keyof T) => {
-    const newPanels = [...panels];
-    newPanels[idx].Attribute = p;
-    setPanels(newPanels);
-  };
-  return [panels, addPanel, setPanelAttribute, removePanel];
 };
