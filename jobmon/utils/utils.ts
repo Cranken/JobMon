@@ -61,6 +61,8 @@ export const useGetJobs = (filter?: JobSearchParams) => {
           );
         }
       });
+    } else {
+      return;
     }
     fetch(url.toString(), {
       credentials: "include",

@@ -9,50 +9,54 @@ import {
 } from "../utils/utils";
 import { JobSearchParams, JobMetadata, JobTag } from "./../types/job";
 import { useRouter } from "next/router";
-import { Box, Center, Spinner } from "@chakra-ui/react";
+import { Box, Center, Divider, Spinner, Stack } from "@chakra-ui/react";
 import JoblistPageSelection from "../components/joblist/JoblistPageSelection";
+import { JobListDisplaySettings } from "../components/joblist/JobListDisplaySettings";
 
 export const Jobs = () => {
   const router = useRouter();
-  const [userName, setUserId] = useStorageState("username", "");
-  const [startTime, setStartTime] = useState(
-    new Date(Math.floor(Date.now()) - 60 * 60 * 24 * 14 * 1000)
-  );
-  const [stopTime, setStopTime] = useState(new Date());
-  const [numNodes, setNumNodes] = useStorageState("numNodes", [1, 192]);
-  const [partition, setPartition] = useStorageState("partition", "");
-  const [numGpu, setNumGpu] = useStorageState("numGpu", [0, 224]);
-  const [showIsRunning, setShowIsRunning] = useStorageState(
-    "showIsRunning",
-    true
-  );
   const [joblistLimit, setJoblistLimit] = useStorageState("joblistLimit", 25);
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useStorageState("sortyBy", "StartTime");
   const [sortByDescending, setSortByDescending] = useState(true);
-  const [params, setParams] = useState<JobSearchParams>({
-    Time: [dateToUnix(startTime), dateToUnix(stopTime)],
-  });
-  const jobListData = useGetJobs(params);
+  const [params, setParams] = useStorageState<JobSearchParams>(
+    "joblistParams",
+    {
+      Partition: "",
+      NumGpus: [0, 224],
+      NumNodes: [1, 192],
+      Time: [
+        dateToUnix(new Date(Math.floor(Date.now()) - 60 * 60 * 24 * 14 * 1000)),
+        dateToUnix(new Date()),
+      ],
+    }
+  );
+  // Workaround to only reload jobs when time range changes
+  const [timeParams, setTimeParams] = useState<JobSearchParams>();
+  useEffect(() => {
+    setTimeParams({ Time: params.Time });
+  }, [params.Time]);
 
+  const jobListData = useGetJobs(timeParams);
   const joblistRef = useRef<HTMLDivElement>(null);
+
   const filter = (job: JobMetadata) =>
-    job.UserName.startsWith(userName) &&
+    job.UserName.startsWith(params.UserName ?? "") &&
+    checkBetween(params.Time?.[0], params.Time?.[1], job.StartTime) &&
+    checkBetween(params.NumNodes?.[0], params.NumNodes?.[1], job.NumNodes) &&
+    (params.Partition === "" ? true : params.Partition === job.Partition) &&
     checkBetween(
-      new Date(startTime),
-      new Date(stopTime),
-      new Date(job.StartTime * 1000)
+      params.NumGpus?.[0],
+      params.NumGpus?.[1],
+      job.GPUsPerNode * job.NumNodes
     ) &&
-    checkBetween(numNodes[0], numNodes[1], job.NumNodes) &&
-    (partition === "" ? true : partition === job.Partition) &&
-    checkBetween(numGpu[0], numGpu[1], job.GPUsPerNode * job.NumNodes) &&
-    (!job.IsRunning || showIsRunning);
+    (!job.IsRunning || params.IsRunning);
   let filteredJobs = jobListData?.Jobs?.filter(filter) ?? [];
 
   useEffect(() => {
     const { user } = router.query;
     if (user?.length ?? 0 > 0) {
-      setUserId(user as string);
+      setParams({ ...params, UserName: user as string });
     }
   }, [router]);
 
@@ -65,13 +69,6 @@ export const Jobs = () => {
       joblistRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [page]);
-
-  useEffect(() => {
-    setParams({
-      ...params,
-      Time: [dateToUnix(startTime), dateToUnix(stopTime)],
-    });
-  }, [startTime, stopTime]);
 
   if (!jobListData) {
     return (
@@ -87,19 +84,23 @@ export const Jobs = () => {
   );
   let elements = [];
   elements.push(
-    <JobFilter
-      key="jobfilter"
-      userName={[userName, setUserId]}
-      startTime={[startTime, setStartTime]}
-      stopTime={[stopTime, setStopTime]}
-      numNodes={[numNodes, setNumNodes]}
-      partitions={[Array.from(partitions), partition, setPartition]}
-      numGpu={[numGpu, setNumGpu]}
-      isRunning={[showIsRunning, setShowIsRunning]}
-      joblistLimit={[joblistLimit, setJoblistLimit]}
-      sortBy={[sortBy, setSortBy]}
-      sortByDescending={[sortByDescending, setSortByDescending]}
-    />
+    <Center key="list-control">
+      <Stack borderWidth="1px" borderRadius="lg" p={5} margin={4} w="50%">
+        <JobFilter
+          key="jobfilter"
+          params={params}
+          setParams={setParams}
+          partitions={Array.from(partitions)}
+        />
+        <Divider></Divider>
+        <JobListDisplaySettings
+          key="display-settings"
+          joblistLimit={[joblistLimit, setJoblistLimit]}
+          sortBy={[sortBy, setSortBy]}
+          sortByDescending={[sortByDescending, setSortByDescending]}
+        ></JobListDisplaySettings>
+      </Stack>
+    </Center>
   );
 
   if (sortBy !== "joblength") {

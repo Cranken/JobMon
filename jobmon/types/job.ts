@@ -118,6 +118,7 @@ export interface JobSearchParams {
   Partition?: string;
   NumNodes?: RangeFilter;
   NumTasks?: RangeFilter;
+  NumGpus?: RangeFilter;
   Time?: RangeFilter;
   Tags?: JobTag[];
 }
