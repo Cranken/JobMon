@@ -97,6 +97,17 @@ func (s *PostgresStore) GetFilteredJobs(filter job.JobFilter) (jobs []job.JobMet
 	return
 }
 
+func (s *PostgresStore) GetJobTags(username string) (tags []job.JobTag, err error) {
+	query := s.db.NewSelect().Table("job_tags").ColumnExpr("job_tags.*").
+		Join("INNER JOIN job_to_tags ON job_tags.id=job_to_tags.tag_id").
+		Join("INNER JOIN job_metadata ON job_metadata.id=job_to_tags.job_id")
+	if username != "" {
+		query = query.Where("job_metadata.user_name=?", username)
+	}
+	err = query.Scan(context.Background(), &tags)
+	return
+}
+
 func (s *PostgresStore) StopJob(id int, stopJob job.StopJob) error {
 	job, err := s.GetJob(id)
 	if err != nil {

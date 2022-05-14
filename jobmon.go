@@ -135,7 +135,20 @@ func GetJobs(w http.ResponseWriter, r *http.Request, _ httprouter.Params, user a
 		keys = append(keys, k)
 	}
 
-	jobListData := job.JobListData{Jobs: jobs, Config: job.JobListConfig{Metrics: keys, RadarChartMetrics: config.RadarChartMetrics, Partitions: config.Partitions}}
+	var tags []job.JobTag
+	if user.Role == auth.ADMIN {
+		// Get all if user is admin
+		tags, err = store.GetJobTags("")
+	} else {
+		tags, err = store.GetJobTags(user.Username)
+	}
+	if err != nil {
+		log.Printf("Could not get job tags %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	jobListData := job.JobListData{Jobs: jobs, Config: job.JobListConfig{Metrics: keys, RadarChartMetrics: config.RadarChartMetrics, Partitions: config.Partitions, Tags: tags}}
 	data, err := json.Marshal(&jobListData)
 	if err != nil {
 		log.Printf("Could not marshal jobs to json")

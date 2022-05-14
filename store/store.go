@@ -22,6 +22,8 @@ type Store interface {
 	StopJob(id int, stopJob job.StopJob) error
 	// Updates the job metadata
 	UpdateJob(job job.JobMetadata) error
+	// Get all tags for a specific user
+	GetJobTags(username string) ([]job.JobTag, error)
 
 	// Add tag to job
 	AddTag(id int, tag *job.JobTag) error

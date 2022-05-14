@@ -90,6 +90,28 @@ func (s *MemoryStore) StopJob(id int, stopJob job.StopJob) error {
 	return nil
 }
 
+func (s *MemoryStore) GetJobTags(username string) (tags []job.JobTag, err error) {
+	var jobs []job.JobMetadata
+	if username == "" {
+		jobs, err = s.GetAllJobs()
+	} else {
+		jobs, err = s.GetFilteredJobs(job.JobFilter{UserName: &username})
+	}
+	if err != nil {
+		return
+	}
+	tagMap := make(map[int64]struct{})
+	for _, j := range jobs {
+		for _, t := range j.Tags {
+			if _, present := tagMap[t.Id]; !present {
+				tagMap[t.Id] = struct{}{}
+				tags = append(tags, *t)
+			}
+		}
+	}
+	return
+}
+
 func (s *MemoryStore) AddTag(id int, tag *job.JobTag) error {
 	job, err := s.getJobReference(id)
 	if err != nil {
