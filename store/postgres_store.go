@@ -88,6 +88,7 @@ func (s *PostgresStore) GetFilteredJobs(filter job.JobFilter) (jobs []job.JobMet
 	query = appendValueFilter(query, filter.Partition, "partition")
 	query = appendRangeFilter(query, filter.NumNodes, "num_nodes")
 	query = appendRangeFilter(query, filter.NumTasks, "num_tasks")
+	query = appendRangeFilter(query, filter.NumGpus, "num_nodes * job_metadata.gp_us_per_node")
 	query = appendRangeFilter(query, filter.Time, "start_time")
 	err = query.Scan(context.Background())
 	if err != nil {

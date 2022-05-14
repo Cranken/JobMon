@@ -51,6 +51,7 @@ type JobListData struct {
 type JobListConfig struct {
 	Metrics           []string
 	RadarChartMetrics []string
+	Partitions        map[string]config.PartitionConfig
 }
 
 type JobTag struct {
@@ -76,6 +77,7 @@ type JobFilter struct {
 	Partition *string
 	NumNodes  *RangeFilter
 	NumTasks  *RangeFilter
+	NumGpus   *RangeFilter
 	Time      *RangeFilter
 	Tags      *[]JobTag
 }
