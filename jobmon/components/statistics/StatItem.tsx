@@ -109,7 +109,6 @@ const renderComputedAttribute = (
       break;
   }
   tuples.sort((a, b) => b[1] - a[1]);
-  console.log(tuples);
   return (
     <>
       <Select value={groupKey} onChange={(e) => setGroupKey(e.target.value)}>

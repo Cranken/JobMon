@@ -103,8 +103,6 @@ const Job: NextPage = () => {
     });
   };
 
-  console.log(data);
-
   return (
     <Box m={5}>
       <Grid

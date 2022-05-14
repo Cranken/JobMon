@@ -49,7 +49,6 @@ export const TagPanel = ({ job }: TagPanelProps) => {
     removeJobTag(job.Id, tag).then((resp) => {
       if (resp.status === 200) {
         const filteredTags = tags.filter((t) => t.Id !== tag.Id);
-        console.log(tags, filteredTags, tag);
         setTags(filteredTags);
       }
     });
