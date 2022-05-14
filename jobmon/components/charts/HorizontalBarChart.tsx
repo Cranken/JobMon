@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useColorModeValue } from "@chakra-ui/react";
 import * as d3 from "d3";
+import { NumberValue } from "d3";
 import { useEffect, useRef } from "react";
 
 export interface HorizontalBarChartProps<T> {
@@ -16,8 +17,9 @@ export interface HorizontalBarChartProps<T> {
   width?: number; // outer width, in pixels
   height?: number; // outer height, in pixels
   xRange?: [number, number]; // [left, right]
-  yRange?: [number, number]; // [bottom, top]
+  xFormat?: (v: NumberValue) => string;
   barHeight?: number;
+  valueFormat?: (d: T) => string;
 }
 
 export function HorizontalBarChart<T>({
@@ -33,8 +35,9 @@ export function HorizontalBarChart<T>({
   width = 1000, // outer width, in pixels
   height = 400, // outer height, in pixels
   xRange = [marginLeft, width - marginRight], // [left, right]
-  yRange = [marginTop, height - marginBottom], // [bottom, top]
+  xFormat,
   barHeight = 20,
+  valueFormat,
 }: HorizontalBarChartProps<T>) {
   const svgRef = useRef<SVGSVGElement>(null);
   const textColor = useColorModeValue("white", "black");
@@ -46,6 +49,12 @@ export function HorizontalBarChart<T>({
     }
     const columns = d3.map(data, column);
     const values = d3.map(data, value);
+    let labels: string[];
+    if (valueFormat) {
+      labels = d3.map(data, valueFormat);
+    } else {
+      labels = d3.map(values, (val) => val.toString());
+    }
 
     height = barHeight * columns.length + marginTop + marginBottom;
 
@@ -53,8 +62,12 @@ export function HorizontalBarChart<T>({
     const yDomain = new d3.InternSet(columns);
     const xScale = d3.scaleLinear(xDomain, xRange);
     const yScale = d3.scaleBand(yDomain, [marginTop, height]).padding(0.1);
-    const xAxis = d3.axisTop(xScale).ticks(width / 80);
+    let xAxis = d3.axisTop(xScale).ticks(width / 80);
     const yAxis = d3.axisLeft(yScale).tickSizeOuter(0);
+
+    if (xFormat) {
+      xAxis = xAxis.tickFormat(xFormat);
+    }
 
     const svg = d3
       .select(svgRef.current)
@@ -122,10 +135,14 @@ export function HorizontalBarChart<T>({
       .attr("y", (i) => (yScale(columns[i]) ?? 1) + barHeight / 2)
       .attr("dx", -4)
       .attr("dy", "0.35em")
-      .text((i) => values[i])
+      .text((i) => labels[i])
       .call((text) =>
         text
-          .filter((i) => xScale(values[i]) - xScale(0) < 20)
+          .filter(
+            (i) =>
+              xScale(values[i]) - xScale(0) <
+              Math.max(labels[i].length * 10, 20)
+          )
           .attr("dx", +4)
           .attr("fill", altColor)
           .attr("text-anchor", "start")

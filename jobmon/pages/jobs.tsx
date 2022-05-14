@@ -78,10 +78,6 @@ export const Jobs = () => {
     );
   }
 
-  let partitions = new Set<string>();
-  jobListData?.Jobs?.forEach((j) =>
-    j.Partition !== "" ? partitions.add(j.Partition) : null
-  );
   let elements = [];
   elements.push(
     <Center key="list-control">
@@ -90,7 +86,7 @@ export const Jobs = () => {
           key="jobfilter"
           params={params}
           setParams={setParams}
-          partitions={Array.from(partitions)}
+          partitions={Object.keys(jobListData.Config.Partitions)}
         />
         <Divider></Divider>
         <JobListDisplaySettings

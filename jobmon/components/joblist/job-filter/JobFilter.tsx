@@ -14,24 +14,46 @@ import {
   Stack,
   Select,
   IconButton,
+  Divider,
 } from "@chakra-ui/react";
 import { JobSearchParams } from "../../../types/job";
 import { dateToUnix } from "../../../utils/utils";
 
 import style from "./JobFilter.module.css";
 import { Stepper } from "./Stepper";
+import { useEffect, useState } from "react";
 
 interface JobFilterProps {
   params: JobSearchParams;
   setParams: (p: JobSearchParams) => void;
   partitions: string[];
+  tabTitles?: JSX.Element[];
+  tabPanels?: JSX.Element[];
+  mustApply?: boolean;
 }
 
 export const JobFilter = ({
   params,
   setParams,
   partitions,
+  tabTitles,
+  tabPanels,
+  mustApply = false,
 }: JobFilterProps) => {
+  const [filterParams, setFilterParams] = useState(params);
+  const [shouldApply, setShouldApply] = useState(false);
+  useEffect(() => {
+    setFilterParams(params);
+  }, [params]);
+  useEffect(() => {
+    if (mustApply && shouldApply) {
+      setParams(filterParams);
+      setShouldApply(false);
+    }
+    if (!mustApply) {
+      setParams(filterParams);
+    }
+  }, [params, filterParams, shouldApply, mustApply, setParams]);
   const timezoneOffset = new Date().getTimezoneOffset() * 60;
   const getDateString = (d: number) =>
     new Date(d - timezoneOffset).toISOString().slice(0, 16);
@@ -41,24 +63,25 @@ export const JobFilter = ({
         <TabList>
           <Tab>Job Data</Tab>
           <Tab>Time</Tab>
+          {tabTitles}
         </TabList>
         <TabPanels>
           <TabPanel>
             <Stack>
               <Flex gap={3}>
                 <Input
-                  value={params.UserName}
+                  value={filterParams.UserName}
                   placeholder="User Id"
                   maxW="15ch"
                   onChange={(ev) =>
-                    setParams({ ...params, UserName: ev.target.value })
+                    setFilterParams({ ...params, UserName: ev.target.value })
                   }
                 />
                 <Select
                   maxW="30ch"
-                  value={params.Partition}
+                  value={filterParams.Partition}
                   onChange={(e) =>
-                    setParams({ ...params, Partition: e.target.value })
+                    setFilterParams({ ...params, Partition: e.target.value })
                   }
                 >
                   <option value="">Show All Partitions</option>
@@ -70,10 +93,10 @@ export const JobFilter = ({
                 </Select>
                 <Select
                   maxW="30ch"
-                  value={params.IsRunning ? "true" : "false"}
+                  value={filterParams.IsRunning ? "true" : "false"}
                   onChange={(e) =>
-                    setParams({
-                      ...params,
+                    setFilterParams({
+                      ...filterParams,
                       IsRunning: e.target.value === "true",
                     })
                   }
@@ -86,38 +109,38 @@ export const JobFilter = ({
                 <Stepper
                   title="Number of Nodes"
                   minimum={1}
-                  lowerLimit={params.NumNodes?.[0] ?? 1}
+                  lowerLimit={filterParams.NumNodes?.[0] ?? 1}
                   setLowerLimit={(val) =>
-                    setParams({
-                      ...params,
-                      NumNodes: [val, params.NumNodes?.[1]],
+                    setFilterParams({
+                      ...filterParams,
+                      NumNodes: [val, filterParams.NumNodes?.[1]],
                     })
                   }
                   maximum={192}
-                  upperLimit={params.NumNodes?.[1] ?? 1}
+                  upperLimit={filterParams.NumNodes?.[1] ?? 1}
                   setUpperLimit={(val) =>
-                    setParams({
-                      ...params,
-                      NumNodes: [params.NumNodes?.[0], val],
+                    setFilterParams({
+                      ...filterParams,
+                      NumNodes: [filterParams.NumNodes?.[0], val],
                     })
                   }
                 ></Stepper>
                 <Stepper
                   title="Number of GPUs"
                   minimum={0}
-                  lowerLimit={params.NumGpus?.[0] ?? 1}
+                  lowerLimit={filterParams.NumGpus?.[0] ?? 1}
                   setLowerLimit={(val) =>
-                    setParams({
-                      ...params,
-                      NumGpus: [val, params.NumGpus?.[1]],
+                    setFilterParams({
+                      ...filterParams,
+                      NumGpus: [val, filterParams.NumGpus?.[1]],
                     })
                   }
                   maximum={224}
-                  upperLimit={params.NumGpus?.[1] ?? 1}
+                  upperLimit={filterParams.NumGpus?.[1] ?? 1}
                   setUpperLimit={(val) =>
-                    setParams({
-                      ...params,
-                      NumGpus: [params.NumGpus?.[0], val],
+                    setFilterParams({
+                      ...filterParams,
+                      NumGpus: [filterParams.NumGpus?.[0], val],
                     })
                   }
                 ></Stepper>
@@ -132,13 +155,13 @@ export const JobFilter = ({
                   className={style["time-input"]}
                   type="datetime-local"
                   min="2021-10-01T00:00"
-                  value={getDateString((params.Time?.[0] ?? 0) * 1000)}
+                  value={getDateString((filterParams.Time?.[0] ?? 0) * 1000)}
                   onChange={(ev) =>
-                    setParams({
-                      ...params,
+                    setFilterParams({
+                      ...filterParams,
                       Time: [
                         dateToUnix(new Date(ev.target.value)),
-                        params.Time?.[1],
+                        filterParams.Time?.[1],
                       ],
                     })
                   }
@@ -149,12 +172,12 @@ export const JobFilter = ({
                   className={style["time-input"]}
                   type="datetime-local"
                   min="2021-10-01T00:00"
-                  value={getDateString((params.Time?.[1] ?? 0) * 1000)}
+                  value={getDateString((filterParams.Time?.[1] ?? 0) * 1000)}
                   onChange={(ev) =>
-                    setParams({
-                      ...params,
+                    setFilterParams({
+                      ...filterParams,
                       Time: [
-                        params.Time?.[0],
+                        filterParams.Time?.[0],
                         dateToUnix(new Date(ev.target.value)),
                       ],
                     })
@@ -164,8 +187,8 @@ export const JobFilter = ({
                 <Button
                   size="sm"
                   onClick={() =>
-                    setParams({
-                      ...params,
+                    setFilterParams({
+                      ...filterParams,
                       Time: [
                         dateToUnix(
                           new Date(
@@ -182,8 +205,17 @@ export const JobFilter = ({
               </Flex>
             </Stack>
           </TabPanel>
+          {tabPanels}
         </TabPanels>
       </Tabs>
+      {mustApply ? (
+        <>
+          <Divider></Divider>
+          <Flex dir="row" justify="end">
+            <Button onClick={() => setShouldApply(true)}>Apply</Button>
+          </Flex>
+        </>
+      ) : null}
     </Stack>
   );
 };

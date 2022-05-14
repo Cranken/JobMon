@@ -44,20 +44,20 @@ export function useStorageState<T>(
   return [state, setStorageState, clearState];
 }
 
-export const useGetJobs = (filter?: JobSearchParams) => {
+export const useGetJobs = (params?: JobSearchParams) => {
   const [jobListData, setJobs] = useState<JobListData>();
   const [_c, _s, removeCookie] = useCookies(["Authorization"]);
   useEffect(() => {
     const url = new URL(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/jobs");
-    if (filter) {
-      Object.keys(filter).forEach((val) => {
+    if (params) {
+      Object.keys(params).forEach((val) => {
         if (val === "Tags") {
-          const ids = filter.Tags?.map((t) => t.Id);
+          const ids = params.Tags?.map((t) => t.Id);
           url.searchParams.append(val, ids?.toString() ?? "");
         } else {
           url.searchParams.append(
             val,
-            filter[val as keyof JobSearchParams]?.toString() ?? ""
+            params[val as keyof JobSearchParams]?.toString() ?? ""
           );
         }
       });
@@ -73,7 +73,7 @@ export const useGetJobs = (filter?: JobSearchParams) => {
         res.json().then((data) => setJobs(data));
       }
     });
-  }, [removeCookie, filter]);
+  }, [removeCookie, params]);
   return jobListData;
 };
 

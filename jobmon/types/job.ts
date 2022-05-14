@@ -29,6 +29,7 @@ export interface JobListData {
 export interface JobListConfig {
   Metrics: string[];
   RadarChartMetrics: string[];
+  Partitions: DataMap<PartitionConfig>;
 }
 
 export enum CollectionType {
@@ -124,3 +125,8 @@ export interface JobSearchParams {
 }
 
 type RangeFilter = [number | undefined, number | undefined];
+
+export interface PartitionConfig {
+  MaxTime: number;
+  Metrics: string[];
+}
