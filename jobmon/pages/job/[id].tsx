@@ -20,10 +20,7 @@ import {
 } from "@chakra-ui/react";
 import { JobInfo } from "../../components/jobview/JobInfo";
 import { useCookies } from "react-cookie";
-import {
-  AnalysisBoxPlot,
-  AnalysisTableView,
-} from "../../components/jobview/AnalysisView";
+import { AnalysisBoxPlot } from "../../components/jobview/AnalysisView";
 import { SelectionMap } from "../../types/helpers";
 import { useStorageState } from "./../../utils/utils";
 
@@ -138,7 +135,7 @@ const Job: NextPage = () => {
         <TabList>
           <Tab>Timeline</Tab>
           <Tab>Box Plots</Tab>
-          <Tab>Node Table</Tab>
+          {/* <Tab>Node Table</Tab> */}
           {/* <Tab>Roofline</Tab> */}
         </TabList>
 
@@ -178,9 +175,9 @@ const Job: NextPage = () => {
               autoScale={autoScale}
             ></AnalysisBoxPlot>
           </TabPanel>
-          <TabPanel>
+          {/* <TabPanel>
             <AnalysisTableView data={data}></AnalysisTableView>
-          </TabPanel>
+          </TabPanel> */}
         </TabPanels>
       </Tabs>
     </Box>
