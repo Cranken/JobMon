@@ -44,99 +44,99 @@ export const AnalysisBoxPlot = ({ data, autoScale }: AnalysisBoxPlotProps) => {
   return <Wrap>{elements}</Wrap>;
 };
 
-interface AnalysisTableViewProps {
-  data?: JobData;
-}
-export const AnalysisTableView = ({ data }: AnalysisTableViewProps) => {
-  const [sortBy, setSortBy] = useState("node");
-  const [descending, setDescending] = useState(true);
-  if (!data || !data.Metadata.Data) {
-    return null;
-  }
-  let nodes: string[] = [];
-  if (sortBy !== "node") {
-    const metric = data.Metadata.Data.find(
-      (val) => val.Config.Measurement === sortBy
-    );
-    if (metric) {
-      nodes = Object.keys(metric?.Data ?? {});
-      nodes.sort((a, b) => (metric?.Data[a] < metric?.Data[b] ? 1 : -1));
-      if (!descending) {
-        nodes.reverse();
-      }
-    }
-  }
-  if (nodes.length === 0) {
-    nodes = data.Metadata.NodeList.split("|");
-    if (!descending) {
-      nodes.reverse();
-    }
-  }
+// interface AnalysisTableViewProps {
+//   data?: JobData;
+// }
+// export const AnalysisTableView = ({ data }: AnalysisTableViewProps) => {
+//   const [sortBy, setSortBy] = useState("node");
+//   const [descending, setDescending] = useState(true);
+//   if (!data || !data.Metadata.Data) {
+//     return null;
+//   }
+//   let nodes: string[] = [];
+//   if (sortBy !== "node") {
+//     const metric = data.Metadata.Data.find(
+//       (val) => val.Config.Measurement === sortBy
+//     );
+//     if (metric) {
+//       nodes = Object.keys(metric?.Data ?? {});
+//       nodes.sort((a, b) => (metric?.Data[a] < metric?.Data[b] ? 1 : -1));
+//       if (!descending) {
+//         nodes.reverse();
+//       }
+//     }
+//   }
+//   if (nodes.length === 0) {
+//     nodes = data.Metadata.NodeList.split("|");
+//     if (!descending) {
+//       nodes.reverse();
+//     }
+//   }
 
-  const rows = nodes.map((node) => {
-    const nodeData = data.Metadata.Data.flatMap(
-      (val) => new Unit(val.Data[node], val.Config.Unit)
-    );
-    return (
-      <Tr key={node}>
-        <Td>{node}</Td>
-        {nodeData.map((val, idx) => (
-          <Td key={idx}>{val.toString()}</Td>
-        ))}
-      </Tr>
-    );
-  });
+//   const rows = nodes.map((node) => {
+//     const nodeData = data.Metadata.Data.flatMap(
+//       (val) => new Unit(val.Data[node], val.Config.Unit)
+//     );
+//     return (
+//       <Tr key={node}>
+//         <Td>{node}</Td>
+//         {nodeData.map((val, idx) => (
+//           <Td key={idx}>{val.toString()}</Td>
+//         ))}
+//       </Tr>
+//     );
+//   });
 
-  return (
-    <Table>
-      <Thead>
-        <Tr>
-          <Th
-            cursor="pointer"
-            onClick={() => {
-              if (sortBy === "node") {
-                setDescending(!descending);
-              } else {
-                setDescending(true);
-              }
-              setSortBy("node");
-            }}
-          >
-            Node
-            {sortBy === "node" ? (
-              descending ? (
-                <ChevronDownIcon boxSize={5} />
-              ) : (
-                <ChevronUpIcon boxSize={5} />
-              )
-            ) : null}
-          </Th>
-          {data.Metadata.Data.map((val) => (
-            <Th
-              cursor="pointer"
-              onClick={() => {
-                if (sortBy === val.Config.Measurement) {
-                  setDescending(!descending);
-                } else {
-                  setDescending(true);
-                }
-                setSortBy(val.Config.Measurement);
-              }}
-              key={val.Config.Measurement}
-            >
-              {val.Config.DisplayName}
-              {sortBy === val.Config.Measurement ? (
-                descending ? (
-                  <ChevronDownIcon boxSize={5} />
-                ) : (
-                  <ChevronUpIcon boxSize={5} />
-                )
-              ) : null}
-            </Th>
-          ))}
-        </Tr>
-      </Thead>
-      <Tbody>{rows}</Tbody>
-    </Table>
-  );
-};
+//   return (
+//     <Table>
+//       <Thead>
+//         <Tr>
+//           <Th
+//             cursor="pointer"
+//             onClick={() => {
+//               if (sortBy === "node") {
+//                 setDescending(!descending);
+//               } else {
+//                 setDescending(true);
+//               }
+//               setSortBy("node");
+//             }}
+//           >
+//             Node
+//             {sortBy === "node" ? (
+//               descending ? (
+//                 <ChevronDownIcon boxSize={5} />
+//               ) : (
+//                 <ChevronUpIcon boxSize={5} />
+//               )
+//             ) : null}
+//           </Th>
+//           {data.Metadata.Data.map((val) => (
+//             <Th
+//               cursor="pointer"
+//               onClick={() => {
+//                 if (sortBy === val.Config.Measurement) {
+//                   setDescending(!descending);
+//                 } else {
+//                   setDescending(true);
+//                 }
+//                 setSortBy(val.Config.Measurement);
+//               }}
+//               key={val.Config.Measurement}
+//             >
+//               {val.Config.DisplayName}
+//               {sortBy === val.Config.Measurement ? (
+//                 descending ? (
+//                   <ChevronDownIcon boxSize={5} />
+//                 ) : (
+//                   <ChevronUpIcon boxSize={5} />
+//                 )
+//               ) : null}
+//             </Th>
+//           ))}
+//         </Tr>
+//       </Thead>
+//       <Tbody>{rows}</Tbody>
+//     </Table>
+//   );
+// };
