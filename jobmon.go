@@ -397,20 +397,14 @@ func main() {
 	jobCache.Init(config, &db, &store)
 	authManager.Init(config, &store)
 
-	// part := "accelerated"
-	// jobs, err := store.GetFilteredJobs(job.JobFilter{Partition: &part})
-	// if err == nil {
-	// 	for _, jm := range jobs {
-	// 		s := job.StopJob{StopTime: jm.StopTime, ExitCode: jm.ExitCode}
-	// 		store.StopJob(jm.Id, s)
-	// 	}
-	// }
+	val, ok := os.LookupEnv("JOBMON_MIGRATE_MEMORY_TO")
+	if ok && val == "psql" {
+		var memStore jobstore.Store
+		memStore = &jobstore.MemoryStore{}
+		memStore.Init(config, &db)
 
-	// var memStore jobstore.Store
-	// memStore = &jobstore.MemoryStore{}
-	// memStore.Init(config, &db)
-
-	// store.(*jobstore.PostgresStore).Migrate(&memStore)
+		store.(*jobstore.PostgresStore).Migrate(&memStore)
+	}
 
 	router := httprouter.New()
 	router.PUT("/api/job_start", authManager.Protected(JobStart, auth.JOBCONTROL))
