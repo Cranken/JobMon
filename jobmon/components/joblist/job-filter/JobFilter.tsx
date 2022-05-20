@@ -44,9 +44,9 @@ export const JobFilter = ({
   mustApply = false,
 }: JobFilterProps) => {
   const [tagPickerItems, _] = useState(
-    tags.map((tag) => {
+    tags?.map((tag) => {
       return { value: tag.Id.toString(), label: tag.Name };
-    })
+    }) ?? []
   );
   const [selectedTags, setSelectedTags] = useState<Item[]>([]);
   const [filterParams, setFilterParams] = useState(params);
