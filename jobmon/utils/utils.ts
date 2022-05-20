@@ -55,10 +55,10 @@ export const useGetJobs = (params?: JobSearchParams) => {
           const ids = params.Tags?.map((t) => t.Id);
           url.searchParams.append(val, ids?.toString() ?? "");
         } else {
-          url.searchParams.append(
-            val,
-            params[val as keyof JobSearchParams]?.toString() ?? ""
-          );
+          const paramVal = params[val as keyof JobSearchParams]?.toString();
+          if (paramVal !== undefined && paramVal !== "") {
+            url.searchParams.append(val, paramVal);
+          }
         }
       });
     } else {

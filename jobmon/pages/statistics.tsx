@@ -43,6 +43,7 @@ export const Statistics = () => {
               partitions={Object.keys(jobListData.Config.Partitions)}
               tabTitles={tabTitles}
               tabPanels={tabPanels}
+              tags={jobListData.Config.Tags}
               mustApply
             ></JobFilter>
           </Stack>

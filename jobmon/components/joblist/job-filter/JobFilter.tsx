@@ -4,7 +4,6 @@ import {
   Input,
   Spacer,
   Text,
-  Center,
   Button,
   TabList,
   Tab,
@@ -13,20 +12,23 @@ import {
   TabPanel,
   Stack,
   Select,
-  IconButton,
   Divider,
+  useColorModeValue,
 } from "@chakra-ui/react";
+import { CUIAutoComplete, Item } from "chakra-ui-autocomplete";
 import { JobSearchParams } from "../../../types/job";
 import { dateToUnix } from "../../../utils/utils";
 
 import style from "./JobFilter.module.css";
 import { Stepper } from "./Stepper";
 import { useEffect, useState } from "react";
+import { JobTag } from "./../../../types/job";
 
 interface JobFilterProps {
   params: JobSearchParams;
   setParams: (p: JobSearchParams) => void;
   partitions: string[];
+  tags: JobTag[];
   tabTitles?: JSX.Element[];
   tabPanels?: JSX.Element[];
   mustApply?: boolean;
@@ -36,12 +38,21 @@ export const JobFilter = ({
   params,
   setParams,
   partitions,
+  tags,
   tabTitles,
   tabPanels,
   mustApply = false,
 }: JobFilterProps) => {
+  const [tagPickerItems, _] = useState(
+    tags.map((tag) => {
+      return { value: tag.Id.toString(), label: tag.Name };
+    })
+  );
+  const [selectedTags, setSelectedTags] = useState<Item[]>([]);
   const [filterParams, setFilterParams] = useState(params);
   const [shouldApply, setShouldApply] = useState(false);
+  const tagListBackground = useColorModeValue("gray.400", "gray.500");
+  const hoverBackground = useColorModeValue("gray.200", "gray.700");
   useEffect(() => {
     setFilterParams(params);
   }, [params]);
@@ -57,12 +68,27 @@ export const JobFilter = ({
   const timezoneOffset = new Date().getTimezoneOffset() * 60;
   const getDateString = (d: number) =>
     new Date(d - timezoneOffset).toISOString().slice(0, 16);
+
+  const handleSelectedItemsChange = (selectedItems?: Item[]) => {
+    if (selectedItems) {
+      setSelectedTags(selectedItems);
+      setFilterParams({
+        ...params,
+        Tags: selectedItems.map(
+          (item) =>
+            tags.find((tag) => tag.Id.toString() === item.value) as JobTag
+        ),
+      });
+    }
+  };
+
   return (
     <Stack>
       <Tabs>
         <TabList>
           <Tab>Job Data</Tab>
           <Tab>Time</Tab>
+          <Tab>Tags</Tab>
           {tabTitles}
         </TabList>
         <TabPanels>
@@ -93,16 +119,21 @@ export const JobFilter = ({
                 </Select>
                 <Select
                   maxW="30ch"
-                  value={filterParams.IsRunning ? "true" : "false"}
-                  onChange={(e) =>
+                  value={String(filterParams.IsRunning)}
+                  onChange={(e) => {
+                    const isRunning =
+                      e.target.value === "undefined"
+                        ? undefined
+                        : e.target.value === "true";
                     setFilterParams({
                       ...filterParams,
-                      IsRunning: e.target.value === "true",
-                    })
-                  }
+                      IsRunning: isRunning,
+                    });
+                  }}
                 >
-                  <option value="true">Show Running Jobs</option>
-                  <option value="false">Hide Running Jobs</option>
+                  <option value="true">Show Only Running Jobs</option>
+                  <option value="false">Show Only Finished Jobs</option>
+                  <option value="undefined">Show All Jobs</option>
                 </Select>
               </Flex>
               <Stack direction="row" gap={6}>
@@ -204,6 +235,20 @@ export const JobFilter = ({
                 </Button>
               </Flex>
             </Stack>
+          </TabPanel>
+          <TabPanel>
+            <CUIAutoComplete
+              items={tagPickerItems}
+              placeholder={"Select Tags..."}
+              label={""}
+              selectedItems={selectedTags}
+              onSelectedItemsChange={(changes) =>
+                handleSelectedItemsChange(changes.selectedItems)
+              }
+              listStyleProps={{ bg: tagListBackground }}
+              highlightItemBg={hoverBackground}
+              disableCreateItem
+            ></CUIAutoComplete>
           </TabPanel>
           {tabPanels}
         </TabPanels>

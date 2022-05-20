@@ -30,6 +30,7 @@ export interface JobListConfig {
   Metrics: string[];
   RadarChartMetrics: string[];
   Partitions: DataMap<PartitionConfig>;
+  Tags: JobTag[];
 }
 
 export enum CollectionType {

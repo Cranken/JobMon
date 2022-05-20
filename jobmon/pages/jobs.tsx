@@ -1,12 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import JobFilter from "../components/joblist/job-filter/JobFilter";
 import JobList from "../components/joblist/JobList";
-import {
-  checkBetween,
-  dateToUnix,
-  useGetJobs,
-  useStorageState,
-} from "../utils/utils";
+import { dateToUnix, useGetJobs, useStorageState } from "../utils/utils";
 import { JobSearchParams, JobMetadata, JobTag } from "./../types/job";
 import { useRouter } from "next/router";
 import { Box, Center, Divider, Spinner, Stack } from "@chakra-ui/react";
@@ -31,27 +26,10 @@ export const Jobs = () => {
       ],
     }
   );
-  // Workaround to only reload jobs when time range changes
-  const [timeParams, setTimeParams] = useState<JobSearchParams>();
-  useEffect(() => {
-    setTimeParams({ Time: params.Time });
-  }, [params.Time]);
-
-  const jobListData = useGetJobs(timeParams);
+  const jobListData = useGetJobs(params);
   const joblistRef = useRef<HTMLDivElement>(null);
 
-  const filter = (job: JobMetadata) =>
-    job.UserName.startsWith(params.UserName ?? "") &&
-    checkBetween(params.Time?.[0], params.Time?.[1], job.StartTime) &&
-    checkBetween(params.NumNodes?.[0], params.NumNodes?.[1], job.NumNodes) &&
-    (params.Partition === "" ? true : params.Partition === job.Partition) &&
-    checkBetween(
-      params.NumGpus?.[0],
-      params.NumGpus?.[1],
-      job.GPUsPerNode * job.NumNodes
-    ) &&
-    (!job.IsRunning || params.IsRunning);
-  let filteredJobs = jobListData?.Jobs?.filter(filter) ?? [];
+  let mutableJobs = jobListData?.Jobs ?? [];
 
   useEffect(() => {
     const { user } = router.query;
@@ -62,7 +40,7 @@ export const Jobs = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [joblistLimit, filteredJobs?.length]);
+  }, [joblistLimit, mutableJobs?.length]);
 
   useEffect(() => {
     if (joblistRef.current) {
@@ -87,6 +65,8 @@ export const Jobs = () => {
           params={params}
           setParams={setParams}
           partitions={Object.keys(jobListData.Config.Partitions)}
+          tags={jobListData.Config.Tags}
+          mustApply
         />
         <Divider></Divider>
         <JobListDisplaySettings
@@ -100,14 +80,14 @@ export const Jobs = () => {
   );
 
   if (sortBy !== "joblength") {
-    filteredJobs.sort((a, b) =>
+    mutableJobs.sort((a, b) =>
       a[sortBy as keyof JobMetadata] < b[sortBy as keyof JobMetadata] ? 1 : -1
     );
     if (!sortByDescending) {
-      filteredJobs.reverse();
+      mutableJobs.reverse();
     }
   } else {
-    filteredJobs.sort((a, b) => {
+    mutableJobs.sort((a, b) => {
       if (!a.IsRunning && !b.IsRunning) {
         return -(
           Math.abs(a.StopTime - a.StartTime) -
@@ -122,18 +102,18 @@ export const Jobs = () => {
       }
       return a.StartTime < b.StartTime ? 1 : -1;
     });
-    const running = filteredJobs.filter((j) => j.IsRunning);
-    const finished = filteredJobs.filter((j) => !j.IsRunning);
+    const running = mutableJobs.filter((j) => j.IsRunning);
+    const finished = mutableJobs.filter((j) => !j.IsRunning);
     if (!sortByDescending) {
       finished.reverse();
     }
-    filteredJobs = [...finished, ...running];
+    mutableJobs = [...finished, ...running];
   }
 
   elements.push(
     <Box key="joblist" ref={joblistRef}>
       <JobList
-        jobs={filteredJobs}
+        jobs={mutableJobs}
         radarChartMetrics={jobListData.Config.RadarChartMetrics}
         limit={joblistLimit}
         page={page}
@@ -141,7 +121,7 @@ export const Jobs = () => {
     </Box>
   );
 
-  const pages = filteredJobs.length / joblistLimit;
+  const pages = mutableJobs.length / joblistLimit;
   elements.push(
     <JoblistPageSelection
       key="pageselection"
