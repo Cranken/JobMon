@@ -42,3 +42,9 @@ func (db *MockDB) GetDataRetentionTime() (int64, error) {
 	db.Calls += 1
 	return 128, nil
 }
+
+func (db *MockDB) CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []database.MetricData, chan bool) {
+	monitor := make(chan []database.MetricData)
+	done := make(chan bool)
+	return monitor, done
+}

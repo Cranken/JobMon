@@ -136,15 +136,46 @@ func (db *InfluxDB) GetDataRetentionTime() (int64, error) {
 	return bucket.RetentionRules[0].EverySeconds, nil
 }
 
-func (db *InfluxDB) getJobData(job *job.JobMetadata, node string, sampleInterval time.Duration) (data JobData, err error) {
-	if job.IsRunning {
-		return data, fmt.Errorf("job is still running")
+func (db *InfluxDB) CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []MetricData, chan bool) {
+	duration, err := time.ParseDuration(db.defaultSampleInterval)
+	if err != nil {
+		duration = 30 * time.Second
 	}
+	monitor := make(chan []MetricData)
+	done := make(chan bool)
+	ticker := time.NewTicker(duration)
+
+	liveJ := *j
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				data, err := db.queryLastDatapoints(liveJ)
+				if err != nil {
+					log.Printf("error getting job data for live monitoring: %v", err)
+					continue
+				}
+				monitor <- data
+			case <-done:
+				ticker.Stop()
+				close(done)
+				close(monitor)
+				return
+			}
+		}
+	}()
+	return monitor, done
+}
+
+func (db *InfluxDB) getJobData(job *job.JobMetadata, node string, sampleInterval time.Duration) (data JobData, err error) {
 	var metricData []MetricData
 	var quantileData []QuantileData
 	var wg sync.WaitGroup
+	if job.IsRunning {
+		job.StopTime = int(time.Now().Unix())
+	}
 	for _, m := range db.partitionConfig[job.Partition].Metrics {
-		wg.Add(2)
+		wg.Add(1)
 		go func(m conf.MetricConfig) {
 			result, err := db.query(m, job, node, sampleInterval)
 			defer wg.Done()
@@ -155,6 +186,7 @@ func (db *InfluxDB) getJobData(job *job.JobMetadata, node string, sampleInterval
 			metricData = append(metricData, MetricData{Config: m, Data: result})
 		}(db.metrics[m])
 
+		wg.Add(1)
 		go func(m conf.MetricConfig) {
 			tempRes, err := db.queryQuantileMeasurement(m, job, db.metricQuantiles, sampleInterval)
 			defer wg.Done()
@@ -223,7 +255,7 @@ func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, job *job.Jo
 	query += metric.PostQueryOp
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
-		log.Printf("Error at query: %v\n", err)
+		log.Printf("Error at simple query: %v : %v\n", query, err)
 	}
 	return result, err
 }
@@ -269,7 +301,7 @@ func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, job *job
 	query += metric.PostQueryOp
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
-		log.Printf("Error at query: %v\n", err)
+		log.Printf("Error at aggregate query: %v\n", err)
 	}
 	return
 }
@@ -342,6 +374,46 @@ func (db *InfluxDB) queryMetadataMeasurements(metric conf.MetricConfig, job *job
 	if err != nil {
 		log.Printf("Error at metadata query: %v\n", err)
 	}
+	return
+}
+
+func (db *InfluxDB) queryLastDatapoints(job job.JobMetadata) (metricData []MetricData, err error) {
+	var wg sync.WaitGroup
+	if job.IsRunning {
+		job.StopTime = int(time.Now().Unix())
+	}
+	sampleInterval, err := time.ParseDuration(db.defaultSampleInterval)
+	if err != nil {
+		sampleInterval = 30 * time.Second
+	}
+	for _, m := range db.partitionConfig[job.Partition].Metrics {
+		wg.Add(1)
+		go func(m conf.MetricConfig) {
+			defer wg.Done()
+			m.FilterFunc = "|> last()" + m.FilterFunc
+			queryResult, err := db.querySimpleMeasurement(m, &job, "", sampleInterval)
+			if err != nil {
+				log.Printf("Job %v: could not get last datapoints %v", job.Id, err)
+				return
+			}
+			if err == nil {
+				separationKey := "hostname"
+				if m.Type != "node" {
+					separationKey = "type-id"
+				}
+				if m.SeparationKey != "" {
+					separationKey = m.SeparationKey
+				}
+				result, err := parseQueryResult(queryResult, separationKey)
+				if err != nil {
+					log.Printf("Job %v: could not parse last datapoints %v", job.Id, err)
+					return
+				}
+				metricData = append(metricData, MetricData{Config: m, Data: result})
+			}
+		}(db.metrics[m])
+	}
+	wg.Wait()
 	return
 }
 

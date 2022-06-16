@@ -34,6 +34,10 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 		pgdriver.WithDatabase(c.JobStore.PSQLDB),
 		pgdriver.WithApplicationName("jobmon-backend")))
 	s.db = bun.NewDB(psqldb, pgdialect.New())
+	err := s.db.Ping()
+	if err != nil {
+		log.Fatalf("Could not connect to psql store: %v", err)
+	}
 	s.db.RegisterModel((*job.JobToTags)(nil))
 	s.db.NewCreateTable().Model((*job.JobToTags)(nil)).Exec(context.Background())
 	s.db.NewCreateTable().Model((*job.JobTag)(nil)).Exec(context.Background())

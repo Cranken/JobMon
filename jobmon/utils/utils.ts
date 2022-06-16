@@ -48,7 +48,9 @@ export const useGetJobs = (params?: JobSearchParams) => {
   const [jobListData, setJobs] = useState<JobListData>();
   const [_c, _s, removeCookie] = useCookies(["Authorization"]);
   useEffect(() => {
-    const url = new URL(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/jobs");
+    const url = new URL(
+      "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + "/api/jobs"
+    );
     if (params) {
       Object.keys(params).forEach((val) => {
         if (val === "Tags") {
@@ -95,7 +97,9 @@ export function groupBy<T>(
 
 export const addJobTag = (jobId: number, tag: string) => {
   const url = new URL(
-    process.env.NEXT_PUBLIC_BACKEND_URL + `/api/tags/add_tag?job=${jobId}`
+    "http://" +
+      process.env.NEXT_PUBLIC_BACKEND_URL +
+      `/api/tags/add_tag?job=${jobId}`
   );
 
   return setJobTag(url.toString(), { Name: tag } as JobTag);
@@ -103,7 +107,9 @@ export const addJobTag = (jobId: number, tag: string) => {
 
 export const removeJobTag = (jobId: number, tag: JobTag) => {
   const url = new URL(
-    process.env.NEXT_PUBLIC_BACKEND_URL + `/api/tags/remove_tag?job=${jobId}`
+    "http://" +
+      process.env.NEXT_PUBLIC_BACKEND_URL +
+      `/api/tags/remove_tag?job=${jobId}`
   );
 
   return setJobTag(url.toString(), tag);

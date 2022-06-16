@@ -2,7 +2,7 @@ import type { NextPage } from "next";
 import React, { useMemo } from "react";
 import { useEffect } from "react";
 import { useState } from "react";
-import { JobData, JobMetadata } from "../../types/job";
+import { JobData, JobMetadata, MetricData } from "../../types/job";
 import MetricDataCharts from "../../components/jobview/MetricDataCharts";
 import { useRouter } from "next/router";
 import QuantileDataCharts from "../../components/jobview/QuantileDataCharts";
@@ -30,7 +30,10 @@ const Job: NextPage = () => {
   const [sampleInterval, setSampleInterval] = useState<number>();
   const [selection, setSelection] = useState<SelectionMap>({});
   const selected = Object.keys(selection).filter((val) => selection[val]);
-  const node = selected.length === 1 ? selected[0] : undefined;
+  const node =
+    selected.length === 1 && Object.keys(selection).length > 1
+      ? selected[0]
+      : undefined;
   const [data, isLoading] = useGetJobData(
     parseInt(jobId as string),
     node,
@@ -60,11 +63,11 @@ const Job: NextPage = () => {
     }
   }, [data?.Metadata.NodeList, data?.Metadata.NumNodes]);
 
-  useEffect(() => {
-    if (data?.SampleInterval) {
-      setSampleInterval(data.SampleInterval);
-    }
-  }, [data]);
+  // useEffect(() => {
+  //   if (data?.SampleInterval) {
+  //     setSampleInterval(data.SampleInterval);
+  //   }
+  // }, [data?.SampleInterval]);
 
   useEffect(() => {
     if (data?.Metadata.StartTime) {
@@ -73,10 +76,13 @@ const Job: NextPage = () => {
   }, [data?.Metadata.StartTime]);
 
   useEffect(() => {
-    if (data?.Metadata.StopTime) {
+    if (data?.Metadata.StopTime && !data?.Metadata.IsRunning) {
       setStopTime(new Date(data?.Metadata.StopTime * 1000));
     }
-  }, [data?.Metadata.StopTime]);
+    if (data?.Metadata.IsRunning) {
+      setStopTime(new Date());
+    }
+  }, [data?.Metadata.StopTime, data?.Metadata.IsRunning, data]);
 
   if (!data) {
     return (
@@ -116,6 +122,7 @@ const Job: NextPage = () => {
         />
         <Control
           jobdata={data}
+          showTimeControl={!data.Metadata.IsRunning}
           setStartTime={setStartTime}
           setStopTime={setStopTime}
           startTime={startTime}
@@ -150,7 +157,9 @@ const Job: NextPage = () => {
                 )}
                 startTime={startTime}
                 stopTime={stopTime}
-                setTimeRange={setTimeRange}
+                setTimeRange={
+                  data.Metadata.IsRunning ? undefined : setTimeRange
+                }
                 isLoading={isLoading}
                 autoScale={autoScale}
               />
@@ -163,7 +172,9 @@ const Job: NextPage = () => {
                 nodeSelection={selected}
                 startTime={startTime}
                 stopTime={stopTime}
-                setTimeRange={setTimeRange}
+                setTimeRange={
+                  data.Metadata.IsRunning ? undefined : setTimeRange
+                }
                 isLoading={isLoading}
                 autoScale={autoScale}
               />
@@ -202,7 +213,9 @@ export const useGetJobData: (
     if (!id) {
       return;
     }
-    let url = new URL(process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}`);
+    let url = new URL(
+      "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}`
+    );
     if (sampleInterval) {
       url.searchParams.append("sampleInterval", sampleInterval.toString());
     }
@@ -227,24 +240,57 @@ export const useGetJobData: (
         removeCookie("Authorization");
       } else {
         res.json().then((data: JobData) => {
-          setJobCache((prevState) => {
-            let key = node;
-            if (data.Metadata.NumNodes === 1) {
-              key = data.Metadata.NodeList;
-            }
-            prevState[
-              key
-                ? data.SampleInterval.toString() + key
-                : (data.SampleInterval.toString() ?? "") + "all"
-            ] = data;
-            return prevState;
-          });
+          if (!data.Metadata.IsRunning) {
+            setJobCache((prevState) => {
+              let key = node;
+              if (data.Metadata.NumNodes === 1) {
+                key = data.Metadata.NodeList;
+              }
+              prevState[
+                key
+                  ? data.SampleInterval.toString() + key
+                  : (data.SampleInterval.toString() ?? "") + "all"
+              ] = data;
+              return prevState;
+            });
+          }
           setJobData(data);
           setIsLoading(false);
         });
       }
     });
   }, [id, node, jobCache, removeCookie, sampleInterval]);
+
+  useEffect(() => {
+    if (jobData?.Metadata.IsRunning) {
+      const url = new URL(
+        "ws://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/live/${id}`
+      );
+      const ws = new WebSocket(url);
+      ws.onmessage = (msg) => {
+        const newJobData = { ...jobData };
+        const metricData = JSON.parse(msg.data) as MetricData[];
+        for (const metric of metricData) {
+          const idx = newJobData.MetricData.findIndex(
+            (d) => d.Config.Measurement === metric.Config.Measurement
+          );
+          if (idx !== -1) {
+            Object.keys(metric.Data).forEach((key) => {
+              newJobData.MetricData[idx].Data[key].push(...metric.Data[key]);
+            });
+          }
+        }
+        setJobData(newJobData);
+      };
+      return () => {
+        if (ws) {
+          ws.close();
+        }
+      };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobData?.Metadata.IsRunning, id]);
+
   return [jobData, isLoading];
 };
 

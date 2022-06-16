@@ -49,7 +49,13 @@ export const JobFilter = ({
     }) ?? []
   );
   const [selectedTags, setSelectedTags] = useState<Item[]>([]);
-  const [filterParams, setFilterParams] = useState(params);
+  const [filterParams, setFilterParams] = useState<JobSearchParams>({
+    ...params,
+    Time: [
+      dateToUnix(new Date(Math.floor(Date.now()) - 60 * 60 * 24 * 14 * 1000)),
+      dateToUnix(new Date()),
+    ],
+  });
   const [shouldApply, setShouldApply] = useState(false);
   const tagListBackground = useColorModeValue("gray.400", "gray.500");
   const hoverBackground = useColorModeValue("gray.200", "gray.700");

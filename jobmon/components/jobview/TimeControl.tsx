@@ -1,4 +1,4 @@
-import { Box, Button, Flex } from "@chakra-ui/react";
+import { Box, Button, cookieStorageManager, Flex } from "@chakra-ui/react";
 import Slider, { createSliderWithTooltip } from "rc-slider";
 import { JobMetadata } from "../../types/job";
 import { useEffect, useState } from "react";

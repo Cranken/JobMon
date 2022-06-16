@@ -176,38 +176,40 @@ export function LineChart<T>({
     let dragStart = 0;
     let dragEnd = 0;
     const svgXOffset = width - svgRef.current.getBoundingClientRect().width;
-    const drag = d3
-      .drag<SVGSVGElement, unknown>()
-      .on("start", (event: DragEvent) => {
-        dragStart = clamp(event.x, xRange[0], xRange[1]);
-        dragEnd = clamp(event.x, xRange[0], xRange[1]);
-      })
-      .on("drag", (event: DragEvent) => {
-        dragEnd = clamp(event.x, xRange[0], xRange[1]);
-        svg.selectChild("rect").remove();
-        svg
-          .append("rect")
-          .attr(
-            "transform",
-            `translate(${
-              dragStart < dragEnd ? dragStart : dragEnd
-            }, ${marginTop})`
-          )
-          .attr("width", Math.abs(dragStart - dragEnd))
-          .attr("height", height - marginTop - marginBottom)
-          .attr("fill", "rgba(0,0,0,0.3)")
-          .lower();
-      })
-      .on("end", (event: DragEvent) => {
-        dragEnd = clamp(event.x, xRange[0], xRange[1]);
-        svg.selectChild("rect").remove();
-        const startIdx = getNearestPointIdx(dragStart);
-        const endIdx = getNearestPointIdx(dragEnd);
-        if (setTimeRange && startIdx && endIdx) {
-          setTimeRange(X[startIdx], X[endIdx]);
-        }
-      });
-    svg.call(drag);
+    if (setTimeRange) {
+      const drag = d3
+        .drag<SVGSVGElement, unknown>()
+        .on("start", (event: DragEvent) => {
+          dragStart = clamp(event.x, xRange[0], xRange[1]);
+          dragEnd = clamp(event.x, xRange[0], xRange[1]);
+        })
+        .on("drag", (event: DragEvent) => {
+          dragEnd = clamp(event.x, xRange[0], xRange[1]);
+          svg.selectChild("rect").remove();
+          svg
+            .append("rect")
+            .attr(
+              "transform",
+              `translate(${
+                dragStart < dragEnd ? dragStart : dragEnd
+              }, ${marginTop})`
+            )
+            .attr("width", Math.abs(dragStart - dragEnd))
+            .attr("height", height - marginTop - marginBottom)
+            .attr("fill", "rgba(0,0,0,0.3)")
+            .lower();
+        })
+        .on("end", (event: DragEvent) => {
+          dragEnd = clamp(event.x, xRange[0], xRange[1]);
+          svg.selectChild("rect").remove();
+          const startIdx = getNearestPointIdx(dragStart);
+          const endIdx = getNearestPointIdx(dragEnd);
+          if (startIdx && endIdx) {
+            setTimeRange(X[startIdx], X[endIdx]);
+          }
+        });
+      svg.call(drag);
+    }
 
     svg
       .append("g")

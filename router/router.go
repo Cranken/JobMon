@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -27,6 +28,7 @@ type Router struct {
 	db          database.DB
 	jobCache    *cache.LRUCache
 	authManager *auth.AuthManager
+	upgrader    websocket.Upgrader
 }
 
 func (r *Router) Init(store jobstore.Store, config *conf.Configuration, db database.DB, jobCache *cache.LRUCache, authManager *auth.AuthManager) {
@@ -35,12 +37,14 @@ func (r *Router) Init(store jobstore.Store, config *conf.Configuration, db datab
 	r.db = db
 	r.jobCache = jobCache
 	r.authManager = authManager
+	r.upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
 
 	router := httprouter.New()
 	router.PUT("/api/job_start", authManager.Protected(r.JobStart, auth.JOBCONTROL))
 	router.PATCH("/api/job_stop/:id", authManager.Protected(r.JobStop, auth.JOBCONTROL))
 	router.GET("/api/jobs", authManager.Protected(r.GetJobs, auth.USER))
 	router.GET("/api/job/:id", authManager.Protected(r.GetJob, auth.USER))
+	router.GET("/api/live/:id", authManager.Protected(r.LiveMonitoring, auth.USER))
 	router.GET("/api/search/:term", authManager.Protected(r.Search, auth.USER))
 	router.POST("/api/login", r.Login)
 	router.POST("/api/logout", authManager.Protected(r.Logout, auth.USER))
@@ -206,6 +210,10 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 		return
 	}
 
+	if j.NumNodes == 1 {
+		node = j.NodeList
+	}
+
 	// Calculate best sample interval
 	dur, _ := time.ParseDuration(r.config.SampleInterval)
 	intervals, secs := j.CalculateSampleIntervals(dur)
@@ -222,8 +230,10 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 
 	// Get job data
 	var jobData database.JobData
-	if node == "" && querySampleInterval == "" {
+	if node == "" && querySampleInterval == "" && !j.IsRunning {
 		jobData, err = r.jobCache.Get(&j, bestInterval)
+	} else if j.IsRunning {
+		jobData, err = r.db.GetNodeJobData(&j, j.NodeList, dur)
 	} else {
 		jobData, err = r.db.GetNodeJobData(&j, node, sampleInterval)
 	}
@@ -366,6 +376,52 @@ func (r *Router) RemoveTag(w http.ResponseWriter, req *http.Request, params http
 		}
 		r.jobCache.UpdateJob(job.Id)
 	}
+}
+
+func (r *Router) LiveMonitoring(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
+	strId := params.ByName("id")
+
+	id, err := strconv.Atoi(strId)
+	if err != nil {
+		log.Printf("Could not job id data")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	c, err := r.upgrader.Upgrade(w, req, nil)
+	if err != nil {
+		log.Print("error upgrading connection:", err)
+		return
+	}
+	j, err := r.store.GetJob(id)
+	if err != nil {
+		log.Printf("Could not get job meta data: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	monitor, done := r.db.CreateLiveMonitoringChannel(&j)
+
+	go func() {
+		for {
+			t, _, _ := c.ReadMessage()
+			if t == -1 {
+				done <- true
+				c.Close()
+				return
+			}
+		}
+	}()
+
+	go func() {
+		for {
+			data, ok := <-monitor
+			if ok {
+				c.WriteJSON(data)
+			} else {
+				return
+			}
+		}
+	}()
 }
 
 func (r *Router) parseTag(w http.ResponseWriter, req *http.Request) (job job.JobMetadata, tag job.JobTag, ok bool) {

@@ -14,16 +14,13 @@ export const Jobs = () => {
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useStorageState("sortyBy", "StartTime");
   const [sortByDescending, setSortByDescending] = useState(true);
+
   const [params, setParams] = useStorageState<JobSearchParams>(
     "joblistParams",
     {
       Partition: "",
       NumGpus: [0, 224],
       NumNodes: [1, 192],
-      Time: [
-        dateToUnix(new Date(Math.floor(Date.now()) - 60 * 60 * 24 * 14 * 1000)),
-        dateToUnix(new Date()),
-      ],
     }
   );
   const jobListData = useGetJobs(params);

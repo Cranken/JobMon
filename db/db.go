@@ -19,4 +19,6 @@ type DB interface {
 	RunAggregation()
 	// Get job data retention time
 	GetDataRetentionTime() (int64, error)
+	// Live Monitoring Channel
+	CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []MetricData, chan bool)
 }

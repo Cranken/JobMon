@@ -6,6 +6,7 @@ import TimeControl from "./TimeControl";
 
 interface ControlProps {
   jobdata: JobData;
+  showTimeControl: boolean;
   startTime: Date;
   stopTime: Date;
   setStartTime: (t: Date) => void;
@@ -23,6 +24,7 @@ interface ControlProps {
 
 export const ViewControl = ({
   jobdata,
+  showTimeControl,
   startTime,
   stopTime,
   setStartTime,
@@ -73,13 +75,15 @@ export const ViewControl = ({
           </Stack>
         ) : null}
       </Stack>
-      <TimeControl
-        metadata={jobdata.Metadata}
-        startTime={startTime}
-        stopTime={stopTime}
-        setStartTime={setStartTime}
-        setStopTime={setStopTime}
-      />
+      {showTimeControl ? (
+        <TimeControl
+          metadata={jobdata.Metadata}
+          startTime={startTime}
+          stopTime={stopTime}
+          setStartTime={setStartTime}
+          setStopTime={setStopTime}
+        />
+      ) : null}
     </Stack>
   );
 };
