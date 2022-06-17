@@ -15,15 +15,13 @@ export const Jobs = () => {
   const [sortBy, setSortBy] = useStorageState("sortyBy", "StartTime");
   const [sortByDescending, setSortByDescending] = useState(true);
 
-  const [params, setParams] = useStorageState<JobSearchParams>(
-    "joblistParams",
-    {
+  const [params, setParams, , isLoadingParams] =
+    useStorageState<JobSearchParams>("joblistParams", {
       Partition: "",
       NumGpus: [0, 224],
       NumNodes: [1, 192],
-    }
-  );
-  const jobListData = useGetJobs(params);
+    });
+  const jobListData = useGetJobs(isLoadingParams ? undefined : params);
   const joblistRef = useRef<HTMLDivElement>(null);
 
   let mutableJobs = jobListData?.Jobs ?? [];

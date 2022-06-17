@@ -14,8 +14,9 @@ export function checkBetween<T>(d1: T, d2: T, point: T) {
 export function useStorageState<T>(
   key: string,
   value: T
-): [T, (value: T) => void, () => void] {
+): [T, (value: T) => void, () => void, boolean] {
   const [state, setState] = useState(value);
+  const [isLoading, setIsLoading] = useState(true);
 
   const setStorageState = (value: T) => {
     if (typeof window !== "undefined") {
@@ -38,10 +39,11 @@ export function useStorageState<T>(
         const value = JSON.parse(saved) as T;
         setState(value);
       }
+      setIsLoading(false);
     }
   }, [key]);
 
-  return [state, setStorageState, clearState];
+  return [state, setStorageState, clearState, isLoading];
 }
 
 export const useGetJobs = (params?: JobSearchParams) => {
