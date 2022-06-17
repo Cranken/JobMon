@@ -84,7 +84,7 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
   let reason = "";
   if (job.IsRunning) {
     dataAvailable = false;
-    reason = "Job is still running. No metric data available yet.";
+    reason = "Job is still running. No metadata available yet.";
   } else if (
     !job.Data ||
     radarChartData.length === 0
@@ -99,7 +99,7 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
 
   return (
     <LinkBox>
-      <LinkOverlay href={job.IsRunning ? undefined : `/job/${job.Id}`}>
+      <LinkOverlay href={`/job/${job.Id}`}>
         <Stack
           direction="row"
           divider={
