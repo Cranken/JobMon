@@ -52,6 +52,7 @@ export const JobFilter = ({
   const [filterParams, setFilterParams] = useState<JobSearchParams>({
     ...params,
     Time: [
+      // two weeks back
       dateToUnix(new Date(Math.floor(Date.now()) - 60 * 60 * 24 * 14 * 1000)),
       dateToUnix(new Date()),
     ],
@@ -71,7 +72,7 @@ export const JobFilter = ({
       setParams(filterParams);
     }
   }, [params, filterParams, shouldApply, mustApply, setParams]);
-  const timezoneOffset = new Date().getTimezoneOffset() * 60;
+  const timezoneOffset = new Date().getTimezoneOffset() * 60 * 1000;
   const getDateString = (d: number) =>
     new Date(d - timezoneOffset).toISOString().slice(0, 16);
 

@@ -27,6 +27,20 @@ export const Jobs = () => {
   let mutableJobs = jobListData?.Jobs ?? [];
 
   useEffect(() => {
+    if (!isLoadingParams) {
+      setParams({
+        ...params,
+        Time: [
+          dateToUnix(
+            new Date(Math.floor(Date.now()) - 60 * 60 * 24 * 14 * 1000)
+          ),
+          dateToUnix(new Date()),
+        ],
+      });
+    }
+  }, [isLoadingParams]);
+
+  useEffect(() => {
     const { user } = router.query;
     if (user?.length ?? 0 > 0) {
       setParams({ ...params, UserName: user as string });
