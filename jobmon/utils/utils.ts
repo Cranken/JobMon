@@ -46,10 +46,14 @@ export function useStorageState<T>(
   return [state, setStorageState, clearState, isLoading];
 }
 
-export const useGetJobs = (params?: JobSearchParams) => {
+export const useGetJobs: (
+  params?: JobSearchParams
+) => [JobListData | undefined, boolean] = (params?: JobSearchParams) => {
   const [jobListData, setJobs] = useState<JobListData>();
   const [_c, _s, removeCookie] = useCookies(["Authorization"]);
+  const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
+    setIsLoading(true);
     const url = new URL(
       "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + "/api/jobs"
     );
@@ -74,11 +78,14 @@ export const useGetJobs = (params?: JobSearchParams) => {
       if (!res.ok && (res.status === 401 || res.status === 403)) {
         removeCookie("Authorization");
       } else {
-        res.json().then((data) => setJobs(data));
+        res.json().then((data) => {
+          setJobs(data);
+          setIsLoading(false);
+        });
       }
     });
   }, [removeCookie, params]);
-  return jobListData;
+  return [jobListData, isLoading];
 };
 
 export function groupBy<T>(

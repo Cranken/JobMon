@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useColorModeValue } from "@chakra-ui/react";
+import { useColorMode, useColorModeValue } from "@chakra-ui/react";
 import * as d3 from "d3";
 import { NumberValue } from "d3";
 import { useEffect, useRef } from "react";
@@ -26,12 +26,12 @@ export function HorizontalBarChart<T>({
   data,
   column,
   value,
-  xLabel = "Frequency",
+  xLabel = "Occurences",
   yLabel = "Value",
-  marginTop = 20, // top margin, in pixels
+  marginTop = 40, // top margin, in pixels
   marginRight = 10, // right margin, in pixels
   marginBottom = 30, // bottom margin, in pixels
-  marginLeft = 120, // left margin, in pixels
+  marginLeft = 180, // left margin, in pixels
   width = 1000, // outer width, in pixels
   height = 400, // outer height, in pixels
   xRange = [marginLeft, width - marginRight], // [left, right]
@@ -42,6 +42,7 @@ export function HorizontalBarChart<T>({
   const svgRef = useRef<SVGSVGElement>(null);
   const textColor = useColorModeValue("white", "black");
   const altColor = useColorModeValue("black", "white");
+  const altBarColor = useColorModeValue("#505050", "#8f8f8f");
 
   useEffect(() => {
     if (!data || !svgRef.current) {
@@ -61,7 +62,7 @@ export function HorizontalBarChart<T>({
     const xDomain = [0, d3.max(values) ?? 1];
     const yDomain = new d3.InternSet(columns);
     const xScale = d3.scaleLinear(xDomain, xRange);
-    const yScale = d3.scaleBand(yDomain, [marginTop, height]).padding(0.1);
+    const yScale = d3.scaleBand(yDomain, [marginTop, height]).padding(0.2);
     let xAxis = d3.axisTop(xScale).ticks(width / 80);
     const yAxis = d3.axisLeft(yScale).tickSizeOuter(0);
 
@@ -80,14 +81,16 @@ export function HorizontalBarChart<T>({
       .append("g")
       .attr("transform", `translate(0,${marginTop})`)
       .call(xAxis)
+      .call((g) => g.selectAll("text").attr("font-size", "120%"))
       .call((g) =>
         g
           .append("text")
           .attr("fill", "currentColor")
           .attr("text-anchor", "end")
           .attr("x", marginLeft - 5)
-          .attr("y", -10)
-          .text(xLabel + "→")
+          .attr("y", -15)
+          .attr("font-size", "140%")
+          .text(xLabel + " →")
       );
 
     svg
@@ -106,28 +109,30 @@ export function HorizontalBarChart<T>({
         g
           .append("text")
           .attr("x", -marginLeft)
-          .attr("y", 20)
+          .attr("y", marginTop)
           .attr("fill", "currentColor")
           .attr("text-anchor", "start")
-          .text("↓" + yLabel)
+          .text("↓ " + yLabel)
+      )
+      .call((g) =>
+        g.selectAll("text").attr("font-size", "140%").attr("title", "assd")
       );
 
     svg
       .append("g")
-      .attr("fill", "currentColor")
       .selectAll("rect")
       .data(d3.range(columns.length))
       .join("rect")
       .attr("x", xScale(0))
       .attr("y", (i) => yScale(columns[i]) ?? 1)
       .attr("height", barHeight)
-      .attr("width", (i) => xScale(values[i]) - xScale(0));
+      .attr("width", (i) => xScale(values[i]) - xScale(0))
+      .attr("fill", (i) => (i % 2 === 0 ? "currentColor" : altBarColor));
 
     svg
       .append("g")
       .attr("fill", textColor)
       .attr("text-anchor", "end")
-      .attr("font-size", 14)
       .selectAll("text")
       .data(d3.range(columns.length))
       .join("text")

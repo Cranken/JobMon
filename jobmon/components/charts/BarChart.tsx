@@ -26,9 +26,9 @@ export function BarChart<T>({
   valueLabel = "",
   marginTop = 20, // top margin, in pixels
   marginRight = 10, // right margin, in pixels
-  marginBottom = 30, // bottom margin, in pixels
+  marginBottom = 40, // bottom margin, in pixels
   marginLeft = 90, // left margin, in pixels
-  width = 1200, // outer width, in pixels
+  width = 1000, // outer width, in pixels
   height = 400, // outer height, in pixels
   xRange = [marginLeft, width - marginRight], // [left, right]
   yRange = [height - marginBottom, marginTop], // [bottom, top]
@@ -59,7 +59,16 @@ export function BarChart<T>({
     svg
       .append("g")
       .attr("transform", `translate(0,${height - marginBottom})`)
-      .call(xAxis);
+      .call(xAxis)
+      .call((g) =>
+        g
+          .append("text")
+          .attr("fill", "currentColor")
+          .attr("text-anchor", "end")
+          .attr("x", width - marginRight)
+          .attr("y", marginBottom)
+          .text(columnLabel)
+      );
 
     svg
       .append("g")
@@ -83,7 +92,7 @@ export function BarChart<T>({
           .text(valueLabel)
       );
 
-    const bar = svg
+    svg
       .append("g")
       .attr("fill", "currentColor")
       .selectAll("rect")
@@ -92,9 +101,11 @@ export function BarChart<T>({
       .attr("x", (i) => xScale(columns[i]) ?? 0)
       .attr("y", (i) => yScale(values[i]))
       .attr("height", (i) => yScale(0) - yScale(values[i]))
-      .attr("width", xScale.bandwidth());
+      .attr("width", xScale.bandwidth())
+      .append("title")
+      .text((i) => values[i].toString());
 
-    if (columnLabel !== "") bar.append("title").text(columnLabel);
+    svg.selectAll("text").attr("font-size", "140%");
 
     return () => {
       d3.select(svgRef.current).selectAll("*").remove();

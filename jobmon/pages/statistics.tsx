@@ -7,23 +7,27 @@ import {
   Tab,
   TabPanel,
 } from "@chakra-ui/react";
+import { Histogram } from "../components/charts/Histogram";
 import JobFilter from "../components/joblist/job-filter/JobFilter";
 import { Panel, PanelManager } from "../components/panelmanager/PanelManager";
 import { JobSearchParams } from "../types/job";
-import { useGetJobs, useStorageState } from "../utils/utils";
+import { groupBy, useGetJobs, useStorageState } from "../utils/utils";
 import { StatItem } from "./../components/statistics/StatItem";
 
 export const Statistics = () => {
-  const [params, setParams] = useStorageState<JobSearchParams>(
-    "statistics-params",
-    { NumGpus: [0, 224], NumNodes: [1, 192] }
+  const [params, setParams, , isLoadingParams] =
+    useStorageState<JobSearchParams>("statistics-params", {
+      NumGpus: [0, 224],
+      NumNodes: [1, 192],
+    });
+  const [jobListData, isLoading] = useGetJobs(
+    isLoadingParams ? undefined : params
   );
-  const jobListData = useGetJobs(params);
   const [selectedPanels, setSelectedPanels] = useStorageState<Panel[]>(
     "statistics-panel-config",
     []
   );
-  if (jobListData) {
+  if (jobListData && !isLoading) {
     const tabTitles = [<Tab key="metrics">Metrics</Tab>];
     const tabPanels = [
       <TabPanel key="metrics">

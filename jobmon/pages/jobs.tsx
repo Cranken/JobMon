@@ -21,7 +21,9 @@ export const Jobs = () => {
       NumGpus: [0, 224],
       NumNodes: [1, 192],
     });
-  const jobListData = useGetJobs(isLoadingParams ? undefined : params);
+  const [jobListData, isLoading] = useGetJobs(
+    isLoadingParams ? undefined : params
+  );
   const joblistRef = useRef<HTMLDivElement>(null);
 
   let mutableJobs = jobListData?.Jobs ?? [];

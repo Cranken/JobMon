@@ -50,7 +50,7 @@ export function Histogram<T>({
   marginTop = 20, // top margin, in pixels
   marginRight = 30, // right margin, in pixels
   marginBottom = 30, // bottom margin, in pixels
-  marginLeft = 40, // left margin, in pixels
+  marginLeft = 80, // left margin, in pixels
   width = 640, // outer width of chart, in pixels
   height = 400, // outer height of chart, in pixels
   insetLeft = 0.5, // inset left edge of bar
@@ -61,8 +61,8 @@ export function Histogram<T>({
   xFormat = "", // a format specifier string for the x-axis
   yDomain, // [ymin, ymax]
   yRange = [height - marginBottom, marginTop], // [bottom, top]
-  yLabel = "Frequency", // a label for the y-axis
-  yFormat = "", // a format specifier string for the y-axis
+  yLabel = "Occurences", // a label for the y-axis
+  yFormat = "d", // a format specifier string for the y-axis
   color = "currentColor", // bar fill color
   normalize = false,
 }: HistogramProps<T>) {
@@ -136,6 +136,7 @@ export function Histogram<T>({
       .selectAll("rect")
       .data(bins)
       .join("rect")
+      .attr("transform", `translate(${marginTop + 50},0})`)
       .attr("x", (d) => xScale(d.x0 ?? 0) + insetLeft)
       .attr("width", (d) =>
         Math.max(
@@ -146,9 +147,7 @@ export function Histogram<T>({
       .attr("y", (d) => yScale(d3.sum(d, (i) => Y[i])))
       .attr("height", (d) => yScale(0) - yScale(d3.sum(d, (i) => Y[i])))
       .append("title")
-      .text((d, i) =>
-        [`${d.x0} ≤ x < ${d.x1}`, yFormatFn(d3.sum(d, (i) => Y[i]))].join("\n")
-      );
+      .text((d, i) => [`${d.x0} ≤ x < ${d.x1}`, Y[i]].join("\n"));
 
     svg
       .append("g")
@@ -158,11 +157,13 @@ export function Histogram<T>({
         g
           .append("text")
           .attr("x", width - marginRight)
-          .attr("y", 27)
+          .attr("y", 30)
           .attr("fill", "currentColor")
           .attr("text-anchor", "end")
           .text(xLabel)
       );
+
+    svg.selectAll("text").attr("font-size", "120%");
 
     return () => {
       d3.select(svgRef.current).selectAll("*").remove();
