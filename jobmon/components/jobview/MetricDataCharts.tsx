@@ -13,6 +13,7 @@ interface MetricDataChartsProps {
   setTimeRange?: (start: Date, end: Date) => void;
   isLoading: boolean;
   autoScale: boolean;
+  isRunning: boolean;
 }
 
 export const MetricDataCharts = ({
@@ -23,6 +24,7 @@ export const MetricDataCharts = ({
   setTimeRange,
   isLoading,
   autoScale,
+  isRunning,
 }: MetricDataChartsProps) => {
   if (!metrics) {
     return <div>No metrics</div>;
@@ -50,7 +52,11 @@ export const MetricDataCharts = ({
     let z;
     let title;
     let max;
-    if (nodeSelection.length === 1 && metric.Config.Type !== "node") {
+    if (
+      nodeSelection.length === 1 &&
+      metric.Config.Type !== "node" &&
+      !isRunning
+    ) {
       z = (d: MetricPoint) => d["type-id"];
       const pThreadCount = Object.keys(metric.Data).length / 2;
       for (const node of Object.keys(metric.Data)) {
@@ -88,7 +94,9 @@ export const MetricDataCharts = ({
       })(metric.Config.Unit, maxPrefix);
     } else {
       const key = (
-        nodeSelection.length === 1 && metric.Config.SeparationKey !== ""
+        nodeSelection.length === 1 &&
+        metric.Config.SeparationKey !== "" &&
+        !isRunning
           ? metric.Config.SeparationKey
           : "hostname"
       ) as keyof MetricPoint;

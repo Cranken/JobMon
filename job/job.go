@@ -107,7 +107,11 @@ func (j *JobMetadata) Overtime(maxTime int) bool {
 // Calculate the sample interval which displays the closest amount of samples in relation to DEFAULT_MAX_POINTS_PER_JOB
 func (j *JobMetadata) CalculateSampleIntervals(metricSampleInterval time.Duration) (intervals []float64, bestAvailableInterval float64) {
 	defaultIntervals := []float64{30, 60, 120, 300, 600, 1800}
-	duration := float64(j.StopTime - j.StartTime)
+	stopTime := j.StopTime
+	if j.IsRunning {
+		stopTime = int(time.Now().Unix())
+	}
+	duration := float64(stopTime - j.StartTime)
 	datapoints := duration / metricSampleInterval.Seconds()
 	factor := math.Ceil(datapoints / DEFAULT_MAX_POINTS_PER_JOB)
 	bestInterval := factor * metricSampleInterval.Seconds()

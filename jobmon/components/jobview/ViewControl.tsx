@@ -12,7 +12,7 @@ interface ControlProps {
   setStartTime: (t: Date) => void;
   setStopTime: (t: Date) => void;
   showQuantiles: boolean;
-  setShowQuantiles: (b: boolean) => void;
+  setShowQuantiles?: (b: boolean) => void;
   autoScale: boolean;
   setAutoScale: (b: boolean) => void;
   sampleInterval: number | undefined;
@@ -47,7 +47,7 @@ export const ViewControl = ({
         setSelectedMetrics={setSelectedMetrics}
       ></MetricSelection>
       <Stack direction="row" gap={2}>
-        {jobdata.Metadata.NumNodes !== 1 ? (
+        {setShowQuantiles ? (
           <Button
             fontSize="sm"
             onClick={() => setShowQuantiles(!showQuantiles)}

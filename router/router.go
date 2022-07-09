@@ -233,7 +233,7 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 	if node == "" && querySampleInterval == "" && !j.IsRunning {
 		jobData, err = r.jobCache.Get(&j, bestInterval)
 	} else if j.IsRunning {
-		jobData, err = r.db.GetNodeJobData(&j, j.NodeList, dur)
+		jobData, err = r.db.GetNodeJobData(&j, "", bestInterval)
 	} else {
 		jobData, err = r.db.GetNodeJobData(&j, node, sampleInterval)
 	}
@@ -393,6 +393,7 @@ func (r *Router) LiveMonitoring(w http.ResponseWriter, req *http.Request, params
 		log.Print("error upgrading connection:", err)
 		return
 	}
+
 	j, err := r.store.GetJob(id)
 	if err != nil {
 		log.Printf("Could not get job meta data: %v", err)

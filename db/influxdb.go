@@ -186,21 +186,23 @@ func (db *InfluxDB) getJobData(job *job.JobMetadata, node string, sampleInterval
 			metricData = append(metricData, MetricData{Config: m, Data: result})
 		}(db.metrics[m])
 
-		wg.Add(1)
-		go func(m conf.MetricConfig) {
-			tempRes, err := db.queryQuantileMeasurement(m, job, db.metricQuantiles, sampleInterval)
-			defer wg.Done()
-			if err != nil {
-				log.Printf("Job %v: could not get quantile data %v", job.Id, err)
-				return
-			}
-			result, err := parseQueryResult(tempRes, "_field")
-			if err != nil {
-				log.Printf("Job %v: could not parse quantile data %v", job.Id, err)
-				return
-			}
-			quantileData = append(quantileData, QuantileData{Config: m, Data: result, Quantiles: db.metricQuantiles})
-		}(db.metrics[m])
+		if !job.IsRunning {
+			wg.Add(1)
+			go func(m conf.MetricConfig) {
+				tempRes, err := db.queryQuantileMeasurement(m, job, db.metricQuantiles, sampleInterval)
+				defer wg.Done()
+				if err != nil {
+					log.Printf("Job %v: could not get quantile data %v", job.Id, err)
+					return
+				}
+				result, err := parseQueryResult(tempRes, "_field")
+				if err != nil {
+					log.Printf("Job %v: could not parse quantile data %v", job.Id, err)
+					return
+				}
+				quantileData = append(quantileData, QuantileData{Config: m, Data: result, Quantiles: db.metricQuantiles})
+			}(db.metrics[m])
+		}
 	}
 	wg.Wait()
 	data.MetricData = metricData
@@ -276,7 +278,7 @@ func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (
 		if val, ok := row[separationKey]; ok {
 			curNode = val.(string)
 		} else {
-			log.Println(row)
+			return nil, fmt.Errorf("could not parse query result %v with separation key %v", row, separationKey)
 		}
 	}
 	result[curNode] = tableRows
@@ -390,21 +392,15 @@ func (db *InfluxDB) queryLastDatapoints(job job.JobMetadata) (metricData []Metri
 		wg.Add(1)
 		go func(m conf.MetricConfig) {
 			defer wg.Done()
-			m.FilterFunc = "|> last()" + m.FilterFunc
-			queryResult, err := db.querySimpleMeasurement(m, &job, "", sampleInterval)
+			m.PostQueryOp += "|> last()"
+			var queryResult *api.QueryTableResult
+			queryResult, err = db.queryAggregateMeasurement(m, &job, sampleInterval)
 			if err != nil {
 				log.Printf("Job %v: could not get last datapoints %v", job.Id, err)
 				return
 			}
 			if err == nil {
-				separationKey := "hostname"
-				if m.Type != "node" {
-					separationKey = "type-id"
-				}
-				if m.SeparationKey != "" {
-					separationKey = m.SeparationKey
-				}
-				result, err := parseQueryResult(queryResult, separationKey)
+				result, err := parseQueryResult(queryResult, "hostname")
 				if err != nil {
 					log.Printf("Job %v: could not parse last datapoints %v", job.Id, err)
 					return
@@ -418,7 +414,7 @@ func (db *InfluxDB) queryLastDatapoints(job job.JobMetadata) (metricData []Metri
 }
 
 func (db *InfluxDB) createTask(taskName string, taskStr string, orgId string) (task *domain.Task, err error) {
-	task, err = db.tasksAPI.CreateTaskWithEvery(context.Background(), taskName, taskStr, "5m", orgId)
+	task, err = db.tasksAPI.CreateTaskWithEvery(context.Background(), taskName, taskStr, "15s", orgId)
 	if err != nil {
 		log.Printf("Could not create task: %v\n", err)
 		return

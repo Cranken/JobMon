@@ -128,7 +128,9 @@ const Job: NextPage = () => {
           startTime={startTime}
           stopTime={stopTime}
           showQuantiles={showQuantiles}
-          setShowQuantiles={setShowQuantiles}
+          setShowQuantiles={
+            !data.Metadata.IsRunning ? setShowQuantiles : undefined
+          }
           autoScale={autoScale}
           setAutoScale={setAutoscale}
           sampleInterval={sampleInterval}
@@ -147,9 +149,8 @@ const Job: NextPage = () => {
         </TabList>
 
         <TabPanels>
-          {/* <TabPanel>{generateChartsMemo}</TabPanel> */}
           <TabPanel>
-            {showQuantiles ? (
+            {showQuantiles && data?.QuantileData?.length > 0 ? (
               <QuantileDataCharts
                 key="quantile-charts"
                 quantiles={data?.QuantileData?.filter((m) =>
@@ -177,6 +178,7 @@ const Job: NextPage = () => {
                 }
                 isLoading={isLoading}
                 autoScale={autoScale}
+                isRunning={data.Metadata.IsRunning}
               />
             )}
           </TabPanel>
