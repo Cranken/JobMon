@@ -1,5 +1,6 @@
 import { Button, Flex, Select, Stack, Text } from "@chakra-ui/react";
 import React from "react";
+import { useCookies } from "react-cookie";
 import { JobData, JobMetadata } from "../../types/job";
 import { MetricSelection } from "./MetricSelection";
 import TimeControl from "./TimeControl";
@@ -39,13 +40,19 @@ export const ViewControl = ({
   selectedMetrics,
   setSelectedMetrics,
 }: ControlProps) => {
+  const [_c, _s, removeCookie] = useCookies(["Authorization"]);
   return (
     <Stack px={3}>
-      <MetricSelection
-        metrics={jobdata.MetricData.map((val) => val.Config)}
-        selectedMetrics={selectedMetrics}
-        setSelectedMetrics={setSelectedMetrics}
-      ></MetricSelection>
+      <Stack direction="row" justify="space-between">
+        <MetricSelection
+          metrics={jobdata.MetricData.map((val) => val.Config)}
+          selectedMetrics={selectedMetrics}
+          setSelectedMetrics={setSelectedMetrics}
+        ></MetricSelection>
+        <Button onClick={() => exportData(jobdata.Metadata.Id, removeCookie)}>
+          Export as CSV
+        </Button>
+      </Stack>
       <Stack direction="row" gap={2}>
         {setShowQuantiles ? (
           <Button
@@ -89,3 +96,30 @@ export const ViewControl = ({
 };
 
 export default ViewControl;
+
+const exportData = (
+  id: number,
+  removeCookie: (name: "Authorization") => void
+) => {
+  let url = new URL(
+    "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}?raw=true`
+  );
+  fetch(url.toString(), { credentials: "include" }).then((res) => {
+    if (!res.ok && (res.status === 401 || res.status === 403)) {
+      removeCookie("Authorization");
+    } else {
+      res.json().then((data: JobData) => {
+        const url = window.URL.createObjectURL(
+          new Blob(data.MetricData.map((m) => m.RawData))
+        );
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `${id}_export.csv`);
+
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode?.removeChild(link);
+      });
+    }
+  });
+};

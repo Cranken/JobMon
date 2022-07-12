@@ -84,12 +84,14 @@ export interface DataMap<T> {
 export interface MetricData {
   Config: MetricConfig;
   Data: DataMap<MetricPoint[]>;
+  RawData: string;
 }
 
 export interface QuantileData {
   Config: MetricConfig;
   Quantiles: string[];
   Data: DataMap<QuantilePoint[]>;
+  RawData: string;
 }
 
 export interface JobData {
