@@ -31,13 +31,19 @@ type InfluxDB struct {
 
 type MetricData struct {
 	Config conf.MetricConfig
-	Data   map[string][]QueryResult
+	// Only set when querying parsed raw data
+	Data map[string][]QueryResult
+	// Only set when querying raw data
+	RawData string
 }
 
 type QuantileData struct {
 	Config    conf.MetricConfig
 	Quantiles []string
-	Data      map[string][]QueryResult
+	// Only set when querying parsed raw data
+	Data map[string][]QueryResult
+	// Only set when querying raw data
+	RawData string
 }
 
 type JobData struct {
@@ -71,12 +77,12 @@ func (db *InfluxDB) Close() {
 	db.client.Close()
 }
 
-func (db *InfluxDB) GetJobData(job *job.JobMetadata, sampleInterval time.Duration) (data JobData, err error) {
-	return db.getJobData(job, "", sampleInterval)
+func (db *InfluxDB) GetJobData(job *job.JobMetadata, sampleInterval time.Duration, raw bool) (data JobData, err error) {
+	return db.getJobData(job, "", sampleInterval, raw)
 }
 
-func (db *InfluxDB) GetNodeJobData(job *job.JobMetadata, node string, sampleInterval time.Duration) (data JobData, err error) {
-	return db.getJobData(job, node, sampleInterval)
+func (db *InfluxDB) GetNodeJobData(job *job.JobMetadata, node string, sampleInterval time.Duration, raw bool) (data JobData, err error) {
+	return db.getJobData(job, node, sampleInterval, raw)
 }
 
 func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMetadataData, err error) {
@@ -167,7 +173,7 @@ func (db *InfluxDB) CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []Metr
 	return monitor, done
 }
 
-func (db *InfluxDB) getJobData(job *job.JobMetadata, node string, sampleInterval time.Duration) (data JobData, err error) {
+func (db *InfluxDB) getJobData(job *job.JobMetadata, node string, sampleInterval time.Duration, raw bool) (data JobData, err error) {
 	var metricData []MetricData
 	var quantileData []QuantileData
 	var wg sync.WaitGroup
@@ -177,13 +183,23 @@ func (db *InfluxDB) getJobData(job *job.JobMetadata, node string, sampleInterval
 	for _, m := range db.partitionConfig[job.Partition].Metrics {
 		wg.Add(1)
 		go func(m conf.MetricConfig) {
-			result, err := db.query(m, job, node, sampleInterval)
-			defer wg.Done()
-			if err != nil {
-				log.Printf("Job %v: could not get metric data %v", job.Id, err)
-				return
+			if raw {
+				result, err := db.queryRaw(m, job, node, sampleInterval)
+				defer wg.Done()
+				if err != nil {
+					log.Printf("Job %v: could not get metric data %v", job.Id, err)
+					return
+				}
+				metricData = append(metricData, MetricData{Config: m, RawData: result})
+			} else {
+				result, err := db.query(m, job, node, sampleInterval)
+				defer wg.Done()
+				if err != nil {
+					log.Printf("Job %v: could not get metric data %v", job.Id, err)
+					return
+				}
+				metricData = append(metricData, MetricData{Config: m, Data: result})
 			}
-			metricData = append(metricData, MetricData{Config: m, Data: result})
 		}(db.metrics[m])
 
 		if !job.IsRunning {
@@ -239,6 +255,17 @@ func (db *InfluxDB) query(metric conf.MetricConfig, job *job.JobMetadata, node s
 	return result, err
 }
 
+func (db *InfluxDB) queryRaw(metric conf.MetricConfig, job *job.JobMetadata, node string, sampleInterval time.Duration) (result string, err error) {
+	if metric.AggFn != "" && node == "" {
+		result, err = db.queryAggregateMeasurementRaw(metric, job, sampleInterval)
+	} else if node != "" {
+		result, err = db.querySimpleMeasurementRaw(metric, job, node, sampleInterval)
+	} else {
+		result, err = db.querySimpleMeasurementRaw(metric, job, node, sampleInterval)
+	}
+	return result, err
+}
+
 func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, job *job.JobMetadata, node string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
 	nodeList := job.NodeList
 	if node != "" {
@@ -258,6 +285,29 @@ func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, job *job.Jo
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		log.Printf("Error at simple query: %v : %v\n", query, err)
+	}
+	return result, err
+}
+
+func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, job *job.JobMetadata, node string, sampleInterval time.Duration) (result string, err error) {
+	nodeList := job.NodeList
+	if node != "" {
+		nodeList = node
+	}
+	query := fmt.Sprintf(`
+		from(bucket: "%v")
+		|> range(start: %v, stop: %v)
+		|> filter(fn: (r) => r["_measurement"] == "%v")
+	  |> filter(fn: (r) => r["type"] == "%v")
+		|> filter(fn: (r) => r["hostname"] =~ /%v/)
+		|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
+		%v
+		|> truncateTimeColumn(unit: %v)
+	`, db.bucket, job.StartTime, job.StopTime, metric.Measurement, metric.Type, nodeList, sampleInterval, metric.FilterFunc, db.defaultSampleInterval)
+	query += metric.PostQueryOp
+	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
+	if err != nil {
+		log.Printf("Error at simple raw query: %v : %v\n", query, err)
 	}
 	return result, err
 }
@@ -304,6 +354,24 @@ func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, job *job
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		log.Printf("Error at aggregate query: %v\n", err)
+	}
+	return
+}
+
+func (db *InfluxDB) queryAggregateMeasurementRaw(metric conf.MetricConfig, job *job.JobMetadata, sampleInterval time.Duration) (result string, err error) {
+	measurement := metric.Measurement + "_" + metric.AggFn
+	query := fmt.Sprintf(`
+		from(bucket: "%v")
+		|> range(start: %v, stop: %v)
+		|> filter(fn: (r) => r["_measurement"] == "%v")
+		|> filter(fn: (r) => r["hostname"] =~ /%v/)
+		|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
+		%v
+	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, sampleInterval, metric.FilterFunc)
+	query += metric.PostQueryOp
+	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
+	if err != nil {
+		log.Printf("Error at aggregate raw query: %v\n", err)
 	}
 	return
 }

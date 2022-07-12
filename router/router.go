@@ -191,6 +191,7 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 	start := time.Now()
 
 	node := req.URL.Query().Get("node")
+	raw := req.URL.Query().Get("raw") == "true"
 	strId := params.ByName("id")
 
 	id, err := strconv.Atoi(strId)
@@ -230,12 +231,12 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 
 	// Get job data
 	var jobData database.JobData
-	if node == "" && querySampleInterval == "" && !j.IsRunning {
+	if node == "" && querySampleInterval == "" && !j.IsRunning && !raw {
 		jobData, err = r.jobCache.Get(&j, bestInterval)
 	} else if j.IsRunning {
-		jobData, err = r.db.GetNodeJobData(&j, "", bestInterval)
+		jobData, err = r.db.GetNodeJobData(&j, "", bestInterval, raw)
 	} else {
-		jobData, err = r.db.GetNodeJobData(&j, node, sampleInterval)
+		jobData, err = r.db.GetNodeJobData(&j, node, sampleInterval, raw)
 	}
 	if err != nil {
 		log.Printf("Could not get job metric data: %v\n", err)
