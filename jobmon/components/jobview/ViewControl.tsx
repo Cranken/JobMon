@@ -1,4 +1,4 @@
-import { Button, Flex, Select, Stack, Text } from "@chakra-ui/react";
+import { Button, Container, Flex, Select, Stack, Text } from "@chakra-ui/react";
 import React from "react";
 import { useCookies } from "react-cookie";
 import { JobData, JobMetadata } from "../../types/job";
@@ -7,9 +7,9 @@ import TimeControl from "./TimeControl";
 
 interface ControlProps {
   jobdata: JobData;
-  showTimeControl: boolean;
-  startTime: Date;
-  stopTime: Date;
+  showTimeControl?: boolean;
+  startTime?: Date;
+  stopTime?: Date;
   setStartTime: (t: Date) => void;
   setStopTime: (t: Date) => void;
   showQuantiles: boolean;
@@ -25,7 +25,7 @@ interface ControlProps {
 
 export const ViewControl = ({
   jobdata,
-  showTimeControl,
+  showTimeControl = true,
   startTime,
   stopTime,
   setStartTime,

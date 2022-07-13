@@ -177,9 +177,6 @@ func (db *InfluxDB) getJobData(job *job.JobMetadata, node string, sampleInterval
 	var metricData []MetricData
 	var quantileData []QuantileData
 	var wg sync.WaitGroup
-	if job.IsRunning {
-		job.StopTime = int(time.Now().Unix())
-	}
 	for _, m := range db.partitionConfig[job.Partition].Metrics {
 		wg.Add(1)
 		go func(m conf.MetricConfig) {

@@ -133,3 +133,24 @@ export interface PartitionConfig {
   MaxTime: number;
   Metrics: string[];
 }
+
+export enum WSMsgType {
+  LoadMetrics = 1,
+  LoadMetricsResponse = 2,
+  LatestMetrics = 3,
+}
+
+export interface WSMsg {
+  Type: number;
+}
+
+export interface WSLoadMetricsMsg extends WSMsg {
+  StartTime: number;
+  StopTime?: number;
+}
+
+export interface WSLoadMetricsResponse extends WSMsg {
+  MetricData: MetricData[];
+}
+
+export type WSLatestMetrics = WSLoadMetricsResponse;

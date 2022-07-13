@@ -2,7 +2,14 @@ import type { NextPage } from "next";
 import React, { useMemo } from "react";
 import { useEffect } from "react";
 import { useState } from "react";
-import { JobData, JobMetadata, MetricData } from "../../types/job";
+import {
+  JobData,
+  JobMetadata,
+  MetricData,
+  WSLoadMetricsResponse,
+  WSMsg,
+  WSMsgType,
+} from "../../types/job";
 import MetricDataCharts from "../../components/jobview/MetricDataCharts";
 import { useRouter } from "next/router";
 import QuantileDataCharts from "../../components/jobview/QuantileDataCharts";
@@ -23,6 +30,7 @@ import { useCookies } from "react-cookie";
 import { AnalysisBoxPlot } from "../../components/jobview/AnalysisView";
 import { SelectionMap } from "../../types/helpers";
 import { useStorageState } from "./../../utils/utils";
+import { WSLoadMetricsMsg } from "./../../types/job";
 
 const Job: NextPage = () => {
   const router = useRouter();
@@ -34,13 +42,14 @@ const Job: NextPage = () => {
     selected.length === 1 && Object.keys(selection).length > 1
       ? selected[0]
       : undefined;
+  const [startTime, setStartTime] = useState<Date>();
+  const [stopTime, setStopTime] = useState<Date>();
   const [data, isLoading] = useGetJobData(
     parseInt(jobId as string),
     node,
-    sampleInterval
+    sampleInterval,
+    startTime?.getTime()
   );
-  const [startTime, setStartTime] = useState<Date>(new Date());
-  const [stopTime, setStopTime] = useState<Date>(new Date());
   const [showQuantiles, setShowQuantiles] = useState(true);
   const [autoScale, setAutoscale] = useState(true);
   const setTimeRange = (start: Date, end: Date) => {
@@ -71,9 +80,13 @@ const Job: NextPage = () => {
 
   useEffect(() => {
     if (data?.Metadata.StartTime) {
-      setStartTime(new Date(data?.Metadata.StartTime * 1000));
+      if (data.Metadata.IsRunning) {
+        setStartTime(new Date(new Date().getTime() - 3600 * 1000));
+      } else {
+        setStartTime(new Date(data?.Metadata.StartTime * 1000));
+      }
     }
-  }, [data?.Metadata.StartTime]);
+  }, [data?.Metadata.StartTime, data?.Metadata.IsRunning]);
 
   useEffect(() => {
     if (data?.Metadata.StopTime && !data?.Metadata.IsRunning) {
@@ -122,7 +135,7 @@ const Job: NextPage = () => {
         />
         <Control
           jobdata={data}
-          showTimeControl={!data.Metadata.IsRunning}
+          // showTimeControl={!data.Metadata.IsRunning || liveLoadAll}
           setStartTime={setStartTime}
           setStopTime={setStopTime}
           startTime={startTime}
@@ -201,16 +214,20 @@ export default Job;
 export const useGetJobData: (
   id: number | undefined,
   node?: string,
-  sampleInterval?: number
+  sampleInterval?: number,
+  timeStart?: number
 ) => [JobData | undefined, boolean] = (
   id: number | undefined,
   node?: string,
-  sampleInterval?: number
+  sampleInterval?: number,
+  timeStart?: number
 ) => {
   const [jobData, setJobData] = useState<JobData>();
   const [isLoading, setIsLoading] = useState(true);
   const [jobCache, setJobCache] = useState<{ [key: string]: JobData }>({});
   const [_c, _s, removeCookie] = useCookies(["Authorization"]);
+  const [curLiveWindowStart, setCurLiveWindowStart] = useState(Infinity);
+  const [ws, setWs] = useState<WebSocket>();
   useEffect(() => {
     if (!id) {
       return;
@@ -271,27 +288,64 @@ export const useGetJobData: (
       const ws = new WebSocket(url);
       ws.onmessage = (msg) => {
         const newJobData = { ...jobData };
-        const metricData = JSON.parse(msg.data) as MetricData[];
-        for (const metric of metricData) {
-          const idx = newJobData.MetricData.findIndex(
-            (d) => d.Config.Measurement === metric.Config.Measurement
-          );
-          if (idx !== -1) {
-            Object.keys(metric.Data).forEach((key) => {
-              newJobData.MetricData[idx].Data[key].push(...metric.Data[key]);
-            });
+        const data = JSON.parse(msg.data) as WSMsg;
+        if (
+          data.Type === WSMsgType.LoadMetricsResponse ||
+          data.Type === WSMsgType.LatestMetrics
+        ) {
+          for (const metric of (data as WSLoadMetricsResponse).MetricData) {
+            const idx = newJobData.MetricData.findIndex(
+              (d) => d.Config.Measurement === metric.Config.Measurement
+            );
+            if (idx !== -1) {
+              Object.keys(metric.Data).forEach((key) => {
+                if (data.Type === WSMsgType.LatestMetrics) {
+                  newJobData.MetricData[idx].Data[key].push(
+                    ...metric.Data[key]
+                  );
+                } else {
+                  newJobData.MetricData[idx].Data[key] = metric.Data[
+                    key
+                  ].concat(newJobData.MetricData[idx].Data[key]);
+                }
+              });
+            }
           }
+          setJobData(newJobData);
         }
-        setJobData(newJobData);
       };
+      window.onbeforeunload = () => {
+        ws.onclose = () => {};
+        ws.close();
+      };
+      setWs(ws);
       return () => {
-        if (ws) {
-          ws.close();
-        }
+        ws.close();
+        setWs(undefined);
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobData?.Metadata.IsRunning, id]);
+
+  useEffect(() => {
+    if (curLiveWindowStart === Infinity && timeStart) {
+      setCurLiveWindowStart(timeStart);
+    }
+  }, [timeStart, curLiveWindowStart]);
+
+  useEffect(() => {
+    if (ws && ws.readyState === ws.OPEN) {
+      if (timeStart && timeStart < curLiveWindowStart) {
+        let msg: WSLoadMetricsMsg = {
+          StartTime: Math.round(timeStart / 1000),
+          StopTime: Math.round(curLiveWindowStart / 1000),
+          Type: WSMsgType.LoadMetrics,
+        };
+        setCurLiveWindowStart(timeStart);
+        ws.send(JSON.stringify(msg));
+      }
+    }
+  }, [ws, timeStart, curLiveWindowStart]);
 
   return [jobData, isLoading];
 };

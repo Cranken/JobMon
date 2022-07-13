@@ -192,6 +192,7 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 
 	node := req.URL.Query().Get("node")
 	raw := req.URL.Query().Get("raw") == "true"
+	liveLoadAll := req.URL.Query().Get("live_load_all") == "true"
 	strId := params.ByName("id")
 
 	id, err := strconv.Atoi(strId)
@@ -230,10 +231,15 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 	}
 
 	// Get job data
+	origStartTime := j.StartTime
+	if j.IsRunning && !liveLoadAll {
+		j.StartTime = int(time.Now().Unix()) - 3600
+	}
 	var jobData database.JobData
 	if node == "" && querySampleInterval == "" && !j.IsRunning && !raw {
 		jobData, err = r.jobCache.Get(&j, bestInterval)
 	} else if j.IsRunning {
+		j.StopTime = int(time.Now().Unix())
 		jobData, err = r.db.GetNodeJobData(&j, "", bestInterval, raw)
 	} else {
 		jobData, err = r.db.GetNodeJobData(&j, node, sampleInterval, raw)
@@ -246,6 +252,7 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 
 	jobData.SampleInterval = sampleInterval.Seconds()
 	jobData.SampleIntervals = intervals
+	j.StartTime = origStartTime
 
 	// Send data
 	jsonData, err := json.Marshal(&jobData)
@@ -405,11 +412,36 @@ func (r *Router) LiveMonitoring(w http.ResponseWriter, req *http.Request, params
 
 	go func() {
 		for {
-			t, _, _ := c.ReadMessage()
+			t, msg, _ := c.ReadMessage()
 			if t == -1 {
 				done <- true
 				c.Close()
 				return
+			}
+			var wsMsg WSMsg
+			err := json.Unmarshal(msg, &wsMsg)
+			if err == nil {
+				switch wsMsg.Type {
+				case WSLoadMetrics:
+					var wsLoadMetricsMsg WSLoadMetricsMsg
+					err = json.Unmarshal(msg, &wsLoadMetricsMsg)
+					if err == nil {
+						origStartTime := j.StartTime
+						origStopTime := j.StopTime
+						j.StartTime = wsLoadMetricsMsg.StartTime
+						j.StopTime = wsLoadMetricsMsg.StopTime
+						sampleDuration, _ := time.ParseDuration(r.config.SampleInterval)
+						data, err := r.db.GetNodeJobData(&j, "", sampleDuration, false)
+						j.StartTime = origStartTime
+						j.StopTime = origStopTime
+						if err == nil {
+							var resp WSLoadMetricsResponseMsg
+							resp.Type = WSLoadMetricsResponse
+							resp.MetricData = data.MetricData
+							c.WriteJSON(resp)
+						}
+					}
+				}
 			}
 		}
 	}()
@@ -418,7 +450,10 @@ func (r *Router) LiveMonitoring(w http.ResponseWriter, req *http.Request, params
 		for {
 			data, ok := <-monitor
 			if ok {
-				c.WriteJSON(data)
+				var resp WSLatestMetricsMsg
+				resp.Type = WSLatestMetrics
+				resp.MetricData = data
+				c.WriteJSON(resp)
 			} else {
 				return
 			}
