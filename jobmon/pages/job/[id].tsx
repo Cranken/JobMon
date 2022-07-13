@@ -29,7 +29,7 @@ import { JobInfo } from "../../components/jobview/JobInfo";
 import { useCookies } from "react-cookie";
 import { AnalysisBoxPlot } from "../../components/jobview/AnalysisView";
 import { SelectionMap } from "../../types/helpers";
-import { useStorageState } from "./../../utils/utils";
+import { clamp, useStorageState } from "./../../utils/utils";
 import { WSLoadMetricsMsg } from "./../../types/job";
 
 const Job: NextPage = () => {
@@ -81,7 +81,12 @@ const Job: NextPage = () => {
   useEffect(() => {
     if (data?.Metadata.StartTime) {
       if (data.Metadata.IsRunning) {
-        setStartTime(new Date(new Date().getTime() - 3600 * 1000));
+        setStartTime(
+          new Date(
+            Math.max(new Date().getTime() - 3600, data.Metadata.StartTime) *
+              1000
+          )
+        );
       } else {
         setStartTime(new Date(data?.Metadata.StartTime * 1000));
       }
