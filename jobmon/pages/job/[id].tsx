@@ -156,7 +156,7 @@ const Job: NextPage = () => {
       <Tabs isLazy>
         <TabList>
           <Tab>Timeline</Tab>
-          <Tab>Box Plots</Tab>
+          {/* <Tab>Box Plots</Tab> */}
           {/* <Tab>Node Table</Tab> */}
           {/* <Tab>Roofline</Tab> */}
         </TabList>
@@ -195,12 +195,12 @@ const Job: NextPage = () => {
               />
             )}
           </TabPanel>
-          <TabPanel>
+          {/* <TabPanel>
             <AnalysisBoxPlot
               data={data}
               autoScale={autoScale}
             ></AnalysisBoxPlot>
-          </TabPanel>
+          </TabPanel> */}
           {/* <TabPanel>
             <AnalysisTableView data={data}></AnalysisTableView>
           </TabPanel> */}
