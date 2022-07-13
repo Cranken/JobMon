@@ -83,8 +83,10 @@ const Job: NextPage = () => {
       if (data.Metadata.IsRunning) {
         setStartTime(
           new Date(
-            Math.max(new Date().getTime() - 3600, data.Metadata.StartTime) *
-              1000
+            Math.max(
+              new Date().getTime() - 3600 * 1000,
+              data.Metadata.StartTime * 1000
+            )
           )
         );
       } else {
