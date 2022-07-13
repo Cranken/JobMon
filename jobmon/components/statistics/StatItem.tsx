@@ -5,7 +5,9 @@ import {
   Box,
   Center,
   Flex,
+  Heading,
   Select,
+  Spacer,
   Stack,
   Text,
   Tooltip,
@@ -63,7 +65,8 @@ const useRenderPanel = (data: JobListData, panel: Panel) => {
         "Partition",
         true,
         true,
-        "Number of jobs per partition"
+        "Number of jobs per partition",
+        OPanel[panel]
       );
     case OPanel.GroupName:
       return renderSimpleAttribute(
@@ -71,7 +74,8 @@ const useRenderPanel = (data: JobListData, panel: Panel) => {
         "GroupName",
         true,
         true,
-        "Number of jobs per group"
+        "Number of jobs per group",
+        OPanel[panel]
       );
     case OPanel.NumNodes:
       return renderSimpleAttribute(
@@ -79,7 +83,8 @@ const useRenderPanel = (data: JobListData, panel: Panel) => {
         "NumNodes",
         false,
         false,
-        "Number of jobs which used a specific number of nodes"
+        "Number of jobs which used a specific number of nodes",
+        OPanel[panel]
       );
     case OPanel.Username:
       return renderSimpleAttribute(
@@ -87,7 +92,8 @@ const useRenderPanel = (data: JobListData, panel: Panel) => {
         "UserName",
         true,
         true,
-        "Number of jobs per user"
+        "Number of jobs per user",
+        OPanel[panel]
       );
     case OPanel.ComputeTime:
       return renderComputedAttribute(
@@ -96,7 +102,8 @@ const useRenderPanel = (data: JobListData, panel: Panel) => {
         groupKey,
         setGroupKey,
         `Compute time grouped by ${groupKey}. ` +
-          "Compute time is calculated as number of nodes * job length"
+          "Compute time is calculated as number of nodes * job length",
+        OPanel[panel]
       );
     case OPanel.JobLength:
       return renderComputedAttribute(
@@ -104,7 +111,8 @@ const useRenderPanel = (data: JobListData, panel: Panel) => {
         panel,
         groupKey,
         setGroupKey,
-        `Job length grouped by ${groupKey}`
+        `Job length grouped by ${groupKey}`,
+        OPanel[panel]
       );
   }
 
@@ -116,7 +124,8 @@ const renderSimpleAttribute = (
   attribute: keyof JobMetadata,
   sortByValue: boolean,
   horizontal: boolean,
-  tooltip: string
+  tooltip: string,
+  title: string
 ) => {
   const groups = groupBy(data?.Jobs ?? [], (obj) => obj[attribute].toString());
   const tuples: [string, number][] = Object.keys(groups).map((attribute) => [
@@ -128,7 +137,8 @@ const renderSimpleAttribute = (
   }
   return (
     <Stack>
-      <Flex justifyContent="end">
+      <Flex gap={3}>
+        <Heading size="lg">{title}</Heading>
         <Tooltip label={tooltip}>
           <QuestionIcon mt={2}></QuestionIcon>
         </Tooltip>
@@ -160,7 +170,8 @@ const renderComputedAttribute = (
   panel: Panel,
   groupKey: string,
   setGroupKey: (k: string) => void,
-  tooltip: string
+  tooltip: string,
+  title: string
 ) => {
   const groups = groupBy(data?.Jobs ?? [], (obj) =>
     obj[groupKey as keyof JobMetadata].toString()
@@ -187,18 +198,26 @@ const renderComputedAttribute = (
   return (
     <Stack>
       <Stack direction="row" pt={2} textAlign="center">
+        <Heading size="lg" width="">
+          {title}
+        </Heading>
+        <Tooltip label={tooltip}>
+          <QuestionIcon></QuestionIcon>
+        </Tooltip>
+        <Spacer></Spacer>
         <Text alignSelf="center" width="10%">
           Group by:
         </Text>
-        <Select value={groupKey} onChange={(e) => setGroupKey(e.target.value)}>
+        <Select
+          value={groupKey}
+          onChange={(e) => setGroupKey(e.target.value)}
+          w="fit-content"
+        >
           <option value="Id">Job Id</option>
           <option value="GroupName">Group Name</option>
           <option value="UserName">User Name</option>
           <option value="Partition">Partition</option>
         </Select>
-        <Tooltip label={tooltip}>
-          <QuestionIcon alignSelf="center"></QuestionIcon>
-        </Tooltip>
       </Stack>
       <HorizontalBarChart
         data={tuples.slice(0, 20)}

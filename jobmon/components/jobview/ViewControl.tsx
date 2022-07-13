@@ -49,9 +49,11 @@ export const ViewControl = ({
           selectedMetrics={selectedMetrics}
           setSelectedMetrics={setSelectedMetrics}
         ></MetricSelection>
-        <Button onClick={() => exportData(jobdata.Metadata.Id, removeCookie)}>
-          Export as CSV
-        </Button>
+        {jobdata.Metadata.IsRunning ? null : (
+          <Button onClick={() => exportData(jobdata.Metadata.Id, removeCookie)}>
+            Export as CSV
+          </Button>
+        )}
       </Stack>
       <Stack direction="row" gap={2}>
         {setShowQuantiles ? (
