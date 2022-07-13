@@ -13,6 +13,7 @@ ADD job ./job
 ADD lru_cache ./lru_cache
 ADD store ./store
 ADD utils ./utils
+ADD router ./router
 
 COPY jobmon.go ./
 

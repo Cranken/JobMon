@@ -1,11 +1,12 @@
 services:
   frontend:
+    restart: always
     build:
       context: ./jobmon
       args:
-        - NEXT_PUBLIC_BACKEND_URL=http://${HOSTNAME}:${BACKEND_PORT}
+        - NEXT_PUBLIC_BACKEND_URL=${HOSTNAME}:${BACKEND_PORT}
     environment:
-      - NEXT_PUBLIC_BACKEND_URL=http://${HOSTNAME}:${BACKEND_PORT}
+      - NEXT_PUBLIC_BACKEND_URL=${HOSTNAME}:${BACKEND_PORT}
     depends_on:
       - backend
       - influxdb
@@ -13,6 +14,7 @@ services:
     ports:
       - ${FRONTEND_PORT}:3000
   backend:
+    restart: always
     build: ./
     volumes:
       - type: bind
@@ -26,6 +28,7 @@ services:
     ports:
       - ${BACKEND_PORT}:8080
   influxdb:
+    restart: always
     image: influxdb
     environment:
       DOCKER_INFLUXDB_INIT_MODE: setup
@@ -40,8 +43,8 @@ services:
       - ./influxdb/data:/var/lib/influxdb2
       - ./influxdb/config:/etc/influxdb2
   psql:
-    image: postgres
     restart: always
+    image: postgres
     environment:
       POSTGRES_PASSWORD: ${PSQL_PASSWORD}
       POSTGRES_DB: ${PSQL_DB}
