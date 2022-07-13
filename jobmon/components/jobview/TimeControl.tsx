@@ -43,9 +43,14 @@ const TimeControl = ({
   let marks: Record<number, ReactNode> = {};
   let t = metadata.StartTime * 1000;
   const inc = ((metadata.StopTime - metadata.StartTime) / 4) * 1000;
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 4; i++) {
     marks[t] = new Date(t).toLocaleString();
     t += inc;
+  }
+  if (metadata.IsRunning) {
+    marks[t] = "Live";
+  } else {
+    marks[t] = new Date(t).toLocaleString();
   }
 
   return (
