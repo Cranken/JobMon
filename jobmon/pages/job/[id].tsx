@@ -72,11 +72,11 @@ const Job: NextPage = () => {
     }
   }, [data?.Metadata.NodeList, data?.Metadata.NumNodes]);
 
-  // useEffect(() => {
-  //   if (data?.SampleInterval) {
-  //     setSampleInterval(data.SampleInterval);
-  //   }
-  // }, [data?.SampleInterval]);
+  useEffect(() => {
+    if (data?.SampleInterval) {
+      setSampleInterval(data.SampleInterval);
+    }
+  }, [data?.SampleInterval]);
 
   useEffect(() => {
     if (data?.Metadata.StartTime) {
@@ -246,18 +246,11 @@ export const useGetJobData: (
       url.searchParams.append("sampleInterval", sampleInterval.toString());
     }
     if (node && node != "" && !node.includes("|")) {
-      const key = (sampleInterval?.toString() ?? "") + node;
       url.searchParams.append("node", node);
-      if (key in jobCache) {
-        setJobData(jobCache[key]);
-        setIsLoading(false);
-        return;
-      }
     }
-    const key = (sampleInterval?.toString() ?? "") + "all";
-    if (!node && key in jobCache) {
-      setJobData(jobCache[key]);
+    if (url.search in jobCache) {
       setIsLoading(false);
+      setJobData(jobCache[url.search]);
       return;
     }
     setIsLoading(true);
@@ -268,15 +261,13 @@ export const useGetJobData: (
         res.json().then((data: JobData) => {
           if (!data.Metadata.IsRunning) {
             setJobCache((prevState) => {
-              let key = node;
-              if (data.Metadata.NumNodes === 1) {
-                key = data.Metadata.NodeList;
+              if (sampleInterval === undefined) {
+                url.searchParams.append(
+                  "sampleInterval",
+                  data.SampleInterval.toString()
+                );
               }
-              prevState[
-                key
-                  ? data.SampleInterval.toString() + key
-                  : (data.SampleInterval.toString() ?? "") + "all"
-              ] = data;
+              prevState[url.search] = data;
               return prevState;
             });
           }

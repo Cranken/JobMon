@@ -67,7 +67,7 @@ export const ViewControl = ({
         <Button fontSize="sm" onClick={() => setAutoScale(!autoScale)}>
           Toggle Automatic Scaling
         </Button>
-        {sampleInterval && sampleIntervals ? (
+        {sampleInterval && sampleIntervals && !jobdata.Metadata.IsRunning ? (
           <Stack direction="row" flexGrow={1} align="center" justify="end">
             <Text>Select sample interval in seconds:</Text>
             <Select

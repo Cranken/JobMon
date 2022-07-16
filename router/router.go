@@ -192,7 +192,6 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 
 	node := req.URL.Query().Get("node")
 	raw := req.URL.Query().Get("raw") == "true"
-	liveLoadAll := req.URL.Query().Get("live_load_all") == "true"
 	strId := params.ByName("id")
 
 	id, err := strconv.Atoi(strId)
@@ -232,7 +231,7 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 
 	// Get job data
 	origStartTime := j.StartTime
-	if j.IsRunning && !liveLoadAll {
+	if j.IsRunning {
 		j.StartTime = int(time.Now().Unix()) - 3600
 	}
 	var jobData database.JobData
