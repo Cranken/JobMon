@@ -431,8 +431,10 @@ func (r *Router) LiveMonitoring(w http.ResponseWriter, req *http.Request, params
 							j.StartTime = wsLoadMetricsMsg.StartTime
 						}
 						j.StopTime = wsLoadMetricsMsg.StopTime
-						sampleDuration, _ := time.ParseDuration(r.config.SampleInterval)
-						data, err := r.db.GetNodeJobData(&j, "", sampleDuration, false)
+						dur, _ := time.ParseDuration(r.config.SampleInterval)
+						_, secs := j.CalculateSampleIntervals(dur)
+						bestInterval := time.Duration(secs) * time.Second
+						data, err := r.db.GetNodeJobData(&j, "", bestInterval, false)
 						j.StartTime = origStartTime
 						j.StopTime = origStopTime
 						if err == nil {
