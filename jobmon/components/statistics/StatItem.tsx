@@ -156,8 +156,8 @@ const renderSimpleAttribute = (
             data={tuples}
             column={(t) => t[0]}
             value={(t) => t[1]}
-            columnLabel="Occurences"
-            valueLabel={attribute}
+            valueLabel="Occurences"
+            columnLabel={attribute}
           ></BarChart>
         </Box>
       )}
