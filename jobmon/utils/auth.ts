@@ -9,7 +9,7 @@ export enum UserRole {
 
 interface AuthUser {
   Username: string;
-  Role: UserRole;
+  Roles: UserRole[];
 }
 
 export const useGetUser = () => {
@@ -23,10 +23,10 @@ export const useGetUser = () => {
     return {} as AuthUser;
   }
   const data = JSON.parse(base64url.decode(split[1]));
-  return { Username: data["Username"], Role: data["Role"] } as AuthUser;
+  return { Username: data["Username"], Roles: data["Roles"] } as AuthUser;
 };
 
 export const useIsAuthenticated = () => {
   const user = useGetUser();
-  return user.Role !== undefined && user.Username !== undefined;
+  return user.Roles !== undefined && user.Username !== undefined;
 };

@@ -23,6 +23,9 @@ type Configuration struct {
 	// Configuration for the job store
 	JobStore JobStoreConfig
 
+	// Configuration for OAuth Login
+	OAuth OAuthConfig
+
 	// Per partition metric config
 	Metrics []MetricConfig
 	// Job data LRU cache size
@@ -103,6 +106,15 @@ type JobStoreConfig struct {
 	PSQLPassword string
 	// Postgres db for job metadata store
 	PSQLDB string
+}
+
+type OAuthConfig struct {
+	ClientID    string
+	Secret      string
+	AuthURL     string
+	TokenURL    string
+	RedirectURL string
+	UserInfoURL string
 }
 
 func (c *Configuration) Init() {

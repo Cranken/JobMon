@@ -259,18 +259,16 @@ export const useGetJobData: (
         removeCookie("Authorization");
       } else {
         res.json().then((data: JobData) => {
-          if (!data.Metadata.IsRunning) {
-            setJobCache((prevState) => {
-              if (sampleInterval === undefined) {
-                url.searchParams.append(
-                  "sampleInterval",
-                  data.SampleInterval.toString()
-                );
-              }
-              prevState[url.search] = data;
-              return prevState;
-            });
-          }
+          setJobCache((prevState) => {
+            if (sampleInterval === undefined) {
+              url.searchParams.append(
+                "sampleInterval",
+                data.SampleInterval.toString()
+              );
+            }
+            prevState[url.search] = data;
+            return prevState;
+          });
           setJobData(data);
           setIsLoading(false);
         });

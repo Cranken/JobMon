@@ -9,3 +9,12 @@ func AllowCors(r *http.Request, header http.Header) {
 	header.Set("Access-Control-Allow-Credentials", "true")
 	header.Set("Access-Control-Expose-Headers", "Set-Cookie")
 }
+
+func Contains[T comparable](slice []T, val T) bool {
+	for _, elem := range slice {
+		if val == elem {
+			return true
+		}
+	}
+	return false
+}

@@ -1,16 +1,23 @@
 package auth
 
 import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"jobmon/config"
 	"jobmon/store"
 	"jobmon/utils"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/julienschmidt/httprouter"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -26,7 +33,7 @@ type AuthPayload struct {
 }
 
 type UserInfo struct {
-	Role     string
+	Roles    []string
 	Username string
 }
 
@@ -35,10 +42,28 @@ type UserClaims struct {
 	jwt.StandardClaims
 }
 
+type OAuthUserInfo struct {
+	Name     string
+	Sub      string
+	Username string `json:"preferred_username"`
+	Eppn     string
+	Email    string
+}
+
+type UserSession struct {
+	OAuthUserInfo
+	Timestamp time.Time
+	IsValid   bool
+}
+
 type AuthManager struct {
 	hmacSampleSecret []byte
 	store            *store.Store
 	localUsers       map[string]config.LocalUser
+	oauthConfig      oauth2.Config
+	oauthUserInfoURL string
+	sessions         map[string]UserSession
+	sessionsLock     sync.Mutex
 }
 
 const EXPIRATIONTIME = 60 * 60 * 24 * 7
@@ -73,7 +98,7 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 			return
 		}
 
-		if user.Role == authLevel || user.Role == ADMIN {
+		if utils.Contains(user.Roles, authLevel) || utils.Contains(user.Roles, ADMIN) {
 			h(w, r, ps, user)
 		} else {
 			utils.AllowCors(r, w.Header())
@@ -88,6 +113,18 @@ func (auth *AuthManager) Init(c config.Configuration, store *store.Store) {
 	auth.hmacSampleSecret = []byte(c.JWTSecret)
 	auth.store = store
 	auth.localUsers = c.LocalUsers
+	auth.oauthConfig = oauth2.Config{
+		ClientID:     c.OAuth.ClientID,
+		ClientSecret: c.OAuth.Secret,
+		Scopes:       []string{"openid", "email", "profile"},
+		RedirectURL:  c.OAuth.RedirectURL,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  c.OAuth.AuthURL,
+			TokenURL: c.OAuth.TokenURL,
+		},
+	}
+	auth.sessions = make(map[string]UserSession)
+	auth.oauthUserInfoURL = c.OAuth.UserInfoURL
 }
 
 func (auth *AuthManager) validate(tokenStr string) (user UserInfo, err error) {
@@ -124,7 +161,7 @@ func (auth *AuthManager) GenerateJWT(user UserInfo, remember bool) (string, erro
 	if remember {
 		expirationTime = time.Hour * 24 * 365
 	}
-	if user.Role == JOBCONTROL {
+	if utils.Contains(user.Roles, JOBCONTROL) {
 		expirationTime *= 10 // Slurm API should "never" expire
 	}
 	claims := UserClaims{
@@ -159,9 +196,9 @@ func (auth *AuthManager) AppendJWT(user UserInfo, remember bool, w http.Response
 }
 
 // Check if given username and password are correct
-func (auth *AuthManager) AuthUser(username string, password string) (user UserInfo, err error) {
+func (auth *AuthManager) AuthLocalUser(username string, password string) (user UserInfo, err error) {
 	if val, ok := auth.localUsers[username]; ok && password == val.Password {
-		user = UserInfo{Role: val.Role, Username: username}
+		user = UserInfo{Roles: []string{val.Role}, Username: username}
 		return
 	}
 	err = fmt.Errorf("no valid user or invalid password")
@@ -171,4 +208,67 @@ func (auth *AuthManager) AuthUser(username string, password string) (user UserIn
 // Log given user out of active sessions
 func (auth *AuthManager) Logout(username string) {
 	(*auth.store).RemoveUserSessionToken(username)
+}
+
+func (auth *AuthManager) GetOAuthCodeURL(sessionID string) string {
+	return auth.oauthConfig.AuthCodeURL(sessionID, oauth2.AccessTypeOnline)
+}
+
+func (auth *AuthManager) GenerateSession() (string, error) {
+	auth.sessionsLock.Lock()
+	defer auth.sessionsLock.Unlock()
+	var sessionID string
+	for {
+		randData := make([]byte, 32)
+		if _, err := rand.Read(randData); err != nil {
+			return "", fmt.Errorf("no random data for session id could be generated")
+		}
+		sessionID = hex.EncodeToString(randData)
+
+		if _, sessionExists := auth.sessions[sessionID]; !sessionExists {
+			break
+		}
+	}
+	auth.sessions[sessionID] = UserSession{IsValid: true, Timestamp: time.Now()}
+	return sessionID, nil
+}
+
+func (auth *AuthManager) GetSession(sessionID string) (UserSession, bool) {
+	auth.sessionsLock.Lock()
+	defer auth.sessionsLock.Unlock()
+	session, ok := auth.sessions[sessionID]
+	return session, ok
+}
+
+func (auth *AuthManager) SetSessionUserInfo(sessionID string, info OAuthUserInfo) {
+	auth.sessionsLock.Lock()
+	defer auth.sessionsLock.Unlock()
+	session, ok := auth.sessions[sessionID]
+	if ok {
+		session.Email = info.Email
+		session.Username = info.Username
+		session.Name = info.Name
+		session.Eppn = info.Eppn
+		session.Sub = info.Sub
+		auth.sessions[sessionID] = session
+	}
+}
+
+func (auth *AuthManager) ExchangeOAuthToken(code string) (*oauth2.Token, error) {
+	return auth.oauthConfig.Exchange(context.Background(), code)
+}
+
+func (auth *AuthManager) GetOAuthUserInfo(token *oauth2.Token) (*OAuthUserInfo, error) {
+	client := auth.oauthConfig.Client(context.Background(), token)
+	resp, err := client.Get(auth.oauthUserInfoURL)
+	if err != nil {
+		return nil, err
+	}
+	dat, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	var userInfo OAuthUserInfo
+	err = json.Unmarshal(dat, &userInfo)
+	return &userInfo, err
 }

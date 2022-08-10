@@ -43,6 +43,7 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 	s.db.NewCreateTable().Model((*job.JobTag)(nil)).Exec(context.Background())
 	s.db.NewCreateTable().Model((*job.JobMetadata)(nil)).Exec(context.Background())
 	s.db.NewCreateTable().Model((*UserSession)(nil)).Exec(context.Background())
+	s.db.NewCreateTable().Model((*UserRoles)(nil)).Exec(context.Background())
 	go func() {
 		s.finishOvertimeJobs()
 	}()
@@ -148,6 +149,23 @@ func (s *PostgresStore) SetUserSessionToken(username string, token string) {
 func (s *PostgresStore) RemoveUserSessionToken(username string) {
 	user := UserSession{Username: username}
 	s.db.NewDelete().Model(&user).WherePK().Exec(context.Background())
+}
+
+func (s *PostgresStore) GetUserRoles(username string) ([]string, bool) {
+	user := UserRoles{Username: username}
+	err := s.db.NewSelect().Model(&user).WherePK().Scan(context.Background())
+	if err != nil {
+		return make([]string, 0), false
+	}
+	return user.Roles, true
+}
+
+func (s *PostgresStore) SetUserRoles(username string, roles []string) {
+	user := UserRoles{Username: username, Roles: roles}
+	s.db.NewInsert().
+		Model(&user).
+		On("CONFLICT (username) DO UPDATE").
+		Exec(context.Background())
 }
 
 func (s *PostgresStore) Flush() {

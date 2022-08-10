@@ -39,7 +39,7 @@ export const Header = () => {
   const [apiKey, setApiKey] = useState("");
 
   const logout = () => {
-    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/logout", {
+    fetch("http://" + process.env.NEXT_PUBLIC_BACKEND_URL + "/api/logout", {
       method: "POST",
       credentials: "include",
       body: JSON.stringify(user),
@@ -92,7 +92,7 @@ export const Header = () => {
               <Link href="/jobs">
                 <Button bg={buttonBg}>Home</Button>
               </Link>
-              {user.Role === UserRole.Admin ? (
+              {user.Roles?.includes(UserRole.Admin) ?? false ? (
                 <Link href="/statistics">
                   <Button bg={buttonBg}>Statistics</Button>
                 </Link>
@@ -111,7 +111,8 @@ export const Header = () => {
           ) : null}
         </Box>
         <Flex flexGrow={1} justify={"end"} gap={2}>
-          {isAuthenticated && user.Role === UserRole.Admin ? (
+          {(isAuthenticated && user.Roles?.includes(UserRole.Admin)) ??
+          false ? (
             <Tooltip label="Admin Debug Menu">
               <Button bg={buttonBg} onClick={onOpen}>
                 <SettingsIcon />
@@ -123,7 +124,7 @@ export const Header = () => {
               {colorMode === "light" ? <MoonIcon /> : <SunIcon />}
             </Button>
           </Tooltip>
-          {isAuthenticated && user.Role === UserRole.Admin ? (
+          {isAuthenticated ? (
             <Tooltip label="Logout">
               <Button bg={buttonBg} onClick={() => logout()}>
                 <Icon as={MdLogout} />

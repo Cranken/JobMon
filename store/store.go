@@ -36,11 +36,20 @@ type Store interface {
 	SetUserSessionToken(username string, token string)
 	// Removes the user session token from the active sessions
 	RemoveUserSessionToken(username string)
+	// Gets the user roles
+	GetUserRoles(username string) ([]string, bool)
+	// Sets the user roles
+	SetUserRoles(username string, roles []string)
 }
 
 type UserSession struct {
 	Username string `bun:",pk"`
 	Token    string
+}
+
+type UserRoles struct {
+	Username string `bun:",pk"`
+	Roles    []string
 }
 
 type ColumnCount []map[string]interface{}

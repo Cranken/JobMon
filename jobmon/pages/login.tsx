@@ -4,6 +4,7 @@ import {
   Button,
   Center,
   Checkbox,
+  Divider,
   Flex,
   FormControl,
   FormLabel,
@@ -82,6 +83,18 @@ export const Login = () => {
             <Button onClick={() => submit()}>Login</Button>
           </Flex>
         </FormControl>
+        <Divider />
+        <Button
+          onClick={() =>
+            router.push(
+              "http://" +
+                process.env.NEXT_PUBLIC_BACKEND_URL +
+                "/auth/oauth/login"
+            )
+          }
+        >
+          Login with OIDC
+        </Button>
       </Stack>
     </Center>
   );

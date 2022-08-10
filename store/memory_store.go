@@ -16,11 +16,12 @@ import (
 )
 
 type MemoryStore struct {
-	Jobs           map[int]*job.JobMetadata
-	SessionStorage map[string]string
-	mut            sync.Mutex
-	database       *db.DB
-	config         config.Configuration
+	Jobs            map[int]*job.JobMetadata
+	SessionStorage  map[string]string
+	UserRoleStorage map[string][]string
+	mut             sync.Mutex
+	database        *db.DB
+	config          config.Configuration
 }
 
 type JobPred func(job.JobMetadata) bool
@@ -141,6 +142,15 @@ func (s *MemoryStore) SetUserSessionToken(username string, token string) {
 
 func (s *MemoryStore) RemoveUserSessionToken(username string) {
 	delete(s.SessionStorage, username)
+}
+
+func (s *MemoryStore) GetUserRoles(username string) ([]string, bool) {
+	roles, ok := s.UserRoleStorage[username]
+	return roles, ok
+}
+
+func (s *MemoryStore) SetUserRoles(username string, roles []string) {
+	s.UserRoleStorage[username] = roles
 }
 
 func (s *MemoryStore) Flush() {

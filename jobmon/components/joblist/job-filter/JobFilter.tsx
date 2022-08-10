@@ -1,4 +1,3 @@
-import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
 import {
   Flex,
   Input,
@@ -23,6 +22,7 @@ import style from "./JobFilter.module.css";
 import { Stepper } from "./Stepper";
 import { useEffect, useState } from "react";
 import { JobTag } from "./../../../types/job";
+import { useGetUser, UserRole } from "../../../utils/auth";
 
 interface JobFilterProps {
   params: JobSearchParams;
@@ -58,6 +58,7 @@ export const JobFilter = ({
     ],
   });
   const [shouldApply, setShouldApply] = useState(false);
+  const user = useGetUser();
   const tagListBackground = useColorModeValue("gray.400", "gray.500");
   const hoverBackground = useColorModeValue("gray.200", "gray.700");
   useEffect(() => {
@@ -102,14 +103,16 @@ export const JobFilter = ({
           <TabPanel>
             <Stack>
               <Flex gap={3}>
-                <Input
-                  value={filterParams.UserName}
-                  placeholder="User Id"
-                  maxW="15ch"
-                  onChange={(ev) =>
-                    setFilterParams({ ...params, UserName: ev.target.value })
-                  }
-                />
+                {user.Roles.includes(UserRole.Admin) ? (
+                  <Input
+                    value={filterParams.UserName}
+                    placeholder="User Id"
+                    maxW="15ch"
+                    onChange={(ev) =>
+                      setFilterParams({ ...params, UserName: ev.target.value })
+                    }
+                  />
+                ) : null}
                 <Select
                   maxW="30ch"
                   value={filterParams.Partition}

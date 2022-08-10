@@ -11,6 +11,7 @@ require (
 
 require (
 	github.com/fatih/color v1.13.0 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
@@ -20,7 +21,10 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f // indirect
-	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150 // indirect
+	golang.org/x/oauth2 v0.0.0-20220722155238-128564f6959c // indirect
+	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
+	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/protobuf v1.28.0 // indirect
 	mellium.im/sasl v0.2.1 // indirect
 )
 
@@ -32,6 +36,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/uptrace/bun/dialect/pgdialect v1.1.4
 	github.com/uptrace/bun/driver/pgdriver v1.1.4
-	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4 // indirect
+	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

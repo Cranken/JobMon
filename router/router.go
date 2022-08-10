@@ -40,6 +40,8 @@ func (r *Router) Init(store jobstore.Store, config *conf.Configuration, db datab
 	r.upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
 
 	router := httprouter.New()
+	router.GET("/auth/oauth/login", r.LoginOAuth)
+	router.GET("/auth/oauth/callback", r.LoginOAuthCallback)
 	router.PUT("/api/job_start", authManager.Protected(r.JobStart, auth.JOBCONTROL))
 	router.PATCH("/api/job_stop/:id", authManager.Protected(r.JobStop, auth.JOBCONTROL))
 	router.GET("/api/jobs", authManager.Protected(r.GetJobs, auth.USER))
@@ -141,10 +143,12 @@ func (r *Router) JobStop(w http.ResponseWriter, req *http.Request, params httpro
 func (r *Router) GetJobs(w http.ResponseWriter, req *http.Request, _ httprouter.Params, user auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
 	filter := r.parseGetJobParams(req.URL.Query())
+
+	// Check user authorization
+	if !utils.Contains(user.Roles, auth.ADMIN) {
+		filter.UserName = &user.Username
+	}
 	jobs, err := r.store.GetFilteredJobs(filter)
-	// TODO: Check auth and get by e.g. project id, ...
-	// Get all for now
-	// jobs, err := store.GetAllJobs()
 	if err != nil {
 		log.Printf("Could not get jobs %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -161,7 +165,7 @@ func (r *Router) GetJobs(w http.ResponseWriter, req *http.Request, _ httprouter.
 	}
 
 	var tags []job.JobTag
-	if user.Role == auth.ADMIN {
+	if utils.Contains(user.Roles, auth.ADMIN) {
 		// Get all if user is admin
 		tags, err = r.store.GetJobTags("")
 	} else {
@@ -201,8 +205,6 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 		return
 	}
 
-	// TODO: Check user authorization/authentification
-
 	// Get job metadata from store
 	j, err := r.store.GetJob(id)
 	if err != nil {
@@ -211,8 +213,11 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 		return
 	}
 
-	if j.NumNodes == 1 {
-		node = j.NodeList
+	// Check user authorization
+	if !(utils.Contains(user.Roles, auth.ADMIN) || user.Username == j.UserName) {
+		log.Printf("User %v is not permitted to access job %v", user.Username, j.Id)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
 	}
 
 	// Calculate best sample interval
@@ -238,7 +243,7 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 	if node == "" && querySampleInterval == "" && !j.IsRunning && !raw {
 		jobData, err = r.jobCache.Get(&j, bestInterval)
 	} else if j.IsRunning {
-		j.StopTime = int(time.Now().Unix())
+			j.StopTime = int(time.Now().Unix())
 		jobData, err = r.db.GetNodeJobData(&j, "", bestInterval, raw)
 	} else {
 		jobData, err = r.db.GetNodeJobData(&j, node, sampleInterval, raw)
@@ -300,7 +305,7 @@ func (r *Router) Login(w http.ResponseWriter, req *http.Request, params httprout
 		return
 	}
 
-	user, err := r.authManager.AuthUser(dat.Username, dat.Password)
+	user, err := r.authManager.AuthLocalUser(dat.Username, dat.Password)
 	if err != nil {
 		log.Printf("Could not authenticate user: %v", err)
 		w.WriteHeader(http.StatusUnauthorized)
@@ -314,6 +319,77 @@ func (r *Router) Login(w http.ResponseWriter, req *http.Request, params httprout
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func (r *Router) LoginOAuth(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+	sessionID, err := r.authManager.GenerateSession()
+	if err != nil {
+		if err != nil {
+			log.Printf("Could not generate session: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+	cookie := http.Cookie{Name: "oauth_session", Value: sessionID, Expires: time.Now().Add(365 * 24 * time.Hour)}
+	http.SetCookie(w, &cookie)
+
+	url := r.authManager.GetOAuthCodeURL(sessionID)
+	http.Redirect(w, req, url, http.StatusTemporaryRedirect)
+}
+
+func (r *Router) LoginOAuthCallback(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+	sessionID, _ := req.Cookie("oauth_session")
+	state := req.FormValue("state")
+	if state != sessionID.Value {
+		log.Printf("OAuth returned non matching state id")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	session, ok := r.authManager.GetSession(state)
+	if !session.IsValid || !ok {
+		log.Printf("OAuth returned invalid state id")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	code := req.FormValue("code")
+	if code == "" {
+		log.Printf("OAuth returned no code")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	token, err := r.authManager.ExchangeOAuthToken(code)
+	if err != nil {
+		log.Printf("Could not exchange token: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if !token.Valid() {
+		log.Printf("Token is invalid")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	userInfo, err := r.authManager.GetOAuthUserInfo(token)
+	if err != nil {
+		log.Printf("Could not get oauth user info %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	roles, ok := r.store.GetUserRoles(userInfo.Username)
+	if !ok || len(roles) == 0 {
+		roles = []string{auth.USER}
+	}
+
+	user := auth.UserInfo{Username: userInfo.Username, Roles: roles}
+	err = r.authManager.AppendJWT(user, true, w)
+	if err != nil {
+		log.Printf("Could not generate JWT: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, req, "http://localhost:3000/jobs", http.StatusTemporaryRedirect)
 }
 
 func (r *Router) Logout(w http.ResponseWriter, req *http.Request, params httprouter.Params, _ auth.UserInfo) {
@@ -346,7 +422,7 @@ func (r *Router) Logout(w http.ResponseWriter, req *http.Request, params httprou
 
 func (r *Router) GenerateAPIKey(w http.ResponseWriter, req *http.Request, params httprouter.Params, _ auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
-	jwt, err := r.authManager.GenerateJWT(auth.UserInfo{Role: auth.JOBCONTROL, Username: "api"}, true)
+	jwt, err := r.authManager.GenerateJWT(auth.UserInfo{Roles: []string{auth.JOBCONTROL}, Username: "api"}, true)
 	if err != nil {
 		log.Printf("Could not generate JWT: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -358,8 +434,12 @@ func (r *Router) GenerateAPIKey(w http.ResponseWriter, req *http.Request, params
 func (r *Router) AddTag(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
 	job, tag, ok := r.parseTag(w, req)
 	if ok {
+		role := auth.USER
+		if utils.Contains(user.Roles, auth.ADMIN) {
+			role = auth.ADMIN
+		}
 		tag.CreatedBy = user.Username
-		tag.Type = user.Role
+		tag.Type = role
 		r.store.AddTag(job.Id, &tag)
 		r.jobCache.UpdateJob(job.Id)
 
