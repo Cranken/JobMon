@@ -390,7 +390,7 @@ func (r *Router) LoginOAuthCallback(w http.ResponseWriter, req *http.Request, pa
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, req, "http://localhost:3000/jobs", http.StatusTemporaryRedirect)
+	http.Redirect(w, req, r.config.OAuth.AfterLoginRedirectUrl, http.StatusTemporaryRedirect)
 }
 
 func (r *Router) Logout(w http.ResponseWriter, req *http.Request, params httprouter.Params, _ auth.UserInfo) {

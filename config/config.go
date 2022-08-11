@@ -109,12 +109,13 @@ type JobStoreConfig struct {
 }
 
 type OAuthConfig struct {
-	ClientID    string
-	Secret      string
-	AuthURL     string
-	TokenURL    string
-	RedirectURL string
-	UserInfoURL string
+	ClientID              string
+	Secret                string
+	AuthURL               string
+	TokenURL              string
+	RedirectURL           string
+	UserInfoURL           string
+	AfterLoginRedirectUrl string
 }
 
 func (c *Configuration) Init() {
