@@ -77,12 +77,11 @@ func (db *InfluxDB) Close() {
 	db.client.Close()
 }
 
-func (db *InfluxDB) GetJobData(job *job.JobMetadata, sampleInterval time.Duration, raw bool) (data JobData, err error) {
-	return db.getJobData(job, "", sampleInterval, raw)
-}
-
-func (db *InfluxDB) GetNodeJobData(job *job.JobMetadata, node string, sampleInterval time.Duration, raw bool) (data JobData, err error) {
-	return db.getJobData(job, node, sampleInterval, raw)
+func (db *InfluxDB) GetJobData(job *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data JobData, err error) {
+	if nodes == "" {
+		nodes = job.NodeList
+	}
+	return db.getJobData(job, nodes, sampleInterval, raw)
 }
 
 func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMetadataData, err error) {
@@ -173,7 +172,7 @@ func (db *InfluxDB) CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []Metr
 	return monitor, done
 }
 
-func (db *InfluxDB) getJobData(job *job.JobMetadata, node string, sampleInterval time.Duration, raw bool) (data JobData, err error) {
+func (db *InfluxDB) getJobData(job *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data JobData, err error) {
 	var metricData []MetricData
 	var quantileData []QuantileData
 	var wg sync.WaitGroup
@@ -181,7 +180,7 @@ func (db *InfluxDB) getJobData(job *job.JobMetadata, node string, sampleInterval
 		wg.Add(1)
 		go func(m conf.MetricConfig) {
 			if raw {
-				result, err := db.queryRaw(m, job, node, sampleInterval)
+				result, err := db.queryRaw(m, job, nodes, sampleInterval)
 				defer wg.Done()
 				if err != nil {
 					log.Printf("Job %v: could not get metric data %v", job.Id, err)
@@ -189,7 +188,7 @@ func (db *InfluxDB) getJobData(job *job.JobMetadata, node string, sampleInterval
 				}
 				metricData = append(metricData, MetricData{Config: m, RawData: result})
 			} else {
-				result, err := db.query(m, job, node, sampleInterval)
+				result, err := db.query(m, job, nodes, sampleInterval)
 				defer wg.Done()
 				if err != nil {
 					log.Printf("Job %v: could not get metric data %v", job.Id, err)
@@ -224,30 +223,22 @@ func (db *InfluxDB) getJobData(job *job.JobMetadata, node string, sampleInterval
 	return data, err
 }
 
-func (db *InfluxDB) query(metric conf.MetricConfig, job *job.JobMetadata, node string, sampleInterval time.Duration) (result map[string][]QueryResult, err error) {
+func (db *InfluxDB) query(metric conf.MetricConfig, job *job.JobMetadata, nodes string, sampleInterval time.Duration) (result map[string][]QueryResult, err error) {
 	var queryResult *api.QueryTableResult
-	if metric.AggFn != "" && node == "" {
-		queryResult, err = db.queryAggregateMeasurement(metric, job, sampleInterval)
-		if err == nil {
-			result, err = parseQueryResult(queryResult, "hostname")
-		}
-	} else if node != "" {
-		queryResult, err = db.querySimpleMeasurement(metric, job, node, sampleInterval)
-		if err == nil {
-			separationKey := "hostname"
-			if metric.Type != "node" {
-				separationKey = "type-id"
-			}
-			if metric.SeparationKey != "" {
-				separationKey = metric.SeparationKey
-			}
-			result, err = parseQueryResult(queryResult, separationKey)
-		}
+	separationKey := metric.SeparationKey
+	// If only one node is specified, always return detailed data, never aggregated data
+	if len(strings.Split(nodes, "|")) == 1 {
+		queryResult, err = db.querySimpleMeasurement(metric, job, nodes, sampleInterval)
 	} else {
-		queryResult, err = db.querySimpleMeasurement(metric, job, node, sampleInterval)
-		if err == nil {
-			result, err = parseQueryResult(queryResult, "hostname")
+		if metric.Type != "node" {
+			queryResult, err = db.queryAggregateMeasurement(metric, job, sampleInterval)
+		} else {
+			queryResult, err = db.querySimpleMeasurement(metric, job, nodes, sampleInterval)
 		}
+		separationKey = "hostname"
+	}
+	if err == nil {
+		result, err = parseQueryResult(queryResult, separationKey)
 	}
 	return result, err
 }
@@ -255,19 +246,13 @@ func (db *InfluxDB) query(metric conf.MetricConfig, job *job.JobMetadata, node s
 func (db *InfluxDB) queryRaw(metric conf.MetricConfig, job *job.JobMetadata, node string, sampleInterval time.Duration) (result string, err error) {
 	if metric.AggFn != "" && node == "" {
 		result, err = db.queryAggregateMeasurementRaw(metric, job, sampleInterval)
-	} else if node != "" {
-		result, err = db.querySimpleMeasurementRaw(metric, job, node, sampleInterval)
 	} else {
 		result, err = db.querySimpleMeasurementRaw(metric, job, node, sampleInterval)
 	}
 	return result, err
 }
 
-func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, job *job.JobMetadata, node string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
-	nodeList := job.NodeList
-	if node != "" {
-		nodeList = node
-	}
+func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, job *job.JobMetadata, nodes string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
 	query := fmt.Sprintf(`
 		from(bucket: "%v")
 		|> range(start: %v, stop: %v)
@@ -277,7 +262,7 @@ func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, job *job.Jo
 		|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
 		%v
 		|> truncateTimeColumn(unit: %v)
-	`, db.bucket, job.StartTime, job.StopTime, metric.Measurement, metric.Type, nodeList, sampleInterval, metric.FilterFunc, db.defaultSampleInterval)
+	`, db.bucket, job.StartTime, job.StopTime, metric.Measurement, metric.Type, nodes, sampleInterval, metric.FilterFunc, db.defaultSampleInterval)
 	query += metric.PostQueryOp
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
@@ -286,11 +271,7 @@ func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, job *job.Jo
 	return result, err
 }
 
-func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, job *job.JobMetadata, node string, sampleInterval time.Duration) (result string, err error) {
-	nodeList := job.NodeList
-	if node != "" {
-		nodeList = node
-	}
+func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, job *job.JobMetadata, nodes string, sampleInterval time.Duration) (result string, err error) {
 	query := fmt.Sprintf(`
 		from(bucket: "%v")
 		|> range(start: %v, stop: %v)
@@ -300,7 +281,7 @@ func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, job *job
 		|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
 		%v
 		|> truncateTimeColumn(unit: %v)
-	`, db.bucket, job.StartTime, job.StopTime, metric.Measurement, metric.Type, nodeList, sampleInterval, metric.FilterFunc, db.defaultSampleInterval)
+	`, db.bucket, job.StartTime, job.StopTime, metric.Measurement, metric.Type, nodes, sampleInterval, metric.FilterFunc, db.defaultSampleInterval)
 	query += metric.PostQueryOp
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
 	if err != nil {
@@ -459,13 +440,19 @@ func (db *InfluxDB) queryLastDatapoints(job job.JobMetadata) (metricData []Metri
 			defer wg.Done()
 			m.PostQueryOp += "|> last()"
 			var queryResult *api.QueryTableResult
-			queryResult, err = db.queryAggregateMeasurement(m, &job, sampleInterval)
+			separationKey := "hostname"
+			if job.NumNodes == 1 {
+				queryResult, err = db.querySimpleMeasurement(m, &job, job.NodeList, sampleInterval)
+				separationKey = m.SeparationKey
+			} else {
+				queryResult, err = db.queryAggregateMeasurement(m, &job, sampleInterval)
+			}
 			if err != nil {
 				log.Printf("Job %v: could not get last datapoints %v", job.Id, err)
 				return
 			}
 			if err == nil {
-				result, err := parseQueryResult(queryResult, "hostname")
+				result, err := parseQueryResult(queryResult, separationKey)
 				if err != nil {
 					log.Printf("Job %v: could not parse last datapoints %v", job.Id, err)
 					return

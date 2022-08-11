@@ -70,11 +70,14 @@ export const MetricDataCharts = ({
             const hThreadData = metric.Data[hThread];
             const aggPoints = pThreadData.map((val, idx) => {
               let aggThread = Object.assign({}, val);
-              if (metric.Config.PThreadAggFn === "mean") {
-                aggThread._value += hThreadData.at(idx)?._value ?? 0;
-                aggThread._value /= 2;
-              } else {
-                aggThread._value += hThreadData.at(idx)?._value ?? 0;
+              switch (metric.Config.PThreadAggFn) {
+                case "mean":
+                  aggThread._value += hThreadData.at(idx)?._value ?? 0;
+                  aggThread._value /= 2;
+                  break;
+                case "sum":
+                default:
+                  aggThread._value += hThreadData.at(idx)?._value ?? 0;
               }
               return aggThread;
             });
@@ -93,12 +96,11 @@ export const MetricDataCharts = ({
           `${d["type-id"]}: ${new Unit(d._value, unitStr).toString(maxPrefix)}`;
       })(metric.Config.Unit, maxPrefix);
     } else {
+      // Check if is aggregated measurement
       const key = (
-        nodeSelection.length === 1 &&
-        metric.Config.SeparationKey !== "" &&
-        !isRunning
-          ? metric.Config.SeparationKey
-          : "hostname"
+        metric.Config.Measurement.endsWith(metric.Config.AggFn)
+          ? "hostname"
+          : metric.Config.SeparationKey
       ) as keyof MetricPoint;
       z = ((key: keyof MetricPoint) => {
         return (d: MetricPoint) => d[key]?.toString() ?? "";

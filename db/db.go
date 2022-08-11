@@ -9,13 +9,14 @@ import (
 type DB interface {
 	Init(c conf.Configuration)
 	Close()
-	// Get job data of the given job and sample interval
-	GetJobData(job *job.JobMetadata, sampleInterval time.Duration, raw bool) (data JobData, err error)
-	// Get job data for a specific node specified by node parameter in the given job and sample interval
-	GetNodeJobData(job *job.JobMetadata, node string, sampleInterval time.Duration, raw bool) (data JobData, err error)
+	// Get job data of the given job for the specified nodes and sample interval.
+	// If raw is true then the MetricData contained in the result data contains the raw metric data.
+	// Nodes should be specified as a list of nodes separated by a '|' character.
+	// If no nodes are specified, data for all nodes are queried.
+	GetJobData(job *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data JobData, err error)
 	// Get job metadata metrics for the given job
 	GetJobMetadataMetrics(job *job.JobMetadata) (data []job.JobMetadataData, err error)
-	// Run aggregation tasks in the Influxdb
+	// Run the aggregation for node data in the db
 	RunAggregation()
 	// Get job data retention time
 	GetDataRetentionTime() (int64, error)
