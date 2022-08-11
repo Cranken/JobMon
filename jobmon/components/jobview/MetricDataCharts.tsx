@@ -95,10 +95,11 @@ export const MetricDataCharts = ({
         return (d: MetricPoint) =>
           `${d["type-id"]}: ${new Unit(d._value, unitStr).toString(maxPrefix)}`;
       })(metric.Config.Unit, maxPrefix);
-    } else {
+    } else if (nodeSelection.length > 0) {
       // Check if is aggregated measurement
       const key = (
-        metric.Config.Measurement.endsWith(metric.Config.AggFn)
+        metric.Config.Measurement.endsWith(metric.Config.AggFn) ||
+        nodeSelection.length > 1
           ? "hostname"
           : metric.Config.SeparationKey
       ) as keyof MetricPoint;
