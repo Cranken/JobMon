@@ -5,7 +5,6 @@ import {
   Flex,
   Icon,
   Input,
-  Link,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -21,6 +20,7 @@ import {
   useColorModeValue,
   useDisclosure,
 } from "@chakra-ui/react";
+import Link from "next/link";
 import { useState } from "react";
 import { useCookies } from "react-cookie";
 import { MdLogout } from "react-icons/md";
@@ -35,8 +35,6 @@ export const Header = () => {
   const buttonBg = useColorModeValue("gray.500", "gray.400");
   const searchInputColor = useColorModeValue("gray.800", "whiteAlpha.900");
   const isAuthenticated = useIsAuthenticated();
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [apiKey, setApiKey] = useState("");
 
   const logout = () => {
     fetch("http://" + process.env.NEXT_PUBLIC_BACKEND_URL + "/api/logout", {
@@ -46,55 +44,23 @@ export const Header = () => {
     }).then(() => removeCookie("Authorization", { path: "/" }));
   };
 
-  const generateApiKey = () => {
-    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/generateAPIKey", {
-      method: "POST",
-      credentials: "include",
-    }).then((resp) =>
-      resp.body
-        ?.getReader()
-        .read()
-        .then((val) => {
-          if (val.value) {
-            setApiKey(new TextDecoder().decode(val.value));
-          }
-        })
-    );
-  };
   return (
     <header>
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Debug Menu</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Stack gap={2}>
-              <Button onClick={() => generateApiKey()}>Generate API Key</Button>
-              <Text>This will invalidate the existing API Key</Text>
-              <Textarea value={apiKey} isReadOnly>
-                test
-              </Textarea>
-            </Stack>
-          </ModalBody>
-
-          <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={onClose}>
-              Close
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
       <Flex bg={headerBg} p={2}>
         <Flex flexGrow={1} gap={2}>
           {isAuthenticated ? (
             <>
-              <Link href="/jobs">
+              <Link href="/jobs" passHref>
                 <Button bg={buttonBg}>Home</Button>
               </Link>
               {user.Roles?.includes(UserRole.Admin) ?? false ? (
-                <Link href="/statistics">
+                <Link href="/statistics" passHref>
                   <Button bg={buttonBg}>Statistics</Button>
+                </Link>
+              ) : null}
+              {user.Roles?.includes(UserRole.Admin) ?? false ? (
+                <Link href="/settings" passHref>
+                  <Button bg={buttonBg}>Settings</Button>
                 </Link>
               ) : null}
             </>
@@ -111,14 +77,6 @@ export const Header = () => {
           ) : null}
         </Box>
         <Flex flexGrow={1} justify={"end"} gap={2}>
-          {(isAuthenticated && user.Roles?.includes(UserRole.Admin)) ??
-          false ? (
-            <Tooltip label="Admin Debug Menu">
-              <Button bg={buttonBg} onClick={onOpen}>
-                <SettingsIcon />
-              </Button>
-            </Tooltip>
-          ) : null}
           <Tooltip label="Toggle Color Mode">
             <Button bg={buttonBg} onClick={toggleColorMode}>
               {colorMode === "light" ? <MoonIcon /> : <SunIcon />}
