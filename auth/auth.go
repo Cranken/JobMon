@@ -10,6 +10,7 @@ import (
 	"jobmon/config"
 	"jobmon/store"
 	"jobmon/utils"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -79,6 +80,7 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 			utils.AllowCors(r, w.Header())
 			http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
 			w.WriteHeader(http.StatusUnauthorized)
+			log.Println("auth: No authorization cookie provided")
 			return
 		}
 
@@ -87,6 +89,7 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 			utils.AllowCors(r, w.Header())
 			http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
 			w.WriteHeader(http.StatusUnauthorized)
+			log.Println("auth: not a valid bearer token")
 			return
 		}
 
@@ -95,6 +98,7 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 			utils.AllowCors(r, w.Header())
 			http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
 			w.WriteHeader(http.StatusUnauthorized)
+			log.Println("auth: not a valid user")
 			return
 		}
 
@@ -110,6 +114,7 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 			utils.AllowCors(r, w.Header())
 			http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
 			w.WriteHeader(http.StatusForbidden)
+			log.Println("auth: user not permitted")
 			return
 		}
 	}

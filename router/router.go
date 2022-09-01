@@ -80,7 +80,10 @@ func (r *Router) JobStart(w http.ResponseWriter, req *http.Request, params httpr
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte{})
-	r.store.PutJob(j)
+	err = r.store.PutJob(j)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func (r *Router) JobStop(w http.ResponseWriter, req *http.Request, params httprouter.Params, _ auth.UserInfo) {
