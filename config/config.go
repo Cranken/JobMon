@@ -33,8 +33,10 @@ type Configuration struct {
 	// Prefetch job data into LRU cache upon job completion
 	Prefetch bool
 	// Sample interval of the metrics as configured in the metric collector
+	// String formatted as e.g. 30s or 1m
 	SampleInterval string
 	// Quantiles the frontend will display; Will be moved to frontend config
+	// Values are percentages formatted as decimal (0.X)
 	MetricQuantiles []string
 	// Secret to use when generating the JWT
 	JWTSecret string
@@ -109,12 +111,20 @@ type JobStoreConfig struct {
 }
 
 type OAuthConfig struct {
-	ClientID              string
-	Secret                string
-	AuthURL               string
-	TokenURL              string
-	RedirectURL           string
-	UserInfoURL           string
+	// OAuth Client ID
+	ClientID string
+	// OAuth Secret
+	Secret string
+	// OAuth Endpoint Auth URL
+	AuthURL string
+	// OAuth Endpoint Token URL
+	TokenURL string
+	// OAuth Redirect URL, i.e. backend oauth callback endpoint ("<backend_host>/auth/oauth/callback")
+	RedirectURL string
+	// Oauth User Info URL
+	UserInfoURL string
+	// URL to which the user will be redirected to after successful login.
+	// Set to some frontend url, e.g. "<frontend_host>/jobs"
 	AfterLoginRedirectUrl string
 }
 
