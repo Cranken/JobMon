@@ -5,8 +5,11 @@ Slurm Job Data is collected by the `jobmon_slurm` Prolog/Epilog script in `/scri
 
 ## Development Setup
 
-The config must have been adjusted beforehand.  
-Node version should be > 16.11.12  
+The config and .env must have been adjusted beforehand.
+
+Node version should be >= 16.11.12.  
+Go version needs to be >= 1.18.
+
 Yarn should have been installed globally.
 
 The easiest way is to use two terminals.  
