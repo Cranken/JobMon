@@ -131,7 +131,10 @@ type OAuthConfig struct {
 func (c *Configuration) Init() {
 	data, err := os.ReadFile(CONFIG_FILE)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		log.Fatalf("Could not read config file: %v\n Error: %v\n", CONFIG_FILE, err)
+		log.Fatalf("config: Could not read config file: %v\n Error: %v\n", CONFIG_FILE, err)
 	}
-	json.Unmarshal(data, c)
+	err = json.Unmarshal(data, c)
+	if err != nil {
+		log.Fatalf("config: Could not unmarshal config file %v", err)
+	}
 }
