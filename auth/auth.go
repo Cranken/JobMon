@@ -121,9 +121,41 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 }
 
 func (auth *AuthManager) Init(c config.Configuration, store *store.Store) {
+	if c.JWTSecret == "" {
+		log.Fatalf("auth: No jwt secret set")
+	}
 	auth.hmacSampleSecret = []byte(c.JWTSecret)
+	if store == nil {
+		log.Fatalf("auth: No store given")
+	}
 	auth.store = store
 	auth.localUsers = c.LocalUsers
+	err := auth.createOAuthConfig(c)
+	if err != nil {
+		log.Printf("auth: OAuth is not available: %v", err)
+	}
+	auth.sessions = make(map[string]UserSession)
+}
+
+func (auth *AuthManager) createOAuthConfig(c config.Configuration) error {
+	if c.OAuth.ClientID == "" {
+		return fmt.Errorf("no OAuth ClientID set")
+	}
+	if c.OAuth.Secret == "" {
+		return fmt.Errorf("no OAuth Secret set")
+	}
+	if c.OAuth.RedirectURL == "" {
+		return fmt.Errorf("no OAuth RedirectURL set")
+	}
+	if c.OAuth.AuthURL == "" {
+		return fmt.Errorf("no OAuth AuthURL set")
+	}
+	if c.OAuth.TokenURL == "" {
+		return fmt.Errorf("no OAuth TokenURL set")
+	}
+	if c.OAuth.UserInfoURL == "" {
+		return fmt.Errorf("no OAuth UserInfoURL set")
+	}
 	auth.oauthConfig = oauth2.Config{
 		ClientID:     c.OAuth.ClientID,
 		ClientSecret: c.OAuth.Secret,
@@ -134,8 +166,8 @@ func (auth *AuthManager) Init(c config.Configuration, store *store.Store) {
 			TokenURL: c.OAuth.TokenURL,
 		},
 	}
-	auth.sessions = make(map[string]UserSession)
 	auth.oauthUserInfoURL = c.OAuth.UserInfoURL
+	return nil
 }
 
 func (auth *AuthManager) validate(tokenStr string) (user UserInfo, err error) {
