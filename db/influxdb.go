@@ -57,10 +57,26 @@ type JobData struct {
 type QueryResult map[string]interface{}
 
 func (db *InfluxDB) Init(c conf.Configuration) {
+	if c.DBHost == "" {
+		log.Fatalln("db: No Influxdb host set")
+	}
+	if c.DBToken == "" {
+		log.Fatalln("db: No Influxdb token set")
+	}
 	db.client = influxdb2.NewClient(c.DBHost, c.DBToken)
+	ok, err := db.client.Ping(context.Background())
+	if !ok || err != nil {
+		log.Fatalf("db: Could not reach influxdb %v", err)
+	}
+	if c.DBOrg == "" {
+		log.Fatalln("db: No Influxdb org set")
+	}
 	db.queryAPI = db.client.QueryAPI(c.DBOrg)
 	db.tasksAPI = db.client.TasksAPI()
 	db.organizationsAPI = db.client.OrganizationsAPI()
+	if c.DBBucket == "" {
+		log.Fatalln("db: No Influxdb bucket set")
+	}
 	db.bucket = c.DBBucket
 	db.org = c.DBOrg
 	db.metrics = make(map[string]conf.MetricConfig)

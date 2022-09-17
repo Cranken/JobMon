@@ -326,6 +326,13 @@ func (r *Router) Login(w http.ResponseWriter, req *http.Request, params httprout
 }
 
 func (r *Router) LoginOAuth(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+	if !r.authManager.OAuthAvailable() {
+		errStr := "OAuth login not avaiable"
+		log.Println(errStr)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(errStr))
+		return
+	}
 	sessionID, err := r.authManager.GenerateSession()
 	if err != nil {
 		if err != nil {

@@ -15,6 +15,8 @@ import (
 	"time"
 )
 
+// DEPRECATED: Do not use anymore.
+// Use Postgres store instead
 type MemoryStore struct {
 	Jobs            map[int]*job.JobMetadata
 	SessionStorage  map[string]string

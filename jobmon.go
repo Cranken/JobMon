@@ -22,15 +22,15 @@ var router = routerImport.Router{}
 func main() {
 	config.Init()
 	db = &database.InfluxDB{}
+	db.Init(config)
 
 	switch config.JobStore.Type {
-	case "postgres":
-		store = &jobstore.PostgresStore{}
-	default:
+	case "memory":
 		store = &jobstore.MemoryStore{}
+	default:
+		store = &jobstore.PostgresStore{}
 	}
 
-	db.Init(config)
 	store.Init(config, &db)
 	jobCache.Init(config, &db, &store)
 	authManager.Init(config, &store)

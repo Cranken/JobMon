@@ -61,6 +61,7 @@ type AuthManager struct {
 	hmacSampleSecret []byte
 	store            *store.Store
 	localUsers       map[string]config.LocalUser
+	oauthAvailable   bool
 	oauthConfig      oauth2.Config
 	oauthUserInfoURL string
 	sessions         map[string]UserSession
@@ -138,6 +139,7 @@ func (auth *AuthManager) Init(c config.Configuration, store *store.Store) {
 }
 
 func (auth *AuthManager) createOAuthConfig(c config.Configuration) error {
+	auth.oauthAvailable = false
 	if c.OAuth.ClientID == "" {
 		return fmt.Errorf("no OAuth ClientID set")
 	}
@@ -167,6 +169,7 @@ func (auth *AuthManager) createOAuthConfig(c config.Configuration) error {
 		},
 	}
 	auth.oauthUserInfoURL = c.OAuth.UserInfoURL
+	auth.oauthAvailable = true
 	return nil
 }
 
@@ -251,6 +254,10 @@ func (auth *AuthManager) AuthLocalUser(username string, password string) (user U
 // Log given user out of active sessions
 func (auth *AuthManager) Logout(username string) {
 	(*auth.store).RemoveUserSessionToken(username)
+}
+
+func (auth *AuthManager) OAuthAvailable() bool {
+	return auth.oauthAvailable
 }
 
 func (auth *AuthManager) GetOAuthCodeURL(sessionID string) string {
