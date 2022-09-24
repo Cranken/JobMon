@@ -1,8 +1,11 @@
-import { checkBetween } from "../utils/utils";
-
+enum PrefixType {
+  None,
+  Metric,
+  Exponential,
+}
 interface UnitType {
   DisplayFormat: string;
-  UsePrefix: boolean;
+  Prefix: PrefixType;
 }
 
 interface UnitsType {
@@ -12,35 +15,35 @@ interface UnitsType {
 const Units: UnitsType = {
   Flops: {
     DisplayFormat: "FLOP/s",
-    UsePrefix: true,
+    Prefix: PrefixType.Metric,
   },
   Bits: {
     DisplayFormat: "Bit/s",
-    UsePrefix: true,
+    Prefix: PrefixType.Metric,
   },
   DegC: {
     DisplayFormat: "°C",
-    UsePrefix: false,
+    Prefix: PrefixType.None,
   },
   Bytes: {
     DisplayFormat: "B/s",
-    UsePrefix: true,
+    Prefix: PrefixType.Metric,
   },
   Byte: {
     DisplayFormat: "B",
-    UsePrefix: true,
+    Prefix: PrefixType.Metric,
   },
   Percentage: {
     DisplayFormat: "%",
-    UsePrefix: false,
+    Prefix: PrefixType.None,
   },
   Packets: {
     DisplayFormat: "Packet/s",
-    UsePrefix: false,
+    Prefix: PrefixType.Exponential,
   },
   None: {
     DisplayFormat: "",
-    UsePrefix: false,
+    Prefix: PrefixType.None,
   },
 };
 
@@ -115,27 +118,35 @@ export class Unit {
   }
 
   toString(prefix?: string) {
-    let best = this.bestPrefix();
-    best = prefix ? prefix : best;
-    if (best) {
-      const prefix = Prefixes[best];
-      const exp = Math.pow(prefix.Base, prefix.Exp);
-      const value = this.value / exp;
-      return `${value.toFixed(2)} ${prefix.Short}${this.type.DisplayFormat}`;
+    switch (this.type.Prefix) {
+      case PrefixType.Exponential:
+        return this.value.toExponential(2) + ` ${this.type.DisplayFormat}`;
+      default:
+        let best = this.bestPrefix();
+        best = prefix ? prefix : best;
+        if (best) {
+          const prefix = Prefixes[best];
+          const exp = Math.pow(prefix.Base, prefix.Exp);
+          const value = this.value / exp;
+          return `${value.toFixed(2)} ${prefix.Short}${
+            this.type.DisplayFormat
+          }`;
+        }
+        return `${this.value.toFixed(2)} ${this.type.DisplayFormat}`;
     }
-    return `${this.value.toFixed(2)} ${this.type.DisplayFormat}`;
   }
 
   bestPrefix() {
-    let prefix;
-    if (this.type.UsePrefix) {
-      prefix = Object.keys(Prefixes).find((key) => {
-        const exp = Math.pow(Prefixes[key].Base, Prefixes[key].Exp);
-        const value = this.value / exp;
-        return 1 <= value && value < 1000;
-      });
+    switch (this.type.Prefix) {
+      case PrefixType.Metric:
+        return Object.keys(Prefixes).find((key) => {
+          const exp = Math.pow(Prefixes[key].Base, Prefixes[key].Exp);
+          const value = this.value / exp;
+          return 1 <= value && value < 1000;
+        });
+      case PrefixType.Exponential:
+        return "None";
     }
-    return prefix;
   }
 }
 
@@ -147,15 +158,12 @@ const getBaseUnit = (str: string) => {
 };
 
 const getPrefix = (str: string, type: UnitType) => {
-  if (type.UsePrefix) {
-    const typeIdx = str.indexOf(type.DisplayFormat);
-    if (typeIdx === -1) {
-      return Prefixes.None;
-    }
-    const prefix = Object.keys(Prefixes).find((key) =>
-      str.includes(`${Prefixes[key].Short}${type.DisplayFormat}`)
-    );
-    return prefix ? Prefixes[prefix] : Prefixes.None;
+  switch (type.Prefix) {
+    case PrefixType.Metric:
+      const prefix = Object.keys(Prefixes).find((key) =>
+        str.includes(`${Prefixes[key].Short}${type.DisplayFormat}`)
+      );
+      return prefix ? Prefixes[prefix] : Prefixes.None;
   }
   return Prefixes.None;
 };
