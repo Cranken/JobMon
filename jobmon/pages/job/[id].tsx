@@ -50,7 +50,7 @@ const Job: NextPage = () => {
     sampleInterval,
     startTime?.getTime()
   );
-  const [showQuantiles, setShowQuantiles] = useState(true);
+  const [showQuantiles, setShowQuantiles] = useState(false);
   const [autoScale, setAutoscale] = useState(true);
   const setTimeRange = (start: Date, end: Date) => {
     setStartTime(start);
