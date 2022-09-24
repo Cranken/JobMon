@@ -104,6 +104,7 @@ export interface JobData {
 export interface JobMetadataData {
   Config: MetricConfig;
   Data: number;
+  Max: number;
 }
 
 export interface JobTag {

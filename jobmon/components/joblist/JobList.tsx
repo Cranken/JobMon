@@ -67,10 +67,11 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
     radarChartData = job.Data.filter((val) =>
       radarChartMetrics.includes(val.Config.Measurement)
     ).map((val) => {
-      const max = Math.max(val.Config.MaxPerNode, val.Config.MaxPerType);
+      let deviceMax = Math.max(val.Config.MaxPerNode, val.Config.MaxPerType);
+      deviceMax = deviceMax !== 0 ? deviceMax : val.Data;
       return {
-        val: val.Data,
-        max: max !== 0 ? max : val.Data,
+        mean: val.Data / deviceMax,
+        max: val.Max / deviceMax,
         title: val.Config.DisplayName,
       };
     });
@@ -167,8 +168,9 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
                     {radarChartData ? (
                       <RadarChart
                         data={radarChartData}
-                        value={(d) => d.val / d.max}
+                        value={(d) => d.mean}
                         title={(d) => d.title}
+                        maxVal={(d) => d.max}
                         size={350}
                         margin={60}
                       ></RadarChart>

@@ -122,10 +122,11 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 				log.Printf("Job %v: could not parse metadata data %v", j.Id, err)
 				return
 			}
-			if res, ok := result["_result"]; ok && len(result) == 1 {
-				val := res[0]["_value"]
-				if val != nil {
-					data = append(data, job.JobMetadataData{Config: m, Data: val.(float64)})
+			if res, ok := result["_result"]; ok {
+				mean := res[0]["_value"]
+				max := res[1]["_value"]
+				if mean != nil && max != nil {
+					data = append(data, job.JobMetadataData{Config: m, Data: mean.(float64), Max: max.(float64)})
 				}
 			}
 		}(db.metrics[m])
@@ -422,18 +423,27 @@ func (db *InfluxDB) queryMetadataMeasurements(metric conf.MetricConfig, job *job
 		measurement += "_" + metric.AggFn
 	}
 	query := fmt.Sprintf(`
-		from(bucket: "%v")
+		data = from(bucket: "%v")
 		|> range(start: %v, stop: %v)
 		|> filter(fn: (r) => r["_measurement"] == "%v")
 		|> filter(fn: (r) => r["hostname"] =~ /%v/)
 		%v
 	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, metric.FilterFunc)
 	query += metric.PostQueryOp
-	query += fmt.Sprintf(`
-		|> %v(column: "_value")
+	query += `
+	mean = data
+		|> mean(column: "_value")
     |> group()
 		|> mean(column: "_value")
-	`, "mean")
+		|> set(key: "_field", value: "mean")
+
+	max = data
+	  |> highestMax(n:5, groupColumns: ["_time"])
+  	|> median()
+  	|> set(key: "_field", value: "max")
+	
+	union(tables: [mean, max])	
+	`
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		log.Printf("Error at metadata query: %v\n", err)

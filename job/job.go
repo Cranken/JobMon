@@ -35,7 +35,10 @@ type JobMetadata struct {
 
 type JobMetadataData struct {
 	Config config.MetricConfig
-	Data   float64
+	// Average
+	Data float64
+	// Max
+	Max float64
 }
 
 type StopJob struct {

@@ -6,6 +6,7 @@ interface RadarChartProps<T> {
   data: T[];
   value: (d: T) => number;
   title: (d: T) => string;
+  maxVal?: (d: T) => number;
   size?: number;
   margin: number;
   numSpirals?: number;
@@ -14,15 +15,16 @@ interface RadarChartProps<T> {
 
 /**
  * Renders a radar chart based on the given data
- * @param data - Array of data to be displayed
- * @param x - Mapping function of data value to quantitative value. Should be between [0,1], i.e. scaled between 0 and the maximum
- * @param y - Mapping function of data value to label
+ * @param data - Array of values to be displayed
+ * @param value - Mapping function which maps data to the mean values to be displayed
+ * @param maxVal - Mapping function which maps data to the maximum values to be displayed
  *
  */
 export function RadarChart<T>({
   data,
   value,
   title,
+  maxVal,
   size = 350,
   margin = 80,
   numSpirals = 4,
@@ -35,6 +37,7 @@ export function RadarChart<T>({
       return;
     }
     const values = d3.map(data, value);
+    const maxVals = maxVal ? d3.map(data, maxVal) : undefined;
     const titles = d3.map(data, title);
 
     const range = [margin, size - margin];
@@ -88,6 +91,18 @@ export function RadarChart<T>({
         .attr("fill", stroke)
         .attr("style", "font-size: 0.7em")
         .text(titles[i]);
+
+      if (maxVals) {
+        const val = maxVals[i];
+        const coord = [Math.cos(angle), Math.sin(angle)];
+        svg
+          .append("circle")
+          .attr("cx", xScale(val * coord[0]))
+          .attr("cy", yScale(val * coord[1]))
+          .attr("r", 3)
+          .attr("fill", "#ff0000")
+          .attr("fill-opacity", "1");
+      }
     });
 
     // Spirals between axes
