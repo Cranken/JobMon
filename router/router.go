@@ -215,7 +215,6 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	r.db.GetJobMetadataMetrics(&j)
 
 	// Check user authorization
 	if !(utils.Contains(user.Roles, auth.ADMIN) || user.Username == j.UserName) {
