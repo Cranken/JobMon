@@ -41,6 +41,10 @@ const Units: UnitsType = {
     DisplayFormat: "Packet/s",
     Prefix: PrefixType.Exponential,
   },
+  Watts: {
+    DisplayFormat: "W",
+    Prefix: PrefixType.Metric,
+  },
   None: {
     DisplayFormat: "",
     Prefix: PrefixType.None,
