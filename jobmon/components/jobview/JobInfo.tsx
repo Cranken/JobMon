@@ -34,7 +34,12 @@ export const JobInfo = ({ metadata, setChecked, nodes }: JobInfoProps) => {
         <TagPanel job={metadata}></TagPanel>
       </Stack>
       <Stack>
-        <Selection setChecked={setChecked} items={nodes} nodePrefix={prefix} />
+        <Selection
+          setChecked={setChecked}
+          items={nodes}
+          nodePrefix={prefix}
+          selectionAllowed={!metadata.IsRunning}
+        />
       </Stack>
     </Grid>
   );

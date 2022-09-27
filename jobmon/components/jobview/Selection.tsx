@@ -9,6 +9,8 @@ import {
   Text,
   Input,
   Stack,
+  Alert,
+  AlertIcon,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { SelectionMap } from "../../types/helpers";
@@ -20,12 +22,14 @@ export interface SelectionProps {
   setChecked: SetFn;
   items: Items;
   nodePrefix: string;
+  selectionAllowed: boolean;
 }
 
 export const Selection = ({
   setChecked,
   items,
   nodePrefix,
+  selectionAllowed,
 }: SelectionProps) => {
   const [selectionString, setSelectionString] = useState("");
   let elements: JSX.Element[] = [];
@@ -42,7 +46,7 @@ export const Selection = ({
         <SelectionItem
           key={key}
           node={key}
-          onChange={setChecked}
+          onChange={selectionAllowed ? setChecked : () => {}}
           checked={items[key]}
         />
       );
@@ -62,21 +66,28 @@ export const Selection = ({
         </h2>
         <AccordionPanel pb={4}>
           <Stack>
-            <Flex justify="space-between">
-              <Button
-                w="14ch"
-                size="xs"
-                mr={2}
-                onClick={() => setChecked({ all: !allChecked })}
-              >
-                Select {allChecked ? "None" : "All"}
-              </Button>
-              <Input
-                size="xs"
-                onChange={(e) => setSelectionString(e.target.value)}
-                value={selectionString}
-              />
-            </Flex>
+            {selectionAllowed ? (
+              <Flex justify="space-between">
+                <Button
+                  w="14ch"
+                  size="xs"
+                  mr={2}
+                  onClick={() => setChecked({ all: !allChecked })}
+                >
+                  Select {allChecked ? "None" : "All"}
+                </Button>
+                <Input
+                  size="xs"
+                  onChange={(e) => setSelectionString(e.target.value)}
+                  value={selectionString}
+                />
+              </Flex>
+            ) : (
+              <Alert status="info">
+                <AlertIcon />
+                Selection not available when viewing live jobs
+              </Alert>
+            )}
             <Flex wrap="wrap" direction="row" mt={2}>
               {elements}
             </Flex>
