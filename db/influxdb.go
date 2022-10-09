@@ -107,32 +107,7 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 	if j.StopTime <= j.StartTime {
 		return data, fmt.Errorf("job stop time is less or equal to start")
 	}
-	var wg sync.WaitGroup
-	for _, m := range db.partitionConfig[j.Partition].Metrics {
-		wg.Add(1)
-		go func(m conf.MetricConfig) {
-			defer wg.Done()
-			tempRes, err := db.queryMetadataMeasurements(m, j)
-			if err != nil {
-				log.Printf("Job %v: could not get metadata data %v", j.Id, err)
-				return
-			}
-			result, err := parseQueryResult(tempRes, "result")
-			if err != nil {
-				log.Printf("Job %v: could not parse metadata data %v", j.Id, err)
-				return
-			}
-			if res, ok := result["_result"]; ok {
-				mean := res[0]["_value"]
-				max := res[1]["_value"]
-				if mean != nil && max != nil {
-					data = append(data, job.JobMetadataData{Config: m, Data: mean.(float64), Max: max.(float64)})
-				}
-			}
-		}(db.metrics[m])
-	}
-	wg.Wait()
-	return
+	return db.getMetadataData(j)
 }
 
 func (db *InfluxDB) RunAggregation() {
@@ -141,21 +116,6 @@ func (db *InfluxDB) RunAggregation() {
 			db.tasksAPI.RunManually(context.Background(), task)
 		}(&task)
 	}
-}
-
-func (db *InfluxDB) GetDataRetentionTime() (int64, error) {
-	bucket, err := db.client.BucketsAPI().FindBucketByName(context.Background(), db.bucket)
-	if err != nil {
-		return 0, err
-	}
-	if len(bucket.RetentionRules) > 1 {
-		return 0, fmt.Errorf("more than one retention rule found")
-	}
-	// No retention rule ^= store forever
-	if len(bucket.RetentionRules) == 0 {
-		return -1, nil
-	}
-	return bucket.RetentionRules[0].EverySeconds, nil
 }
 
 func (db *InfluxDB) CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []MetricData, chan bool) {
@@ -197,16 +157,16 @@ func (db *InfluxDB) getJobData(job *job.JobMetadata, nodes string, sampleInterva
 		wg.Add(1)
 		go func(m conf.MetricConfig) {
 			if raw {
-				result, err := db.queryRaw(m, job, nodes, sampleInterval)
 				defer wg.Done()
+				result, err := db.queryRaw(m, job, nodes, sampleInterval)
 				if err != nil {
 					log.Printf("Job %v: could not get metric data %v", job.Id, err)
 					return
 				}
 				metricData = append(metricData, MetricData{Config: m, RawData: result})
 			} else {
-				result, err := db.query(m, job, nodes, sampleInterval)
 				defer wg.Done()
+				result, err := db.query(m, job, nodes, sampleInterval)
 				if err != nil {
 					log.Printf("Job %v: could not get metric data %v", job.Id, err)
 					return
@@ -218,8 +178,8 @@ func (db *InfluxDB) getJobData(job *job.JobMetadata, nodes string, sampleInterva
 		if !job.IsRunning {
 			wg.Add(1)
 			go func(m conf.MetricConfig) {
-				tempRes, err := db.queryQuantileMeasurement(m, job, db.metricQuantiles, sampleInterval)
 				defer wg.Done()
+				tempRes, err := db.queryQuantileMeasurement(m, job, db.metricQuantiles, sampleInterval)
 				if err != nil {
 					log.Printf("Job %v: could not get quantile data %v", job.Id, err)
 					return
@@ -238,6 +198,37 @@ func (db *InfluxDB) getJobData(job *job.JobMetadata, nodes string, sampleInterva
 	data.QuantileData = quantileData
 	data.Metadata = job
 	return data, err
+}
+
+func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (data []job.JobMetadataData, err error) {
+	var wg sync.WaitGroup
+	for _, m := range db.partitionConfig[j.Partition].Metrics {
+		wg.Add(1)
+		go func(m conf.MetricConfig) {
+			defer wg.Done()
+			tempRes, err := db.queryMetadataMeasurements(m, j)
+			if err != nil {
+				log.Printf("Job %v: could not get metadata data %v", j.Id, err)
+				return
+			}
+
+			result, err := parseQueryResult(tempRes, "result")
+			if err != nil {
+				log.Printf("Job %v: could not parse metadata data %v", j.Id, err)
+				return
+			}
+
+			if res, ok := result["_result"]; ok {
+				mean := res[0]["_value"]
+				max := res[1]["_value"]
+				if mean != nil && max != nil {
+					data = append(data, job.JobMetadataData{Config: m, Data: mean.(float64), Max: max.(float64)})
+				}
+			}
+		}(db.metrics[m])
+	}
+	wg.Wait()
+	return
 }
 
 func (db *InfluxDB) query(metric conf.MetricConfig, job *job.JobMetadata, nodes string, sampleInterval time.Duration) (result map[string][]QueryResult, err error) {
@@ -293,6 +284,7 @@ func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, job *job
 	return result, err
 }
 
+// separationKey describes the key by which to differentiate between different datasets. E.g. per host/per cpu
 func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (result map[string][]QueryResult, err error) {
 	result = make(map[string][]QueryResult)
 	tableRows := []QueryResult{}

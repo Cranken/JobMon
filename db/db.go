@@ -18,8 +18,6 @@ type DB interface {
 	GetJobMetadataMetrics(job *job.JobMetadata) (data []job.JobMetadataData, err error)
 	// Run the aggregation for node data in the db
 	RunAggregation()
-	// Get job data retention time
-	GetDataRetentionTime() (int64, error)
 	// Creates a channel which periodically returns the latest metric data for the given job.
 	// Also returns a channel which can be used to send an close signal
 	CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []MetricData, chan bool)
