@@ -55,6 +55,8 @@ func (r *Router) Init(store jobstore.Store, config *conf.Configuration, db *data
 	router.POST("/api/generateAPIKey", authManager.Protected(r.GenerateAPIKey, auth.ADMIN))
 	router.POST("/api/tags/add_tag", authManager.Protected(r.AddTag, auth.USER))
 	router.POST("/api/tags/remove_tag", authManager.Protected(r.RemoveTag, auth.USER))
+	router.GET("/api/config", authManager.Protected(r.GetConfig, auth.ADMIN))
+	router.PATCH("/api/config/update", authManager.Protected(r.UpdateConfig, auth.ADMIN))
 	router.GET("/api/admin/livelog", authManager.Protected(r.LiveLog, auth.ADMIN))
 	router.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Access-Control-Request-Method") != "" {
@@ -571,6 +573,55 @@ func (r *Router) LiveMonitoring(w http.ResponseWriter, req *http.Request, params
 			}
 		}
 	}()
+}
+
+func (r *Router) GetConfig(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
+	utils.AllowCors(req, w.Header())
+	// Restrict available configuration parameters for now
+	conf := conf.Configuration{}
+	conf.Metrics = r.config.Metrics
+
+	data, err := json.Marshal(conf)
+	if err != nil {
+		log.Println("Could not marshal config")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(data)
+}
+
+func (r *Router) UpdateConfig(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
+	utils.AllowCors(req, w.Header())
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		log.Printf("Could not read update config request body")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Test if it is valid configuration
+	conf := conf.Configuration{}
+	err = json.Unmarshal(body, &conf)
+	if err != nil {
+		log.Printf("Could not unmarshal update config request body")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Actually overwrite config
+	r.config.Metrics = conf.Metrics
+
+	// Reinit affected units
+	// DB because of potential changes to metrics
+	(*r.db).Init(*r.config)
+	data, err := json.Marshal(r.config)
+	if err != nil {
+		log.Printf("Could not unmarshal update config request body")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	w.Write(data)
 }
 
 func (r *Router) LiveLog(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
