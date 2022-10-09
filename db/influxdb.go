@@ -270,17 +270,10 @@ func (db *InfluxDB) queryRaw(metric conf.MetricConfig, job *job.JobMetadata, nod
 }
 
 func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, job *job.JobMetadata, nodes string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
-	query := fmt.Sprintf(`
-		from(bucket: "%v")
-		|> range(start: %v, stop: %v)
-		|> filter(fn: (r) => r["_measurement"] == "%v")
-	  |> filter(fn: (r) => r["type"] == "%v")
-		|> filter(fn: (r) => r["hostname"] =~ /%v/)
-		|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
-		%v
-		|> truncateTimeColumn(unit: %v)
-	`, db.bucket, job.StartTime, job.StopTime, metric.Measurement, metric.Type, nodes, sampleInterval, metric.FilterFunc, db.defaultSampleInterval)
-	query += metric.PostQueryOp
+	query := fmt.Sprintf(SimpleMeasurementQuery,
+		db.bucket, job.StartTime, job.StopTime, metric.Measurement,
+		metric.Type, nodes, sampleInterval, metric.FilterFunc,
+		metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		log.Printf("Error at simple query: %v : %v\n", query, err)
@@ -289,17 +282,10 @@ func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, job *job.Jo
 }
 
 func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, job *job.JobMetadata, nodes string, sampleInterval time.Duration) (result string, err error) {
-	query := fmt.Sprintf(`
-		from(bucket: "%v")
-		|> range(start: %v, stop: %v)
-		|> filter(fn: (r) => r["_measurement"] == "%v")
-	  |> filter(fn: (r) => r["type"] == "%v")
-		|> filter(fn: (r) => r["hostname"] =~ /%v/)
-		|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
-		%v
-		|> truncateTimeColumn(unit: %v)
-	`, db.bucket, job.StartTime, job.StopTime, metric.Measurement, metric.Type, nodes, sampleInterval, metric.FilterFunc, db.defaultSampleInterval)
-	query += metric.PostQueryOp
+	query := fmt.Sprintf(SimpleMeasurementQuery,
+		db.bucket, job.StartTime, job.StopTime, metric.Measurement,
+		metric.Type, nodes, sampleInterval, metric.FilterFunc,
+		metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
 	if err != nil {
 		log.Printf("Error at simple raw query: %v : %v\n", query, err)
@@ -337,15 +323,9 @@ func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (
 
 func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, job *job.JobMetadata, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement + "_" + metric.AggFn
-	query := fmt.Sprintf(`
-		from(bucket: "%v")
-		|> range(start: %v, stop: %v)
-		|> filter(fn: (r) => r["_measurement"] == "%v")
-		|> filter(fn: (r) => r["hostname"] =~ /%v/)
-		|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
-		%v
-	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, sampleInterval, metric.FilterFunc)
-	query += metric.PostQueryOp
+	query := fmt.Sprintf(AggregateMeasurementQuery,
+		db.bucket, job.StartTime, job.StopTime, measurement,
+		job.NodeList, sampleInterval, metric.FilterFunc, metric.PostQueryOp)
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		log.Printf("Error at aggregate query: %v\n", err)
@@ -355,15 +335,9 @@ func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, job *job
 
 func (db *InfluxDB) queryAggregateMeasurementRaw(metric conf.MetricConfig, job *job.JobMetadata, sampleInterval time.Duration) (result string, err error) {
 	measurement := metric.Measurement + "_" + metric.AggFn
-	query := fmt.Sprintf(`
-		from(bucket: "%v")
-		|> range(start: %v, stop: %v)
-		|> filter(fn: (r) => r["_measurement"] == "%v")
-		|> filter(fn: (r) => r["hostname"] =~ /%v/)
-		|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
-		%v
-	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, sampleInterval, metric.FilterFunc)
-	query += metric.PostQueryOp
+	query := fmt.Sprintf(AggregateMeasurementQuery,
+		db.bucket, job.StartTime, job.StopTime, measurement,
+		job.NodeList, sampleInterval, metric.FilterFunc, metric.PostQueryOp)
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
 	if err != nil {
 		log.Printf("Error at aggregate raw query: %v\n", err)
@@ -381,25 +355,17 @@ func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, job *job.
 		tempKeys = append(tempKeys, string(i))
 	}
 
-	query := fmt.Sprintf(`
-		data = from(bucket: "%v")
-			|> range(start: %v, stop: %v)
-			|> filter(fn: (r) => r["_measurement"] == "%v")
-			|> filter(fn: (r) => r["hostname"] =~ /%v/)
-		  |> aggregateWindow(every: %s, fn: mean, createEmpty: true)
-			%v
-			|> truncateTimeColumn(unit: %v)
-			|> group(columns: ["_time"], mode: "by")`,
-		db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, sampleInterval, metric.FilterFunc, db.defaultSampleInterval)
-
+	quantileSubQuery := ""
 	for i, q := range quantiles {
-		query += "\n" + quantileString(tempKeys[i], q, measurement)
+		quantileSubQuery += quantileString(tempKeys[i], q, measurement) + "\n"
 	}
 
-	query += "\n" + fmt.Sprintf(`
-		union(tables: %v)
-		|> group(columns: ["_field"])`, "["+strings.Join(tempKeys[0:len(quantiles)], ",")+"]")
-	query += metric.PostQueryOp
+	tempKeyAggregation := "[" + strings.Join(tempKeys[0:len(quantiles)], ",") + "]"
+
+	query := fmt.Sprintf(QuantileMeasurementQuery,
+		db.bucket, job.StartTime, job.StopTime, measurement,
+		job.NodeList, sampleInterval, metric.FilterFunc, metric.PostQueryOp,
+		sampleInterval, quantileSubQuery, tempKeyAggregation)
 
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
@@ -409,11 +375,7 @@ func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, job *job.
 }
 
 func quantileString(streamName string, q string, measurement string) string {
-	return fmt.Sprintf(`
-		%v = data
-    |> quantile(column: "_value", q: %v, method: "estimate_tdigest", compression: 1000.0)
-    |> set(key: "_field", value: "%v")
-    |> set(key: "_measurement", value: "%v_quant")`,
+	return fmt.Sprintf(QuantileStringTemplate,
 		streamName, q, q, measurement)
 }
 
@@ -422,28 +384,9 @@ func (db *InfluxDB) queryMetadataMeasurements(metric conf.MetricConfig, job *job
 	if metric.AggFn != "" {
 		measurement += "_" + metric.AggFn
 	}
-	query := fmt.Sprintf(`
-		data = from(bucket: "%v")
-		|> range(start: %v, stop: %v)
-		|> filter(fn: (r) => r["_measurement"] == "%v")
-		|> filter(fn: (r) => r["hostname"] =~ /%v/)
-		%v
-	`, db.bucket, job.StartTime, job.StopTime, measurement, job.NodeList, metric.FilterFunc)
-	query += metric.PostQueryOp
-	query += `
-	mean = data
-		|> mean(column: "_value")
-    |> group()
-		|> mean(column: "_value")
-		|> set(key: "_field", value: "mean")
-
-	max = data
-	  |> highestMax(n:5, groupColumns: ["_time"])
-  	|> median()
-  	|> set(key: "_field", value: "max")
-	
-	union(tables: [mean, max])	
-	`
+	query := fmt.Sprintf(MetadataMeasurementsQuery,
+		db.bucket, job.StartTime, job.StopTime, measurement,
+		job.NodeList, metric.FilterFunc, metric.PostQueryOp)
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		log.Printf("Error at metadata query: %v\n", err)
@@ -508,18 +451,10 @@ func (db *InfluxDB) createAggregationTask(metric conf.MetricConfig, orgId string
 	if sampleInterval == "" {
 		sampleInterval = db.defaultSampleInterval
 	}
-	query := fmt.Sprintf(`
-		from(bucket: "%v")
-			|> range(start: -task.every)
-			|> filter(fn: (r) => r["_measurement"] == "%v")
-			|> filter(fn: (r) => r.type == "%v")
-			%v
-			|> group(columns: ["_measurement", "hostname"], mode:"by")
-			|> aggregateWindow(every: %v, fn: %v, createEmpty: false)
-			|> set(key: "_measurement", value: "%v")
-			|> set(key: "_field", value: "%v")
-			|> to(bucket: "%v", org: "%v")
-	`, db.bucket, metric.Measurement, metric.Type, metric.FilterFunc, sampleInterval, metric.AggFn, measurement, measurement, db.bucket, db.org)
+	query := fmt.Sprintf(AggregationTaskQuery,
+		db.bucket, metric.Measurement, metric.Type, metric.FilterFunc,
+		metric.PostQueryOp, sampleInterval, metric.AggFn,
+		measurement, measurement, db.bucket, db.org)
 	return db.createTask(taskName, query, orgId)
 }
 
