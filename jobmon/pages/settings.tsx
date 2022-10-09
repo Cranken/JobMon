@@ -16,20 +16,35 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Spinner,
   Stack,
   Text,
   Textarea,
   useDisclosure,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import APIView from "../components/settings/APIView";
+import LogView from "../components/settings/LogView";
+import MetricsView from "../components/settings/MetricsView";
+import { Configuration } from "./../types/config";
 
 enum SettingsView {
   General = "General Settings",
   API = "API",
+  Metrics = "Metrics",
+  Logs = "Logs"
 }
 
 export const Settings = () => {
   const [settingsView, setSettingsView] = useState(SettingsView.General);
+  const [config, setConfig] = useGetConfig();
+  if (!config) {
+    return (
+      <Center>
+        <Spinner />
+      </Center>
+    );
+  }
   return (
     <Center h="100%" mt={4}>
       <Grid w="50%" templateColumns="repeat(4, 1fr)" h="100%" gap={2}>
@@ -48,18 +63,28 @@ export const Settings = () => {
             ))}
           </Stack>
         </GridItem>
-        <GridItem colSpan={3}>{renderSettingsView(settingsView)}</GridItem>
+        <GridItem colSpan={3}>
+          {renderSettingsView(settingsView, config, setConfig)}
+        </GridItem>
       </Grid>
     </Center>
   );
 };
 
-const renderSettingsView = (view: SettingsView) => {
+const renderSettingsView = (
+  view: SettingsView,
+  config: Configuration,
+  setConfig: (c: Configuration) => void
+) => {
   switch (view) {
     case SettingsView.General:
       return <GeneralView />;
     case SettingsView.API:
       return <APIView />;
+    case SettingsView.Metrics:
+      return <MetricsView config={config} setConfig={setConfig} />;
+    case SettingsView.Logs:
+      return <LogView />
   }
   return null;
 };
@@ -68,61 +93,38 @@ const GeneralView = () => {
   return <></>;
 };
 
-const APIView = () => {
-  const [apiKey, setApiKey] = useState("");
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const generateApiKey = () => {
-    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/generateAPIKey", {
-      method: "POST",
-      credentials: "include",
-    }).then((resp) =>
-      resp.body
-        ?.getReader()
-        .read()
-        .then((val) => {
-          if (val.value) {
-            setApiKey(new TextDecoder().decode(val.value));
-            onClose();
-          }
-        })
-    );
-  };
-  return (
-    <Stack gap={2}>
-      <Box>
-        <Button onClick={onOpen}>Generate API Key</Button>
-      </Box>
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay />
-        <ModalContent w="500px">
-          <ModalBody>
-            <Stack g={2}>
-              <Alert status="error">
-                <AlertIcon />
-                <AlertTitle>Warning!</AlertTitle>
-                <AlertDescription>
-                  <Text>Are you sure?</Text>
-                  <Text>This will invalidate any existing API keys</Text>
-                </AlertDescription>
-              </Alert>
-              <Box>
-                <Button onClick={() => generateApiKey()}>Generate</Button>
-              </Box>
-            </Stack>
-          </ModalBody>
+const useGetConfig: () => [
+  Configuration | undefined,
+  (c: Configuration) => void
+] = () => {
+  const [config, setConfig] = useState<Configuration>();
+  const setAndSubmit = (c: Configuration) => {
+    setConfig(c);
 
-          <ModalFooter>
-            <Button colorScheme="blue" onClick={onClose}>
-              Close
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-      <Textarea value={apiKey} placeholder="API key" isReadOnly>
-        test
-      </Textarea>
-    </Stack>
-  );
+    const url = new URL(
+      "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/config/update`
+    );
+
+    fetch(url.toString(), { method: "PATCH", credentials: "include", body: JSON.stringify(c) }).then((res) => {
+      res.json().then((data: Configuration) => {
+        setConfig(data);
+      });
+    });
+
+  }
+
+  useEffect(() => {
+    const url = new URL(
+      "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/config`
+    );
+
+    fetch(url.toString(), { credentials: "include" }).then((res) => {
+      res.json().then((data: Configuration) => {
+        setConfig(data);
+      });
+    });
+  }, []);
+  return [config, setAndSubmit];
 };
 
 export default Settings;

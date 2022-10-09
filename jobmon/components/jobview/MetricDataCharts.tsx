@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import * as d3 from "d3";
 import { Center, Flex, Grid, Spinner } from "@chakra-ui/react";
-import { MetricData, MetricPoint } from "../../types/job";
+import { AggFn, MetricData, MetricPoint } from "../../types/job";
 import { Unit } from "../../types/units";
 import { LineChart } from "../charts/LineChart";
 
@@ -71,11 +71,11 @@ export const MetricDataCharts = ({
             const aggPoints = pThreadData.map((val, idx) => {
               let aggThread = Object.assign({}, val);
               switch (metric.Config.PThreadAggFn) {
-                case "mean":
+                case AggFn.Mean:
                   aggThread._value += hThreadData.at(idx)?._value ?? 0;
                   aggThread._value /= 2;
                   break;
-                case "sum":
+                case AggFn.Sum:
                 default:
                   aggThread._value += hThreadData.at(idx)?._value ?? 0;
               }

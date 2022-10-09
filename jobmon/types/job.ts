@@ -39,19 +39,22 @@ export enum CollectionType {
   PerThread,
 }
 
-type PThreadAggFn = "mean" | "sum";
+export enum AggFn {
+  Mean = "mean",
+  Sum = "sum",
+}
 
 export interface MetricConfig {
   Type: string;
   Measurement: string;
-  AggFn: string;
+  AggFn: AggFn;
   SampleInterval: string;
   Unit: string;
   DisplayName: string;
   SeparationKey: string;
   MaxPerNode: number;
   MaxPerType: number;
-  PThreadAggFn: PThreadAggFn;
+  PThreadAggFn: AggFn;
 }
 
 export interface MetricPoint {
