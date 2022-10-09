@@ -229,62 +229,81 @@ export const useGetJobData: (
   sampleInterval?: number,
   timeStart?: number
 ) => {
-  const [jobData, setJobData] = useState<JobData>();
-  const [isLoading, setIsLoading] = useState(true);
-  const [jobCache, setJobCache] = useState<{ [key: string]: JobData }>({});
-  const [_c, _s, removeCookie] = useCookies(["Authorization"]);
-  const [curLiveWindowStart, setCurLiveWindowStart] = useState(Infinity);
-  const [ws, setWs] = useState<WebSocket>();
-  useEffect(() => {
-    if (!id) {
-      return;
-    }
-    let url = new URL(
-      "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}`
-    );
-    if (sampleInterval) {
-      url.searchParams.append("sampleInterval", sampleInterval.toString());
-    }
-    if (node && node != "" && !node.includes("|")) {
-      url.searchParams.append("node", node);
-    }
-    if (url.search in jobCache) {
-      setIsLoading(false);
-      setJobData(jobCache[url.search]);
-      return;
-    }
-    setIsLoading(true);
-    fetch(url.toString(), { credentials: "include" }).then((res) => {
-      if (!res.ok && (res.status === 401 || res.status === 403)) {
-        removeCookie("Authorization");
-      } else {
-        res.json().then((data: JobData) => {
-          setJobCache((prevState) => {
-            if (sampleInterval === undefined) {
-              url.searchParams.append(
-                "sampleInterval",
-                data.SampleInterval.toString()
-              );
-            }
-            prevState[url.search] = data;
-            return prevState;
-          });
-          setJobData(data);
-          setIsLoading(false);
-        });
+    const [jobData, setJobData] = useState<JobData>();
+    const [isLoading, setIsLoading] = useState(true);
+    const [jobCache, setJobCache] = useState<{ [key: string]: JobData }>({});
+    const [_c, _s, removeCookie] = useCookies(["Authorization"]);
+    const [curLiveWindowStart, setCurLiveWindowStart] = useState(Infinity);
+    const [ws, setWs] = useState<WebSocket>();
+    const [lastMessage, setLastMessage] = useState<WSMsg>({} as WSMsg);
+    useEffect(() => {
+      if (!id) {
+        return;
       }
-    });
-  }, [id, node, jobCache, removeCookie, sampleInterval]);
-
-  useEffect(() => {
-    if (jobData?.Metadata.IsRunning) {
-      const url = new URL(
-        "ws://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/live/${id}`
+      let url = new URL(
+        "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}`
       );
-      const ws = new WebSocket(url);
-      ws.onmessage = (msg) => {
+      if (sampleInterval) {
+        url.searchParams.append("sampleInterval", sampleInterval.toString());
+      }
+      if (node && node != "" && !node.includes("|")) {
+        url.searchParams.append("node", node);
+      }
+      if (url.search in jobCache) {
+        setIsLoading(false);
+        setJobData(jobCache[url.search]);
+        return;
+      }
+      setIsLoading(true);
+      fetch(url.toString(), { credentials: "include" }).then((res) => {
+        if (!res.ok && (res.status === 401 || res.status === 403)) {
+          removeCookie("Authorization");
+        } else {
+          res.json().then((data: JobData) => {
+            setJobCache((prevState) => {
+              if (sampleInterval === undefined) {
+                url.searchParams.append(
+                  "sampleInterval",
+                  data.SampleInterval.toString()
+                );
+              }
+              prevState[url.search] = data;
+              return prevState;
+            });
+            setJobData(data);
+            setIsLoading(false);
+          });
+        }
+      });
+    }, [id, node, jobCache, removeCookie, sampleInterval]);
+
+    useEffect(() => {
+      if (jobData?.Metadata.IsRunning) {
+        const url = new URL(
+          "ws://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/live/${id}`
+        );
+        const ws = new WebSocket(url);
+        ws.onmessage = (msg) => {
+          const data = JSON.parse(msg.data) as WSMsg;
+          setLastMessage(data);
+        };
+        window.onbeforeunload = () => {
+          ws.onclose = () => { };
+          ws.close();
+        };
+        setWs(ws);
+        return () => {
+          ws.close();
+          setWs(undefined);
+        };
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [jobData?.Metadata.IsRunning, id]);
+
+    useEffect(() => {
+      if (jobData) {
         const newJobData = { ...jobData };
-        const data = JSON.parse(msg.data) as WSMsg;
+        const data = lastMessage;
         if (
           data.Type === WSMsgType.LoadMetricsResponse ||
           data.Type === WSMsgType.LatestMetrics
@@ -309,42 +328,31 @@ export const useGetJobData: (
           }
           setJobData(newJobData);
         }
-      };
-      window.onbeforeunload = () => {
-        ws.onclose = () => {};
-        ws.close();
-      };
-      setWs(ws);
-      return () => {
-        ws.close();
-        setWs(undefined);
-      };
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobData?.Metadata.IsRunning, id]);
-
-  useEffect(() => {
-    if (curLiveWindowStart === Infinity && timeStart) {
-      setCurLiveWindowStart(timeStart);
-    }
-  }, [timeStart, curLiveWindowStart]);
-
-  useEffect(() => {
-    if (ws && ws.readyState === ws.OPEN) {
-      if (timeStart && timeStart < curLiveWindowStart) {
-        let msg: WSLoadMetricsMsg = {
-          StartTime: Math.round(timeStart / 1000),
-          StopTime: Math.round(curLiveWindowStart / 1000),
-          Type: WSMsgType.LoadMetrics,
-        };
-        setCurLiveWindowStart(timeStart);
-        ws.send(JSON.stringify(msg));
       }
-    }
-  }, [ws, timeStart, curLiveWindowStart]);
+    }, [lastMessage])
 
-  return [jobData, isLoading];
-};
+    useEffect(() => {
+      if (curLiveWindowStart === Infinity && timeStart) {
+        setCurLiveWindowStart(timeStart);
+      }
+    }, [timeStart, curLiveWindowStart]);
+
+    useEffect(() => {
+      if (ws && ws.readyState === ws.OPEN) {
+        if (timeStart && timeStart < curLiveWindowStart) {
+          let msg: WSLoadMetricsMsg = {
+            StartTime: Math.round(timeStart / 1000),
+            StopTime: Math.round(curLiveWindowStart / 1000),
+            Type: WSMsgType.LoadMetrics,
+          };
+          setCurLiveWindowStart(timeStart);
+          ws.send(JSON.stringify(msg));
+        }
+      }
+    }, [ws, timeStart, curLiveWindowStart]);
+
+    return [jobData, isLoading];
+  };
 
 interface PartitionMetricSelection {
   [key: string]: string[];
