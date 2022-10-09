@@ -20,6 +20,9 @@ type Configuration struct {
 	// InfluxDB bucket
 	DBBucket string
 
+	// Frontend URL
+	FrontendURL string
+
 	// Configuration for the job store
 	JobStore JobStoreConfig
 

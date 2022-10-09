@@ -25,19 +25,21 @@ import (
 type Router struct {
 	store       jobstore.Store
 	config      *conf.Configuration
-	db          database.DB
+	db          *database.DB
 	jobCache    *cache.LRUCache
 	authManager *auth.AuthManager
 	upgrader    websocket.Upgrader
+	logger *utils.WebLogger
 }
 
-func (r *Router) Init(store jobstore.Store, config *conf.Configuration, db database.DB, jobCache *cache.LRUCache, authManager *auth.AuthManager) {
+func (r *Router) Init(store jobstore.Store, config *conf.Configuration, db *database.DB, jobCache *cache.LRUCache, authManager *auth.AuthManager, logger *utils.WebLogger) {
 	r.store = store
 	r.config = config
 	r.db = db
 	r.jobCache = jobCache
 	r.authManager = authManager
 	r.upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
+	r.logger = logger
 
 	router := httprouter.New()
 	router.GET("/auth/oauth/login", r.LoginOAuth)
@@ -53,8 +55,24 @@ func (r *Router) Init(store jobstore.Store, config *conf.Configuration, db datab
 	router.POST("/api/generateAPIKey", authManager.Protected(r.GenerateAPIKey, auth.ADMIN))
 	router.POST("/api/tags/add_tag", authManager.Protected(r.AddTag, auth.USER))
 	router.POST("/api/tags/remove_tag", authManager.Protected(r.RemoveTag, auth.USER))
+	router.GET("/api/admin/livelog", authManager.Protected(r.LiveLog, auth.ADMIN))
+	router.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Access-Control-Request-Method") != "" {
+			// Set CORS headers
+			header := w.Header()
+			header.Set("Access-Control-Allow-Methods", header.Get("Allow"))
+			header.Set("Access-Control-Allow-Origin", config.FrontendURL)
+			header.Set("Access-Control-Allow-Credentials", "true")
+			header.Set("Access-Control-Expose-Headers", "Set-Cookie")
+		}
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+		// Adjust status code to 204
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	server := &http.Server{Addr: ":8080", Handler: router}
+
+	log.Fatal(server.ListenAndServe())
 }
 
 func (r *Router) JobStart(w http.ResponseWriter, req *http.Request, params httprouter.Params, _ auth.UserInfo) {
@@ -127,7 +145,7 @@ func (r *Router) JobStop(w http.ResponseWriter, req *http.Request, params httpro
 
 		if err != nil {
 			// Run aggregation tasks to calculate metadata metrics and (if enabled) prefetch job data
-			r.db.RunAggregation()
+			(*r.db).RunAggregation()
 			if r.config.Prefetch {
 				go func() {
 					jobMetadata, err := r.store.GetJob(id)
@@ -250,7 +268,7 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 			j.StopTime = int(time.Now().Unix())
 			node = ""
 		}
-		jobData, err = r.db.GetJobData(&j, node, bestInterval, raw)
+		jobData, err = (*r.db).GetJobData(&j, node, bestInterval, raw)
 	}
 	if err != nil {
 		log.Printf("Could not get job metric data: %v\n", err)
@@ -498,7 +516,7 @@ func (r *Router) LiveMonitoring(w http.ResponseWriter, req *http.Request, params
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	monitor, done := r.db.CreateLiveMonitoringChannel(&j)
+	monitor, done := (*r.db).CreateLiveMonitoringChannel(&j)
 
 	go func() {
 		for {
@@ -525,7 +543,7 @@ func (r *Router) LiveMonitoring(w http.ResponseWriter, req *http.Request, params
 						dur, _ := time.ParseDuration(r.config.SampleInterval)
 						_, secs := j.CalculateSampleIntervals(dur)
 						bestInterval := time.Duration(secs) * time.Second
-						data, err := r.db.GetJobData(&j, "", bestInterval, false)
+						data, err := (*r.db).GetJobData(&j, "", bestInterval, false)
 						j.StartTime = origStartTime
 						j.StopTime = origStopTime
 						if err == nil {
@@ -549,6 +567,26 @@ func (r *Router) LiveMonitoring(w http.ResponseWriter, req *http.Request, params
 				resp.MetricData = data
 				c.WriteJSON(resp)
 			} else {
+				return
+			}
+		}
+	}()
+}
+
+func (r *Router) LiveLog(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
+	c, err := r.upgrader.Upgrade(w, req, nil)
+	if err != nil {
+		log.Print("error upgrading connection:", err)
+		return
+	}
+	r.logger.AddConnection(c)
+
+	go func() {
+		for {
+			t, _, _ := c.ReadMessage()
+			if t == -1 {
+				r.logger.RemoveConnection(c)
+				c.Close()
 				return
 			}
 		}

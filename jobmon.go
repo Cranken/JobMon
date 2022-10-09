@@ -7,6 +7,8 @@ import (
 	cache "jobmon/lru_cache"
 	routerImport "jobmon/router"
 	jobstore "jobmon/store"
+	"jobmon/utils"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,8 +20,12 @@ var db database.DB
 var jobCache = cache.LRUCache{}
 var authManager = auth.AuthManager{}
 var router = routerImport.Router{}
+var webLogger = utils.WebLogger{}
 
 func main() {
+	webLogger.Init()
+	log.SetOutput(&webLogger)
+
 	config.Init()
 	db = &database.InfluxDB{}
 	db.Init(config)
@@ -35,17 +41,8 @@ func main() {
 	jobCache.Init(config, &db, &store)
 	authManager.Init(config, &store)
 
-	val, ok := os.LookupEnv("JOBMON_MIGRATE_MEMORY_TO")
-	if ok && val == "psql" {
-		var memStore jobstore.Store
-		memStore = &jobstore.MemoryStore{}
-		memStore.Init(config, &db)
-
-		store.(*jobstore.PostgresStore).Migrate(&memStore)
-	}
-
 	registerCleanup()
-	router.Init(store, &config, db, &jobCache, &authManager)
+	router.Init(store, &config, &db, &jobCache, &authManager, &webLogger)
 }
 
 func registerCleanup() {

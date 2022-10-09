@@ -1,6 +1,8 @@
 package utils
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // Helper function to allow CORS
 func AllowCors(r *http.Request, header http.Header) {
@@ -17,4 +19,13 @@ func Contains[T comparable](slice []T, val T) bool {
 		}
 	}
 	return false
+}
+
+func Remove[T comparable](container []T, target T) []T {
+    for i, v := range container {
+        if v == target {
+            return append(container[:i], container[i+1:]...)
+        }
+    }
+    return container
 }
