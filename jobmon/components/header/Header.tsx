@@ -60,7 +60,7 @@ export const Header = () => {
               ) : null}
               {user.Roles?.includes(UserRole.Admin) ?? false ? (
                 <Link href="/settings" passHref>
-                  <Button bg={buttonBg}>Settings</Button>
+                  <Button bg={buttonBg}>Admin</Button>
                 </Link>
               ) : null}
             </>
