@@ -42,6 +42,7 @@ export enum CollectionType {
 export enum AggFn {
   Mean = "mean",
   Sum = "sum",
+  Empty = ""
 }
 
 export interface MetricConfig {
@@ -55,6 +56,8 @@ export interface MetricConfig {
   MaxPerNode: number;
   MaxPerType: number;
   PThreadAggFn: AggFn;
+  FilterFunc: string;
+  PostQueryOp: string;
 }
 
 export interface MetricPoint {

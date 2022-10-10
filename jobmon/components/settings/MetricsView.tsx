@@ -4,12 +4,14 @@ import {
   AccordionIcon,
   AccordionItem,
   AccordionPanel,
+  Alert,
+  AlertIcon,
+  AlertTitle,
   Box,
   Button,
   ButtonGroup,
   Flex,
   FormLabel,
-  Grid,
   HStack,
   Input,
   Popover,
@@ -22,6 +24,7 @@ import {
   PopoverTrigger,
   Select,
   Stack,
+  useToast,
 } from "@chakra-ui/react";
 import { Field, Form, Formik } from "formik";
 import React, { useState } from "react";
@@ -35,6 +38,7 @@ interface IMetricsViewProps {
 
 const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
   const [lConfig, setLConfig] = useState(config);
+  const toast = useToast();
   if (!lConfig) {
     return null;
   }
@@ -49,11 +53,19 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
             metricConfig={m}
             setMetricConfig={(m: MetricConfig, del: boolean = false) => {
               let curConfig = { ...lConfig };
+              if (!del && curConfig.Metrics[i].DisplayName === "New Metric") {
+                toast({
+                  description: "Remember to assign newly created metrics to partitions.",
+                  status: "info",
+                  isClosable: true
+                })
+              }
               if (del) {
-                delete curConfig.Metrics[i];
+                curConfig.Metrics = curConfig.Metrics.filter((_, ind) => ind != i)
               } else {
                 curConfig.Metrics[i] = m;
               }
+              setLConfig(curConfig);
               setConfig(curConfig);
             }} />
         ))}
@@ -61,7 +73,15 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
       <Box>
         <Button onClick={() => {
           let curConfig = { ...lConfig };
-          curConfig.Metrics.push({ DisplayName: "New Metric", Measurement: "measurement" } as MetricConfig);
+          curConfig.Metrics.push({
+            Type: "node", Measurement: "",
+            AggFn: AggFn.Mean, SampleInterval: "30s",
+            Unit: "", DisplayName: "New Metric",
+            SeparationKey: "hostname",
+            MaxPerNode: 0, MaxPerType: 0,
+            PThreadAggFn: "",
+            FilterFunc: "", PostQueryOp: "",
+          } as MetricConfig);
           setLConfig(curConfig);
         }
         }>Add</Button>
@@ -74,6 +94,60 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
 interface IMetricItemProps {
   metricConfig: MetricConfig;
   setMetricConfig: (m: MetricConfig, del?: boolean) => void;
+}
+
+const validateNotEmpty = (value: string) => {
+  return value.length > 0 ? "" : "Value is required"
+}
+
+const validateNumber = (value: string) => {
+  return !isNaN(+value) ? "" : "Not a number"
+}
+
+const ErrorMessage = (text: string) => {
+  return (
+    <Alert my={2} status='error'>
+      <AlertIcon />
+      <AlertTitle>{text}</AlertTitle>
+    </Alert>
+  )
+}
+
+const TextField = (displayString: string, key: keyof MetricConfig, errorStr?: string, validate = true) => {
+  return (
+    <>
+      <FormLabel pt={1}>{displayString}</FormLabel>
+      <Field name={key} placeholder={displayString} as={Input} validate={validate ? validateNotEmpty : undefined} />
+      {errorStr && ErrorMessage(errorStr)}
+    </>
+  )
+}
+
+const NumberField = (displayString: string, key: keyof MetricConfig, errorStr?: string) => {
+  return (
+    <>
+      <FormLabel pt={1}>{displayString}</FormLabel>
+      <Field name={key} placeholder={displayString} as={Input} validate={validateNumber} />
+      {errorStr && ErrorMessage(errorStr)}
+    </>
+  )
+}
+
+const AggFnSelection = (displayName: string, name: string) => {
+  return (
+    <>
+      <FormLabel pt={1}>{displayName}</FormLabel>
+      <Field name={name} as={Select} >
+        {Object.values(AggFn).map((fn) => {
+          return fn === AggFn.Empty ? null :
+            (<option key={fn} value={fn}>
+              {fn}
+            </option>)
+        }
+        )}
+      </Field>
+    </>
+  )
 }
 
 const MetricItem = ({ metricConfig, setMetricConfig }: IMetricItemProps) => {
@@ -90,55 +164,60 @@ const MetricItem = ({ metricConfig, setMetricConfig }: IMetricItemProps) => {
       <AccordionPanel>
         <Formik
           initialValues={metricConfig}
-          onSubmit={(values) =>
+          onSubmit={(values) => {
+            values.MaxPerNode = Number(values.MaxPerNode);
+            values.MaxPerType = Number(values.MaxPerType);
             setMetricConfig(values)
           }
+          }
         >
-          <Form autoComplete="off">
-            <FormLabel>Display Name:</FormLabel>
-            <Field name="DisplayName" placeholder="Display Name" as={Input} />
-            <FormLabel pt={1}>Measurement:</FormLabel>
-            <Field name="Measurement" placeholder="Measurement" as={Input} />
-            <FormLabel pt={1}>Aggregation Function:</FormLabel>
-            <Field name="AggFn" as={Select}>
-              {Object.values(AggFn).map((fn) => (
-                <option key={fn} value={fn}>
-                  {fn}
-                </option>
-              ))}{" "}
-            </Field>
-            <Flex mt={3} justify="space-between" gap={2}>
-              <HStack>
-                <Button type="reset" colorScheme="gray">
-                  Reset
-                </Button>
-                <Button type="submit" colorScheme="green">
-                  Save
-                </Button>
-              </HStack>
-              <Popover>
-                {({ onClose }) => (
-                  <>
-                    <PopoverTrigger>
-                      <Button colorScheme="red">Delete</Button>
-                    </PopoverTrigger>
-                    <PopoverContent>
-                      <PopoverArrow />
-                      <PopoverCloseButton />
-                      <PopoverHeader>Confirmation</PopoverHeader>
-                      <PopoverBody>Are you sure you want to delete this metric configuration?</PopoverBody>
-                      <PopoverFooter display='flex' justifyContent='flex-end'>
-                        <ButtonGroup size='sm'>
-                          <Button variant='outline' onClick={onClose}>Cancel</Button>
-                          <Button colorScheme='red' onClick={() => setMetricConfig(metricConfig, true)}>Delete</Button>
-                        </ButtonGroup>
-                      </PopoverFooter>
-                    </PopoverContent>
-                  </>
-                )}
-              </Popover>
-            </Flex>
-          </Form>
+          {({ values, errors }) => (
+            <Form autoComplete="off">
+              {TextField("Display Name", "DisplayName", errors.DisplayName)}
+              {TextField("Measurement", "Measurement", errors.Measurement)}
+              {TextField("Type", "Type", errors.Type)}
+              {values.Type === "cpu" ? AggFnSelection("PThread Aggregation Function", "PThreadAggFn") : null}
+              {TextField("Sample Interval", "SampleInterval", errors.SampleInterval)}
+              {AggFnSelection("Aggregation Function", "AggFn")}
+              {TextField("Unit", "Unit", "", false)}
+              {NumberField("Max per Node", "MaxPerNode", errors.MaxPerNode)}
+              {NumberField("Max per Type", "MaxPerType", errors.MaxPerType)}
+              {TextField("Separation Key", "SeparationKey", errors.SeparationKey)}
+              {TextField("Filter Function", "FilterFunc", "", false)}
+              {TextField("Post Query Operation", "PostQueryOp", "", false)}
+              <Flex mt={3} justify="space-between" gap={2}>
+                <HStack>
+                  <Button type="reset" colorScheme="gray">
+                    Reset
+                  </Button>
+                  <Button type="submit" colorScheme="green">
+                    Save
+                  </Button>
+                </HStack>
+                <Popover>
+                  {({ onClose }) => (
+                    <>
+                      <PopoverTrigger>
+                        <Button colorScheme="red">Delete</Button>
+                      </PopoverTrigger>
+                      <PopoverContent>
+                        <PopoverArrow />
+                        <PopoverCloseButton />
+                        <PopoverHeader>Confirmation</PopoverHeader>
+                        <PopoverBody>Are you sure you want to delete this metric configuration?</PopoverBody>
+                        <PopoverFooter display='flex' justifyContent='flex-end'>
+                          <ButtonGroup size='sm'>
+                            <Button variant='outline' onClick={onClose}>Cancel</Button>
+                            <Button colorScheme='red' onClick={() => setMetricConfig(metricConfig, true)}>Delete</Button>
+                          </ButtonGroup>
+                        </PopoverFooter>
+                      </PopoverContent>
+                    </>
+                  )}
+                </Popover>
+              </Flex>
+            </Form>
+          )}
         </Formik>
       </AccordionPanel>
     </AccordionItem>
