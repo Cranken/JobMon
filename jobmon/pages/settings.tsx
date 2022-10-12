@@ -26,12 +26,14 @@ import { useEffect, useState } from "react";
 import APIView from "../components/settings/APIView";
 import LogView from "../components/settings/LogView";
 import MetricsView from "../components/settings/MetricsView";
+import PartitionsView from "../components/settings/PartitionsView";
 import { Configuration } from "./../types/config";
 
 enum SettingsView {
   General = "General Settings",
   API = "API",
   Metrics = "Metrics",
+  Partitions = "Partitions",
   Logs = "Logs"
 }
 
@@ -83,6 +85,8 @@ const renderSettingsView = (
       return <APIView />;
     case SettingsView.Metrics:
       return <MetricsView config={config} setConfig={setConfig} />;
+    case SettingsView.Partitions:
+      return <PartitionsView config={config} setConfig={setConfig} />
     case SettingsView.Logs:
       return <LogView />
   }

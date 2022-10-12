@@ -30,6 +30,7 @@ import { Field, Form, Formik } from "formik";
 import React, { useState } from "react";
 import { Configuration } from "./../../types/config";
 import { AggFn, MetricConfig } from "./../../types/job";
+import { NumberField, TextField } from "./FormComponents";
 
 interface IMetricsViewProps {
   config: Configuration;
@@ -43,7 +44,6 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
     return null;
   }
   return (
-    // <Grid gap={5} templateColumns="repeat(2, 1fr)">
     <Stack gap={2}>
       <Accordion allowMultiple>
         {lConfig.Metrics.map((m, i) => (
@@ -87,50 +87,12 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
         }>Add</Button>
       </Box>
     </Stack>
-    // </Grid>
   );
 };
 
 interface IMetricItemProps {
   metricConfig: MetricConfig;
   setMetricConfig: (m: MetricConfig, del?: boolean) => void;
-}
-
-const validateNotEmpty = (value: string) => {
-  return value.length > 0 ? "" : "Value is required"
-}
-
-const validateNumber = (value: string) => {
-  return !isNaN(+value) ? "" : "Not a number"
-}
-
-const ErrorMessage = (text: string) => {
-  return (
-    <Alert my={2} status='error'>
-      <AlertIcon />
-      <AlertTitle>{text}</AlertTitle>
-    </Alert>
-  )
-}
-
-const TextField = (displayString: string, key: keyof MetricConfig, errorStr?: string, validate = true) => {
-  return (
-    <>
-      <FormLabel pt={1}>{displayString}</FormLabel>
-      <Field name={key} placeholder={displayString} as={Input} validate={validate ? validateNotEmpty : undefined} />
-      {errorStr && ErrorMessage(errorStr)}
-    </>
-  )
-}
-
-const NumberField = (displayString: string, key: keyof MetricConfig, errorStr?: string) => {
-  return (
-    <>
-      <FormLabel pt={1}>{displayString}</FormLabel>
-      <Field name={key} placeholder={displayString} as={Input} validate={validateNumber} />
-      {errorStr && ErrorMessage(errorStr)}
-    </>
-  )
 }
 
 const AggFnSelection = (displayName: string, name: string) => {
