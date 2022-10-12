@@ -141,3 +141,11 @@ func (c *Configuration) Init() {
 		log.Fatalf("config: Could not unmarshal config file %v", err)
 	}
 }
+
+func (c *Configuration) Flush() {
+	data, err := json.MarshalIndent(c, "", "    ")
+	if err != nil {
+		log.Printf("Could not marshal store into json: %v\n", err)
+	}
+	os.WriteFile(CONFIG_FILE, data, 0644)
+}

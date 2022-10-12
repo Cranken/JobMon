@@ -53,6 +53,7 @@ func registerCleanup() {
 		<-sigChan
 		store.Flush()
 		db.Close()
+		config.Flush()
 		os.Exit(0)
 	}()
 }
