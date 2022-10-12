@@ -145,7 +145,7 @@ func (c *Configuration) Init() {
 func (c *Configuration) Flush() {
 	data, err := json.MarshalIndent(c, "", "    ")
 	if err != nil {
-		log.Printf("Could not marshal store into json: %v\n", err)
+		log.Printf("Could not marshal config into json: %v\n", err)
 	}
 	os.WriteFile(CONFIG_FILE, data, 0644)
 }
