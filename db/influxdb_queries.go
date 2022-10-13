@@ -9,22 +9,23 @@ from(bucket: "%v")
 	|> filter(fn: (r) => r["_measurement"] == "%v")
 	|> filter(fn: (r) => r["type"] == "%v")
 	|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
+	|> aggregateWindow(every: %v, fn: mean, createEmpty: false)
 	%v
 	%v
 	|> truncateTimeColumn(unit: %v)
 `
 
 // Parameters: bucket, startTime, stopTime, measurement,
-// nodelist, sampleInterval, filterfunc, postQueryOp
+// nodelist, sampleInterval, filterfunc, postQueryOp, sampleInterval
 const AggregateMeasurementQuery = `
 from(bucket: "%v")
 	|> range(start: %v, stop: %v)
 	|> filter(fn: (r) => r["_measurement"] == "%v")
 	|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
+	|> aggregateWindow(every: %v, fn: mean, createEmpty: false)
 	%v
 	%v
+	|> truncateTimeColumn(unit: %v)
 `
 
 // Parameters: bucket, startTime, stopTime, measurement,
@@ -35,7 +36,7 @@ data = from(bucket: "%v")
 	|> range(start: %v, stop: %v)
 	|> filter(fn: (r) => r["_measurement"] == "%v")
 	|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	|> aggregateWindow(every: %s, fn: mean, createEmpty: true)
+	|> aggregateWindow(every: %s, fn: mean, createEmpty: false)
 	%v
 	%v
 	|> truncateTimeColumn(unit: %v)
