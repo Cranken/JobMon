@@ -190,8 +190,7 @@ export function LineChart<T>({
             .append("rect")
             .attr(
               "transform",
-              `translate(${
-                dragStart < dragEnd ? dragStart : dragEnd
+              `translate(${dragStart < dragEnd ? dragStart : dragEnd
               }, ${marginTop})`
             )
             .attr("width", Math.abs(dragStart - dragEnd))
@@ -216,6 +215,10 @@ export function LineChart<T>({
       .attr("transform", `translate(0,${height - marginBottom})`)
       .call(xAxis);
 
+    const mean = new Unit(d3.mean(Y) ?? 0, unit ?? "");
+    const min = new Unit(d3.min(Y) ?? 0, unit ?? "");
+    const max = new Unit(d3.max(Y) ?? 0, unit ?? "");
+
     svg
       .append("g")
       .attr("transform", `translate(${marginLeft},0)`)
@@ -236,6 +239,15 @@ export function LineChart<T>({
           .attr("fill", "currentColor")
           .attr("text-anchor", "start")
           .text(yLabel)
+      )
+      .call((g) =>
+        g
+          .append("text")
+          .attr("fill", "currentColor")
+          .attr("x", width - marginRight - marginLeft)
+          .attr("y", 10)
+          .attr("text-anchor", "end")
+          .text(`Min: ${min.toString()}, Mean: ${mean.toString()}, Max: ${max.toString()}`)
       );
 
     if (fillBoundKeys) {
@@ -380,6 +392,7 @@ export function LineChart<T>({
       ruler
         .attr("transform", `translate(${xScale(X[i])}, 0)`)
         .attr("stroke", "currentColor");
+
     }
 
     function pointerleft() {
