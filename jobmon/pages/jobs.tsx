@@ -111,12 +111,13 @@ export const Jobs = () => {
       if (b.IsRunning && !a.IsRunning) {
         return 1;
       }
-      return a.StartTime < b.StartTime ? 1 : -1;
+      return a.StartTime < b.StartTime ? -1 : 1;
     });
     const running = mutableJobs.filter((j) => j.IsRunning);
     const finished = mutableJobs.filter((j) => !j.IsRunning);
     if (!sortByDescending) {
       finished.reverse();
+      running.reverse();
     }
     mutableJobs = [...finished, ...running];
   }
