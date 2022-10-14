@@ -215,7 +215,8 @@ export function LineChart<T>({
       .attr("transform", `translate(0,${height - marginBottom})`)
       .call(xAxis);
 
-    const mean = new Unit(d3.mean(Y) ?? 0, unit ?? "");
+    const meanVal = d3.mean(Y) ?? 0;
+    const mean = new Unit(meanVal, unit ?? "");
     const min = new Unit(d3.min(Y) ?? 0, unit ?? "");
     const max = new Unit(d3.max(Y) ?? 0, unit ?? "");
 
@@ -249,6 +250,16 @@ export function LineChart<T>({
           .attr("text-anchor", "end")
           .text(`Min: ${min.toString()}, Mean: ${mean.toString()}, Max: ${max.toString()}`)
       );
+
+    svg
+      .append("g")
+      .append("line")
+      .attr("x1", marginLeft)
+      .attr("x2", width - marginRight)
+      .attr("y1", yScale(meanVal))
+      .attr("y2", yScale(meanVal))
+      .attr("stroke", "currentColor")
+      .attr("stroke-dasharray", 4)
 
     if (fillBoundKeys) {
       const range = d3.range(linePointCount);
