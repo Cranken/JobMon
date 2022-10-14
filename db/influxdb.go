@@ -317,7 +317,7 @@ func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, job *job
 	measurement := metric.Measurement + "_" + metric.AggFn
 	query := fmt.Sprintf(AggregateMeasurementQuery,
 		db.bucket, job.StartTime, job.StopTime, measurement,
-		job.NodeList, sampleInterval, metric.FilterFunc, metric.PostQueryOp, sampleInterval)
+		job.NodeList, sampleInterval, metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		log.Printf("Error at aggregate query: %v\n", err)
@@ -329,7 +329,7 @@ func (db *InfluxDB) queryAggregateMeasurementRaw(metric conf.MetricConfig, job *
 	measurement := metric.Measurement + "_" + metric.AggFn
 	query := fmt.Sprintf(AggregateMeasurementQuery,
 		db.bucket, job.StartTime, job.StopTime, measurement,
-		job.NodeList, sampleInterval, metric.FilterFunc, metric.PostQueryOp, sampleInterval)
+		job.NodeList, sampleInterval, metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
 	if err != nil {
 		log.Printf("Error at aggregate raw query: %v\n", err)
@@ -339,8 +339,10 @@ func (db *InfluxDB) queryAggregateMeasurementRaw(metric conf.MetricConfig, job *
 
 func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, job *job.JobMetadata, quantiles []string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement
+	filterFunc := metric.FilterFunc
 	if metric.AggFn != "" {
 		measurement += "_" + metric.AggFn
+		filterFunc = ""
 	}
 	tempKeys := []string{}
 	for i := 'A'; i <= 'Z'; i++ {
@@ -356,7 +358,7 @@ func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, job *job.
 
 	query := fmt.Sprintf(QuantileMeasurementQuery,
 		db.bucket, job.StartTime, job.StopTime, measurement,
-		job.NodeList, sampleInterval, metric.FilterFunc, metric.PostQueryOp,
+		job.NodeList, sampleInterval, filterFunc, metric.PostQueryOp,
 		sampleInterval, quantileSubQuery, tempKeyAggregation)
 
 	result, err = db.queryAPI.Query(context.Background(), query)
