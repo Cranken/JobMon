@@ -29,7 +29,7 @@ export const JobInfo = ({ metadata, setChecked, nodes }: JobInfoProps) => {
             <Tag colorScheme="green">Running</Tag>
           </Box>
         ) : (
-          <Text>End:{new Date(metadata.StopTime * 1000).toLocaleString()}</Text>
+          <Text>End: {new Date(metadata.StopTime * 1000).toLocaleString()}</Text>
         )}
         <TagPanel job={metadata}></TagPanel>
       </Stack>
