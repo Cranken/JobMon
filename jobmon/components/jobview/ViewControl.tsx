@@ -1,4 +1,5 @@
 import { Button, Container, Flex, Select, Stack, Text } from "@chakra-ui/react";
+import JSZip from "jszip";
 import React from "react";
 import { useCookies } from "react-cookie";
 import { JobData, JobMetadata } from "../../types/job";
@@ -111,16 +112,17 @@ const exportData = (
       removeCookie("Authorization");
     } else {
       res.json().then((data: JobData) => {
-        const url = window.URL.createObjectURL(
-          new Blob(data.MetricData.map((m) => m.RawData))
-        );
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", `${id}_export.csv`);
+        const zip = new JSZip();
+        data.MetricData.forEach((m) => zip.file(m.Config.Measurement + ".csv", m.RawData))
+        zip.generateAsync({ type: "blob" }).then((b) => {
+          const link = document.createElement("a");
+          link.href = window.URL.createObjectURL(b);
+          link.setAttribute("download", `${id}_export.zip`);
 
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode?.removeChild(link);
+          document.body.appendChild(link);
+          link.click();
+          link.parentNode?.removeChild(link);
+        })
       });
     }
   });
