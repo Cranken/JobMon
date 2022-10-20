@@ -45,7 +45,7 @@ const APIView = () => {
         <ModalOverlay />
         <ModalContent w="500px">
           <ModalBody>
-            <Stack g={2}>
+            <Stack gap={2}>
               <Alert status="error">
                 <AlertIcon />
                 <AlertTitle>Warning!</AlertTitle>

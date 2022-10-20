@@ -39,7 +39,7 @@ export const MetricSelection = ({
             value={selectedMetrics}
             onChange={(val) => setSelectedMetrics(val as string[])}
           >
-            <Grid templateColumns="repeat(3, 10fr)" gap={2}>
+            <Grid templateColumns="repeat(3, 10fr)" flexWrap="wrap" gap={2}>
               {metrics.map((metric) => (
                 <Checkbox
                   key={metric.Measurement}

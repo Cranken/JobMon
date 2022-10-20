@@ -31,7 +31,7 @@ export const PanelManager = ({
       value={selectedPanels}
       onChange={(val) => setSelectedPanels(val.map((val) => val as Panel))}
     >
-      <Grid templateColumns="repeat(3, 10fr)" gap={2}>
+      <Grid templateColumns="repeat(3, 10fr)" flexWrap="wrap" gap={2}>
         {Object.keys(OPanel).map((panel) => (
           <Checkbox
             key={panel}
