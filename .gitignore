@@ -1,2 +1,4 @@
 store.json
-config.json
+config.json*
+influxdb/
+psql/
