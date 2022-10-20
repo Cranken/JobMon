@@ -88,7 +88,7 @@ const PartitionItem = ({ partitionConfig, setPartitionConfig }: IPartitionItemPr
                             <FormLabel pt={1}>Metrics</FormLabel>
                             <Wrap gap={5}>
                                 {values.availableMetrics.map((m) =>
-                                    <FormLabel>
+                                    <FormLabel key={m.Measurement}>
                                         <Field type="checkbox" name="Metrics" value={m.Measurement} />
                                         {m.DisplayName}
                                     </FormLabel>
