@@ -25,7 +25,7 @@ import { useState } from "react";
 import { useCookies } from "react-cookie";
 import { MdLogout } from "react-icons/md";
 import { useIsAuthenticated, UserRole } from "../../utils/auth";
-import { useGetUser } from "./../../utils/auth";
+import { useGetUser } from "../../utils/auth";
 
 export const Header = () => {
   const user = useGetUser();

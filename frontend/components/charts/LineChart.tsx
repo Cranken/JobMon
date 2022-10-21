@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRef } from "react";
 import { isDate } from "util";
 import { Unit } from "../../types/units";
-import { checkBetween, clamp } from "./../../utils/utils";
+import { checkBetween, clamp } from "../../utils/utils";
 
 export interface LineChartProps<T> {
   data: T[];

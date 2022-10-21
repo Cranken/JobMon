@@ -14,7 +14,7 @@ import {
 } from "@chakra-ui/react";
 import { HorizontalBarChart } from "../charts/HorizontalBarChart";
 import { Panel } from "../panelmanager/PanelManager";
-import { OPanel } from "./../panelmanager/PanelManager";
+import { OPanel } from "../panelmanager/PanelManager";
 import { useState } from "react";
 import humanizeDuration from "humanize-duration";
 import { BarChart } from "../charts/BarChart";
@@ -102,7 +102,7 @@ const useRenderPanel = (data: JobListData, panel: Panel) => {
         groupKey,
         setGroupKey,
         `Compute time grouped by ${groupKey}. ` +
-          "Compute time is calculated as number of nodes * job length",
+        "Compute time is calculated as number of nodes * job length",
         OPanel[panel]
       );
     case OPanel.JobLength:

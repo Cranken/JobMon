@@ -29,8 +29,8 @@ import { JobInfo } from "../../components/jobview/JobInfo";
 import { useCookies } from "react-cookie";
 import { AnalysisBoxPlot } from "../../components/jobview/AnalysisView";
 import { SelectionMap } from "../../types/helpers";
-import { clamp, useStorageState } from "./../../utils/utils";
-import { WSLoadMetricsMsg } from "./../../types/job";
+import { clamp, useStorageState } from "../../utils/utils";
+import { WSLoadMetricsMsg } from "../../types/job";
 
 const Job: NextPage = () => {
   const router = useRouter();

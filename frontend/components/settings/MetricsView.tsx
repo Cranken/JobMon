@@ -28,8 +28,8 @@ import {
 } from "@chakra-ui/react";
 import { Field, Form, Formik } from "formik";
 import React, { useState } from "react";
-import { Configuration } from "./../../types/config";
-import { AggFn, MetricConfig } from "./../../types/job";
+import { Configuration } from "../../types/config";
+import { AggFn, MetricConfig } from "../../types/job";
 import { NumberField, TextField } from "./FormComponents";
 
 interface IMetricsViewProps {

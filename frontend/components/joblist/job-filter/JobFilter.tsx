@@ -21,7 +21,7 @@ import { dateToUnix } from "../../../utils/utils";
 import style from "./JobFilter.module.css";
 import { Stepper } from "./Stepper";
 import { useEffect, useState } from "react";
-import { JobTag } from "./../../../types/job";
+import { JobTag } from "../../../types/job";
 import { useGetUser, UserRole } from "../../../utils/auth";
 
 interface JobFilterProps {

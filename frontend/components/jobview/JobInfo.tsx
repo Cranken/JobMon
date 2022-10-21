@@ -1,4 +1,4 @@
-import { JobMetadata } from "./../../types/job";
+import { JobMetadata } from "../../types/job";
 import { Box, Grid, Stack, Tag, Text, Wrap } from "@chakra-ui/react";
 import Selection from "./Selection";
 import { SelectionMap } from "../../types/helpers";

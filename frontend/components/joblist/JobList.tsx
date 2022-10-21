@@ -1,4 +1,4 @@
-import { JobMetadata } from "./../../types/job";
+import { JobMetadata } from "../../types/job";
 import {
   Alert,
   AlertIcon,

@@ -12,7 +12,7 @@ import JobFilter from "../components/joblist/job-filter/JobFilter";
 import { Panel, PanelManager } from "../components/panelmanager/PanelManager";
 import { JobSearchParams } from "../types/job";
 import { groupBy, useGetJobs, useStorageState } from "../utils/utils";
-import { StatItem } from "./../components/statistics/StatItem";
+import { StatItem } from "../components/statistics/StatItem";
 
 export const Statistics = () => {
   const [params, setParams, , isLoadingParams] =

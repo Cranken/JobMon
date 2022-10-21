@@ -1,4 +1,4 @@
-import { MetricConfig } from "./../../types/job";
+import { MetricConfig } from "../../types/job";
 import {
   Checkbox,
   CheckboxGroup,

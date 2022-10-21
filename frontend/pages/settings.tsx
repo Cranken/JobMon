@@ -27,7 +27,7 @@ import APIView from "../components/settings/APIView";
 import LogView from "../components/settings/LogView";
 import MetricsView from "../components/settings/MetricsView";
 import PartitionsView from "../components/settings/PartitionsView";
-import { Configuration } from "./../types/config";
+import { Configuration } from "../types/config";
 
 enum SettingsView {
   General = "General Settings",
