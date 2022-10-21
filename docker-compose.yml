@@ -2,7 +2,7 @@ services:
   frontend:
     restart: always
     build:
-      context: ./jobmon
+      context: ./frontend
       args:
         - NEXT_PUBLIC_BACKEND_URL=${HOSTNAME}:${BACKEND_PORT}
     environment:
@@ -15,7 +15,7 @@ services:
       - ${FRONTEND_PORT}:3000
   backend:
     restart: always
-    build: ./
+    build: ./backend
     volumes:
       - type: bind
         source: ./config.json
