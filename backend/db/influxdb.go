@@ -239,7 +239,7 @@ func (db *InfluxDB) query(metric conf.MetricConfig, job *job.JobMetadata, nodes 
 		queryResult, err = db.querySimpleMeasurement(metric, job, nodes, sampleInterval)
 	} else {
 		if metric.Type != "node" {
-			queryResult, err = db.queryAggregateMeasurement(metric, job, sampleInterval)
+			queryResult, err = db.queryAggregateMeasurement(metric, job, nodes, sampleInterval)
 		} else {
 			queryResult, err = db.querySimpleMeasurement(metric, job, nodes, sampleInterval)
 		}
@@ -253,7 +253,7 @@ func (db *InfluxDB) query(metric conf.MetricConfig, job *job.JobMetadata, nodes 
 
 func (db *InfluxDB) queryRaw(metric conf.MetricConfig, job *job.JobMetadata, node string, sampleInterval time.Duration) (result string, err error) {
 	if metric.AggFn != "" && node == "" {
-		result, err = db.queryAggregateMeasurementRaw(metric, job, sampleInterval)
+		result, err = db.queryAggregateMeasurementRaw(metric, job, node, sampleInterval)
 	} else {
 		result, err = db.querySimpleMeasurementRaw(metric, job, node, sampleInterval)
 	}
@@ -313,11 +313,11 @@ func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (
 	return
 }
 
-func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, job *job.JobMetadata, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, job *job.JobMetadata, nodes string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement + "_" + metric.AggFn
 	query := fmt.Sprintf(AggregateMeasurementQuery,
 		db.bucket, job.StartTime, job.StopTime, measurement,
-		job.NodeList, sampleInterval, metric.PostQueryOp, sampleInterval)
+		nodes, sampleInterval, metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		log.Printf("Error at aggregate query: %v\n", err)
@@ -325,11 +325,11 @@ func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, job *job
 	return
 }
 
-func (db *InfluxDB) queryAggregateMeasurementRaw(metric conf.MetricConfig, job *job.JobMetadata, sampleInterval time.Duration) (result string, err error) {
+func (db *InfluxDB) queryAggregateMeasurementRaw(metric conf.MetricConfig, job *job.JobMetadata, nodes string, sampleInterval time.Duration) (result string, err error) {
 	measurement := metric.Measurement + "_" + metric.AggFn
 	query := fmt.Sprintf(AggregateMeasurementQuery,
 		db.bucket, job.StartTime, job.StopTime, measurement,
-		job.NodeList, sampleInterval, metric.PostQueryOp, sampleInterval)
+		nodes, sampleInterval, metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
 	if err != nil {
 		log.Printf("Error at aggregate raw query: %v\n", err)
@@ -408,7 +408,7 @@ func (db *InfluxDB) queryLastDatapoints(job job.JobMetadata) (metricData []Metri
 				queryResult, err = db.querySimpleMeasurement(m, &job, job.NodeList, sampleInterval)
 				separationKey = m.SeparationKey
 			} else {
-				queryResult, err = db.queryAggregateMeasurement(m, &job, sampleInterval)
+				queryResult, err = db.queryAggregateMeasurement(m, &job, job.NodeList, sampleInterval)
 			}
 			if err != nil {
 				log.Printf("Job %v: could not get last datapoints %v", job.Id, err)
