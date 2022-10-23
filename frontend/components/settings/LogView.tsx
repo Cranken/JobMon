@@ -32,7 +32,7 @@ const LogView = () => {
         }
     }, [lastMessage])
 
-    return <Textarea value={messages.join("")} height="60vh"></Textarea>
+    return <Textarea value={messages.join("")} height="60vh" readOnly></Textarea>
 }
 
 export default LogView

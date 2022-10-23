@@ -24,6 +24,7 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import APIView from "../components/settings/APIView";
+import GeneralView from "../components/settings/GeneralView";
 import LogView from "../components/settings/LogView";
 import MetricsView from "../components/settings/MetricsView";
 import PartitionsView from "../components/settings/PartitionsView";
@@ -91,10 +92,6 @@ const renderSettingsView = (
       return <LogView />
   }
   return null;
-};
-
-const GeneralView = () => {
-  return <></>;
 };
 
 const useGetConfig: () => [
