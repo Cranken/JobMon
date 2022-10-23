@@ -5,6 +5,8 @@ import {
   Flex,
   Icon,
   Input,
+  LinkBox,
+  LinkOverlay,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -50,18 +52,24 @@ export const Header = () => {
         <Flex flexGrow={1} gap={2}>
           {isAuthenticated ? (
             <>
-              <Link href="/jobs" passHref>
-                <Button bg={buttonBg}>Home</Button>
-              </Link>
+              <LinkBox>
+                <LinkOverlay href="/jobs">
+                  <Button bg={buttonBg}>Home</Button>
+                </LinkOverlay>
+              </LinkBox>
               {user.Roles?.includes(UserRole.Admin) ?? false ? (
-                <Link href="/statistics" passHref>
-                  <Button bg={buttonBg}>Statistics</Button>
-                </Link>
+                <LinkBox>
+                  <LinkOverlay href="/statistics">
+                    <Button bg={buttonBg}>Statistics</Button>
+                  </LinkOverlay>
+                </LinkBox>
               ) : null}
               {user.Roles?.includes(UserRole.Admin) ?? false ? (
-                <Link href="/settings" passHref>
-                  <Button bg={buttonBg}>Admin</Button>
-                </Link>
+                <LinkBox>
+                  <LinkOverlay href="/settings">
+                    <Button bg={buttonBg}>Admin</Button>
+                  </LinkOverlay>
+                </LinkBox>
               ) : null}
             </>
           ) : null}
