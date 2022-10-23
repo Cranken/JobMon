@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"jobmon/analysis"
 	conf "jobmon/config"
 	"jobmon/job"
 	"log"
@@ -28,33 +29,6 @@ type InfluxDB struct {
 	defaultSampleInterval string
 	metricQuantiles       []string
 }
-
-type MetricData struct {
-	Config conf.MetricConfig
-	// Only set when querying parsed raw data
-	Data map[string][]QueryResult
-	// Only set when querying raw data
-	RawData string
-}
-
-type QuantileData struct {
-	Config    conf.MetricConfig
-	Quantiles []string
-	// Only set when querying parsed raw data
-	Data map[string][]QueryResult
-	// Only set when querying raw data
-	RawData string
-}
-
-type JobData struct {
-	Metadata        *job.JobMetadata
-	MetricData      []MetricData
-	QuantileData    []QuantileData
-	SampleInterval  float64
-	SampleIntervals []float64
-}
-
-type QueryResult map[string]interface{}
 
 func (db *InfluxDB) Init(c conf.Configuration) {
 	if c.DBHost == "" {
@@ -93,11 +67,18 @@ func (db *InfluxDB) Close() {
 	db.client.Close()
 }
 
-func (db *InfluxDB) GetJobData(job *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data JobData, err error) {
+func (db *InfluxDB) GetJobData(j *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data job.JobData, err error) {
 	if nodes == "" {
-		nodes = job.NodeList
+		nodes = j.NodeList
 	}
-	return db.getJobData(job, nodes, sampleInterval, raw)
+	return db.getJobData(j, nodes, sampleInterval, raw, false)
+}
+
+func (db *InfluxDB) GetAggregatedJobData(j *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data job.JobData, err error) {
+	if nodes == "" {
+		nodes = j.NodeList
+	}
+	return db.getJobData(j, nodes, sampleInterval, raw, true)
 }
 
 func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMetadataData, err error) {
@@ -107,7 +88,23 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 	if j.StopTime <= j.StartTime {
 		return data, fmt.Errorf("job stop time is less or equal to start")
 	}
-	return db.getMetadataData(j)
+	data, err = db.getMetadataData(j)
+	if err != nil {
+		return data, err
+	}
+	s, err := time.ParseDuration(db.defaultSampleInterval)
+	if err != nil {
+		return data, err
+	}
+	_, interval := j.CalculateSampleIntervals(s)
+	aggData, err := db.getJobData(j, j.NodeList, interval, false, true)
+	cps := analysis.ChangePointDetection(&aggData)
+	for i, md := range data {
+		md.ChangePoints = cps[md.Config.Measurement]
+		data[i] = md
+	}
+
+	return
 }
 
 func (db *InfluxDB) RunAggregation() {
@@ -118,12 +115,12 @@ func (db *InfluxDB) RunAggregation() {
 	}
 }
 
-func (db *InfluxDB) CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []MetricData, chan bool) {
+func (db *InfluxDB) CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []job.MetricData, chan bool) {
 	duration, err := time.ParseDuration(db.defaultSampleInterval)
 	if err != nil {
 		duration = 30 * time.Second
 	}
-	monitor := make(chan []MetricData)
+	monitor := make(chan []job.MetricData)
 	done := make(chan bool)
 	ticker := time.NewTicker(duration)
 
@@ -149,54 +146,54 @@ func (db *InfluxDB) CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []Metr
 	return monitor, done
 }
 
-func (db *InfluxDB) getJobData(job *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data JobData, err error) {
-	var metricData []MetricData
-	var quantileData []QuantileData
+func (db *InfluxDB) getJobData(j *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool, forceAggregate bool) (data job.JobData, err error) {
+	var metricData []job.MetricData
+	var quantileData []job.QuantileData
 	var wg sync.WaitGroup
-	for _, m := range db.partitionConfig[job.Partition].Metrics {
+	for _, m := range db.partitionConfig[j.Partition].Metrics {
 		wg.Add(1)
 		go func(m conf.MetricConfig) {
 			if raw {
 				defer wg.Done()
-				result, err := db.queryRaw(m, job, nodes, sampleInterval)
+				result, err := db.queryRaw(m, j, nodes, sampleInterval, forceAggregate)
 				if err != nil {
-					log.Printf("Job %v: could not get metric data %v", job.Id, err)
+					log.Printf("Job %v: could not get metric data %v", j.Id, err)
 					return
 				}
-				metricData = append(metricData, MetricData{Config: m, RawData: result})
+				metricData = append(metricData, job.MetricData{Config: m, RawData: result})
 			} else {
 				defer wg.Done()
-				result, err := db.query(m, job, nodes, sampleInterval)
+				result, err := db.query(m, j, nodes, sampleInterval, forceAggregate)
 				if err != nil {
-					log.Printf("Job %v: could not get metric data %v", job.Id, err)
+					log.Printf("Job %v: could not get metric data %v", j.Id, err)
 					return
 				}
-				metricData = append(metricData, MetricData{Config: m, Data: result})
+				metricData = append(metricData, job.MetricData{Config: m, Data: result})
 			}
 		}(db.metrics[m])
 
-		if !job.IsRunning {
+		if !j.IsRunning {
 			wg.Add(1)
 			go func(m conf.MetricConfig) {
 				defer wg.Done()
-				tempRes, err := db.queryQuantileMeasurement(m, job, db.metricQuantiles, sampleInterval)
+				tempRes, err := db.queryQuantileMeasurement(m, j, db.metricQuantiles, sampleInterval)
 				if err != nil {
-					log.Printf("Job %v: could not get quantile data %v", job.Id, err)
+					log.Printf("Job %v: could not get quantile data %v", j.Id, err)
 					return
 				}
 				result, err := parseQueryResult(tempRes, "_field")
 				if err != nil {
-					log.Printf("Job %v: could not parse quantile data %v", job.Id, err)
+					log.Printf("Job %v: could not parse quantile data %v", j.Id, err)
 					return
 				}
-				quantileData = append(quantileData, QuantileData{Config: m, Data: result, Quantiles: db.metricQuantiles})
+				quantileData = append(quantileData, job.QuantileData{Config: m, Data: result, Quantiles: db.metricQuantiles})
 			}(db.metrics[m])
 		}
 	}
 	wg.Wait()
 	data.MetricData = metricData
 	data.QuantileData = quantileData
-	data.Metadata = job
+	data.Metadata = j
 	return data, err
 }
 
@@ -231,17 +228,17 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (data []job.JobMetadataD
 	return
 }
 
-func (db *InfluxDB) query(metric conf.MetricConfig, job *job.JobMetadata, nodes string, sampleInterval time.Duration) (result map[string][]QueryResult, err error) {
+func (db *InfluxDB) query(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration, forceAggregate bool) (result map[string][]job.QueryResult, err error) {
 	var queryResult *api.QueryTableResult
 	separationKey := metric.SeparationKey
 	// If only one node is specified, always return detailed data, never aggregated data
-	if len(strings.Split(nodes, "|")) == 1 {
-		queryResult, err = db.querySimpleMeasurement(metric, job, nodes, sampleInterval)
+	if len(strings.Split(nodes, "|")) == 1 && !forceAggregate {
+		queryResult, err = db.querySimpleMeasurement(metric, j, nodes, sampleInterval)
 	} else {
 		if metric.Type != "node" {
-			queryResult, err = db.queryAggregateMeasurement(metric, job, nodes, sampleInterval)
+			queryResult, err = db.queryAggregateMeasurement(metric, j, nodes, sampleInterval)
 		} else {
-			queryResult, err = db.querySimpleMeasurement(metric, job, nodes, sampleInterval)
+			queryResult, err = db.querySimpleMeasurement(metric, j, nodes, sampleInterval)
 		}
 		separationKey = "hostname"
 	}
@@ -251,18 +248,18 @@ func (db *InfluxDB) query(metric conf.MetricConfig, job *job.JobMetadata, nodes 
 	return result, err
 }
 
-func (db *InfluxDB) queryRaw(metric conf.MetricConfig, job *job.JobMetadata, node string, sampleInterval time.Duration) (result string, err error) {
-	if metric.AggFn != "" && node == "" {
-		result, err = db.queryAggregateMeasurementRaw(metric, job, node, sampleInterval)
+func (db *InfluxDB) queryRaw(metric conf.MetricConfig, j *job.JobMetadata, node string, sampleInterval time.Duration, forceAggregate bool) (result string, err error) {
+	if metric.Type != "node" && forceAggregate {
+		result, err = db.queryAggregateMeasurementRaw(metric, j, node, sampleInterval)
 	} else {
-		result, err = db.querySimpleMeasurementRaw(metric, job, node, sampleInterval)
+		result, err = db.querySimpleMeasurementRaw(metric, j, node, sampleInterval)
 	}
 	return result, err
 }
 
-func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, job *job.JobMetadata, nodes string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
 	query := fmt.Sprintf(SimpleMeasurementQuery,
-		db.bucket, job.StartTime, job.StopTime, metric.Measurement,
+		db.bucket, j.StartTime, j.StopTime, metric.Measurement,
 		metric.Type, nodes, sampleInterval, metric.FilterFunc,
 		metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.Query(context.Background(), query)
@@ -272,9 +269,9 @@ func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, job *job.Jo
 	return result, err
 }
 
-func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, job *job.JobMetadata, nodes string, sampleInterval time.Duration) (result string, err error) {
+func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result string, err error) {
 	query := fmt.Sprintf(SimpleMeasurementQuery,
-		db.bucket, job.StartTime, job.StopTime, metric.Measurement,
+		db.bucket, j.StartTime, j.StopTime, metric.Measurement,
 		metric.Type, nodes, sampleInterval, metric.FilterFunc,
 		metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
@@ -285,9 +282,9 @@ func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, job *job
 }
 
 // separationKey describes the key by which to differentiate between different datasets. E.g. per host/per cpu
-func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (result map[string][]QueryResult, err error) {
-	result = make(map[string][]QueryResult)
-	tableRows := []QueryResult{}
+func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (result map[string][]job.QueryResult, err error) {
+	result = make(map[string][]job.QueryResult)
+	tableRows := []job.QueryResult{}
 	curNode := ""
 	tableIndex := int64(0)
 	for queryResult.Next() {
@@ -295,7 +292,7 @@ func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (
 		if row["table"].(int64) != tableIndex {
 			tableIndex++
 			result[curNode] = tableRows
-			tableRows = []QueryResult{}
+			tableRows = []job.QueryResult{}
 		}
 		tableRows = append(tableRows, row)
 		if val, ok := row[separationKey]; ok {
@@ -313,10 +310,10 @@ func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (
 	return
 }
 
-func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, job *job.JobMetadata, nodes string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement + "_" + metric.AggFn
 	query := fmt.Sprintf(AggregateMeasurementQuery,
-		db.bucket, job.StartTime, job.StopTime, measurement,
+		db.bucket, j.StartTime, j.StopTime, measurement,
 		nodes, sampleInterval, metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
@@ -325,10 +322,10 @@ func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, job *job
 	return
 }
 
-func (db *InfluxDB) queryAggregateMeasurementRaw(metric conf.MetricConfig, job *job.JobMetadata, nodes string, sampleInterval time.Duration) (result string, err error) {
+func (db *InfluxDB) queryAggregateMeasurementRaw(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result string, err error) {
 	measurement := metric.Measurement + "_" + metric.AggFn
 	query := fmt.Sprintf(AggregateMeasurementQuery,
-		db.bucket, job.StartTime, job.StopTime, measurement,
+		db.bucket, j.StartTime, j.StopTime, measurement,
 		nodes, sampleInterval, metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
 	if err != nil {
@@ -337,7 +334,7 @@ func (db *InfluxDB) queryAggregateMeasurementRaw(metric conf.MetricConfig, job *
 	return
 }
 
-func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, job *job.JobMetadata, quantiles []string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, j *job.JobMetadata, quantiles []string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement
 	filterFunc := metric.FilterFunc
 	if metric.AggFn != "" {
@@ -357,8 +354,8 @@ func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, job *job.
 	tempKeyAggregation := "[" + strings.Join(tempKeys[0:len(quantiles)], ",") + "]"
 
 	query := fmt.Sprintf(QuantileMeasurementQuery,
-		db.bucket, job.StartTime, job.StopTime, measurement,
-		job.NodeList, sampleInterval, filterFunc, metric.PostQueryOp,
+		db.bucket, j.StartTime, j.StopTime, measurement,
+		j.NodeList, sampleInterval, filterFunc, metric.PostQueryOp,
 		sampleInterval, quantileSubQuery, tempKeyAggregation)
 
 	result, err = db.queryAPI.Query(context.Background(), query)
@@ -373,14 +370,14 @@ func quantileString(streamName string, q string, measurement string) string {
 		streamName, q, q, measurement)
 }
 
-func (db *InfluxDB) queryMetadataMeasurements(metric conf.MetricConfig, job *job.JobMetadata) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) queryMetadataMeasurements(metric conf.MetricConfig, j *job.JobMetadata) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement
 	if metric.AggFn != "" {
 		measurement += "_" + metric.AggFn
 	}
 	query := fmt.Sprintf(MetadataMeasurementsQuery,
-		db.bucket, job.StartTime, job.StopTime, measurement,
-		job.NodeList, metric.FilterFunc, metric.PostQueryOp)
+		db.bucket, j.StartTime, j.StopTime, measurement,
+		j.NodeList, metric.FilterFunc, metric.PostQueryOp)
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		log.Printf("Error at metadata query: %v\n", err)
@@ -388,39 +385,39 @@ func (db *InfluxDB) queryMetadataMeasurements(metric conf.MetricConfig, job *job
 	return
 }
 
-func (db *InfluxDB) queryLastDatapoints(job job.JobMetadata) (metricData []MetricData, err error) {
+func (db *InfluxDB) queryLastDatapoints(j job.JobMetadata) (metricData []job.MetricData, err error) {
 	var wg sync.WaitGroup
-	if job.IsRunning {
-		job.StopTime = int(time.Now().Unix())
+	if j.IsRunning {
+		j.StopTime = int(time.Now().Unix())
 	}
 	sampleInterval, err := time.ParseDuration(db.defaultSampleInterval)
 	if err != nil {
 		sampleInterval = 30 * time.Second
 	}
-	for _, m := range db.partitionConfig[job.Partition].Metrics {
+	for _, m := range db.partitionConfig[j.Partition].Metrics {
 		wg.Add(1)
 		go func(m conf.MetricConfig) {
 			defer wg.Done()
 			m.PostQueryOp += "|> last()"
 			var queryResult *api.QueryTableResult
 			separationKey := "hostname"
-			if job.NumNodes == 1 {
-				queryResult, err = db.querySimpleMeasurement(m, &job, job.NodeList, sampleInterval)
+			if j.NumNodes == 1 {
+				queryResult, err = db.querySimpleMeasurement(m, &j, j.NodeList, sampleInterval)
 				separationKey = m.SeparationKey
 			} else {
-				queryResult, err = db.queryAggregateMeasurement(m, &job, job.NodeList, sampleInterval)
+				queryResult, err = db.queryAggregateMeasurement(m, &j, j.NodeList, sampleInterval)
 			}
 			if err != nil {
-				log.Printf("Job %v: could not get last datapoints %v", job.Id, err)
+				log.Printf("Job %v: could not get last datapoints %v", j.Id, err)
 				return
 			}
 			if err == nil {
 				result, err := parseQueryResult(queryResult, separationKey)
 				if err != nil {
-					log.Printf("Job %v: could not parse last datapoints %v", job.Id, err)
+					log.Printf("Job %v: could not parse last datapoints %v", j.Id, err)
 					return
 				}
-				metricData = append(metricData, MetricData{Config: m, Data: result})
+				metricData = append(metricData, job.MetricData{Config: m, Data: result})
 			}
 		}(db.metrics[m])
 	}

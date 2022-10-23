@@ -1,6 +1,8 @@
 package router
 
-import "jobmon/db"
+import (
+	"jobmon/job"
+)
 
 const (
 	WSLoadMetrics         = 1
@@ -15,12 +17,12 @@ type WSMsg struct {
 type WSLoadMetricsMsg struct {
 	WSMsg
 	StartTime int
-	StopTime int
+	StopTime  int
 }
 
 type WSLoadMetricsResponseMsg struct {
 	WSMsg
-	MetricData []db.MetricData
+	MetricData []job.MetricData
 }
 
 type WSLatestMetricsMsg = WSLoadMetricsResponseMsg

@@ -39,6 +39,8 @@ type JobMetadataData struct {
 	Data float64
 	// Max
 	Max float64
+	// Change points
+	ChangePoints []time.Time
 }
 
 type StopJob struct {
@@ -91,6 +93,32 @@ type RangeFilter struct {
 	To   *int
 }
 
+type QueryResult map[string]interface{}
+type MetricData struct {
+	Config config.MetricConfig
+	// Only set when querying parsed raw data
+	Data map[string][]QueryResult
+	// Only set when querying raw data
+	RawData string
+}
+
+type QuantileData struct {
+	Config    config.MetricConfig
+	Quantiles []string
+	// Only set when querying parsed raw data
+	Data map[string][]QueryResult
+	// Only set when querying raw data
+	RawData string
+}
+
+type JobData struct {
+	Metadata        *JobMetadata
+	MetricData      []MetricData
+	QuantileData    []QuantileData
+	SampleInterval  float64
+	SampleIntervals []float64
+}
+
 // Check if job TTL has expired.
 // If TTL == 0 then the job will never expire
 func (j *JobMetadata) Expired() bool {
@@ -108,7 +136,7 @@ func (j *JobMetadata) Overtime(maxTime int) bool {
 }
 
 // Calculate the sample interval which displays the closest amount of samples in relation to DEFAULT_MAX_POINTS_PER_JOB
-func (j *JobMetadata) CalculateSampleIntervals(metricSampleInterval time.Duration) (intervals []float64, bestAvailableInterval float64) {
+func (j *JobMetadata) CalculateSampleIntervals(metricSampleInterval time.Duration) ([]float64, time.Duration) {
 	defaultIntervals := []float64{30, 60, 120, 300, 600, 1800}
 	stopTime := j.StopTime
 	if j.IsRunning {
@@ -118,18 +146,19 @@ func (j *JobMetadata) CalculateSampleIntervals(metricSampleInterval time.Duratio
 	datapoints := duration / metricSampleInterval.Seconds()
 	factor := math.Ceil(datapoints / DEFAULT_MAX_POINTS_PER_JOB)
 	bestInterval := factor * metricSampleInterval.Seconds()
-	bestAvailableInterval = metricSampleInterval.Seconds()
+	bestAvailableInterval := metricSampleInterval.Seconds()
 	for _, v := range defaultIntervals {
 		if math.Abs(v-bestInterval) < math.Abs(bestAvailableInterval-bestInterval) {
 			bestAvailableInterval = v
 		}
 	}
+	intervals := make([]float64, 0)
 	for _, v := range defaultIntervals {
 		if metricSampleInterval.Seconds() <= v && v <= bestAvailableInterval {
 			intervals = append(intervals, v)
 		}
 	}
-	return
+	return intervals, time.Duration(bestAvailableInterval) * time.Second
 }
 
 func (j *JobMetadata) AddTag(tag *JobTag) {

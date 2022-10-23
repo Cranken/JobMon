@@ -21,7 +21,7 @@ type LRUCache struct {
 
 type Item struct {
 	id   int
-	data db.JobData
+	data job.JobData
 }
 
 func (c *LRUCache) Init(config conf.Configuration, db *db.DB, store *store.Store) {
@@ -32,7 +32,7 @@ func (c *LRUCache) Init(config conf.Configuration, db *db.DB, store *store.Store
 }
 
 // Get job data for the given sample interval from cache by job metadata
-func (c *LRUCache) Get(j *job.JobMetadata, sampleInterval time.Duration) (data db.JobData, err error) {
+func (c *LRUCache) Get(j *job.JobMetadata, sampleInterval time.Duration) (data job.JobData, err error) {
 	c.mut.Lock()
 	defer c.mut.Unlock()
 
@@ -76,7 +76,7 @@ func (c *LRUCache) put(data Item) {
 	c.list.PushFront(data)
 }
 
-func (c *LRUCache) find(id int) (data db.JobData, err error) {
+func (c *LRUCache) find(id int) (data job.JobData, err error) {
 	for el := c.list.Front(); el != nil; el = el.Next() {
 		if el.Value.(Item).id == id {
 			c.list.MoveToFront(el)

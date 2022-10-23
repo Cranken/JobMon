@@ -58,6 +58,7 @@ func (r *Router) Init(store jobstore.Store, config *conf.Configuration, db *data
 	router.GET("/api/config", authManager.Protected(r.GetConfig, auth.ADMIN))
 	router.PATCH("/api/config/update", authManager.Protected(r.UpdateConfig, auth.ADMIN))
 	router.GET("/api/admin/livelog", authManager.Protected(r.LiveLog, auth.ADMIN))
+	router.POST("/api/admin/refresh_metadata/:id", authManager.Protected(r.RefreshMetadata, auth.ADMIN))
 	router.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Access-Control-Request-Method") != "" {
 			// Set CORS headers
@@ -153,8 +154,7 @@ func (r *Router) JobStop(w http.ResponseWriter, req *http.Request, params httpro
 					jobMetadata, err := r.store.GetJob(id)
 					if err == nil {
 						dur, _ := time.ParseDuration(r.config.SampleInterval)
-						_, secs := jobMetadata.CalculateSampleIntervals(dur)
-						bestInterval := time.Duration(secs) * time.Second
+						_, bestInterval := jobMetadata.CalculateSampleIntervals(dur)
 						r.jobCache.Get(&jobMetadata, bestInterval)
 					}
 				}()
@@ -245,8 +245,7 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 
 	// Calculate best sample interval
 	dur, _ := time.ParseDuration(r.config.SampleInterval)
-	intervals, secs := j.CalculateSampleIntervals(dur)
-	bestInterval := time.Duration(secs) * time.Second
+	intervals, bestInterval := j.CalculateSampleIntervals(dur)
 
 	sampleInterval := bestInterval
 	querySampleInterval := req.URL.Query().Get("sampleInterval")
@@ -262,15 +261,15 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 	if j.IsRunning {
 		j.StartTime = int(time.Now().Unix()) - 3600
 	}
-	var jobData database.JobData
+	var jobData job.JobData
 	if node == "" && querySampleInterval == "" && !j.IsRunning && !raw {
-		jobData, err = r.jobCache.Get(&j, bestInterval)
+		jobData, err = r.jobCache.Get(&j, sampleInterval)
 	} else {
 		if j.IsRunning {
 			j.StopTime = int(time.Now().Unix())
 			node = ""
 		}
-		jobData, err = (*r.db).GetJobData(&j, node, bestInterval, raw)
+		jobData, err = (*r.db).GetJobData(&j, node, sampleInterval, raw)
 	}
 	if err != nil {
 		log.Printf("Could not get job metric data: %v\n", err)
@@ -543,8 +542,7 @@ func (r *Router) LiveMonitoring(w http.ResponseWriter, req *http.Request, params
 						}
 						j.StopTime = wsLoadMetricsMsg.StopTime
 						dur, _ := time.ParseDuration(r.config.SampleInterval)
-						_, secs := j.CalculateSampleIntervals(dur)
-						bestInterval := time.Duration(secs) * time.Second
+						_, bestInterval := j.CalculateSampleIntervals(dur)
 						data, err := (*r.db).GetJobData(&j, "", bestInterval, false)
 						j.StartTime = origStartTime
 						j.StopTime = origStopTime
@@ -644,6 +642,49 @@ func (r *Router) LiveLog(w http.ResponseWriter, req *http.Request, params httpro
 			}
 		}
 	}()
+}
+
+func (r *Router) RefreshMetadata(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
+	utils.AllowCors(req, w.Header())
+	strId := params.ByName("id")
+
+	id, err := strconv.Atoi(strId)
+	if err != nil {
+		log.Printf("Could not parse job id data")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Get job metadata from store
+	j, err := r.store.GetJob(id)
+	if err != nil {
+		log.Printf("Could not get job meta data: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	data, err := (*r.db).GetJobMetadataMetrics(&j)
+	if err != nil {
+		log.Printf("Could not get job meta data metrics: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	j.Data = data
+	err = r.store.UpdateJob(j)
+	if err != nil {
+		log.Printf("Could not update job in store: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	jsonData, err := json.Marshal(&j)
+	if err != nil {
+		log.Printf("Could not marhsal job metadata: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(jsonData)
 }
 
 func (r *Router) parseTag(w http.ResponseWriter, req *http.Request) (job job.JobMetadata, tag job.JobTag, ok bool) {
