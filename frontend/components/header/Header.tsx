@@ -97,7 +97,7 @@ export const Header = () => {
 
 const searchHandler = (key: string, term: string) => {
   if (key === "Enter") {
-    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/${term}`, {
+    fetch("http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/${term}`, {
       credentials: "include",
     }).then((res) =>
       res.text().then((val) => {
