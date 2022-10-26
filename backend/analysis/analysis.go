@@ -19,7 +19,11 @@ func ChangePointDetection(j *job.JobData) map[string][]time.Time {
 			for _, v := range m.Data {
 				values := make([]float64, 0)
 				for _, vi := range v {
-					values = append(values, vi["_value"].(float64))
+					val := vi["_value"]
+					if val == nil {
+						return
+					}
+					values = append(values, val.(float64))
 				}
 				cpts := changepoint.NonParametric(values, 1, 5)
 				times := make([]time.Time, 0)
