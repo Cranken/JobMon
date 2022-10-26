@@ -54,8 +54,7 @@ export const MetricDataCharts = ({
     let max;
     if (
       nodeSelection.length === 1 &&
-      metric.Config.Type !== "node" &&
-      !isRunning
+      metric.Config.Type !== "node"
     ) {
       z = (d: MetricPoint) => d["type-id"];
       const pThreadCount = Object.keys(metric.Data).length / 2;
