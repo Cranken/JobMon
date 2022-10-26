@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"log"
 	"os"
+
+	"github.com/google/uuid"
 )
 
 const CONFIG_FILE = "config.json"
@@ -52,6 +54,8 @@ type Configuration struct {
 }
 
 type MetricConfig struct {
+	// Global unique identifier for metric
+	GUID string
 	// Metric type, e.g. "cpu", "node", "socket", "accelerator"
 	Type string
 	// Measurement name in Influxdb
@@ -139,6 +143,12 @@ func (c *Configuration) Init() {
 	err = json.Unmarshal(data, c)
 	if err != nil {
 		log.Fatalf("config: Could not unmarshal config file %v", err)
+	}
+	for i, mc := range c.Metrics {
+		if mc.GUID == "" {
+			mc.GUID = uuid.New().String()
+			c.Metrics[i] = mc
+		}
 	}
 }
 

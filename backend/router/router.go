@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/julienschmidt/httprouter"
 )
@@ -608,6 +609,13 @@ func (r *Router) UpdateConfig(w http.ResponseWriter, req *http.Request, params h
 		return
 	}
 
+	// Add GUID for new metrics
+	for i, mc := range conf.Metrics {
+		if mc.GUID == "" {
+			mc.GUID = uuid.New().String()
+			conf.Metrics[i] = mc
+		}
+	}
 	// Actually overwrite config
 	r.config.Metrics = conf.Metrics
 	r.config.Partitions = conf.Partitions
