@@ -187,7 +187,7 @@ const Job: NextPage = () => {
             ) : (
               <MetricDataCharts
                 key="metric-charts"
-                metrics={data?.MetricData.filter((m) =>
+                metrics={data?.MetricData?.filter((m) =>
                   selectedMetrics.includes(m.Config.Measurement)
                 )}
                 nodeSelection={selected}
@@ -278,7 +278,7 @@ export const useGetJobData: (
     }, [id, node, jobCache, removeCookie, sampleInterval]);
 
     useEffect(() => {
-      if (jobData?.Metadata.IsRunning) {
+      if (jobData?.Metadata.IsRunning && jobData.MetricData) {
         const url = new URL(
           "ws://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/live/${id}`
         );
@@ -366,7 +366,7 @@ const useMetricSelection = (
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([]);
 
   useEffect(() => {
-    if (job && job.Metadata) {
+    if (job && job.Metadata && job.MetricData) {
       const partition = job.Metadata.Partition;
       if (partition in selectedMetricsMap) {
         setSelectedMetrics(selectedMetricsMap[partition]);

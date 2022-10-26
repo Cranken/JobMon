@@ -27,7 +27,7 @@ export const MetricDataCharts = ({
   isRunning,
 }: MetricDataChartsProps) => {
   if (!metrics) {
-    return <div>No metrics</div>;
+    return <div>No metric data available</div>;
   }
   if (isLoading) {
     return (
@@ -99,7 +99,7 @@ export const MetricDataCharts = ({
       // Check if is aggregated measurement
       const key = (
         metric.Config.Measurement.endsWith(metric.Config.AggFn) ||
-        nodeSelection.length > 1
+          nodeSelection.length > 1
           ? "hostname"
           : metric.Config.SeparationKey
       ) as keyof MetricPoint;

@@ -46,7 +46,7 @@ export const ViewControl = ({
     <Stack px={3}>
       <Stack direction="row" justify="space-between">
         <MetricSelection
-          metrics={jobdata.MetricData.map((val) => val.Config)}
+          metrics={jobdata.MetricData?.map((val) => val.Config) ?? []}
           selectedMetrics={selectedMetrics}
           setSelectedMetrics={setSelectedMetrics}
         ></MetricSelection>
