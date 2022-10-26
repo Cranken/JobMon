@@ -75,7 +75,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
           let curConfig = { ...lConfig };
           curConfig.Metrics.push({
             Type: "node", Measurement: "",
-            AggFn: AggFn.Mean, SampleInterval: "30s",
+            AggFn: AggFn.Mean, SampleInterval: "",
             Unit: "", DisplayName: "New Metric",
             SeparationKey: "hostname",
             MaxPerNode: 0, MaxPerType: 0,
@@ -139,7 +139,7 @@ const MetricItem = ({ metricConfig, setMetricConfig }: IMetricItemProps) => {
               {TextField("Measurement", "Measurement", errors.Measurement)}
               {TextField("Type", "Type", errors.Type)}
               {values.Type === "cpu" ? AggFnSelection("PThread Aggregation Function", "PThreadAggFn") : null}
-              {TextField("Sample Interval", "SampleInterval", errors.SampleInterval)}
+              {TextField("Sample Interval", "SampleInterval", "", false)}
               {AggFnSelection("Aggregation Function", "AggFn")}
               {TextField("Unit", "Unit", "", false)}
               {NumberField("Max per Node", "MaxPerNode", errors.MaxPerNode)}
