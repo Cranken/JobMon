@@ -30,7 +30,7 @@ const refreshJobMetadata = (id: string) => {
     const url = new URL(
         "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/admin/refresh_metadata/${id.toString()}`
     );
-    fetch(url, {
+    fetch(url.toString(), {
         credentials: "include",
         method: "POST"
     }).then((resp) => resp.json().then((data: JobMetadata) => {
