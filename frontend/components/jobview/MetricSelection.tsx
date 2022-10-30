@@ -23,7 +23,7 @@ export const MetricSelection = ({
   setSelectedMetrics,
 }: MetricSelectionProps) => {
   return (
-    <Accordion allowToggle w="50%">
+    <Accordion allowToggle w="100%">
       <AccordionItem>
         <h2>
           <AccordionButton>
