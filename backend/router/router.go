@@ -14,6 +14,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -616,6 +617,9 @@ func (r *Router) UpdateConfig(w http.ResponseWriter, req *http.Request, params h
 			conf.Metrics[i] = mc
 		}
 	}
+
+	sort.SliceStable(conf.Metrics, func(i, j int) bool { return conf.Metrics[i].DisplayName < conf.Metrics[j].DisplayName })
+
 	// Actually overwrite config
 	r.config.Metrics = conf.Metrics
 	r.config.Partitions = conf.Partitions

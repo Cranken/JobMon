@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"sort"
 
 	"github.com/google/uuid"
 )
@@ -150,6 +151,7 @@ func (c *Configuration) Init() {
 			c.Metrics[i] = mc
 		}
 	}
+	sort.SliceStable(c.Metrics, func(i, j int) bool { return c.Metrics[i].DisplayName < c.Metrics[j].DisplayName })
 }
 
 func (c *Configuration) Flush() {
