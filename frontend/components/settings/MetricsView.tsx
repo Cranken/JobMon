@@ -27,7 +27,7 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { Field, Form, Formik } from "formik";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Configuration } from "../../types/config";
 import { AggFn, MetricConfig } from "../../types/job";
 import { NumberField, TextField } from "./FormComponents";
@@ -39,6 +39,9 @@ interface IMetricsViewProps {
 
 const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
   const [lConfig, setLConfig] = useState(config);
+  useEffect(() => {
+    setLConfig(config);
+  }, [config])
   const toast = useToast();
   if (!lConfig) {
     return null;
