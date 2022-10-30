@@ -49,7 +49,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
         {lConfig.Metrics.map((m, i) => (
           <MetricItem
             // Hack to avoid duplicate keys if adding multiple new (empty) metrics
-            key={m.DisplayName + i}
+            key={m.GUID + i.toString()}
             metricConfig={m}
             setMetricConfig={(m: MetricConfig, del: boolean = false) => {
               let curConfig = { ...lConfig };
@@ -135,6 +135,7 @@ const MetricItem = ({ metricConfig, setMetricConfig }: IMetricItemProps) => {
         >
           {({ values, errors }) => (
             <Form autoComplete="off">
+              <FormLabel pt={1}>GUID: {values.GUID}</FormLabel>
               {TextField("Display Name", "DisplayName", errors.DisplayName)}
               {TextField("Measurement", "Measurement", errors.Measurement)}
               {TextField("Type", "Type", errors.Type)}

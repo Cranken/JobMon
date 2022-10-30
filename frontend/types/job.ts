@@ -46,6 +46,7 @@ export enum AggFn {
 }
 
 export interface MetricConfig {
+  GUID: string;
   Type: string;
   Measurement: string;
   AggFn: AggFn;

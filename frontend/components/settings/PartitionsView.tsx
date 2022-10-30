@@ -1,4 +1,4 @@
-import { Stack, Accordion, Box, Button, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, ButtonGroup, Flex, HStack, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverFooter, PopoverHeader, PopoverTrigger, Checkbox, Container, Wrap, Text, FormLabel } from "@chakra-ui/react";
+import { Stack, Accordion, Box, Button, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, ButtonGroup, Flex, HStack, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverFooter, PopoverHeader, PopoverTrigger, Checkbox, Container, Wrap, Text, FormLabel, Tooltip } from "@chakra-ui/react";
 import { Formik, Form, Field, FieldArray } from "formik";
 import { useState } from "react";
 import { Configuration } from "../../types/config";
@@ -88,10 +88,12 @@ const PartitionItem = ({ partitionConfig, setPartitionConfig }: IPartitionItemPr
                             <FormLabel pt={1}>Metrics</FormLabel>
                             <Wrap gap={5}>
                                 {values.availableMetrics.map((m) =>
-                                    <FormLabel key={m.Measurement}>
-                                        <Field type="checkbox" name="Metrics" value={m.Measurement} />
-                                        {m.DisplayName}
-                                    </FormLabel>
+                                    <Tooltip label={m.GUID} key={m.Measurement}>
+                                        <FormLabel>
+                                            <Field type="checkbox" name="Metrics" value={m.Measurement} />
+                                            {m.DisplayName}
+                                        </FormLabel>
+                                    </Tooltip>
                                 )}
                             </Wrap>
                             <Flex mt={3} justify="space-between" gap={2}>
