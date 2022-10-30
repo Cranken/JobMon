@@ -6,7 +6,9 @@ COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
 
+ADD analysis ./analysis
 ADD auth ./auth
+ADD changepoint ./changepoint
 ADD config ./config
 ADD db ./db
 ADD job ./job
