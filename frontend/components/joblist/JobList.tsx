@@ -65,7 +65,7 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
   let membwData;
   if (job.Data) {
     radarChartData = job.Data.filter((val) =>
-      radarChartMetrics.includes(val.Config.Measurement)
+      radarChartMetrics.includes(val.Config.GUID)
     ).map((val) => {
       let deviceMax = Math.max(val.Config.MaxPerNode, val.Config.MaxPerType);
       deviceMax = deviceMax !== 0 ? deviceMax : val.Data;

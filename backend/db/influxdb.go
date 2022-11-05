@@ -55,7 +55,7 @@ func (db *InfluxDB) Init(c conf.Configuration) {
 	db.org = c.DBOrg
 	db.metrics = make(map[string]conf.MetricConfig)
 	for _, mc := range c.Metrics {
-		db.metrics[mc.Measurement] = mc
+		db.metrics[mc.GUID] = mc
 	}
 	db.partitionConfig = c.Partitions
 	db.defaultSampleInterval = c.SampleInterval
