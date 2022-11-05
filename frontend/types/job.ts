@@ -27,7 +27,6 @@ export interface JobListData {
 }
 
 export interface JobListConfig {
-  Metrics: string[];
   RadarChartMetrics: string[];
   Partitions: DataMap<PartitionConfig>;
   Tags: JobTag[];

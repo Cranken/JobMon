@@ -54,7 +54,6 @@ type JobListData struct {
 }
 
 type JobListConfig struct {
-	Metrics           []string
 	RadarChartMetrics []string
 	Partitions        map[string]config.PartitionConfig
 	Tags              []JobTag

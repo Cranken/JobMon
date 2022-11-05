@@ -180,15 +180,6 @@ func (r *Router) GetJobs(w http.ResponseWriter, req *http.Request, _ httprouter.
 		return
 	}
 
-	metrics := make(map[string]struct{})
-	for _, v := range r.config.Metrics {
-		metrics[v.Measurement] = struct{}{}
-	}
-	keys := make([]string, 0, len(metrics))
-	for k := range metrics {
-		keys = append(keys, k)
-	}
-
 	var tags []job.JobTag
 	if utils.Contains(user.Roles, auth.ADMIN) {
 		// Get all if user is admin
@@ -203,7 +194,6 @@ func (r *Router) GetJobs(w http.ResponseWriter, req *http.Request, _ httprouter.
 	}
 
 	jobListData := job.JobListData{Jobs: jobs, Config: job.JobListConfig{
-		Metrics:           keys,
 		RadarChartMetrics: r.config.RadarChartMetrics,
 		Partitions:        r.config.Partitions, Tags: tags}}
 	data, err := json.Marshal(&jobListData)
