@@ -104,8 +104,13 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 		}
 
 		roles, ok := (*authManager.store).GetUserRoles(user.Username)
-		// Normal user role is not stored in database
-		roles = append(roles, USER)
+		if !ok {
+			if !utils.Contains(roles, USER) {
+				roles = append(roles, USER)
+			}
+			(*authManager.store).SetUserRoles(user.Username, roles)
+			ok = true
+		}
 
 		if ok && (utils.Contains(roles, authLevel) || utils.Contains(roles, ADMIN)) {
 			h(w, r, ps, user)
