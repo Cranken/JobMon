@@ -314,7 +314,7 @@ func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, j *job.J
 	measurement := metric.Measurement + "_" + metric.AggFn
 	query := fmt.Sprintf(AggregateMeasurementQuery,
 		db.bucket, j.StartTime, j.StopTime, measurement,
-		nodes, sampleInterval, metric.PostQueryOp, sampleInterval)
+		nodes, sampleInterval, metric.FilterFunc, metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		log.Printf("Error at aggregate query: %v\n", err)
@@ -326,7 +326,7 @@ func (db *InfluxDB) queryAggregateMeasurementRaw(metric conf.MetricConfig, j *jo
 	measurement := metric.Measurement + "_" + metric.AggFn
 	query := fmt.Sprintf(AggregateMeasurementQuery,
 		db.bucket, j.StartTime, j.StopTime, measurement,
-		nodes, sampleInterval, metric.PostQueryOp, sampleInterval)
+		nodes, sampleInterval, metric.FilterFunc, metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
 	if err != nil {
 		log.Printf("Error at aggregate raw query: %v\n", err)

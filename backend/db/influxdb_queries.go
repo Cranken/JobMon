@@ -24,6 +24,7 @@ from(bucket: "%v")
 	|> filter(fn: (r) => r["hostname"] =~ /%v/)
 	|> aggregateWindow(every: %v, fn: mean, createEmpty: false)
 	%v
+	%v
 	|> truncateTimeColumn(unit: %v)
 `
 
