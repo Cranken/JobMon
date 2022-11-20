@@ -44,7 +44,7 @@ const Job: NextPage = () => {
       : undefined;
   const [startTime, setStartTime] = useState<Date>();
   const [stopTime, setStopTime] = useState<Date>();
-  const [aggFnSelection, setAggFnSelection] = useState(new Map<string, AggFn>);
+  const [aggFnSelection, setAggFnSelection] = useState(new Map<string, AggFn>());
   const [data, isLoading] = useGetJobData(
     parseInt(jobId as string),
     node,
