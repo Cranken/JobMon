@@ -20,7 +20,6 @@ services:
       - type: bind
         source: ./backend/config.json
         target: /app/config.json
-        read_only: true
       - ./backend/store:/app/store
     depends_on:
       - influxdb
