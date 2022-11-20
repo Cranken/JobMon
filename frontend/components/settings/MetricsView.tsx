@@ -25,6 +25,7 @@ import {
   Select,
   Stack,
   useToast,
+  Wrap,
 } from "@chakra-ui/react";
 import { Field, Form, Formik } from "formik";
 import React, { useEffect, useState } from "react";
@@ -98,12 +99,15 @@ interface IMetricItemProps {
   setMetricConfig: (m: MetricConfig, del?: boolean) => void;
 }
 
-const AggFnSelection = (displayName: string, name: string) => {
+const AggFnSelection = (displayName: string, name: string, availableAggFns: string[]) => {
+  if ((availableAggFns?.length ?? 0) === 0) {
+    return null;
+  }
   return (
     <>
       <FormLabel pt={1}>{displayName}</FormLabel>
       <Field name={name} as={Select} >
-        {Object.values(AggFn).map((fn) => {
+        {availableAggFns.map((fn) => {
           return fn === AggFn.Empty ? null :
             (<option key={fn} value={fn}>
               {fn}
@@ -111,6 +115,24 @@ const AggFnSelection = (displayName: string, name: string) => {
         }
         )}
       </Field>
+    </>
+  )
+}
+
+const AvailableAggFns = (displayName: string) => {
+  return (
+    <>
+      <FormLabel pt={1}>{displayName}</FormLabel>
+      <Wrap gap={5}>
+        {Object.values(AggFn).map((fn) => {
+          return fn === AggFn.Empty ? null :
+            (<FormLabel key={fn}>
+              <Field type="checkbox" name="AvailableAggFns" value={fn} />
+              {fn}
+            </FormLabel>)
+        }
+        )}
+      </Wrap>
     </>
   )
 }
@@ -142,9 +164,10 @@ const MetricItem = ({ metricConfig, setMetricConfig }: IMetricItemProps) => {
               {TextField("Display Name", "DisplayName", errors.DisplayName)}
               {TextField("Measurement", "Measurement", errors.Measurement)}
               {TextField("Type", "Type", errors.Type)}
-              {values.Type === "cpu" ? AggFnSelection("PThread Aggregation Function", "PThreadAggFn") : null}
+              {values.Type === "cpu" ? AggFnSelection("PThread Aggregation Function", "PThreadAggFn", Object.values(AggFn)) : null}
               {TextField("Sample Interval", "SampleInterval", "", false)}
-              {AggFnSelection("Aggregation Function", "AggFn")}
+              {AvailableAggFns("Available Aggregation Functions")}
+              {AggFnSelection("Default Aggregation Function", "AggFn", values.AvailableAggFns)}
               {TextField("Unit", "Unit", "", false)}
               {NumberField("Max per Node", "MaxPerNode", errors.MaxPerNode)}
               {NumberField("Max per Type", "MaxPerType", errors.MaxPerType)}

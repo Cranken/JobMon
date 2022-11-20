@@ -33,6 +33,11 @@ func (db *MockDB) GetJobMetadataMetrics(job *job.JobMetadata) (data []job.JobMet
 	return data, nil
 }
 
+func (db *MockDB) GetMetricDataWithAggFn(j *job.JobMetadata, m config.MetricConfig, aggFn string, sampleInterval time.Duration) (data job.MetricData, err error) {
+	db.Calls += 1
+	return data, nil
+}
+
 func (db *MockDB) RunAggregation() {
 	db.Calls += 1
 }

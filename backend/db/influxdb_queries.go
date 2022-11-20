@@ -16,6 +16,22 @@ from(bucket: "%v")
 `
 
 // Parameters: bucket, startTime, stopTime, measurement,
+// type, nodelist, filterfunc, postQueryOp, sampleInterval,
+// aggFn, sampleInterval
+const SimpleAggMeasurementQuery = `
+from(bucket: "%v")
+	|> range(start: %v, stop: %v)
+	|> filter(fn: (r) => r["_measurement"] == "%v")
+	|> filter(fn: (r) => r["type"] == "%v")
+	|> filter(fn: (r) => r["hostname"] =~ /%v/)
+	%v
+	%v
+	|> group(columns: ["_measurement", "hostname"], mode:"by")
+	|> aggregateWindow(every: %v, fn: %v, createEmpty: false)
+	|> truncateTimeColumn(unit: %v)
+`
+
+// Parameters: bucket, startTime, stopTime, measurement,
 // nodelist, sampleInterval, filterfunc, postQueryOp, sampleInterval
 const AggregateMeasurementQuery = `
 from(bucket: "%v")
@@ -89,6 +105,18 @@ from(bucket: "%v")
 	%v
 	|> group(columns: ["_measurement", "hostname"], mode:"by")
 	|> aggregateWindow(every: %v, fn: %v, createEmpty: false)
+	|> group(columns: ["hostname"], mode:"by")
+	|> keep(
+        columns: [
+            "hostname",
+            "_start",
+            "_stop",
+            "_time",
+            "_value",
+            "cluster",
+            "hostname",
+        ],
+    )
 	|> set(key: "_measurement", value: "%v")
 	|> set(key: "_field", value: "%v")
 	|> to(bucket: "%v", org: "%v")

@@ -245,7 +245,7 @@ export function LineChart<T>({
         g
           .append("text")
           .attr("fill", "currentColor")
-          .attr("x", width - marginRight - marginLeft)
+          .attr("x", width - marginRight - marginLeft - 90)
           .attr("y", 10)
           .attr("text-anchor", "end")
           .text(`Min: ${min.toString()}, Mean: ${mean.toString()}, Max: ${max.toString()}`)

@@ -22,6 +22,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/julienschmidt/httprouter"
+	"golang.org/x/exp/slices"
 )
 
 type Router struct {
@@ -50,6 +51,7 @@ func (r *Router) Init(store jobstore.Store, config *conf.Configuration, db *data
 	router.PATCH("/api/job_stop/:id", authManager.Protected(r.JobStop, auth.JOBCONTROL))
 	router.GET("/api/jobs", authManager.Protected(r.GetJobs, auth.USER))
 	router.GET("/api/job/:id", authManager.Protected(r.GetJob, auth.USER))
+	router.GET("/api/metric/:id", authManager.Protected(r.GetMetric, auth.USER))
 	router.GET("/api/live/:id", authManager.Protected(r.LiveMonitoring, auth.USER))
 	router.GET("/api/search/:term", authManager.Protected(r.Search, auth.USER))
 	router.POST("/api/login", r.Login)
@@ -283,6 +285,86 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 
 	elapsed := time.Since(start)
 	log.Printf("Get job %v took %s", j.Id, elapsed)
+
+	w.Write(jsonData)
+}
+
+func (r *Router) GetMetric(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
+	utils.AllowCors(req, w.Header())
+
+	strId := params.ByName("id")
+	metric := req.URL.Query().Get("metric")
+	aggFn := req.URL.Query().Get("aggFn")
+
+	if metric == "" || aggFn == "" {
+		log.Printf("Metric or aggFn was not provided")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.Atoi(strId)
+	if err != nil {
+		log.Printf("Could not job id data")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Get job metadata from store
+	j, err := r.store.GetJob(id)
+	if err != nil {
+		log.Printf("Could not get job meta data: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Check user authorization
+	if !(utils.Contains(user.Roles, auth.ADMIN) || user.Username == j.UserName) {
+		log.Printf("User %v is not permitted to access job %v", user.Username, j.Id)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Calculate best sample interval
+	dur, _ := time.ParseDuration(r.config.SampleInterval)
+	_, bestInterval := j.CalculateSampleIntervals(dur)
+
+	sampleInterval := bestInterval
+	querySampleInterval := req.URL.Query().Get("sampleInterval")
+	if querySampleInterval != "" {
+		parsedDuration, err := time.ParseDuration(querySampleInterval + "s")
+		if err == nil {
+			sampleInterval = parsedDuration
+		}
+	}
+
+	// Get job data
+	if j.IsRunning {
+		j.StartTime = int(time.Now().Unix()) - 3600
+	}
+	if j.IsRunning {
+		j.StopTime = int(time.Now().Unix())
+	}
+	mc := slices.IndexFunc(r.config.Metrics, func(c conf.MetricConfig) bool { return c.GUID == metric })
+	if mc == -1 {
+		log.Printf("Requested metric with guid %v not found", metric)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	metricData, err := (*r.db).GetMetricDataWithAggFn(&j, r.config.Metrics[mc], aggFn, sampleInterval)
+	if err != nil {
+		log.Printf("Could not get metric data: %v\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Send data
+	jsonData, err := json.Marshal(&metricData)
+	if err != nil {
+		log.Printf("Could not marshal metric data to json")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	w.Write(jsonData)
 }

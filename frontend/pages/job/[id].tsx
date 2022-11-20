@@ -1,10 +1,10 @@
 import type { NextPage } from "next";
-import React, { useMemo } from "react";
+import React from "react";
 import { useEffect } from "react";
 import { useState } from "react";
 import {
+  AggFn,
   JobData,
-  JobMetadata,
   MetricData,
   WSLoadMetricsResponse,
   WSMsg,
@@ -27,10 +27,10 @@ import {
 } from "@chakra-ui/react";
 import { JobInfo } from "../../components/jobview/JobInfo";
 import { useCookies } from "react-cookie";
-import { AnalysisBoxPlot } from "../../components/jobview/AnalysisView";
 import { SelectionMap } from "../../types/helpers";
-import { clamp, useStorageState } from "../../utils/utils";
+import { useStorageState } from "../../utils/utils";
 import { WSLoadMetricsMsg } from "../../types/job";
+import { authFetch } from "../../utils/auth";
 
 const Job: NextPage = () => {
   const router = useRouter();
@@ -44,11 +44,13 @@ const Job: NextPage = () => {
       : undefined;
   const [startTime, setStartTime] = useState<Date>();
   const [stopTime, setStopTime] = useState<Date>();
+  const [aggFnSelection, setAggFnSelection] = useState(new Map<string, AggFn>);
   const [data, isLoading] = useGetJobData(
     parseInt(jobId as string),
     node,
     sampleInterval,
-    startTime?.getTime()
+    aggFnSelection,
+    startTime?.getTime(),
   );
   const [showQuantiles, setShowQuantiles] = useState(false);
   const [autoScale, setAutoscale] = useState(true);
@@ -103,6 +105,14 @@ const Job: NextPage = () => {
       setStopTime(new Date());
     }
   }, [data?.Metadata.StopTime, data?.Metadata.IsRunning, data]);
+
+  useEffect(() => {
+    if (data && data.MetricData) {
+      const selection = new Map<string, AggFn>();
+      data.MetricData.forEach((m) => selection.set(m.Config.GUID, m.Config.AggFn))
+      setAggFnSelection(selection);
+    }
+  }, [data?.Metadata])
 
   if (!data) {
     return (
@@ -199,6 +209,12 @@ const Job: NextPage = () => {
                 isLoading={isLoading}
                 autoScale={autoScale}
                 isRunning={data.Metadata.IsRunning}
+                aggFnSelection={aggFnSelection}
+                setAggFnSelection={(m, fn) => setAggFnSelection((prevState) => {
+                  const copy = new Map(prevState);
+                  copy.set(m, fn);
+                  return copy;
+                })}
               />
             )}
           </TabPanel>
@@ -218,24 +234,90 @@ const Job: NextPage = () => {
 };
 export default Job;
 
+interface JobCache {
+  Metadata: Omit<JobData, "MetricData"> | undefined;
+  [sampleInterval: number]: MetricData[]
+}
+
+interface NodeCache {
+  [sampleInterval: number]: {
+    [key: string]: JobData
+  }
+}
+
+interface AggCache {
+  [sampleInterval: number]: {
+    [metric: string]: {
+      [aggFn: string]: MetricData
+    }
+  }
+}
+
+/** 
+ * Gets the job data for the provided ID.
+ * Implements caching for the data
+ * 
+ * The caching strategy follows the provided optional parameters:
+ * 
+ * If a node is selected: 
+ * Always return the detailed node data.
+ * 
+ * Otherwise: Return the data for the provided sampleinterval and overwrite
+ * the metrics with a non-default aggFn provided by the aggFnSelection
+ */
 export const useGetJobData: (
   id: number | undefined,
   node?: string,
   sampleInterval?: number,
+  aggFnSelection?: Map<string, AggFn>,
   timeStart?: number
 ) => [JobData | undefined, boolean] = (
   id: number | undefined,
   node?: string,
   sampleInterval?: number,
+  aggFnSelection?: Map<string, AggFn>,
   timeStart?: number
 ) => {
     const [jobData, setJobData] = useState<JobData>();
     const [isLoading, setIsLoading] = useState(true);
-    const [jobCache, setJobCache] = useState<{ [key: string]: JobData }>({});
+    const [jobCache, setJobCache] = useState<JobCache>({ Metadata: undefined });
+    const [nodeCache, setNodeCache] = useState<NodeCache>({});
     const [_c, _s, removeCookie] = useCookies(["Authorization"]);
     const [curLiveWindowStart, setCurLiveWindowStart] = useState(Infinity);
     const [ws, setWs] = useState<WebSocket>();
     const [lastMessage, setLastMessage] = useState<WSMsg>({} as WSMsg);
+    const [aggFnCache, setAggFnCache] = useState<AggCache>({});
+
+    const populateJobCache = (data: JobData) => {
+      setJobCache((prevState) => {
+        const newState = prevState;
+        if (!newState.Metadata) {
+          newState.Metadata = data;
+        }
+        newState[data.SampleInterval] = data.MetricData;
+        setAggFnCache((aggState) => {
+          data.MetricData.forEach((m) => {
+            if (!(data.SampleInterval in aggState)) {
+              aggState[data.SampleInterval] = {}
+            }
+            const intervalData = aggState[data.SampleInterval];
+            if (!(m.Config.GUID in intervalData)) {
+              intervalData[m.Config.GUID] = {}
+            }
+            if (!(m.Config.AggFn in intervalData[m.Config.GUID])) {
+              intervalData[m.Config.GUID] = { [m.Config.AggFn]: m }
+            }
+            aggState[data.SampleInterval] = intervalData;
+          })
+          return aggState;
+        })
+        setIsLoading(false);
+        setJobData(data);
+        return newState;
+      });
+    }
+
+    // General data based on sampleInterval
     useEffect(() => {
       if (!id) {
         return;
@@ -244,38 +326,90 @@ export const useGetJobData: (
         "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}`
       );
       if (sampleInterval) {
-        url.searchParams.append("sampleInterval", sampleInterval.toString());
+        if (!(sampleInterval in jobCache)) {
+          url.searchParams.append("sampleInterval", sampleInterval.toString());
+          setIsLoading(true);
+          authFetch(url.toString()).then(populateJobCache);
+        } else {
+          if (!jobCache.Metadata) {
+            throw Error("No metadata in jobcache");
+          }
+          setIsLoading(false);
+          setJobData({ ...jobCache.Metadata, MetricData: jobCache[sampleInterval] })
+        }
+      } else {
+        setIsLoading(true);
+        authFetch(url.toString()).then(populateJobCache);
       }
-      if (node && node != "" && !node.includes("|")) {
-        url.searchParams.append("node", node);
-      }
-      if (url.search in jobCache) {
-        setIsLoading(false);
-        setJobData(jobCache[url.search]);
+    }, [id, node, jobCache, sampleInterval]);
+
+    // AggFn Metrics
+    useEffect(() => {
+      if (!jobData) {
         return;
       }
-      setIsLoading(true);
-      fetch(url.toString(), { credentials: "include" }).then((res) => {
-        if (!res.ok && (res.status === 401 || res.status === 403)) {
-          removeCookie("Authorization");
-        } else {
-          res.json().then((data: JobData) => {
-            setJobCache((prevState) => {
-              if (sampleInterval === undefined) {
-                url.searchParams.append(
-                  "sampleInterval",
-                  data.SampleInterval.toString()
-                );
-              }
-              prevState[url.search] = data;
-              return prevState;
-            });
-            setJobData(data);
-            setIsLoading(false);
-          });
+      const newData = { ...jobData };
+      if (aggFnSelection && sampleInterval && newData.MetricData) {
+        const intervalData = { ...aggFnCache[sampleInterval] };
+        console.log(intervalData);
+        const newMetricData = newData.MetricData.map((m) => {
+          const aggFn = aggFnSelection.get(m.Config.GUID) ?? m.Config.AggFn;
+          if (m.Config.GUID in intervalData && aggFn in intervalData[m.Config.GUID]) {
+            return intervalData[m.Config.GUID][aggFn]
+          } else {
+            let url = new URL(
+              "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/metric/${id}`
+            );
+            url.searchParams.append("sampleInterval", sampleInterval.toString());
+            url.searchParams.append("metric", m.Config.GUID);
+            url.searchParams.append("aggFn", aggFn);
+            authFetch(url.toString()).then((data: MetricData) => {
+              setAggFnCache((prevCache) => {
+                const newCache = { ...prevCache };
+                newCache[sampleInterval][m.Config.GUID][aggFn] = data;
+                return newCache;
+              })
+            })
+          }
+          return m;
+        })
+        newData.MetricData = newMetricData
+        setJobData(newData);
+      }
+    }, [aggFnSelection, aggFnCache])
+
+    // Node data
+    useEffect(() => {
+      if (node && node !== "") {
+        if (!sampleInterval) {
+          return;
         }
-      });
-    }, [id, node, jobCache, removeCookie, sampleInterval]);
+        if (sampleInterval in nodeCache) {
+          const nodes = nodeCache[sampleInterval];
+          if (node in nodes) {
+            setJobData(nodes[node]);
+            setIsLoading(false);
+            return;
+          }
+        }
+        let url = new URL(
+          "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}`
+        );
+        url.searchParams.append("sampleInterval", sampleInterval.toString());
+        url.searchParams.append("node", node);
+        setIsLoading(true);
+        authFetch(url.toString()).then((data: JobData) => {
+          setNodeCache((cache) => {
+            const intervalData = { ...cache[sampleInterval] };
+            intervalData[node] = data;
+            return { ...cache, [sampleInterval]: intervalData }
+          })
+          setIsLoading(false);
+          setJobData(data);
+          return;
+        })
+      }
+    }, [node])
 
     useEffect(() => {
       if (jobData?.Metadata.IsRunning && jobData.MetricData) {
@@ -389,3 +523,21 @@ const useMetricSelection = (
 
   return [selectedMetrics, setSelection];
 };
+
+const formatCacheKey = (
+  node?: string,
+  sampleInterval?: number,
+  aggFnSelection?: [string, AggFn]
+) => {
+  let key = "";
+  if (node) {
+    key += node;
+  }
+  if (sampleInterval) {
+    key += sampleInterval.toString();
+  }
+  if (aggFnSelection) {
+    key += aggFnSelection.toString();
+  }
+  return key;
+}

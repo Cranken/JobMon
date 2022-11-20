@@ -61,8 +61,11 @@ type MetricConfig struct {
 	Type string
 	// Measurement name in Influxdb
 	Measurement string
-	// Aggregation function to use in aggregation of per device(cpu, socket, accelerator) data to node data
+	// Default Aggregation function to use in aggregation of per device(cpu, socket, accelerator) data to node data.
+	// Not used for metrics with type == "node"
 	AggFn string
+	// List of all possible aggregation functions
+	AvailableAggFns []string
 	// Sample interval of the metric
 	SampleInterval string
 	// Unit; supported units are: "FLOP/s", "Bit/s", "°C", "B/s", "B", "%", ""

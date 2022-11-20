@@ -41,6 +41,8 @@ export enum CollectionType {
 export enum AggFn {
   Mean = "mean",
   Sum = "sum",
+  Min = "min",
+  Max = "max",
   Empty = ""
 }
 
@@ -49,6 +51,7 @@ export interface MetricConfig {
   Type: string;
   Measurement: string;
   AggFn: AggFn;
+  AvailableAggFns: string[];
   SampleInterval: string;
   Unit: string;
   DisplayName: string;

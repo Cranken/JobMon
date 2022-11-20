@@ -1,9 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import * as d3 from "d3";
-import { Center, Flex, Grid, Spinner } from "@chakra-ui/react";
-import { AggFn, MetricData, MetricPoint } from "../../types/job";
+import { Box, Center, Flex, Grid, IconButton, Menu, MenuButton, MenuItemOption, MenuList, MenuOptionGroup, Spinner } from "@chakra-ui/react";
+import { AggFn, MetricConfig, MetricData, MetricPoint } from "../../types/job";
 import { Unit } from "../../types/units";
 import { LineChart } from "../charts/LineChart";
+import { SettingsIcon } from "@chakra-ui/icons";
+import React, { useState } from "react";
 
 interface MetricDataChartsProps {
   metrics: MetricData[] | undefined;
@@ -14,6 +16,8 @@ interface MetricDataChartsProps {
   isLoading: boolean;
   autoScale: boolean;
   isRunning: boolean;
+  aggFnSelection: Map<string, AggFn>;
+  setAggFnSelection: (m: string, v: AggFn) => void;
 }
 
 export const MetricDataCharts = ({
@@ -25,6 +29,8 @@ export const MetricDataCharts = ({
   isLoading,
   autoScale,
   isRunning,
+  aggFnSelection,
+  setAggFnSelection
 }: MetricDataChartsProps) => {
   if (!metrics) {
     return <div>No metric data available</div>;
@@ -68,7 +74,7 @@ export const MetricDataCharts = ({
           if (hThread in metric.Data) {
             const hThreadData = metric.Data[hThread];
             const aggPoints = pThreadData.map((val, idx) => {
-              let aggThread = Object.assign({}, val);
+              let aggThread: MetricPoint = Object.assign({}, val);
               switch (metric.Config.PThreadAggFn) {
                 case AggFn.Mean:
                   aggThread._value += hThreadData.at(idx)?._value ?? 0;
@@ -133,12 +139,11 @@ export const MetricDataCharts = ({
     }
 
     chartElements.push(
-      <Flex
-        border="1px"
-        borderColor="gray.700"
-        borderRadius="md"
-        m={3}
+      <ChartContainer
         key={metric.Config.Measurement}
+        metric={metric.Config}
+        aggFn={aggFnSelection.get(metric.Config.GUID)}
+        setAggFn={(fn: AggFn) => setAggFnSelection(metric.Config.GUID, fn)}
       >
         <LineChart
           data={metricData}
@@ -154,10 +159,35 @@ export const MetricDataCharts = ({
           yDomain={yDomain}
           showTooltipSum={metric.Config.AggFn === "sum"}
         />
-      </Flex>
+      </ChartContainer>
     );
   }
   return <Grid templateColumns={"repeat(2, 1fr)"}>{chartElements}</Grid>;
 };
+
+const ChartContainer = ({ children, metric, aggFn, setAggFn }: React.PropsWithChildren<{ metric: MetricConfig, aggFn?: AggFn, setAggFn: (fn: AggFn) => void }>) => {
+  return (
+    <Flex
+      border="1px"
+      borderColor="gray.700"
+      borderRadius="md"
+      m={3}
+      pos="relative"
+    >
+      {children}
+      {metric.AvailableAggFns?.length > 0 ?
+        <Box position="absolute" right="0">
+          <Menu closeOnSelect={false}>
+            <MenuButton as={IconButton} icon={<SettingsIcon />} variant="unstyled" size="sm">
+            </MenuButton>
+            <MenuList>
+              <MenuOptionGroup value={aggFn} onChange={(val) => setAggFn(val as AggFn)} title='Per Node Aggregation Method' type='radio'>
+                {metric.AvailableAggFns?.map((aggFn) => <MenuItemOption key={aggFn} value={aggFn}>{aggFn}</MenuItemOption>) ?? null}
+              </MenuOptionGroup>
+            </MenuList>
+          </Menu>
+        </Box> : null}
+    </Flex>);
+}
 
 export default MetricDataCharts;

@@ -19,6 +19,8 @@ type DB interface {
 	// Behaves like GetJobData except for single node jobs.
 	// Single node jobs also return aggregated data for metrics with metric granularity finer than per node.
 	GetAggregatedJobData(job *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data job.JobData, err error)
+	// Get the data for a metric with the given aggFn
+	GetMetricDataWithAggFn(j *job.JobMetadata, m conf.MetricConfig, aggFn string, sampleInterval time.Duration) (data job.MetricData, err error)
 	// Run the aggregation for node data in the db
 	RunAggregation()
 	// Creates a channel which periodically returns the latest metric data for the given job.
