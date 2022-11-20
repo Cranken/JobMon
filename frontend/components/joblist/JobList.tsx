@@ -61,8 +61,6 @@ interface JobListItemProps {
 export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
   const borderColor = useColorModeValue("gray.300", "whiteAlpha.400");
   let radarChartData: any[] = [];
-  let flopsData;
-  let membwData;
   if (job.Data) {
     radarChartData = job.Data.filter((val) =>
       radarChartMetrics.includes(val.Config.GUID)
@@ -76,9 +74,6 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
       };
     });
     radarChartData.sort((a, b) => (a.title < b.title ? -1 : 1));
-
-    // flopsData = job.Data.find((val) => val.Config.Measurement === "flops_dp");
-    // membwData = job.Data.find((val) => val.Config.Measurement === "mem_bw");
   }
 
   let dataAvailable = true;
@@ -89,13 +84,9 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
   } else if (
     !job.Data ||
     radarChartData.length === 0
-    // !flopsData ||
-    // Object.keys(flopsData.Data).length === 0 ||
-    // !membwData ||
-    // Object.keys(membwData.Data).length === 0
   ) {
     dataAvailable = false;
-    reason = "No metadata for job available.";
+    reason = "No metadata metrics for job available.";
   }
 
   return (
