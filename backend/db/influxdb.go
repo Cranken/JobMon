@@ -168,7 +168,7 @@ func (db *InfluxDB) getJobData(j *job.JobMetadata, nodes string, sampleInterval 
 	var metricData []job.MetricData
 	var quantileData []job.QuantileData
 	var wg sync.WaitGroup
-	for _, m := range db.partitionConfig[j.Partition].Metrics {
+	for _, m := range db.getPartition(j).Metrics {
 		wg.Add(1)
 		go func(m conf.MetricConfig) {
 			if raw {
@@ -217,7 +217,7 @@ func (db *InfluxDB) getJobData(j *job.JobMetadata, nodes string, sampleInterval 
 
 func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (data []job.JobMetadataData, err error) {
 	var wg sync.WaitGroup
-	for _, m := range db.partitionConfig[j.Partition].Metrics {
+	for _, m := range db.getPartition(j).Metrics {
 		wg.Add(1)
 		go func(m conf.MetricConfig) {
 			defer wg.Done()
@@ -415,7 +415,7 @@ func (db *InfluxDB) queryLastDatapoints(j job.JobMetadata) (metricData []job.Met
 	if err != nil {
 		sampleInterval = 30 * time.Second
 	}
-	for _, m := range db.partitionConfig[j.Partition].Metrics {
+	for _, m := range db.getPartition(&j).Metrics {
 		wg.Add(1)
 		go func(m conf.MetricConfig) {
 			defer wg.Done()
@@ -505,4 +505,21 @@ func (db *InfluxDB) updateAggregationTasks() (err error) {
 		}(metric.First, metric.Second)
 	}
 	return
+}
+
+func (db *InfluxDB) getPartition(j *job.JobMetadata) conf.BasePartitionConfig {
+	nodes := strings.Split(j.NodeList, "|")
+	for _, vp := range db.partitionConfig[j.Partition].VirtualPartitions {
+		matches := true
+		for _, n := range nodes {
+			if !utils.Contains(vp.Nodes, n) {
+				matches = false
+				break
+			}
+		}
+		if matches {
+			return vp.BasePartitionConfig
+		}
+	}
+	return db.partitionConfig[j.Partition].BasePartitionConfig
 }

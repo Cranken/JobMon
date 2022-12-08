@@ -86,12 +86,24 @@ type MetricConfig struct {
 	PThreadAggFn string
 }
 
-type PartitionConfig struct {
+type BasePartitionConfig struct {
 	// Maximum wall clock time for a job in the partition
 	MaxTime int
 	// Metrics the partition provides.
 	// Array of measurement names as specified in the global metric config
 	Metrics []string
+}
+
+type VirtualPartitionConfig struct {
+	BasePartitionConfig
+	// Node ranges inside the parent partition which this virtual partition applies to
+	Nodes []string
+}
+
+type PartitionConfig struct {
+	BasePartitionConfig
+	// Virtual partitions inside this parent partition
+	VirtualPartitions map[string]VirtualPartitionConfig
 }
 
 type LocalUser struct {
