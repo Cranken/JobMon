@@ -1,4 +1,4 @@
-import { Alert, AlertIcon, AlertTitle, FormLabel, Input } from "@chakra-ui/react";
+import { Alert, AlertIcon, AlertTitle, Box, FormLabel, Input, Tooltip } from "@chakra-ui/react";
 import { Field } from "formik";
 import { MetricConfig } from "../../types/job";
 
@@ -19,22 +19,20 @@ export const ErrorMessage = (text: string) => {
     );
 };
 
-export const TextField = <T,>(displayString: string, key: keyof T, errorStr?: string, validate = true, validationFunc?: (s: string) => string) => {
+export const TextField = <T,>(displayString: string, key: keyof T, errorStr?: string, validate = true, validationFunc?: (s: string) => string, tooltip?: string) => {
     return (
         <>
             <FormLabel pt={1}>{displayString}</FormLabel>
-            <Field name={key} placeholder={displayString} as={Input} validate={validate ? (validationFunc ?? validateNotEmpty) : undefined} />
+            <Tooltip label={tooltip}>
+                <Box>
+                    <Field name={key} placeholder={displayString} as={Input} validate={validate ? (validationFunc ?? validateNotEmpty) : undefined} />
+                </Box>
+            </Tooltip>
             {errorStr && ErrorMessage(errorStr)}
         </>
     );
 };
 
-export const NumberField = <T,>(displayString: string, key: keyof T, errorStr?: string) => {
-    return (
-        <>
-            <FormLabel pt={1}>{displayString}</FormLabel>
-            <Field name={key} placeholder={displayString} as={Input} validate={validateNumber} />
-            {errorStr && ErrorMessage(errorStr)}
-        </>
-    );
+export const NumberField = <T,>(displayString: string, key: keyof T, errorStr?: string, tooltip?: string) => {
+    return TextField(displayString, key, errorStr, true, validateNumber, tooltip);
 };

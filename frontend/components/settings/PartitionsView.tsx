@@ -166,8 +166,12 @@ const PartitionItem = ({ partitionConfig, setPartitionConfig, parentPartitions }
                     {({ values, errors }) => (
                         <Form autoComplete="off">
                             <FormLabel>
-                                <Field type="checkbox" name="isVirtual" />
-                                Is Virtual Partition?
+                                <Tooltip label={TOOLTIP_IS_VIRTUAL_PARTITION}>
+                                    <Box maxW="fit-content">
+                                        <Field type="checkbox" name="isVirtual" />
+                                        Is Virtual Partition?
+                                    </Box>
+                                </Tooltip>
                             </FormLabel>
                             {TextField("Display Name", "displayName", errors.displayName)}
                             {values.isVirtual ?
@@ -233,7 +237,7 @@ const PartitionItem = ({ partitionConfig, setPartitionConfig, parentPartitions }
                     )}
                 </Formik>
             </AccordionPanel>
-        </AccordionItem>
+        </AccordionItem >
     );
 };
 
@@ -247,3 +251,5 @@ const validateSlurmNodeRange = (s: string) => {
 };
 
 export default PartitionsView;
+
+const TOOLTIP_IS_VIRTUAL_PARTITION = "Declares this partition as virtual. This is used in cases when there is a subgroup of nodes in a parent partition which have a different hardware configuration.";

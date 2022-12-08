@@ -42,7 +42,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
   const [lConfig, setLConfig] = useState(config);
   useEffect(() => {
     setLConfig(config);
-  }, [config])
+  }, [config]);
   const toast = useToast();
   if (!lConfig) {
     return null;
@@ -62,10 +62,10 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
                   description: "Remember to assign newly created metrics to partitions.",
                   status: "info",
                   isClosable: true
-                })
+                });
               }
               if (del) {
-                curConfig.Metrics = curConfig.Metrics.filter((_, ind) => ind != i)
+                curConfig.Metrics = curConfig.Metrics.filter((_, ind) => ind != i);
               } else {
                 curConfig.Metrics[i] = m;
               }
@@ -111,13 +111,13 @@ const AggFnSelection = (displayName: string, name: string, availableAggFns: stri
           return fn === AggFn.Empty ? null :
             (<option key={fn} value={fn}>
               {fn}
-            </option>)
+            </option>);
         }
         )}
       </Field>
     </>
-  )
-}
+  );
+};
 
 const AvailableAggFns = (displayName: string) => {
   return (
@@ -129,13 +129,13 @@ const AvailableAggFns = (displayName: string) => {
             (<FormLabel key={fn}>
               <Field type="checkbox" name="AvailableAggFns" value={fn} />
               {fn}
-            </FormLabel>)
+            </FormLabel>);
         }
         )}
       </Wrap>
     </>
-  )
-}
+  );
+};
 
 const MetricItem = ({ metricConfig, setMetricConfig }: IMetricItemProps) => {
   return (
@@ -154,7 +154,7 @@ const MetricItem = ({ metricConfig, setMetricConfig }: IMetricItemProps) => {
           onSubmit={(values) => {
             values.MaxPerNode = Number(values.MaxPerNode);
             values.MaxPerType = Number(values.MaxPerType);
-            setMetricConfig(values)
+            setMetricConfig(values);
           }
           }
         >
@@ -163,17 +163,17 @@ const MetricItem = ({ metricConfig, setMetricConfig }: IMetricItemProps) => {
               <FormLabel pt={1}>GUID: {values.GUID}</FormLabel>
               {TextField("Display Name", "DisplayName", errors.DisplayName)}
               {TextField("Measurement", "Measurement", errors.Measurement)}
-              {TextField("Type", "Type", errors.Type)}
+              {TextField("Type", "Type", errors.Type, undefined, undefined, TOOLTIP_TYPE)}
               {values.Type === "cpu" ? AggFnSelection("PThread Aggregation Function", "PThreadAggFn", Object.values(AggFn)) : null}
               {TextField("Sample Interval", "SampleInterval", "", false)}
               {AvailableAggFns("Available Aggregation Functions")}
               {AggFnSelection("Default Aggregation Function", "AggFn", values.AvailableAggFns)}
-              {TextField("Unit", "Unit", "", false)}
-              {NumberField("Max per Node", "MaxPerNode", errors.MaxPerNode)}
-              {NumberField("Max per Type", "MaxPerType", errors.MaxPerType)}
-              {TextField("Separation Key", "SeparationKey", errors.SeparationKey)}
-              {TextField("Filter Function", "FilterFunc", "", false)}
-              {TextField("Post Query Operation", "PostQueryOp", "", false)}
+              {TextField("Unit", "Unit", "", false, undefined, TOOLTIP_UNIT)}
+              {NumberField("Max per Node", "MaxPerNode", errors.MaxPerNode, TOOLTIP_MAX_PER_NODES)}
+              {NumberField("Max per Type", "MaxPerType", errors.MaxPerType, TOOLTIP_MAX_PER_TYPE)}
+              {TextField("Separation Key", "SeparationKey", errors.SeparationKey, true, undefined, TOOLTIP_SEPARATION_KEY)}
+              {TextField("Filter Function", "FilterFunc", "", false, undefined, TOOLTIP_FILTER_FUNC)}
+              {TextField("Post Query Operation", "PostQueryOp", "", false, undefined, TOOLTIP_POST_QUERY_OP)}
               <Flex mt={3} justify="space-between" gap={2}>
                 <HStack>
                   <Button type="reset" colorScheme="gray">
@@ -214,3 +214,16 @@ const MetricItem = ({ metricConfig, setMetricConfig }: IMetricItemProps) => {
 };
 
 export default MetricsView;
+
+const TOOLTIP_TYPE = "Supported types: cpu, node, socket, accelerator.";
+const TOOLTIP_UNIT = "Supported units: FLOP/s, Bit/s, °C, B/s, B, %, Packet/s, W. Default is none(empty string). \
+                      Can be prefixed by SI-prefixes.";
+
+const TOOLTIP_MAX_PER_NODES = "Maximum value a node can have for this metric. \
+                               This value must be in the same unit as specified in the above unit field.";
+const TOOLTIP_MAX_PER_TYPE = "Maximum value a unit as specified in the above \"Type\" field can have for this metric. \
+                              This value must be in the same unit as specified in the above unit field.";
+
+const TOOLTIP_SEPARATION_KEY = "Separation key used to differentiate between nodes in the InfluxDB query.";
+const TOOLTIP_FILTER_FUNC = "Optional filter function used in InfluxDB queries. Must be a valid Flux query.";
+const TOOLTIP_POST_QUERY_OP = "Optional post query function used in InfluxDB queries. Must be a valid Flux query.";
