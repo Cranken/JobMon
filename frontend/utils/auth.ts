@@ -33,14 +33,14 @@ export const useIsAuthenticated = () => {
 };
 
 
-export const authFetch = (url: string) => {
-  const p = fetch(url.toString(), { credentials: "include" }).then((res) => {
+export const authFetch = (url: string, options?: RequestInit) => {
+  const p = fetch(url.toString(), { credentials: "include", ...options }).then((res) => {
     if (!res.ok && (res.status === 401 || res.status === 403)) {
       Cookies.remove("Authorization");
-      return new Promise((_, reject) => reject("Unauthorized"))
+      return new Promise((_, reject) => reject("Unauthorized"));
     } else {
       return res.json();
     }
   });
   return p;
-}
+};

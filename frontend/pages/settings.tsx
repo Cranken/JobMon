@@ -21,6 +21,7 @@ import {
   Text,
   Textarea,
   useDisclosure,
+  useToast,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import APIView from "../components/settings/APIView";
@@ -29,6 +30,7 @@ import LogView from "../components/settings/LogView";
 import MetricsView from "../components/settings/MetricsView";
 import PartitionsView from "../components/settings/PartitionsView";
 import { Configuration } from "../types/config";
+import { authFetch } from "../utils/auth";
 
 enum SettingsView {
   General = "General Settings",
@@ -87,9 +89,9 @@ const renderSettingsView = (
     case SettingsView.Metrics:
       return <MetricsView config={config} setConfig={setConfig} />;
     case SettingsView.Partitions:
-      return <PartitionsView config={config} setConfig={setConfig} />
+      return <PartitionsView config={config} setConfig={setConfig} />;
     case SettingsView.Logs:
-      return <LogView />
+      return <LogView />;
   }
   return null;
 };
@@ -99,6 +101,7 @@ const useGetConfig: () => [
   (c: Configuration) => void
 ] = () => {
   const [config, setConfig] = useState<Configuration>();
+  const toast = useToast();
   const setAndSubmit = (c: Configuration) => {
     setConfig(c);
 
@@ -106,13 +109,22 @@ const useGetConfig: () => [
       "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/config/update`
     );
 
-    fetch(url.toString(), { method: "PATCH", credentials: "include", body: JSON.stringify(c) }).then((res) => {
-      res.json().then((data: Configuration) => {
-        setConfig(data);
+    authFetch(url.toString(), { method: "PATCH", body: JSON.stringify(c) }).then((data: Configuration) => {
+      setConfig(data);
+      toast({
+        description: "Config updated successfully",
+        status: "success",
+        isClosable: true
       });
-    });
+    }, (reason) =>
+      toast({
+        description: `Config update failed: ${reason}`,
+        status: "error",
+        isClosable: true
+      })
+    );
 
-  }
+  };
 
   useEffect(() => {
     const url = new URL(
