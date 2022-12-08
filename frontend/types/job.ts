@@ -139,9 +139,15 @@ export interface JobSearchParams {
 
 type RangeFilter = [number | undefined, number | undefined];
 
+export interface VirtualPartitionConfig {
+  Metrics: string[] | null;
+  Nodes: string[] | null;
+}
+
 export interface PartitionConfig {
   MaxTime: number;
-  Metrics: string[];
+  Metrics: string[] | null;
+  VirtualPartitions: DataMap<VirtualPartitionConfig> | null;
 }
 
 export enum WSMsgType {
