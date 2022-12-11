@@ -1,13 +1,12 @@
-import { Stack, useToast, Text, Input, FormLabel, Button, Box, Select, Wrap } from "@chakra-ui/react";
+import { Stack, useToast, Input, FormLabel, Button, Box, Wrap } from "@chakra-ui/react";
 import { Field, Form, Formik } from "formik";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { AvailableUserRoles, UserRoles } from "../../types/config";
 import { authFetch } from "../../utils/auth";
 
 const UsersView = () => {
     const [username, setUsername] = useState<string>();
     const [user, updateUser] = useGetUser(username);
-    console.log(user);
     return (
         <Stack>
             <Formik initialValues={{ username: "" }} onSubmit={(values) => setUsername(values.username)}>
