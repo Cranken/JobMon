@@ -30,12 +30,7 @@ func main() {
 	db = &database.InfluxDB{}
 	db.Init(config)
 
-	switch config.JobStore.Type {
-	case "memory":
-		store = &jobstore.MemoryStore{}
-	default:
-		store = &jobstore.PostgresStore{}
-	}
+	store = &jobstore.PostgresStore{}
 
 	store.Init(config, &db)
 	jobCache.Init(config, &db, &store)

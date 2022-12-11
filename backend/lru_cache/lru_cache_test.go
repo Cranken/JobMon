@@ -5,7 +5,7 @@ import (
 	"jobmon/db"
 	"jobmon/job"
 	"jobmon/store"
-	"jobmon/utils"
+	"jobmon/test"
 	"testing"
 	"time"
 )
@@ -13,8 +13,8 @@ import (
 func TestPutCleanup(t *testing.T) {
 	cache := LRUCache{}
 	config := config.Configuration{CacheSize: 3}
-	var db db.DB = &utils.MockDB{}
-	var store store.Store = &store.MemoryStore{}
+	var db db.DB = &test.MockDB{}
+	var store store.Store = &test.MockStore{}
 	cache.Init(config, &db, &store)
 
 	if cache.list.Len() != 0 {
@@ -36,8 +36,8 @@ func TestPutCleanup(t *testing.T) {
 func TestPutCleanupAfterAccess(t *testing.T) {
 	cache := LRUCache{}
 	config := config.Configuration{CacheSize: 3}
-	var db db.DB = &utils.MockDB{}
-	var store store.Store = &store.MemoryStore{}
+	var db db.DB = &test.MockDB{}
+	var store store.Store = &test.MockStore{}
 	cache.Init(config, &db, &store)
 
 	cache.put(Item{id: 1})
@@ -57,13 +57,13 @@ func TestPutCleanupAfterAccess(t *testing.T) {
 func TestGet(t *testing.T) {
 	cache := LRUCache{}
 	config := config.Configuration{CacheSize: 3}
-	var db db.DB = &utils.MockDB{}
-	var store store.Store = &store.MemoryStore{}
+	var db db.DB = &test.MockDB{}
+	var store store.Store = &test.MockStore{}
 	cache.Init(config, &db, &store)
 
 	job := job.JobMetadata{Id: 1}
 	cache.Get(&job, 30*time.Second)
-	if db.(*utils.MockDB).Calls != 1 {
+	if db.(*test.MockDB).Calls != 1 {
 		t.Fatalf("Did not retrieve job data from db")
 	}
 
@@ -71,7 +71,7 @@ func TestGet(t *testing.T) {
 	if dat.Metadata.Id != 1 {
 		t.Fatalf("Retrieved wrong item from cache")
 	}
-	if db.(*utils.MockDB).Calls != 1 {
+	if db.(*test.MockDB).Calls != 1 {
 		t.Fatalf("Called db on cached item")
 	}
 }

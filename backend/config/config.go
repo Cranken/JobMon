@@ -113,14 +113,8 @@ type LocalUser struct {
 }
 
 type JobStoreConfig struct {
-	// Supported types: "memory", "postgres"; Defaults to "memory"
+	// Supported types: "postgres"
 	Type string
-
-	// Memory store config
-	// Path to the file the job metadata store should use
-	MemFilePath string
-	// Default time to live of jobs
-	MemDefaultTTL int
 
 	// Postgres store config:
 	// Postgres host address
