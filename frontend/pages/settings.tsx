@@ -29,6 +29,7 @@ import GeneralView from "../components/settings/GeneralView";
 import LogView from "../components/settings/LogView";
 import MetricsView from "../components/settings/MetricsView";
 import PartitionsView from "../components/settings/PartitionsView";
+import UsersView from "../components/settings/UsersView";
 import { Configuration } from "../types/config";
 import { authFetch } from "../utils/auth";
 
@@ -37,7 +38,8 @@ enum SettingsView {
   API = "API",
   Metrics = "Metrics",
   Partitions = "Partitions",
-  Logs = "Logs"
+  Logs = "Logs",
+  Users = "Users"
 }
 
 export const Settings = () => {
@@ -92,6 +94,8 @@ const renderSettingsView = (
       return <PartitionsView config={config} setConfig={setConfig} />;
     case SettingsView.Logs:
       return <LogView />;
+    case SettingsView.Users:
+      return <UsersView />;
   }
   return null;
 };
