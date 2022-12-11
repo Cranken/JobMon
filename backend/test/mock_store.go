@@ -4,6 +4,7 @@ import (
 	"jobmon/config"
 	"jobmon/db"
 	"jobmon/job"
+	"jobmon/store"
 )
 
 type MockStore struct {
@@ -76,9 +77,9 @@ func (s *MockStore) RemoveUserSessionToken(username string) {
 	s.Calls += 1
 }
 
-func (s *MockStore) GetUserRoles(username string) ([]string, bool) {
+func (s *MockStore) GetUserRoles(username string) (store.UserRoles, bool) {
 	s.Calls += 1
-	return make([]string, 0), true
+	return store.UserRoles{}, true
 }
 
 func (s *MockStore) SetUserRoles(username string, roles []string) {

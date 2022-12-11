@@ -9,6 +9,7 @@ import (
 	database "jobmon/db"
 	"jobmon/job"
 	cache "jobmon/lru_cache"
+	"jobmon/store"
 	jobstore "jobmon/store"
 	"jobmon/utils"
 	"log"
@@ -63,6 +64,8 @@ func (r *Router) Init(store jobstore.Store, config *conf.Configuration, db *data
 	router.PATCH("/api/config/update", authManager.Protected(r.UpdateConfig, auth.ADMIN))
 	router.GET("/api/admin/livelog", authManager.Protected(r.LiveLog, auth.ADMIN))
 	router.POST("/api/admin/refresh_metadata/:id", authManager.Protected(r.RefreshMetadata, auth.ADMIN))
+	router.GET("/api/config/users/:user", authManager.Protected(r.GetUserConfig, auth.ADMIN))
+	router.PATCH("/api/config/users/:user", authManager.Protected(r.SetUserConfig, auth.ADMIN))
 	router.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Access-Control-Request-Method") != "" {
 			// Set CORS headers
@@ -481,12 +484,12 @@ func (r *Router) LoginOAuthCallback(w http.ResponseWriter, req *http.Request, pa
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	roles, ok := r.store.GetUserRoles(userInfo.Username)
-	if !ok || len(roles) == 0 {
-		roles = []string{auth.USER}
+	userRoles, ok := r.store.GetUserRoles(userInfo.Username)
+	if !ok || len(userRoles.Roles) == 0 {
+		userRoles.Roles = []string{auth.USER}
 	}
 
-	user := auth.UserInfo{Username: userInfo.Username, Roles: roles}
+	user := auth.UserInfo{Username: userInfo.Username, Roles: userRoles.Roles}
 	err = r.authManager.AppendJWT(user, true, w)
 	if err != nil {
 		log.Printf("Could not generate JWT: %v", err)
@@ -771,6 +774,67 @@ func (r *Router) RefreshMetadata(w http.ResponseWriter, req *http.Request, param
 	w.Write(jsonData)
 }
 
+func (r *Router) GetUserConfig(w http.ResponseWriter, req *http.Request, params httprouter.Params, _ auth.UserInfo) {
+	utils.AllowCors(req, w.Header())
+	userStr := params.ByName("user")
+	if userStr == "" {
+		log.Println("Could not get user string from request params")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	// Restrict available configuration parameters for now
+	user, ok := r.store.GetUserRoles(userStr)
+
+	if !ok {
+		log.Println("Could not get user roles")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	data, err := json.Marshal(user)
+	if err != nil {
+		log.Println("Could not marshal user")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(data)
+}
+
+func (r *Router) SetUserConfig(w http.ResponseWriter, req *http.Request, params httprouter.Params, _ auth.UserInfo) {
+	utils.AllowCors(req, w.Header())
+	userStr := params.ByName("user")
+	if userStr == "" {
+		log.Println("Could not get user string from request params")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		log.Printf("Could not read update users request body")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Test if it is json user struct
+	user := store.UserRoles{}
+	err = json.Unmarshal(body, &user)
+	if err != nil {
+		log.Printf("Could not unmarshal set user config request body")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	r.store.SetUserRoles(user.Username, user.Roles)
+	data, err := json.Marshal(user)
+	if err != nil {
+		log.Println("Could not marshal user")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(data)
+}
 func (r *Router) parseTag(w http.ResponseWriter, req *http.Request) (job job.JobMetadata, tag job.JobTag, ok bool) {
 	utils.AllowCors(req, w.Header())
 

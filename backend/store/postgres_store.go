@@ -148,13 +148,13 @@ func (s *PostgresStore) RemoveUserSessionToken(username string) {
 	s.db.NewDelete().Model(&user).WherePK().Exec(context.Background())
 }
 
-func (s *PostgresStore) GetUserRoles(username string) ([]string, bool) {
+func (s *PostgresStore) GetUserRoles(username string) (UserRoles, bool) {
 	user := UserRoles{Username: username}
 	err := s.db.NewSelect().Model(&user).WherePK().Scan(context.Background())
 	if err != nil {
-		return make([]string, 0), false
+		return user, false
 	}
-	return user.Roles, true
+	return user, true
 }
 
 func (s *PostgresStore) SetUserRoles(username string, roles []string) {

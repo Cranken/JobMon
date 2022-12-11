@@ -103,16 +103,16 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 			return
 		}
 
-		roles, ok := (*authManager.store).GetUserRoles(user.Username)
+		userRoles, ok := (*authManager.store).GetUserRoles(user.Username)
 		if !ok {
-			if !utils.Contains(roles, USER) {
-				roles = append(roles, USER)
+			if !utils.Contains(userRoles.Roles, USER) {
+				user.Roles = append(userRoles.Roles, USER)
 			}
-			(*authManager.store).SetUserRoles(user.Username, roles)
+			(*authManager.store).SetUserRoles(user.Username, userRoles.Roles)
 			ok = true
 		}
 
-		if ok && (utils.Contains(roles, authLevel) || utils.Contains(roles, ADMIN)) {
+		if ok && (utils.Contains(userRoles.Roles, authLevel) || utils.Contains(user.Roles, ADMIN)) {
 			h(w, r, ps, user)
 		} else {
 			utils.AllowCors(r, w.Header())
