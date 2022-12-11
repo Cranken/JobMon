@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import * as d3 from "d3";
 import { useRef, useEffect } from "react";
+import { clamp } from "../../utils/utils";
 
 interface RadarChartProps<T> {
   data: T[];
@@ -60,7 +61,7 @@ export function RadarChart<T>({
     let xPos: number[] = [];
     let yPos: number[] = [];
     angles.forEach((angle, i) => {
-      const val = values[i];
+      const val = clamp(values[i], 0, 1);
 
       const coord = [Math.cos(angle), Math.sin(angle)];
       xPos.push(val * coord[0]);
@@ -83,8 +84,7 @@ export function RadarChart<T>({
         .attr("y", yScale(0))
         .attr(
           "transform",
-          `translate(${1.1 * (xScale(coord[0]) - xScale(0))}, ${
-            1.1 * (yScale(coord[1]) - yScale(0))
+          `translate(${1.1 * (xScale(coord[0]) - xScale(0))}, ${1.1 * (yScale(coord[1]) - yScale(0))
           })`
         )
         .attr("text-anchor", "middle")
@@ -93,7 +93,7 @@ export function RadarChart<T>({
         .text(titles[i]);
 
       if (maxVals) {
-        const val = maxVals[i];
+        const val = clamp(maxVals[i], 0, 1);
         const coord = [Math.cos(angle), Math.sin(angle)];
         svg
           .append("circle")
