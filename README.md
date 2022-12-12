@@ -40,3 +40,7 @@ The config.json contains the configuration for the backend as well as the metric
 ```
 docker-compose up [-d]
 ```
+
+## API Documentation
+
+For further information about the available API endpoints check [doc/API.md](doc/API.md).
