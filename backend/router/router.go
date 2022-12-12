@@ -701,6 +701,7 @@ func (r *Router) UpdateConfig(w http.ResponseWriter, req *http.Request, params h
 
 	// Reinit affected units
 	// DB because of potential changes to metrics
+	(*r.config).Flush()
 	(*r.db).Init(*r.config)
 	data, err := json.Marshal(r.config)
 	if err != nil {
