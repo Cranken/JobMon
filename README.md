@@ -16,13 +16,15 @@ The easiest way is to use two terminals.
 Terminal 1:
 
 ```
+cd backend
+go get
 go run .
 ```
 
 Terminal 2:
 
 ```
-cd jobmon
+cd frontend
 yarn
 yarn dev
 ```
