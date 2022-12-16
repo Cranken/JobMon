@@ -235,10 +235,12 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (data []job.JobMetadataD
 
 			if res, ok := result["_result"]; ok {
 				mean := res[0]["_value"]
-				max := res[1]["_value"]
-				if mean != nil && max != nil {
-					data = append(data, job.JobMetadataData{Config: m, Data: mean.(float64), Max: max.(float64)})
+				md := job.JobMetadataData{Config: m, Data: mean.(float64)}
+				if len(res) > 1 {
+					max := res[1]["_value"]
+					md.Max = max.(float64)
 				}
+				data = append(data, md)
 			}
 		}(db.metrics[m])
 	}
