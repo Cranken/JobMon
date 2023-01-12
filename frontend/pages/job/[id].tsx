@@ -109,10 +109,10 @@ const Job: NextPage = () => {
   useEffect(() => {
     if (data && data.MetricData) {
       const selection = new Map<string, AggFn>();
-      data.MetricData.forEach((m) => selection.set(m.Config.GUID, m.Config.AggFn))
+      data.MetricData.forEach((m) => selection.set(m.Config.GUID, m.Config.AggFn));
       setAggFnSelection(selection);
     }
-  }, [data?.Metadata])
+  }, [data?.Metadata]);
 
   if (!data) {
     return (
@@ -135,6 +135,16 @@ const Job: NextPage = () => {
       }
     });
   };
+
+  const filteredMetricData = data.MetricData.filter((m) =>
+    selectedMetrics.includes(m.Config.Measurement)
+  );
+  const filteredQuantileData = data.QuantileData.filter((m) =>
+    selectedMetrics.includes(m.Config.Measurement)
+  );
+  const categories = Array.from(new Set(filteredMetricData.flatMap((m) => m.Config.Categories))).sort((a, b) => a < b ? -1 : 1);
+  const metricGroups = categories.map((c) => filteredMetricData.filter((v) => v.Config.Categories.includes(c)));
+  const quantileGroups = categories.map((c) => filteredQuantileData.filter((v) => v.Config.Categories.includes(c)));
 
   return (
     <Box m={5}>
@@ -172,85 +182,74 @@ const Job: NextPage = () => {
       </Grid>
       <Tabs isLazy>
         <TabList>
-          <Tab>Timeline</Tab>
-          {/* <Tab>Box Plots</Tab> */}
-          {/* <Tab>Node Table</Tab> */}
-          {/* <Tab>Roofline</Tab> */}
+          {categories.map((c) => <Tab key={c}>{c}</Tab>)}
         </TabList>
 
         <TabPanels>
-          <TabPanel>
-            {showQuantiles && data?.QuantileData?.length > 0 ? (
-              <QuantileDataCharts
-                key="quantile-charts"
-                quantiles={data?.QuantileData?.filter((m) =>
-                  selectedMetrics.includes(m.Config.Measurement)
-                )}
-                startTime={startTime}
-                stopTime={stopTime}
-                setTimeRange={
-                  data.Metadata.IsRunning ? undefined : setTimeRange
-                }
-                isLoading={isLoading}
-                autoScale={autoScale}
-              />
-            ) : (
-              <MetricDataCharts
-                key="metric-charts"
-                metrics={data?.MetricData?.filter((m) =>
-                  selectedMetrics.includes(m.Config.Measurement)
-                )}
-                nodeSelection={selected}
-                startTime={startTime}
-                stopTime={stopTime}
-                setTimeRange={
-                  data.Metadata.IsRunning ? undefined : setTimeRange
-                }
-                isLoading={isLoading}
-                autoScale={autoScale}
-                isRunning={data.Metadata.IsRunning}
-                aggFnSelection={aggFnSelection}
-                setAggFnSelection={(m, fn) => setAggFnSelection((prevState) => {
-                  const copy = new Map(prevState);
-                  copy.set(m, fn);
-                  return copy;
-                })}
-              />
-            )}
-          </TabPanel>
-          {/* <TabPanel>
-            <AnalysisBoxPlot
-              data={data}
-              autoScale={autoScale}
-            ></AnalysisBoxPlot>
-          </TabPanel> */}
-          {/* <TabPanel>
-            <AnalysisTableView data={data}></AnalysisTableView>
-          </TabPanel> */}
+          {showQuantiles && data?.QuantileData?.length > 0 ?
+            quantileGroups.map((g, i) =>
+              <TabPanel key={`quantile-${i}`}>
+                <QuantileDataCharts
+                  key="quantile-charts"
+                  quantiles={g}
+                  startTime={startTime}
+                  stopTime={stopTime}
+                  setTimeRange={
+                    data.Metadata.IsRunning ? undefined : setTimeRange
+                  }
+                  isLoading={isLoading}
+                  autoScale={autoScale}
+                />
+              </TabPanel>
+            ) :
+            metricGroups.map((g, i) =>
+              <TabPanel key={`metric-${i}`}>
+                <MetricDataCharts
+                  key="metric-charts"
+                  metrics={g}
+                  nodeSelection={selected}
+                  startTime={startTime}
+                  stopTime={stopTime}
+                  setTimeRange={
+                    data.Metadata.IsRunning ? undefined : setTimeRange
+                  }
+                  isLoading={isLoading}
+                  autoScale={autoScale}
+                  isRunning={data.Metadata.IsRunning}
+                  aggFnSelection={aggFnSelection}
+                  setAggFnSelection={(m, fn) => setAggFnSelection((prevState) => {
+                    const copy = new Map(prevState);
+                    copy.set(m, fn);
+                    return copy;
+                  })}
+                />
+              </TabPanel>
+            )
+          }
         </TabPanels>
       </Tabs>
-    </Box>
+    </Box >
   );
 };
 export default Job;
 
 interface JobCache {
   Metadata: Omit<JobData, "MetricData"> | undefined;
-  [sampleInterval: number]: MetricData[]
+  [sampleInterval: number]: MetricData[];
 }
 
 interface NodeCache {
   [sampleInterval: number]: {
-    [key: string]: JobData
-  }
+    [key: string]: JobData;
+  };
 }
 
 interface AggCache {
   [sampleInterval: number]: {
     [metric: string]: {
-      [aggFn: string]: MetricData
-    }
-  }
+      [aggFn: string]: MetricData;
+    };
+  };
 }
 
 /** 
@@ -298,24 +297,24 @@ export const useGetJobData: (
         setAggFnCache((aggState) => {
           data.MetricData.forEach((m) => {
             if (!(data.SampleInterval in aggState)) {
-              aggState[data.SampleInterval] = {}
+              aggState[data.SampleInterval] = {};
             }
             const intervalData = aggState[data.SampleInterval];
             if (!(m.Config.GUID in intervalData)) {
-              intervalData[m.Config.GUID] = {}
+              intervalData[m.Config.GUID] = {};
             }
             if (!(m.Config.AggFn in intervalData[m.Config.GUID])) {
-              intervalData[m.Config.GUID] = { [m.Config.AggFn]: m }
+              intervalData[m.Config.GUID] = { [m.Config.AggFn]: m };
             }
             aggState[data.SampleInterval] = intervalData;
-          })
+          });
           return aggState;
-        })
+        });
         setIsLoading(false);
         setJobData(data);
         return newState;
       });
-    }
+    };
 
     // General data based on sampleInterval
     useEffect(() => {
@@ -335,7 +334,7 @@ export const useGetJobData: (
             throw Error("No metadata in jobcache");
           }
           setIsLoading(false);
-          setJobData({ ...jobCache.Metadata, MetricData: jobCache[sampleInterval] })
+          setJobData({ ...jobCache.Metadata, MetricData: jobCache[sampleInterval] });
         }
       } else {
         setIsLoading(true);
@@ -355,7 +354,7 @@ export const useGetJobData: (
         const newMetricData = newData.MetricData.map((m) => {
           const aggFn = aggFnSelection.get(m.Config.GUID) ?? m.Config.AggFn;
           if (m.Config.GUID in intervalData && aggFn in intervalData[m.Config.GUID]) {
-            return intervalData[m.Config.GUID][aggFn]
+            return intervalData[m.Config.GUID][aggFn];
           } else {
             let url = new URL(
               "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/metric/${id}`
@@ -368,15 +367,15 @@ export const useGetJobData: (
                 const newCache = { ...prevCache };
                 newCache[sampleInterval][m.Config.GUID][aggFn] = data;
                 return newCache;
-              })
-            })
+              });
+            });
           }
           return m;
-        })
-        newData.MetricData = newMetricData
+        });
+        newData.MetricData = newMetricData;
         setJobData(newData);
       }
-    }, [aggFnSelection, aggFnCache])
+    }, [aggFnSelection, aggFnCache]);
 
     // Node data
     useEffect(() => {
@@ -402,14 +401,14 @@ export const useGetJobData: (
           setNodeCache((cache) => {
             const intervalData = { ...cache[sampleInterval] };
             intervalData[node] = data;
-            return { ...cache, [sampleInterval]: intervalData }
-          })
+            return { ...cache, [sampleInterval]: intervalData };
+          });
           setIsLoading(false);
           setJobData(data);
           return;
-        })
+        });
       }
-    }, [node])
+    }, [node]);
 
     useEffect(() => {
       if (jobData?.Metadata.IsRunning && jobData.MetricData) {
@@ -463,7 +462,7 @@ export const useGetJobData: (
           setJobData(newJobData);
         }
       }
-    }, [lastMessage])
+    }, [lastMessage]);
 
     useEffect(() => {
       if (curLiveWindowStart === Infinity && timeStart) {
@@ -540,4 +539,4 @@ const formatCacheKey = (
     key += aggFnSelection.toString();
   }
   return key;
-}
+};

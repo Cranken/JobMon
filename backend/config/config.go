@@ -50,6 +50,8 @@ type Configuration struct {
 	LocalUsers map[string]LocalUser
 	// Per partition configurations
 	Partitions map[string]PartitionConfig
+	// Categories used for grouping metrics
+	MetricCategories []string
 	// Metrics to display in the radar chart; Will be moved to frontend config
 	RadarChartMetrics []string
 }
@@ -59,6 +61,8 @@ type MetricConfig struct {
 	GUID string
 	// Metric type, e.g. "cpu", "node", "socket", "accelerator"
 	Type string
+	// Category the metric belongs to. Must be one of config->MetricCategories
+	Categories []string
 	// Measurement name in Influxdb
 	Measurement string
 	// Default Aggregation function to use in aggregation of per device(cpu, socket, accelerator) data to node data.

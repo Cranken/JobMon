@@ -656,6 +656,7 @@ func (r *Router) GetConfig(w http.ResponseWriter, req *http.Request, params http
 	conf := conf.Configuration{}
 	conf.Metrics = r.config.Metrics
 	conf.Partitions = r.config.Partitions
+	conf.MetricCategories = r.config.MetricCategories
 
 	data, err := json.Marshal(conf)
 	if err != nil {
@@ -698,6 +699,7 @@ func (r *Router) UpdateConfig(w http.ResponseWriter, req *http.Request, params h
 	// Actually overwrite config
 	r.config.Metrics = conf.Metrics
 	r.config.Partitions = conf.Partitions
+	r.config.MetricCategories = conf.MetricCategories
 
 	// Reinit affected units
 	// DB because of potential changes to metrics

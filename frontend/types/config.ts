@@ -2,6 +2,7 @@ import { MetricConfig, PartitionConfig } from "./job";
 
 export interface Configuration {
   Metrics: MetricConfig[];
+  MetricCategories: string[];
   Partitions: { [key: string]: PartitionConfig; };
 }
 
