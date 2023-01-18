@@ -91,7 +91,7 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
     job.StopTime - job.StartTime < 120
   ) {
     dataAvailable = false;
-    reason = "No metadata metrics for jobs shorter than two minutes available.";
+    reason = "No metadata metrics available for jobs shorter than two minutes.";
   }
 
   return (
