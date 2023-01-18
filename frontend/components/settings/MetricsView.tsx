@@ -66,7 +66,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
   }
   return (
     <Stack gap={2}>
-      <CategoryPanel
+      {/* <CategoryPanel
         availableCategories={lConfig.MetricCategories}
         addCategory={(c) => {
           let curConfig = { ...lConfig };
@@ -82,7 +82,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
           setLConfig(curConfig);
           setConfig(curConfig);
         }}
-      />
+      /> */}
       <StackDivider />
       <Accordion allowMultiple>
         {lConfig.Metrics.map((m, i) => (
