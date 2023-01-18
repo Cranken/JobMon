@@ -275,7 +275,7 @@ const CategorySelect = ({ availableCategories, addCategory, removeCategory, ...p
     <>
       <CreatableSelect
         isMulti
-        value={field.value.map((c) => ({ value: c, label: c }))}
+        value={field.value?.map((c) => ({ value: c, label: c })) ?? []}
         options={availableCategories.map((c) => ({ value: c, label: c }))}
         onChange={(c) => helpers.setValue(c.map((co) => co.value))}
         onCreateOption={(c) => {
