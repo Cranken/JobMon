@@ -6,6 +6,7 @@ import Header from "../components/header/Header";
 import { useIsAuthenticated } from "../utils/auth";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
+import dynamic from "next/dynamic";
 
 function MyApp({ Component, pageProps }: AppProps) {
   const isAuthenticated = useIsAuthenticated();
@@ -40,4 +41,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   );
 }
 
-export default MyApp;
+export default dynamic(() => Promise.resolve(MyApp), {
+  ssr: false,
+});
+// export default MyApp;
