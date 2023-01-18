@@ -350,7 +350,6 @@ export const useGetJobData: (
       const newData = { ...jobData };
       if (aggFnSelection && sampleInterval && newData.MetricData) {
         const intervalData = { ...aggFnCache[sampleInterval] };
-        console.log(intervalData);
         const newMetricData = newData.MetricData.map((m) => {
           const aggFn = aggFnSelection.get(m.Config.GUID) ?? m.Config.AggFn;
           if (m.Config.GUID in intervalData && aggFn in intervalData[m.Config.GUID]) {

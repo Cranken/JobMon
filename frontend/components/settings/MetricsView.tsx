@@ -154,7 +154,6 @@ interface ICategoryPanelProps {
 const CategoryPanel = ({ availableCategories, addCategory, removeCategory }: ICategoryPanelProps) => {
   const [addCategoryText, setAddCategoryText] = useState("");
   const borderColor = useColorModeValue("gray.300", "whiteAlpha.400");
-  console.log(availableCategories);
   return <CreatableSelect isMulti options={availableCategories.map((c) => { return { value: c, label: c }; })}></CreatableSelect>;
   // return (
   //   <>
@@ -272,7 +271,6 @@ const AvailableAggFns = (displayName: string) => {
 
 const CategorySelect = ({ availableCategories, addCategory, removeCategory, ...props }: FieldHookConfig<string[]> & ICategoryPanelProps) => {
   const [field, meta, helpers] = useField(props);
-  console.log(props, field, field.value);
   return (
     <>
       <CreatableSelect
