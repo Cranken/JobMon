@@ -97,7 +97,6 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 	if err != nil {
 		return data, err
 	}
-	log.Println(j)
 	_, interval := j.CalculateSampleIntervals(s)
 	aggData, err := db.getJobData(j, j.NodeList, interval, false, true)
 	cps := analysis.ChangePointDetection(&aggData)
