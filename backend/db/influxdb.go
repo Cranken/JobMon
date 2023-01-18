@@ -97,6 +97,7 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 	if err != nil {
 		return data, err
 	}
+	log.Println(j)
 	_, interval := j.CalculateSampleIntervals(s)
 	aggData, err := db.getJobData(j, j.NodeList, interval, false, true)
 	cps := analysis.ChangePointDetection(&aggData)
@@ -235,7 +236,7 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (data []job.JobMetadataD
 
 			if res, ok := result["_result"]; ok {
 				md := job.JobMetadataData{Config: m}
-				if len(res) == 1 {
+				if len(res) >= 1 {
 					mean := res[0]["_value"]
 					switch v := mean.(type) {
 					case float64:
@@ -243,7 +244,7 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (data []job.JobMetadataD
 					default:
 					}
 				}
-				if len(res) > 1 {
+				if len(res) >= 2 {
 					max := res[1]["_value"]
 					switch v := max.(type) {
 					case float64:
