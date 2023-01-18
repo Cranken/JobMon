@@ -279,7 +279,7 @@ const CategorySelect = ({ availableCategories, addCategory, removeCategory, ...p
         options={availableCategories.map((c) => ({ value: c, label: c }))}
         onChange={(c) => helpers.setValue(c.map((co) => co.value))}
         onCreateOption={(c) => {
-          helpers.setValue([...field.value, c]);
+          helpers.setValue([...field.value ?? [], c]);
           addCategory(c);
         }}
       />
