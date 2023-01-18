@@ -15,7 +15,7 @@ import {
 import { useEffect, useState } from "react";
 import { SelectionMap } from "../../types/helpers";
 
-type Items = { [key: string]: boolean };
+type Items = { [key: string]: boolean; };
 type SetFn = (val: SelectionMap) => void;
 
 export interface SelectionProps {
@@ -46,7 +46,7 @@ export const Selection = ({
         <SelectionItem
           key={key}
           node={key}
-          onChange={selectionAllowed ? setChecked : () => {}}
+          onChange={selectionAllowed ? setChecked : () => { }}
           checked={items[key]}
         />
       );
@@ -148,7 +148,7 @@ const parsePart = (s: string) => {
       const parts = matches.groups["range"].split("-");
       const lower = parseInt(parts[0]);
       const upper = parseInt(parts[1]);
-      if (lower !== NaN && upper !== NaN) {
+      if (!Number.isNaN(lower) && !Number.isNaN(upper)) {
         for (let i = lower; i <= upper; i++) {
           nodes.push(i.toString());
         }
