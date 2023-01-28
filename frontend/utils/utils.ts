@@ -50,7 +50,7 @@ export const useGetJobs: (
   params?: JobSearchParams
 ) => [JobListData | undefined, boolean] = (params?: JobSearchParams) => {
   const [jobListData, setJobs] = useState<JobListData>();
-  const [_c, _s, removeCookie] = useCookies(["Authorization"]);
+  const [, , removeCookie] = useCookies(["Authorization"]);
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
     setIsLoading(true);
@@ -92,7 +92,7 @@ export function groupBy<T>(
   data: T[],
   keyFunc: (obj: T) => string
 ): DataMap<T[]> {
-  let groups: DataMap<T[]> = {};
+  const groups: DataMap<T[]> = {};
   data.forEach((obj) => {
     const key = keyFunc(obj);
     if (key in groups) {

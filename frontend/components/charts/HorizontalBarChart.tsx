@@ -1,8 +1,7 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import { useColorMode, useColorModeValue } from "@chakra-ui/react";
+import { useColorModeValue } from "@chakra-ui/react";
 import * as d3 from "d3";
 import { NumberValue } from "d3";
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 
 export interface HorizontalBarChartProps<T> {
   data: T[];
@@ -77,7 +76,7 @@ export function HorizontalBarChart<T>({
       .attr("viewBox", [0, 0, width, height])
       .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
 
-    const xElem = svg
+    svg
       .append("g")
       .attr("transform", `translate(0,${marginTop})`)
       .call(xAxis)

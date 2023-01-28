@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import JobFilter from "../components/joblist/job-filter/JobFilter";
 import JobList from "../components/joblist/JobList";
 import { dateToUnix, useGetJobs, useStorageState } from "../utils/utils";
-import { JobSearchParams, JobMetadata, JobTag } from "../types/job";
+import { JobSearchParams, JobMetadata } from "../types/job";
 import { useRouter } from "next/router";
 import { Box, Center, Divider, Spinner, Stack } from "@chakra-ui/react";
 import JoblistPageSelection from "../components/joblist/JoblistPageSelection";
@@ -21,7 +21,7 @@ export const Jobs = () => {
       NumGpus: [0, 224],
       NumNodes: [1, 192],
     });
-  const [jobListData, isLoading] = useGetJobs(
+  const [jobListData] = useGetJobs(
     isLoadingParams ? undefined : params
   );
   const joblistRef = useRef<HTMLDivElement>(null);
@@ -67,7 +67,7 @@ export const Jobs = () => {
     );
   }
 
-  let elements = [];
+  const elements = [];
   elements.push(
     <Center key="list-control">
       <Stack borderWidth="1px" borderRadius="lg" p={5} margin={4} w="50%">

@@ -1,4 +1,4 @@
-import { MoonIcon, SettingsIcon, SunIcon } from "@chakra-ui/icons";
+import { MoonIcon, SunIcon } from "@chakra-ui/icons";
 import {
   Box,
   Button,
@@ -7,32 +7,20 @@ import {
   Input,
   LinkBox,
   LinkOverlay,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  Stack,
-  Text,
-  Textarea,
   Tooltip,
   useColorMode,
   useColorModeValue,
-  useDisclosure,
 } from "@chakra-ui/react";
-import Link from "next/link";
-import { useState } from "react";
 import { useCookies } from "react-cookie";
 import { MdLogout } from "react-icons/md";
 import { useIsAuthenticated, UserRole } from "../../utils/auth";
 import { useGetUser } from "../../utils/auth";
+import React from "react";
 
 export const Header = () => {
   const user = useGetUser();
   const { colorMode, toggleColorMode } = useColorMode();
-  const [_c, _s, removeCookie] = useCookies(["Authorization"]);
+  const [, , removeCookie] = useCookies(["Authorization"]);
   const headerBg = useColorModeValue("gray.400", "gray.500");
   const buttonBg = useColorModeValue("gray.500", "gray.400");
   const searchInputColor = useColorModeValue("gray.800", "whiteAlpha.900");

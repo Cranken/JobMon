@@ -1,8 +1,8 @@
-import { Button, Container, Flex, Select, Stack, Text } from "@chakra-ui/react";
+import { Button, Select, Stack, Text } from "@chakra-ui/react";
 import JSZip from "jszip";
 import React from "react";
 import { useCookies } from "react-cookie";
-import { JobData, JobMetadata } from "../../types/job";
+import { JobData } from "../../types/job";
 import { MetricSelection } from "./MetricSelection";
 import TimeControl from "./TimeControl";
 
@@ -41,7 +41,7 @@ export const ViewControl = ({
   selectedMetrics,
   setSelectedMetrics,
 }: ControlProps) => {
-  const [_c, _s, removeCookie] = useCookies(["Authorization"]);
+  const [, , removeCookie] = useCookies(["Authorization"]);
   return (
     <Stack px={3}>
       <Stack direction="row" justify="space-between">
@@ -104,7 +104,7 @@ const exportData = (
   id: number,
   removeCookie: (name: "Authorization") => void
 ) => {
-  let url = new URL(
+  const url = new URL(
     "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}?raw=true`
   );
   fetch(url.toString(), { credentials: "include" }).then((res) => {
@@ -113,7 +113,7 @@ const exportData = (
     } else {
       res.json().then((data: JobData) => {
         const zip = new JSZip();
-        data.MetricData.forEach((m) => zip.file(m.Config.Measurement + ".csv", m.RawData))
+        data.MetricData.forEach((m) => zip.file(m.Config.Measurement + ".csv", m.RawData));
         zip.generateAsync({ type: "blob" }).then((b) => {
           const link = document.createElement("a");
           link.href = window.URL.createObjectURL(b);
@@ -122,7 +122,7 @@ const exportData = (
           document.body.appendChild(link);
           link.click();
           link.parentNode?.removeChild(link);
-        })
+        });
       });
     }
   });

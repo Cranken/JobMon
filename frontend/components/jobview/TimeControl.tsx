@@ -1,17 +1,10 @@
 import {
   Box,
-  Button,
-  cookieStorageManager,
   Flex,
-  Slider as ChakraSlider,
-  SliderFilledTrack,
-  SliderThumb,
-  SliderTrack,
-  Tooltip,
 } from "@chakra-ui/react";
 import Slider, { createSliderWithTooltip } from "rc-slider";
 import { JobMetadata } from "../../types/job";
-import { ReactNode, useEffect, useState } from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 
 import "rc-slider/assets/index.css";
 
@@ -40,7 +33,7 @@ const TimeControl = ({
   useEffect(() => {
     setTooltipValues([startTime?.getTime() ?? 0, stopTime?.getTime() ?? 1]);
   }, [startTime, stopTime]);
-  let marks: Record<number, ReactNode> = {};
+  const marks: Record<number, ReactNode> = {};
   let t = metadata.StartTime * 1000;
   const inc = ((metadata.StopTime - metadata.StartTime) / 4) * 1000;
   for (let i = 0; i < 4; i++) {

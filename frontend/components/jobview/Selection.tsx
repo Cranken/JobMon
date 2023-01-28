@@ -12,7 +12,7 @@ import {
   Alert,
   AlertIcon,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { SelectionMap } from "../../types/helpers";
 
 type Items = { [key: string]: boolean; };
@@ -32,10 +32,9 @@ export const Selection = ({
   selectionAllowed,
 }: SelectionProps) => {
   const [selectionString, setSelectionString] = useState("");
-  let elements: JSX.Element[] = [];
+  const elements: JSX.Element[] = [];
   useEffect(() => {
     parseSelection(selectionString, items, setChecked, nodePrefix);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionString]);
 
   let allChecked = true;
@@ -46,7 +45,7 @@ export const Selection = ({
         <SelectionItem
           key={key}
           node={key}
-          onChange={selectionAllowed ? setChecked : () => { }}
+          onChange={selectionAllowed ? setChecked : () => undefined}
           checked={items[key]}
         />
       );
@@ -127,7 +126,7 @@ const parseSelection = (
   const parts = str.split(" ");
   if (parts.length > 0) {
     const selected = parts.flatMap(parsePart);
-    let map: SelectionMap = {};
+    const map: SelectionMap = {};
     map["all"] = false;
     for (const node of selected) {
       const padding = Math.max(4 - node.length, 0);
@@ -139,8 +138,8 @@ const parseSelection = (
 };
 
 const parsePart = (s: string) => {
-  let matches = s.match(/((?:\[)(?<range>\d+-\d+)(?:\]))|(?<single>\d+)/);
-  let nodes: string[] = [];
+  const matches = s.match(/((?:\[)(?<range>\d+-\d+)(?:\]))|(?<single>\d+)/);
+  const nodes: string[] = [];
   if (matches !== null && matches.groups) {
     if (matches.groups["single"]) {
       nodes.push(matches.groups["single"]);

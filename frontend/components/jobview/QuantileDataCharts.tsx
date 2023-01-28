@@ -1,10 +1,10 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import * as d3 from "d3";
 import { QuantileData } from "../../types/job";
 import { LineChart } from "../charts/LineChart";
 import { QuantilePoint } from "../../types/job";
 import { Center, Flex, Grid, Spinner } from "@chakra-ui/react";
 import { Unit } from "../../types/units";
+import React from "react";
 
 interface QuantileDataChartsProps {
   quantiles: QuantileData[] | undefined;
@@ -37,7 +37,7 @@ export const QuantileDataCharts = ({
     startTime ?? new Date(0),
     stopTime ?? new Date(),
   ];
-  let chartElements = [];
+  const chartElements = [];
   const sortedMetrics = quantiles.sort((a, b) =>
     a.Config.DisplayName < b.Config.DisplayName ? -1 : 1
   );

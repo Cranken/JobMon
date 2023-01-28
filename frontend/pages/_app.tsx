@@ -5,7 +5,7 @@ import theme from "../styles/theme";
 import Header from "../components/header/Header";
 import { useIsAuthenticated } from "../utils/auth";
 import { useRouter } from "next/router";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import dynamic from "next/dynamic";
 
 function MyApp({ Component, pageProps }: AppProps) {

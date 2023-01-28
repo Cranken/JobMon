@@ -12,6 +12,7 @@ import {
   RangeSliderThumb,
   Text,
 } from "@chakra-ui/react";
+import React from "react";
 
 interface StepperProps {
   minimum: number;

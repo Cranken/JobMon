@@ -1,18 +1,10 @@
 import {
   useColorModeValue,
-  Table,
-  Thead,
-  Tr,
-  Th,
-  Tbody,
-  Td,
   Wrap,
 } from "@chakra-ui/react";
 import { JobData } from "../../types/job";
 import { BoxPlot } from "../charts/BoxPlot";
-import { Unit } from "../../types/units";
-import { useState } from "react";
-import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
+import React from "react";
 
 interface AnalysisBoxPlotProps {
   data?: JobData;

@@ -10,6 +10,7 @@ import {
   Box,
   Grid,
 } from "@chakra-ui/react";
+import React from "react";
 
 interface MetricSelectionProps {
   metrics: MetricConfig[];

@@ -1,30 +1,15 @@
-import { AddIcon, MinusIcon } from "@chakra-ui/icons";
 import {
   Accordion,
   AccordionButton,
   AccordionIcon,
   AccordionItem,
   AccordionPanel,
-  Alert,
-  AlertIcon,
-  AlertTitle,
   Box,
-  BoxProps,
   Button,
   ButtonGroup,
-  ChakraComponent,
   Flex,
   FormLabel,
-  forwardRef,
-  Heading,
   HStack,
-  IconButton,
-  Input,
-  InputProps,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuList,
   Popover,
   PopoverArrow,
   PopoverBody,
@@ -35,16 +20,12 @@ import {
   PopoverTrigger,
   Select,
   Stack,
-  StackDivider,
-  Tag,
-  Textarea,
   Tooltip,
-  useColorModeValue,
   useToast,
   Wrap,
 } from "@chakra-ui/react";
 import { CreatableSelect } from "chakra-react-select";
-import { Field, FieldAttributes, FieldHookConfig, Form, Formik, useField } from "formik";
+import { Field, FieldHookConfig, Form, Formik, useField } from "formik";
 import React, { useEffect, useState } from "react";
 import { Configuration } from "../../types/config";
 import { AggFn, MetricConfig } from "../../types/job";
@@ -90,8 +71,8 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
             // Hack to avoid duplicate keys if adding multiple new (empty) metrics
             key={m.GUID + i.toString()}
             metricConfig={m}
-            setMetricConfig={(m: MetricConfig, del: boolean = false) => {
-              let curConfig = { ...lConfig };
+            setMetricConfig={(m: MetricConfig, del = false) => {
+              const curConfig = { ...lConfig };
               if (!del && curConfig.Metrics[i].DisplayName === "New Metric") {
                 toast({
                   description: "Remember to assign newly created metrics to partitions.",
@@ -109,7 +90,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
             }}
             availableCategories={lConfig.MetricCategories}
             addCategory={(c) => {
-              let curConfig = { ...lConfig };
+              const curConfig = { ...lConfig };
               if (!(c in curConfig.MetricCategories)) {
                 curConfig.MetricCategories.push(c);
                 setLConfig(curConfig);
@@ -117,7 +98,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
               }
             }}
             removeCategory={(c) => {
-              let curConfig = { ...lConfig };
+              const curConfig = { ...lConfig };
               curConfig.MetricCategories = curConfig.MetricCategories.filter((v) => v !== c);
               setLConfig(curConfig);
               setConfig(curConfig);
@@ -127,7 +108,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
       </Accordion>
       <Box>
         <Button onClick={() => {
-          let curConfig = { ...lConfig };
+          const curConfig = { ...lConfig };
           curConfig.Metrics.push({
             Type: "node", Measurement: "",
             AggFn: AggFn.Mean, SampleInterval: "",
@@ -151,80 +132,6 @@ interface ICategoryPanelProps {
   removeCategory: (c: string) => void;
 }
 
-const CategoryPanel = ({ availableCategories, addCategory, removeCategory }: ICategoryPanelProps) => {
-  const [addCategoryText, setAddCategoryText] = useState("");
-  const borderColor = useColorModeValue("gray.300", "whiteAlpha.400");
-  return <CreatableSelect isMulti options={availableCategories.map((c) => { return { value: c, label: c }; })}></CreatableSelect>;
-  // return (
-  //   <>
-  //     <Heading></Heading>
-  //     <Accordion allowToggle >
-  //       <AccordionItem border="1px" borderRadius="lg">
-  //         <AccordionButton as={Heading} _hover={{ cursor: "pointer" }} >
-  //           Configure Metric Categories
-  //         </AccordionButton >
-  //         <AccordionPanel>
-  //           <Stack>
-  //             {availableCategories?.map((category) => (
-  //               <Flex
-  //                 border="1px"
-  //                 borderColor={borderColor}
-  //                 borderRadius="md"
-  //                 key={category}
-  //                 justify="space-between"
-  //                 align="center"
-  //                 p={1}
-  //               >
-  //                 <Tag>{category}</Tag>
-  //                 <IconButton
-  //                   aria-label={"remove-category"}
-  //                   icon={<MinusIcon />}
-  //                   variant="ghost"
-  //                   size="sm"
-  //                   onClick={() => removeCategory(category)}
-  //                 ></IconButton>
-  //               </Flex>
-  //             ))}
-  //             <Flex align="center">
-  //               <Input
-  //                 variant="outline"
-  //                 placeholder="Add Category..."
-  //                 size="sm"
-  //                 w="fit-content"
-  //                 borderRadius="lg"
-  //                 value={addCategoryText}
-  //                 onChange={(ev) => setAddCategoryText(ev.target.value)}
-  //                 onKeyPress={(ev) => {
-  //                   if (
-  //                     ev.key === "Enter" &&
-  //                     !ev.altKey &&
-  //                     !ev.ctrlKey &&
-  //                     !ev.shiftKey &&
-  //                     !ev.metaKey
-  //                   ) {
-  //                     addCategory(addCategoryText);
-  //                     setAddCategoryText("");
-  //                   }
-  //                 }}
-  //               />
-  //               <IconButton
-  //                 aria-label={"add-category"}
-  //                 icon={<AddIcon />}
-  //                 variant="ghost"
-  //                 size="sm"
-  //                 onClick={() => {
-  //                   addCategory(addCategoryText);
-  //                   setAddCategoryText("");
-  //                 }}
-  //               ></IconButton>
-  //             </Flex>
-  //           </Stack>
-  //         </AccordionPanel>
-  //       </AccordionItem>
-  //     </Accordion>
-  //   </>
-  // );
-};
 
 interface IMetricItemProps {
   metricConfig: MetricConfig;
@@ -269,8 +176,8 @@ const AvailableAggFns = (displayName: string) => {
   );
 };
 
-const CategorySelect = ({ availableCategories, addCategory, removeCategory, ...props }: FieldHookConfig<string[]> & ICategoryPanelProps) => {
-  const [field, meta, helpers] = useField(props);
+const CategorySelect = ({ availableCategories, addCategory, ...props }: FieldHookConfig<string[]> & ICategoryPanelProps) => {
+  const [field, , helpers] = useField(props);
   return (
     <>
       <CreatableSelect

@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import * as d3 from "d3";
 import React, { useEffect } from "react";
 import { useRef } from "react";
@@ -38,7 +37,6 @@ export function RooflinePlot({
   flops_unit,
   mem_bw,
   mem_bw_max,
-  mem_bw_unit,
   marginTop = 30, // top margin, in pixels
   marginRight = 10, // right margin, in pixels
   marginBottom = 30, // bottom margin, in pixels
@@ -61,8 +59,8 @@ export function RooflinePlot({
     xRange = [marginLeft, width - marginRight]; // [left, right]
 
     // Compute data
-    let opInt: number[] = [];
-    let flop: number[] = [];
+    const opInt: number[] = [];
+    const flop: number[] = [];
     flops.forEach((f, i) => {
       const m = mem_bw[i];
       if (isNaN(f) || isNaN(m)) {

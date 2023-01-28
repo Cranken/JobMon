@@ -1,5 +1,6 @@
 import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
 import { Stack, Select, IconButton, Text } from "@chakra-ui/react";
+import React from "react";
 
 interface JobListDisplaySettingsProps {
   joblistLimit: [number, (l: number) => void];

@@ -1,6 +1,5 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import * as d3 from "d3";
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { Unit } from "../../types/units";
 
 /**
@@ -58,7 +57,6 @@ export function BoxPlot<T>({
   marginLeft = 80, // left margin, in pixels
   width = 640, // outer width of chart, in pixels
   height = 400, // outer height of chart, in pixels
-  inset = 0.5, // left and right inset
   insetLeft = 0.5, // inset left edge of bar
   insetRight = 0.5, // inset right edge of bar
   xDomain, // [xmin, xmax]
@@ -68,7 +66,6 @@ export function BoxPlot<T>({
   yDomain, // [ymin, ymax]
   yRange = [height - marginBottom, marginTop], // [bottom, top]
   yLabel = "", // a label for the y-axis
-  yFormat = "", // a format specifier string for the y-axis
   stroke = "currentColor", // stroke color of whiskers, median, outliers
   fill = "#ddd", // fill color of boxes
   jitter = 4, // amount of random jitter for outlier dots, in pixels
@@ -107,7 +104,7 @@ export function BoxPlot<T>({
         const iqr = q3 - q1; // interquartile range
         const r0 = Math.max(min, q1 - iqr * 1.5);
         const r1 = Math.min(max, q3 + iqr * 1.5);
-        let b = bin as ExtBin;
+        const b = bin as ExtBin;
         b.quartiles = [q1, q2, q3];
         b.range = [r0, r1];
         b.x0 = 0.25;

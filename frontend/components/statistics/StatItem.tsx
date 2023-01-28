@@ -15,7 +15,7 @@ import {
 import { HorizontalBarChart } from "../charts/HorizontalBarChart";
 import { Panel } from "../panelmanager/PanelManager";
 import { OPanel } from "../panelmanager/PanelManager";
-import { useState } from "react";
+import React, { useState } from "react";
 import humanizeDuration from "humanize-duration";
 import { BarChart } from "../charts/BarChart";
 import { QuestionIcon } from "@chakra-ui/icons";

@@ -26,7 +26,6 @@ import {
   Tabs,
 } from "@chakra-ui/react";
 import { JobInfo } from "../../components/jobview/JobInfo";
-import { useCookies } from "react-cookie";
 import { SelectionMap } from "../../types/helpers";
 import { useStorageState } from "../../utils/utils";
 import { WSLoadMetricsMsg } from "../../types/job";

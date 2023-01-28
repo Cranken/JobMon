@@ -1,13 +1,14 @@
 import { JobMetadata } from "../../types/job";
-import { Box, Grid, Stack, Tag, Text, Wrap } from "@chakra-ui/react";
+import { Box, Grid, Stack, Tag, Text } from "@chakra-ui/react";
 import Selection from "./Selection";
 import { SelectionMap } from "../../types/helpers";
 import { TagPanel } from "./TagPanel";
+import React from "react";
 
 interface JobInfoProps {
   metadata: JobMetadata;
   setChecked: (val: SelectionMap) => void;
-  nodes: { [key: string]: boolean };
+  nodes: { [key: string]: boolean; };
 }
 
 export const JobInfo = ({ metadata, setChecked, nodes }: JobInfoProps) => {

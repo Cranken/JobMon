@@ -132,9 +132,8 @@ export class Unit {
           const prefix = Prefixes[best];
           const exp = Math.pow(prefix.Base, prefix.Exp);
           const value = this.value / exp;
-          return `${value.toFixed(2)} ${prefix.Short}${
-            this.type.DisplayFormat
-          }`;
+          return `${value.toFixed(2)} ${prefix.Short}${this.type.DisplayFormat
+            }`;
         }
         return `${this.value.toFixed(2)} ${this.type.DisplayFormat}`;
     }
@@ -155,7 +154,7 @@ export class Unit {
 }
 
 const getBaseUnit = (str: string) => {
-  let key = Object.keys(Units).find((val) =>
+  const key = Object.keys(Units).find((val) =>
     str.includes(Units[val].DisplayFormat)
   );
   return key ? Units[key] : Units.None;

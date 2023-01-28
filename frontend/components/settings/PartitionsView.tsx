@@ -1,9 +1,9 @@
-import { Stack, Accordion, Box, Button, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, ButtonGroup, Flex, HStack, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverFooter, PopoverHeader, PopoverTrigger, Checkbox, Container, Wrap, Text, FormLabel, Tooltip, Select, Input } from "@chakra-ui/react";
-import { Formik, Form, Field, FieldArray } from "formik";
-import { useState } from "react";
+import { Stack, Accordion, Box, Button, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, ButtonGroup, Flex, HStack, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverFooter, PopoverHeader, PopoverTrigger, Wrap, FormLabel, Tooltip, Select } from "@chakra-ui/react";
+import { Formik, Form, Field } from "formik";
+import React, { useState } from "react";
 import { Configuration } from "../../types/config";
-import { AggFn, MetricConfig, PartitionConfig as ParentPartitionConfig, VirtualPartitionConfig } from "../../types/job";
-import { NumberField, TextField, ErrorMessage } from "./FormComponents";
+import { MetricConfig, PartitionConfig as ParentPartitionConfig, VirtualPartitionConfig } from "../../types/job";
+import { NumberField, TextField } from "./FormComponents";
 
 interface IPartitionsViewProps {
     config: Configuration;
@@ -48,9 +48,9 @@ const PartitionsView = ({ config, setConfig }: IPartitionsViewProps) => {
                 // Hack to avoid duplicate keys if adding multiple new (empty) metrics
                 key={pName + i + parent}
                 partitionConfig={partitionConfig}
-                setPartitionConfig={(pConf: PartitionConfig, del: boolean = false) => {
+                setPartitionConfig={(pConf: PartitionConfig, del = false) => {
                     let index = accIndex;
-                    let curConfig = { ...lConfig };
+                    const curConfig = { ...lConfig };
                     // Changed virtual state, delete previous entry
                     if (partitionConfig.isVirtual !== pConf.isVirtual) {
                         if (pConf.isVirtual) {
@@ -120,11 +120,11 @@ const PartitionsView = ({ config, setConfig }: IPartitionsViewProps) => {
             <Accordion allowToggle index={accIndex} onChange={(i) => {
                 setAccIndex(i as number);
             }}>
-                {Object.entries(lConfig.Partitions).map(([pName, p], i) => [createPartitionItem(pName, i)].concat(p.VirtualPartitions ? Object.entries(p.VirtualPartitions).map(([cName, c], i) => createPartitionItem(cName, i, pName)) : []))}
+                {Object.entries(lConfig.Partitions).map(([pName, p], i) => [createPartitionItem(pName, i)].concat(p.VirtualPartitions ? Object.entries(p.VirtualPartitions).map(([cName,], i) => createPartitionItem(cName, i, pName)) : []))}
             </Accordion>
             <Box>
                 <Button onClick={() => {
-                    let curConfig = { ...lConfig };
+                    const curConfig = { ...lConfig };
                     curConfig.Partitions["New Partition"] = {} as ParentPartitionConfig;
                     setLConfig(curConfig);
                 }

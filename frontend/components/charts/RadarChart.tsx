@@ -1,6 +1,5 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import * as d3 from "d3";
-import { useRef, useEffect } from "react";
+import React, { useRef, useEffect } from "react";
 import { clamp } from "../../utils/utils";
 
 interface RadarChartProps<T> {
@@ -58,8 +57,8 @@ export function RadarChart<T>({
       .attr("viewBox", [0, 0, size, size])
       .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
 
-    let xPos: number[] = [];
-    let yPos: number[] = [];
+    const xPos: number[] = [];
+    const yPos: number[] = [];
     angles.forEach((angle, i) => {
       const val = clamp(values[i], 0, 1);
 
@@ -78,7 +77,7 @@ export function RadarChart<T>({
         .attr("stroke-opacity", "0.5");
 
       // Legend
-      const text = svg
+      svg
         .append("text")
         .attr("x", xScale(0))
         .attr("y", yScale(0))

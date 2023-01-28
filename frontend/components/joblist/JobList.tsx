@@ -16,8 +16,7 @@ import {
   Wrap,
 } from "@chakra-ui/react";
 import { RadarChart } from "../charts/RadarChart";
-import * as d3 from "d3";
-import RooflinePlot from "../charts/RooflinePlot";
+import React from "react";
 
 interface JobListProps {
   jobs: JobMetadata[];
@@ -60,6 +59,7 @@ interface JobListItemProps {
 
 export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
   const borderColor = useColorModeValue("gray.300", "whiteAlpha.400");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let radarChartData: any[] = [];
   if (job.Data) {
     radarChartData = job.Data.filter((val) =>

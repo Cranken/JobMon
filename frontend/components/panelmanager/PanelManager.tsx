@@ -1,4 +1,5 @@
 import { Checkbox, CheckboxGroup, Grid } from "@chakra-ui/react";
+import React from "react";
 
 export const OPanel = {
   Partition: "Partition",
@@ -11,7 +12,7 @@ export const OPanel = {
 
 export type Panel = keyof typeof OPanel;
 
-export interface PanelConfig<T> {
+export interface PanelConfig {
   Position: number;
   Type: Panel;
 }

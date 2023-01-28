@@ -1,6 +1,5 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import * as d3 from "d3";
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 
 /**
  * Renders a histogram based on the given data
@@ -54,11 +53,9 @@ export function Histogram<T>({
   width = 640, // outer width of chart, in pixels
   height = 400, // outer height of chart, in pixels
   insetLeft = 0.5, // inset left edge of bar
-  insetRight = 0.5, // inset right edge of bar
   xDomain, // [xmin, xmax]
   xRange = [marginLeft, width - marginRight], // [left, right]
   xLabel = "Bins", // a label for the x-axis
-  xFormat = "", // a format specifier string for the x-axis
   yDomain, // [ymin, ymax]
   yRange = [height - marginBottom, marginTop], // [bottom, top]
   yLabel = "Occurences", // a label for the y-axis
@@ -72,7 +69,7 @@ export function Histogram<T>({
     if (!data || !svgRef.current) {
       return;
     }
-    let X = d3.map(data, x);
+    const X = d3.map(data, x);
     const Y0 = d3.map(data, y);
     const I = d3.range(X.length);
 
@@ -99,7 +96,6 @@ export function Histogram<T>({
       .ticks(width / 80)
       .tickSizeOuter(0);
     const yAxis = d3.axisLeft(yScale).ticks(height / 40, yFormat);
-    let yFormatFn = yScale.tickFormat(100, yFormat);
 
     const svg = d3
       .select(svgRef.current)

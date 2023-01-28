@@ -7,12 +7,12 @@ import {
   Tab,
   TabPanel,
 } from "@chakra-ui/react";
-import { Histogram } from "../components/charts/Histogram";
 import JobFilter from "../components/joblist/job-filter/JobFilter";
 import { Panel, PanelManager } from "../components/panelmanager/PanelManager";
 import { JobSearchParams } from "../types/job";
-import { groupBy, useGetJobs, useStorageState } from "../utils/utils";
+import { useGetJobs, useStorageState } from "../utils/utils";
 import { StatItem } from "../components/statistics/StatItem";
+import React from "react";
 
 export const Statistics = () => {
   const [params, setParams, , isLoadingParams] =
@@ -53,7 +53,7 @@ export const Statistics = () => {
           </Stack>
         </Center>
         <Grid templateColumns="repeat(2, 1fr)">
-          {selectedPanels.map((panel, i) => (
+          {selectedPanels.map((panel) => (
             <Stack
               border="1px"
               borderColor="gray.700"

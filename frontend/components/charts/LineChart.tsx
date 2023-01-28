@@ -1,8 +1,6 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import * as d3 from "d3";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useRef } from "react";
-import { isDate } from "util";
 import { Unit } from "../../types/units";
 import { checkBetween, clamp } from "../../utils/utils";
 
@@ -58,10 +56,10 @@ export interface LineChartProps<T> {
  */
 export function LineChart<T>({
   data,
-  x = (_) => new Date(), // given d in data, returns the (temporal) x-value
-  y = (_) => 0, // given d in data, returns the (quantitative) y-value
-  z = (_) => "default",
-  title = (_) => "",
+  x = () => new Date(), // given d in data, returns the (temporal) x-value
+  y = () => 0, // given d in data, returns the (quantitative) y-value
+  z = () => "default",
+  title = () => "",
   unit,
   defined, // for gaps in data
   curve = d3.curveLinear, // method of interpolation between points
@@ -76,7 +74,6 @@ export function LineChart<T>({
   xRange = [marginLeft, width - marginRight], // [left, right]
   yDomain, // [ymin, ymax]
   yRange = [height - marginBottom, marginTop], // [bottom, top]
-  yFormat, // a format specifier string for the y-axis
   yLabel = "Metric Data", // a label for the y-axis
   zDomain, // array of z-values
   color = "currentColor", // stroke color of line
@@ -84,7 +81,6 @@ export function LineChart<T>({
   strokeLinejoin = "round", // stroke line join of the line
   strokeWidth = 1.5, // stroke width of line, in pixels
   strokeOpacity = 1, // stroke opacity of line
-  mixBlendMode = "multiply", // blend mode of lines
   colors = d3.schemeTableau10, // array of categorical colors
   fill = "#ff000020",
   fillBoundKeys,
@@ -153,7 +149,7 @@ export function LineChart<T>({
       .tickFormat((val) => new Unit(val, unit ?? "").toString(prefix));
 
     // Construct a line generator.
-    const line = d3
+    d3
       .line<number>()
       .defined((_, index) => D[index])
       .curve(curve)
@@ -175,7 +171,6 @@ export function LineChart<T>({
 
     let dragStart = 0;
     let dragEnd = 0;
-    const svgXOffset = width - svgRef.current.getBoundingClientRect().width;
     if (setTimeRange) {
       const drag = d3
         .drag<SVGSVGElement, unknown>()
@@ -259,7 +254,7 @@ export function LineChart<T>({
       .attr("y1", yScale(meanVal))
       .attr("y2", yScale(meanVal))
       .attr("stroke", "currentColor")
-      .attr("stroke-dasharray", 4)
+      .attr("stroke-dasharray", 4);
 
     if (fillBoundKeys) {
       const range = d3.range(linePointCount);
@@ -285,17 +280,9 @@ export function LineChart<T>({
         .data(d3.group(range, (i) => Z[i]))
         .join("path")
         .attr("stroke", (_, I) => colorFn(I))
-        .attr("d", ([_, I]) => area(I));
+        .attr("d", ([, I]) => area(I));
     }
 
-    const path = svg
-      .append("g")
-      .attr("fill", "none")
-      .selectAll("path")
-      .data(d3.group(I, (i) => Z[i]))
-      .join("path")
-      .attr("stroke", (_, I) => colorFn(I))
-      .attr("d", ([_, I]) => line(I));
 
     const ruler = svg.append("g");
 
@@ -320,7 +307,7 @@ export function LineChart<T>({
       tooltip.selectAll("*").remove();
 
       // Values of the lines
-      let values = [];
+      const values = [];
       let lastY = 0;
       for (let idx = zSet.size - 1; idx >= 0; idx--) {
         values.push(filteredData[idx * linePointCount + i]);
@@ -360,12 +347,12 @@ export function LineChart<T>({
             addLine(`[${values.length - 10} more hidden]`);
           }
 
-          let tooltipText = title(val);
+          const tooltipText = title(val);
           addLine(tooltipText);
         }
       } else {
         for (let idx = 0; idx < values.length; idx++) {
-          let tooltipText = title(values[idx]);
+          const tooltipText = title(values[idx]);
           addLine(tooltipText);
         }
       }

@@ -1,29 +1,13 @@
 import {
-  Alert,
-  AlertDescription,
-  AlertIcon,
-  AlertTitle,
-  Box,
   Button,
   Center,
-  Container,
   Grid,
   GridItem,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
   Spinner,
   Stack,
-  Text,
-  Textarea,
-  useDisclosure,
   useToast,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import APIView from "../components/settings/APIView";
 import GeneralView from "../components/settings/GeneralView";
 import LogView from "../components/settings/LogView";
@@ -110,7 +94,7 @@ const useGetConfig: () => [
     setConfig(c);
 
     const url = new URL(
-      "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/config/update`
+      "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + "/api/config/update"
     );
 
     authFetch(url.toString(), { method: "PATCH", body: JSON.stringify(c) }).then((data: Configuration) => {
@@ -132,7 +116,7 @@ const useGetConfig: () => [
 
   useEffect(() => {
     const url = new URL(
-      "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/config`
+      "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + "/api/config"
     );
 
     fetch(url.toString(), { credentials: "include" }).then((res) => {

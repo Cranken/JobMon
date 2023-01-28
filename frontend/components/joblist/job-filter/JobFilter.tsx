@@ -20,7 +20,7 @@ import { dateToUnix } from "../../../utils/utils";
 
 import style from "./JobFilter.module.css";
 import { Stepper } from "./Stepper";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { JobTag } from "../../../types/job";
 import { useGetUser, UserRole } from "../../../utils/auth";
 
@@ -43,7 +43,7 @@ export const JobFilter = ({
   tabPanels,
   mustApply = false,
 }: JobFilterProps) => {
-  const [tagPickerItems, _] = useState(
+  const [tagPickerItems,] = useState(
     tags?.map((tag) => {
       return { value: tag.Id.toString(), label: tag.Name };
     }) ?? []

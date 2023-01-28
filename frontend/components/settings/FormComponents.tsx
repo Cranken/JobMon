@@ -1,6 +1,6 @@
 import { Alert, AlertIcon, AlertTitle, Box, FormLabel, Input, Tooltip } from "@chakra-ui/react";
 import { Field } from "formik";
-import { MetricConfig } from "../../types/job";
+import React from "react";
 
 export const validateNotEmpty = (value: string) => {
     return value.length > 0 ? "" : "Value is required";
