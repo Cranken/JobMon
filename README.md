@@ -33,7 +33,7 @@ The frontend should be available at: http://localhost:3000
 
 ## Production Use
 
-After setting the values in the .env and config.json file docker-compose can be used for easy deployment of the stack.
+After setting the values in the .env and config.json files, docker-compose can be used for easy deployment of the stack.
 
 The .env file specifies the frontend database authentication keys as well as the ports the docker containers will run on.
 
@@ -45,4 +45,4 @@ docker-compose up [-d]
 
 ## API Documentation
 
-For further information about the available API endpoints check [doc/API.md](doc/API.md).
+For further information about the available API endpoints, check out [doc/API.md](doc/API.md).
