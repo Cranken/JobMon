@@ -36,15 +36,15 @@ const Job: NextPage = () => {
   const router = useRouter();
   const jobId = router.query["id"];
   const [sampleInterval, setSampleInterval] = useState<number>();
-  const [selection, setSelection] = useState<SelectionMap>({});
-  const selected = Object.keys(selection).filter((val) => selection[val]);
+  const [selection, setSelection] = useState<SelectionMap>();
+  const selected = selection ? Object.keys(selection).filter((val) => selection[val]) : [];
   const node =
-    selected.length === 1 && Object.keys(selection).length > 1
+    selected.length === 1 && Object.keys(selection ?? []).length > 1
       ? selected[0]
       : undefined;
   const [startTime, setStartTime] = useState<Date>();
   const [stopTime, setStopTime] = useState<Date>();
-  const [aggFnSelection, setAggFnSelection] = useState(new Map<string, AggFn>());
+  const [aggFnSelection, setAggFnSelection] = useState<Map<string, AggFn>>();
   const [data, isLoading] = useGetJobData(
     parseInt(jobId as string),
     node,
@@ -62,7 +62,7 @@ const Job: NextPage = () => {
 
   useEffect(() => {
     if (data?.Metadata.NodeList !== undefined) {
-      let allHostSelection: SelectionMap = {};
+      const allHostSelection: SelectionMap = {};
       const nodes = data.Metadata.NodeList.split("|");
       nodes.forEach((val) => {
         allHostSelection[val] = true;
@@ -108,9 +108,11 @@ const Job: NextPage = () => {
 
   useEffect(() => {
     if (data && data.MetricData) {
-      const selection = new Map<string, AggFn>();
-      data.MetricData.forEach((m) => selection.set(m.Config.GUID, m.Config.AggFn));
-      setAggFnSelection(selection);
+      if (!aggFnSelection) {
+        const selection = new Map<string, AggFn>();
+        data.MetricData.forEach((m) => selection.set(m.Config.GUID, m.Config.AggFn));
+        setAggFnSelection(selection);
+      }
     }
   }, [data?.Metadata]);
 
@@ -123,6 +125,9 @@ const Job: NextPage = () => {
   }
 
   const setChecked = (val: SelectionMap) => {
+    if (!selection) {
+      return;
+    }
     const newSelection = { ...selection };
     Object.keys(val).forEach((key) => {
       if (key === "all") {
@@ -135,13 +140,12 @@ const Job: NextPage = () => {
       }
     });
   };
-
-  const filteredMetricData = data.MetricData.filter((m) =>
+  const filteredMetricData = data.MetricData?.filter((m) =>
     selectedMetrics.includes(m.Config.Measurement)
-  );
-  const filteredQuantileData = data.QuantileData.filter((m) =>
+  ) ?? [];
+  const filteredQuantileData = data.QuantileData?.filter((m) =>
     selectedMetrics.includes(m.Config.Measurement)
-  );
+  ) ?? [];
   const categories = Array.from(new Set(filteredMetricData.flatMap((m) => m.Config.Categories))).sort((a, b) => a < b ? -1 : 1);
   const metricGroups = categories.map((c) => filteredMetricData.filter((v) => v.Config.Categories.includes(c)));
   const quantileGroups = categories.map((c) => filteredQuantileData.filter((v) => v.Config.Categories.includes(c)));
@@ -158,7 +162,7 @@ const Job: NextPage = () => {
         <JobInfo
           metadata={data.Metadata}
           setChecked={setChecked}
-          nodes={selection}
+          nodes={selection ?? {}}
         />
         <Control
           jobdata={data}
@@ -216,7 +220,7 @@ const Job: NextPage = () => {
                   isLoading={isLoading}
                   autoScale={autoScale}
                   isRunning={data.Metadata.IsRunning}
-                  aggFnSelection={aggFnSelection}
+                  aggFnSelection={selected.length !== 1 ? aggFnSelection : undefined}
                   setAggFnSelection={(m, fn) => setAggFnSelection((prevState) => {
                     const copy = new Map(prevState);
                     copy.set(m, fn);
@@ -280,8 +284,7 @@ export const useGetJobData: (
     const [jobData, setJobData] = useState<JobData>();
     const [isLoading, setIsLoading] = useState(true);
     const [jobCache, setJobCache] = useState<JobCache>({ Metadata: undefined });
-    const [nodeCache, setNodeCache] = useState<NodeCache>({});
-    const [_c, _s, removeCookie] = useCookies(["Authorization"]);
+    const [nodeCache, setNodeCache] = useState<NodeCache>();
     const [curLiveWindowStart, setCurLiveWindowStart] = useState(Infinity);
     const [ws, setWs] = useState<WebSocket>();
     const [lastMessage, setLastMessage] = useState<WSMsg>({} as WSMsg);
@@ -321,7 +324,7 @@ export const useGetJobData: (
       if (!id) {
         return;
       }
-      let url = new URL(
+      const url = new URL(
         "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}`
       );
       if (sampleInterval) {
@@ -355,7 +358,7 @@ export const useGetJobData: (
           if (m.Config.GUID in intervalData && aggFn in intervalData[m.Config.GUID]) {
             return intervalData[m.Config.GUID][aggFn];
           } else {
-            let url = new URL(
+            const url = new URL(
               "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/metric/${id}`
             );
             url.searchParams.append("sampleInterval", sampleInterval.toString());
@@ -382,7 +385,8 @@ export const useGetJobData: (
         if (!sampleInterval) {
           return;
         }
-        if (sampleInterval in nodeCache) {
+        console.log(sampleInterval, nodeCache);
+        if (nodeCache && sampleInterval in nodeCache) {
           const nodes = nodeCache[sampleInterval];
           if (node in nodes) {
             setJobData(nodes[node]);
@@ -390,7 +394,7 @@ export const useGetJobData: (
             return;
           }
         }
-        let url = new URL(
+        const url = new URL(
           "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}`
         );
         url.searchParams.append("sampleInterval", sampleInterval.toString());
@@ -398,7 +402,7 @@ export const useGetJobData: (
         setIsLoading(true);
         authFetch(url.toString()).then((data: JobData) => {
           setNodeCache((cache) => {
-            const intervalData = { ...cache[sampleInterval] };
+            const intervalData = { ...(cache ?? {})[sampleInterval] };
             intervalData[node] = data;
             return { ...cache, [sampleInterval]: intervalData };
           });
@@ -407,7 +411,7 @@ export const useGetJobData: (
           return;
         });
       }
-    }, [node]);
+    }, [node, nodeCache, sampleInterval]);
 
     useEffect(() => {
       if (jobData?.Metadata.IsRunning && jobData.MetricData) {
@@ -420,7 +424,6 @@ export const useGetJobData: (
           setLastMessage(data);
         };
         window.onbeforeunload = () => {
-          ws.onclose = () => { };
           ws.close();
         };
         setWs(ws);
@@ -429,7 +432,6 @@ export const useGetJobData: (
           setWs(undefined);
         };
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [jobData?.Metadata.IsRunning, id]);
 
     useEffect(() => {
@@ -472,7 +474,7 @@ export const useGetJobData: (
     useEffect(() => {
       if (ws && ws.readyState === ws.OPEN) {
         if (timeStart && timeStart < curLiveWindowStart) {
-          let msg: WSLoadMetricsMsg = {
+          const msg: WSLoadMetricsMsg = {
             StartTime: Math.round(timeStart / 1000),
             StopTime: Math.round(curLiveWindowStart / 1000),
             Type: WSMsgType.LoadMetrics,
@@ -520,22 +522,4 @@ const useMetricSelection = (
   };
 
   return [selectedMetrics, setSelection];
-};
-
-const formatCacheKey = (
-  node?: string,
-  sampleInterval?: number,
-  aggFnSelection?: [string, AggFn]
-) => {
-  let key = "";
-  if (node) {
-    key += node;
-  }
-  if (sampleInterval) {
-    key += sampleInterval.toString();
-  }
-  if (aggFnSelection) {
-    key += aggFnSelection.toString();
-  }
-  return key;
 };

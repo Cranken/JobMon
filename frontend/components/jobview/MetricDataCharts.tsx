@@ -1,11 +1,10 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import * as d3 from "d3";
 import { Box, Center, Flex, Grid, IconButton, Menu, MenuButton, MenuItemOption, MenuList, MenuOptionGroup, Spinner } from "@chakra-ui/react";
 import { AggFn, MetricConfig, MetricData, MetricPoint } from "../../types/job";
 import { Unit } from "../../types/units";
 import { LineChart } from "../charts/LineChart";
 import { SettingsIcon } from "@chakra-ui/icons";
-import React, { useState } from "react";
+import React from "react";
 
 interface MetricDataChartsProps {
   metrics: MetricData[] | undefined;
@@ -16,7 +15,7 @@ interface MetricDataChartsProps {
   isLoading: boolean;
   autoScale: boolean;
   isRunning: boolean;
-  aggFnSelection: Map<string, AggFn>;
+  aggFnSelection?: Map<string, AggFn>;
   setAggFnSelection: (m: string, v: AggFn) => void;
 }
 
@@ -28,7 +27,6 @@ export const MetricDataCharts = ({
   setTimeRange,
   isLoading,
   autoScale,
-  isRunning,
   aggFnSelection,
   setAggFnSelection
 }: MetricDataChartsProps) => {
@@ -46,7 +44,7 @@ export const MetricDataCharts = ({
     startTime ?? new Date(0),
     stopTime ?? new Date(),
   ];
-  let chartElements = [];
+  const chartElements = [];
   const sortedMetrics = [...metrics].sort((a, b) =>
     a.Config.DisplayName < b.Config.DisplayName ? -1 : 1
   );
@@ -69,12 +67,12 @@ export const MetricDataCharts = ({
           if (+node >= pThreadCount) {
             break;
           }
-          let pThreadData = metric.Data[node];
+          const pThreadData = metric.Data[node];
           const hThread = (+node + pThreadCount).toString();
           if (hThread in metric.Data) {
             const hThreadData = metric.Data[hThread];
             const aggPoints = pThreadData.map((val, idx) => {
-              let aggThread: MetricPoint = Object.assign({}, val);
+              const aggThread: MetricPoint = Object.assign({}, val);
               switch (metric.Config.PThreadAggFn) {
                 case AggFn.Mean:
                   aggThread._value += hThreadData.at(idx)?._value ?? 0;
@@ -137,12 +135,11 @@ export const MetricDataCharts = ({
         yDomain = [0, max];
       }
     }
-
     chartElements.push(
       <ChartContainer
         key={metric.Config.Measurement}
         metric={metric.Config}
-        aggFn={aggFnSelection.get(metric.Config.GUID)}
+        aggFn={aggFnSelection?.get(metric.Config.GUID)}
         setAggFn={(fn: AggFn) => setAggFnSelection(metric.Config.GUID, fn)}
       >
         <LineChart
@@ -165,7 +162,7 @@ export const MetricDataCharts = ({
   return <Grid templateColumns={"repeat(2, 1fr)"}>{chartElements}</Grid>;
 };
 
-const ChartContainer = ({ children, metric, aggFn, setAggFn }: React.PropsWithChildren<{ metric: MetricConfig, aggFn?: AggFn, setAggFn: (fn: AggFn) => void }>) => {
+const ChartContainer = ({ children, metric, aggFn, setAggFn }: React.PropsWithChildren<{ metric: MetricConfig, aggFn?: AggFn, setAggFn: (fn: AggFn) => void; }>) => {
   return (
     <Flex
       border="1px"
@@ -175,7 +172,7 @@ const ChartContainer = ({ children, metric, aggFn, setAggFn }: React.PropsWithCh
       pos="relative"
     >
       {children}
-      {metric.AvailableAggFns?.length > 0 ?
+      {metric.AvailableAggFns?.length > 0 && aggFn ?
         <Box position="absolute" right="0">
           <Menu closeOnSelect={false}>
             <MenuButton as={IconButton} icon={<SettingsIcon />} variant="unstyled" size="sm">
@@ -188,6 +185,6 @@ const ChartContainer = ({ children, metric, aggFn, setAggFn }: React.PropsWithCh
           </Menu>
         </Box> : null}
     </Flex>);
-}
+};
 
 export default MetricDataCharts;
