@@ -83,7 +83,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
           setConfig(curConfig);
         }}
       /> */}
-      <StackDivider />
+      {/* <StackDivider /> */}
       <Accordion allowMultiple>
         {lConfig.Metrics.map((m, i) => (
           <MetricItem
