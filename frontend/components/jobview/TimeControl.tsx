@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Flex,
 } from "@chakra-ui/react";
 import Slider, { createSliderWithTooltip } from "rc-slider";
@@ -76,7 +77,7 @@ const TimeControl = ({
           tipProps={{ visible: showTooltip }}
         />
       </Box>
-      {/* <Button
+      <Button
         fontSize="sm"
         onClick={() => {
           setStartTime(new Date(metadata.StartTime * 1000));
@@ -84,7 +85,7 @@ const TimeControl = ({
         }}
       >
         Reset Time Range
-      </Button> */}
+      </Button>
     </Flex>
   );
 };
