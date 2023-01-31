@@ -9,7 +9,7 @@ from(bucket: "%v")
 	|> filter(fn: (r) => r["_measurement"] == "%v")
 	|> filter(fn: (r) => r["type"] == "%v")
 	|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	|> aggregateWindow(every: %v, fn: mean, createEmpty: false)
+	|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
 	%v
 	%v
 	|> truncateTimeColumn(unit: %v)
@@ -27,7 +27,7 @@ from(bucket: "%v")
 	%v
 	%v
 	|> group(columns: ["_measurement", "hostname"], mode:"by")
-	|> aggregateWindow(every: %v, fn: %v, createEmpty: false)
+	|> aggregateWindow(every: %v, fn: %v, createEmpty: true)
 	|> truncateTimeColumn(unit: %v)
 `
 
@@ -38,7 +38,7 @@ from(bucket: "%v")
 	|> range(start: %v, stop: %v)
 	|> filter(fn: (r) => r["_measurement"] == "%v")
 	|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	|> aggregateWindow(every: %v, fn: mean, createEmpty: false)
+	|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
 	%v
 	%v
 	|> truncateTimeColumn(unit: %v)
@@ -52,7 +52,7 @@ data = from(bucket: "%v")
 	|> range(start: %v, stop: %v)
 	|> filter(fn: (r) => r["_measurement"] == "%v")
 	|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	|> aggregateWindow(every: %s, fn: mean, createEmpty: false)
+	|> aggregateWindow(every: %s, fn: mean, createEmpty: true)
 	%v
 	%v
 	|> truncateTimeColumn(unit: %v)
