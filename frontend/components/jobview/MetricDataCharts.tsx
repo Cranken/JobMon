@@ -45,86 +45,15 @@ export const MetricDataCharts = ({
     stopTime ?? new Date(),
   ];
   const chartElements = [];
+  // Sort for consistency
   const sortedMetrics = [...metrics].sort((a, b) =>
     a.Config.DisplayName < b.Config.DisplayName ? -1 : 1
   );
   for (const metric of sortedMetrics) {
-    let metricData: MetricPoint[] = [];
     if (metric.Data === null) {
       continue;
     }
-    let z;
-    let title;
-    let max;
-    if (
-      nodeSelection.length === 1 &&
-      metric.Config.Type !== "node"
-    ) {
-      z = (d: MetricPoint) => d["type-id"];
-      const pThreadCount = Object.keys(metric.Data).length / 2;
-      for (const node of Object.keys(metric.Data)) {
-        if (metric.Config.Type === "cpu") {
-          if (+node >= pThreadCount) {
-            break;
-          }
-          const pThreadData = metric.Data[node];
-          const hThread = (+node + pThreadCount).toString();
-          if (hThread in metric.Data) {
-            const hThreadData = metric.Data[hThread];
-            const aggPoints = pThreadData.map((val, idx) => {
-              const aggThread: MetricPoint = Object.assign({}, val);
-              switch (metric.Config.PThreadAggFn) {
-                case AggFn.Mean:
-                  aggThread._value += hThreadData.at(idx)?._value ?? 0;
-                  aggThread._value /= 2;
-                  break;
-                case AggFn.Sum:
-                default:
-                  aggThread._value += hThreadData.at(idx)?._value ?? 0;
-              }
-              return aggThread;
-            });
-            metricData = metricData.concat(aggPoints);
-          } else {
-            metricData = metricData.concat(pThreadData);
-          }
-        } else {
-          metricData = metricData.concat(metric.Data[node]);
-        }
-      }
-      max = d3.max(d3.map(metricData, (d) => d._value)) ?? 0;
-      const maxPrefix = new Unit(max, metric.Config.Unit).bestPrefix();
-      title = ((unitStr: string, maxPrefix?: string) => {
-        return (d: MetricPoint) =>
-          `${d["type-id"]}: ${new Unit(d._value, unitStr).toString(maxPrefix)}`;
-      })(metric.Config.Unit, maxPrefix);
-    } else if (nodeSelection.length > 0) {
-      // Check if is aggregated measurement
-      const key = (
-        metric.Config.Measurement.endsWith(metric.Config.AggFn) ||
-          nodeSelection.length > 1
-          ? "hostname"
-          : metric.Config.SeparationKey
-      ) as keyof MetricPoint;
-      z = ((key: keyof MetricPoint) => {
-        return (d: MetricPoint) => d[key]?.toString() ?? "";
-      })(key);
-      for (const node of Object.keys(metric.Data)) {
-        if (key !== "hostname" || nodeSelection.indexOf(node) > -1) {
-          metricData = metricData.concat(metric.Data[node]);
-        }
-      }
-      max = d3.max(d3.map(metricData, (d) => d._value)) ?? 0;
-      const maxPrefix = new Unit(max, metric.Config.Unit).bestPrefix();
-      title = ((
-        key: keyof MetricPoint,
-        unitStr: string,
-        maxPrefix?: string
-      ) => {
-        return (d: MetricPoint) =>
-          `${d[key]}: ${new Unit(d._value, unitStr).toString(maxPrefix)}`;
-      })(key, metric.Config.Unit, maxPrefix);
-    }
+    const [metricData, z, title] = prepareMetricData(metric, nodeSelection);
     let yDomain: [number, number] | undefined = undefined;
     if (!autoScale) {
       const max =
@@ -161,6 +90,87 @@ export const MetricDataCharts = ({
   }
   return <Grid templateColumns={"repeat(2, 1fr)"}>{chartElements}</Grid>;
 };
+
+const prepareMetricData: (metric: MetricData, nodeSelection: string[]) =>
+  [MetricPoint[], ((d: MetricPoint) => string) | undefined, ((d: MetricPoint) => string) | undefined] =
+  (metric: MetricData, nodeSelection: string[]) => {
+    let metricData: MetricPoint[] = [];
+    let z, title;
+    if (
+      nodeSelection.length === 1 &&
+      metric.Config.Type !== "node"
+    ) {
+      z = (d: MetricPoint) => d["type-id"];
+      const pThreadCount = Object.keys(metric.Data).length / 2;
+      for (const node of Object.keys(metric.Data)) {
+        if (metric.Config.Type === "cpu") {
+          // CPU type means we collect data by thread
+          // Therefore we have to aggregate physical and corresponding hyperthread data
+          if (+node >= pThreadCount) {
+            break;
+          }
+          const pThreadData = metric.Data[node];
+          // Corresponding pair is [physIndex, physIndex + totalThreads / 2]
+          const hThread = (+node + pThreadCount).toString();
+          if (hThread in metric.Data) {
+            const hThreadData = metric.Data[hThread];
+            // Aggregation per time step
+            const aggPoints = pThreadData.map((val, idx) => {
+              const aggThread: MetricPoint = Object.assign({}, val);
+              switch (metric.Config.PThreadAggFn) {
+                case AggFn.Mean:
+                  aggThread._value += hThreadData.at(idx)?._value ?? 0;
+                  aggThread._value /= 2;
+                  break;
+                case AggFn.Sum:
+                default:
+                  aggThread._value += hThreadData.at(idx)?._value ?? 0;
+              }
+              return aggThread;
+            });
+            metricData = metricData.concat(aggPoints);
+          } else {
+            metricData = metricData.concat(pThreadData);
+          }
+        } else {
+          metricData = metricData.concat(metric.Data[node]);
+        }
+      }
+      const max = d3.max(d3.map(metricData, (d) => d._value)) ?? 0;
+      const maxPrefix = new Unit(max, metric.Config.Unit).bestPrefix();
+      title = ((unitStr: string, maxPrefix?: string) => {
+        return (d: MetricPoint) =>
+          `${d["type-id"]}: ${new Unit(d._value, unitStr).toString(maxPrefix)}`;
+      })(metric.Config.Unit, maxPrefix);
+    } else if (nodeSelection.length > 0) {
+      // Check if is aggregated measurement
+      const key = (
+        metric.Config.Measurement.endsWith(metric.Config.AggFn) ||
+          nodeSelection.length > 1
+          ? "hostname"
+          : metric.Config.SeparationKey
+      ) as keyof MetricPoint;
+      z = ((key: keyof MetricPoint) => {
+        return (d: MetricPoint) => d[key]?.toString() ?? "";
+      })(key);
+      for (const node of Object.keys(metric.Data)) {
+        if (key !== "hostname" || nodeSelection.indexOf(node) > -1) {
+          metricData = metricData.concat(metric.Data[node]);
+        }
+      }
+      const max = d3.max(d3.map(metricData, (d) => d._value)) ?? 0;
+      const maxPrefix = new Unit(max, metric.Config.Unit).bestPrefix();
+      title = ((
+        key: keyof MetricPoint,
+        unitStr: string,
+        maxPrefix?: string
+      ) => {
+        return (d: MetricPoint) =>
+          `${d[key]}: ${new Unit(d._value, unitStr).toString(maxPrefix)}`;
+      })(key, metric.Config.Unit, maxPrefix);
+    }
+    return [metricData, z, title];
+  };
 
 const ChartContainer = ({ children, metric, aggFn, setAggFn }: React.PropsWithChildren<{ metric: MetricConfig, aggFn?: AggFn, setAggFn: (fn: AggFn) => void; }>) => {
   return (
