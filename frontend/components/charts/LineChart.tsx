@@ -117,8 +117,10 @@ export function LineChart<T>({
     const X = d3.map(filteredData, x);
     const Y = d3.map(filteredData, y);
     const Z = d3.map(filteredData, z);
+    console.log(X, Y, Z);
     if (defined === undefined) defined = (_, index) => !isNaN(Y[index]);
     const D = d3.map(filteredData, defined);
+    console.log(D);
 
     // Compute default domains.
     if (xDomain === undefined) xDomain = d3.extent(X) as [Date, Date];
@@ -149,7 +151,7 @@ export function LineChart<T>({
       .tickFormat((val) => new Unit(val, unit ?? "").toString(prefix));
 
     // Construct a line generator.
-    d3
+    const line = d3
       .line<number>()
       .defined((_, index) => D[index])
       .curve(curve)
@@ -165,6 +167,15 @@ export function LineChart<T>({
       .on("pointermove", pointermoved)
       .on("pointerleave", pointerleft)
       .on("touchstart", (event) => event.preventDefault());
+
+    svg
+      .append("g")
+      .attr("fill", "none")
+      .selectAll("path")
+      .data(d3.group(I, (i) => Z[i]))
+      .join("path")
+      .attr("stroke", (_, I) => colorFn(I))
+      .attr("d", ([, I]) => line(I));
 
     const getNearestPointIdx = (pos: number) =>
       d3.least(d3.range(linePointCount), (i) => Math.hypot(xScale(X[i]) - pos));
