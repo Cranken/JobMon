@@ -1,180 +1,50 @@
 {
-  "DBHost": "<db_host>:<db_port>",
-  "DBToken": "<db_auth_token>",
-  "DBOrg": "org",
-  "DBBucket": "collector",
-  "JWTSecret": "<jwt_secret>",
-  "JobStore": {
-    "Type": "postgres",
-    "PSQLHost": "<psql_host>:<psql_port>",
-    "PSQLUsername": "postgres",
-    "PSQLPassword": "<psql_password>",
-    "PSQLDB": "jobmon"
-  },
-  "OAuth": {
-    "ClientID": "<oauth_client_id>",
-    "Secret": "<oauth_secret>",
-    "AuthURL": "<auth_url>",
-    "TokenURL": "<token_url>",
-    "UserInfoURL": "<user_info_url>",
-    "RedirectURL": "http://<backend_url>:<backend_port>/auth/oauth/callback",
-    "AfterLoginRedirectUrl": "http://<frontend_url>:<frontend_port>/jobs"
-  },
-  "CacheSize": 50,
-  "Prefetch": true,
-  "SampleInterval": "30s",
-  "MetricQuantiles": ["0.25", "0.5", "0.75"],
-  "Partitions": {
-    "dev_cpuonly": {
-      "MaxTime": 3600
+    "DBHost": "<db_host>:<db_port>",
+    "DBToken": "<db_auth_token>",
+    "DBOrg": "org",
+    "DBBucket": "collector",
+    "JWTSecret": "<jwt_secret>",
+    "FrontendURL": "http://<frontend_url>:<frontend_port>",
+    "JobStore": {
+        "Type": "postgres",
+        "PSQLHost": "<psql_host>:<psql_port>",
+        "PSQLUsername": "postgres",
+        "PSQLPassword": "<psql_password>",
+        "PSQLDB": "jobmon"
     },
-    "cpuonly": {
-      "MaxTime": 259200
+    "OAuth": {
+        "ClientID": "<oauth_client_id>",
+        "Secret": "<oauth_secret>",
+        "AuthURL": "<auth_url>",
+        "TokenURL": "<token_url>",
+        "UserInfoURL": "<user_info_url>",
+        "RedirectURL": "http://<backend_url>:<backend_port>/auth/oauth/callback",
+        "AfterLoginRedirectUrl": "http://<frontend_url>:<frontend_port>/jobs"
     },
-    "dev_accelerated": {
-      "MaxTime": 3600
-    },
-    "accelerated": {
-      "MaxTime": 172800,
-      "Metrics": [
-        "temp",
-        "mem_bw",
-        "flops_dp",
-        "mem_used",
-        "ib_total",
-        "ib_total_pkts",
-        "gpfs_bytes_total",
-        "nv_fb_mem_used",
-        "nv_mem_util",
-        "nv_util"
-      ]
-    },
-    "haicore-gpu4": {
-      "MaxTime": 432000
-    },
-    "haicore-gpu8": {
-      "MaxTime": 432000
+    "CacheSize": 50,
+    "Prefetch": true,
+    "SampleInterval": "30s",
+    "MetricQuantiles": [
+        "0.25",
+        "0.5",
+        "0.75"
+    ],
+    "Partitions": {},
+    "RadarChartMetrics": [],
+    "Metrics": [],
+    "MetricCategories": [],
+    "LocalUsers": {
+        "user123": {
+            "Password": "s3cr3t",
+            "Role": "user"
+        },
+        "api": {
+            "Password": "s4f3_passw0rd",
+            "Role": "job-control"
+        },
+        "admin": {
+            "Password": "4dmin123",
+            "Role": "admin"
+        }
     }
-  },
-  "RadarChartMetrics": [
-    "mem_bw",
-    "flops_dp",
-    "ib_total",
-    "nv_mem_util",
-    "nv_util"
-  ],
-  "Metrics": [
-    {
-      "Measurement": "temp",
-      "Type": "cpu",
-      "AggFn": "mean",
-      "SeparationKey": "type-id",
-      "Unit": "°C",
-      "DisplayName": "Temperature",
-      "PThreadAggFn": "mean"
-    },
-    {
-      "Measurement": "mem_bw",
-      "Type": "socket",
-      "AggFn": "sum",
-      "SeparationKey": "type-id",
-      "DisplayName": "Memory Bandwidth",
-      "Unit": "MB/s",
-      "MaxPerType": 170000,
-      "MaxPerNode": 340000
-    },
-    {
-      "Measurement": "flops_dp",
-      "Type": "cpu",
-      "AggFn": "sum",
-      "SeparationKey": "type-id",
-      "DisplayName": "FLOP/S",
-      "Unit": "MFLOP/s",
-      "MaxPerType": 68000,
-      "MaxPerNode": 5032000
-    },
-    {
-      "Measurement": "mem_used",
-      "Type": "node",
-      "AggFn": "mean",
-      "SeparationKey": "hostname",
-      "DisplayName": "Memory Usage",
-      "Unit": "kB",
-      "MaxPerType": 256000000,
-      "MaxPerNode": 256000000
-    },
-    {
-      "Measurement": "ib_total",
-      "Type": "node",
-      "AggFn": "sum",
-      "DisplayName": "Infiniband Traffic",
-      "PostQueryOp": "|> derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
-      "SeparationKey": "device",
-      "MaxPerType": 25000000000,
-      "MaxPerNode": 25000000000,
-      "Unit": "B/s"
-    },
-    {
-      "Measurement": "ib_total_pkts",
-      "Type": "node",
-      "AggFn": "sum",
-      "DisplayName": "Infiniband Packets",
-      "PostQueryOp": "|> derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
-      "SeparationKey": "device",
-      "Unit": "Packet/s"
-    },
-    {
-      "Measurement": "gpfs_bytes_total",
-      "Type": "node",
-      "AggFn": "sum",
-      "DisplayName": "GPFS Traffic",
-      "PostQueryOp": "|> derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
-      "SeparationKey": "filesystem",
-      "Unit": "B/s"
-    },
-    {
-      "DisplayName": "GPU Memory Usage",
-      "Measurement": "nv_fb_mem_used",
-      "Type": "accelerator",
-      "AggFn": "mean",
-      "SeparationKey": "type-id",
-      "MaxPerNode": 40536,
-      "MaxPerType": 40536,
-      "Unit": "MiB"
-    },
-    {
-      "DisplayName": "GPU Utilization",
-      "Measurement": "nv_util",
-      "Type": "accelerator",
-      "SeparationKey": "type-id",
-      "AggFn": "mean",
-      "MaxPerNode": 100,
-      "MaxPerType": 100,
-      "Unit": "%"
-    },
-    {
-      "DisplayName": "GPU Memory Bandwidth",
-      "Measurement": "nv_mem_util",
-      "Type": "accelerator",
-      "SeparationKey": "type-id",
-      "AggFn": "mean",
-      "MaxPerNode": 100,
-      "MaxPerType": 100,
-      "Unit": "%"
-    }
-  ],
-  "LocalUsers": {
-    "user123": {
-      "Password": "s3cr3t",
-      "Role": "user"
-    },
-    "api": {
-      "Password": "s4f3_passw0rd",
-      "Role": "job-control"
-    },
-    "admin": {
-      "Password": "4dmin123",
-      "Role": "admin"
-    }
-  }
 }
