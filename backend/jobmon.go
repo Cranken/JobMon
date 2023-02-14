@@ -14,32 +14,46 @@ import (
 	"syscall"
 )
 
-var store jobstore.Store
-var config = conf.Configuration{}
-var db database.DB
-var jobCache = cache.LRUCache{}
-var authManager = auth.AuthManager{}
-var router = routerImport.Router{}
-var webLogger = utils.WebLogger{}
+var (
+	store       jobstore.Store
+	config      = conf.Configuration{}
+	db          database.DB
+	jobCache    = cache.LRUCache{}
+	authManager = auth.AuthManager{}
+	router      = routerImport.Router{}
+	webLogger   = utils.WebLogger{}
+)
 
 func main() {
 	webLogger.Init()
 	log.SetOutput(&webLogger)
 
+	// parse the json configuration file and map the data to config.
 	config.Init()
+
+	// create and initialize the InfluxDB
 	db = &database.InfluxDB{}
 	db.Init(config)
 
+	// create and initialize a PostgresStore
 	store = &jobstore.PostgresStore{}
-
 	store.Init(config, &db)
+
+	// setup lru cache for storing job data
 	jobCache.Init(config, &db, &store)
+
+	// setup the authentication manager
 	authManager.Init(config, &store)
 
+	// cleanup everything
 	registerCleanup()
+
+	// start the server
 	router.Init(store, &config, &db, &jobCache, &authManager, &webLogger)
 }
 
+// registerCleanup performs all the necessary cleanups before starting a fresh
+// instance of the server.
 func registerCleanup() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
