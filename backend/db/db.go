@@ -10,7 +10,7 @@ import (
 // working with an InfluxDB.
 type DB interface {
 
-	// Init initializes db based on the configuration c.
+	// Init initializes a InfluxDB connection based on the configuration c.
 	Init(c conf.Configuration)
 
 	// Close shuts down the connection to the InfluxDB.

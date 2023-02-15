@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-// Helper function to allow CORS
+// AllowCors is helper function to allow CORS.
 func AllowCors(r *http.Request, header http.Header) {
 	header.Set("Access-Control-Allow-Methods", r.Header.Get("Allow"))
 	header.Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
@@ -12,6 +12,7 @@ func AllowCors(r *http.Request, header http.Header) {
 	header.Set("Access-Control-Expose-Headers", "Set-Cookie")
 }
 
+// Contains checks if slice contains val.
 func Contains[T comparable](slice []T, val T) bool {
 	for _, elem := range slice {
 		if val == elem {
@@ -21,6 +22,7 @@ func Contains[T comparable](slice []T, val T) bool {
 	return false
 }
 
+// Remove removes target from container if it exists.
 func Remove[T comparable](container []T, target T) []T {
 	for i, v := range container {
 		if v == target {
@@ -30,6 +32,7 @@ func Remove[T comparable](container []T, target T) []T {
 	return container
 }
 
+// Tuple data structure.
 type Tuple[T any, V any] struct {
 	First  T
 	Second V
