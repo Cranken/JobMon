@@ -8,6 +8,7 @@ import (
 
 const DEFAULT_MAX_POINTS_PER_JOB = 200
 
+// JobMetadata represents all the metadata of a job.
 type JobMetadata struct {
 	Id           int `bun:",pk"`
 	UserId       int
@@ -33,6 +34,7 @@ type JobMetadata struct {
 	Data         []JobMetadataData
 }
 
+// JobMetaData represents the job data.
 type JobMetadataData struct {
 	Config config.MetricConfig
 	// Average
@@ -43,22 +45,26 @@ type JobMetadataData struct {
 	ChangePoints []time.Time
 }
 
+// StopJob stores the ExitCode of a job and the end time.
 type StopJob struct {
 	ExitCode int
 	StopTime int
 }
 
+// JobListData stores a list of JobMetadata for a specific configuration.
 type JobListData struct {
 	Jobs   []JobMetadata
 	Config JobListConfig
 }
 
+// JobListConfig stores metrics, partitions and tags of jobs.
 type JobListConfig struct {
 	RadarChartMetrics []string
 	Partitions        map[string]config.PartitionConfig
 	Tags              []JobTag
 }
 
+// JobTag represents a job tag, which contains information like tag name, kind and author.
 type JobTag struct {
 	Id        int64 `bun:",pk,autoincrement"`
 	Name      string
@@ -66,6 +72,7 @@ type JobTag struct {
 	CreatedBy string
 }
 
+// JobToTags represents a map that stores job metadata and job tags.
 type JobToTags struct {
 	JobId int          `bun:",pk"`
 	Job   *JobMetadata `bun:"rel:belongs-to,join:job_id=id"`
@@ -73,6 +80,7 @@ type JobToTags struct {
 	Tag   *JobTag      `bun:"rel:belongs-to,join:tag_id=id"`
 }
 
+// JobFilter represents a job filter with considerable number of parameters.
 type JobFilter struct {
 	UserId    *int
 	UserName  *string
@@ -87,12 +95,16 @@ type JobFilter struct {
 	Tags      *[]JobTag
 }
 
+// RangeFilter represents an integer interval.
 type RangeFilter struct {
 	From *int
 	To   *int
 }
 
+// QueryResult represents a map with keys being strings and value any type.
 type QueryResult map[string]interface{}
+
+// MetricData stores metric data.
 type MetricData struct {
 	Config config.MetricConfig
 	// Only set when querying parsed raw data
@@ -101,6 +113,7 @@ type MetricData struct {
 	RawData string
 }
 
+// QuantileData similar to MetricData but this one stores data only for the given quantiles.
 type QuantileData struct {
 	Config    config.MetricConfig
 	Quantiles []string
@@ -110,6 +123,7 @@ type QuantileData struct {
 	RawData string
 }
 
+// JobData stores job metadata, metric data, quantile data etc.
 type JobData struct {
 	Metadata        *JobMetadata
 	MetricData      []MetricData
@@ -118,8 +132,7 @@ type JobData struct {
 	SampleIntervals []float64
 }
 
-// Check if job TTL has expired.
-// If TTL == 0 then the job will never expire
+// Expired checks if job TTL has expired. If TTL == 0 then the job will never expire.
 func (j *JobMetadata) Expired() bool {
 	now := int(time.Now().Unix())
 	if j.TTL == 0 {
@@ -128,13 +141,14 @@ func (j *JobMetadata) Expired() bool {
 	return j.StopTime+j.TTL < now
 }
 
-// Check if job exceeds given maxTime from its start time until now
+// Overtime checks if job exceeds given maxTime from its start time until current time.
 func (j *JobMetadata) Overtime(maxTime int) bool {
 	now := int(time.Now().Unix())
 	return j.StartTime+maxTime < now
 }
 
-// Calculate the sample interval which displays the closest amount of samples in relation to DEFAULT_MAX_POINTS_PER_JOB
+// CalculateSampleIntervals calculates and returns the sample interval which displays
+// the closest amount of samples in relation to DEFAULT_MAX_POINTS_PER_JOB.
 func (j *JobMetadata) CalculateSampleIntervals(metricSampleInterval time.Duration) ([]float64, time.Duration) {
 	defaultIntervals := []float64{30, 60, 120, 300, 600, 1800}
 	stopTime := j.StopTime
@@ -160,6 +174,7 @@ func (j *JobMetadata) CalculateSampleIntervals(metricSampleInterval time.Duratio
 	return intervals, time.Duration(bestAvailableInterval) * time.Second
 }
 
+// AddTag adds tag to the job j.
 func (j *JobMetadata) AddTag(tag *JobTag) {
 	for _, jt := range j.Tags {
 		if jt == tag {
@@ -169,6 +184,7 @@ func (j *JobMetadata) AddTag(tag *JobTag) {
 	j.Tags = append(j.Tags, tag)
 }
 
+// RemoveTag removes tag from job j.
 func (j *JobMetadata) RemoveTag(tag *JobTag) {
 	var newTags []*JobTag
 	for _, jt := range j.Tags {
@@ -179,6 +195,7 @@ func (j *JobMetadata) RemoveTag(tag *JobTag) {
 	j.Tags = newTags
 }
 
+// IsIn checks of tags belong to the job tag t.
 func (t *JobTag) IsIn(tags []*JobTag) bool {
 	if tags == nil {
 		return false

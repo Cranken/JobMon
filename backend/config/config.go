@@ -101,7 +101,7 @@ type VirtualPartitionConfig struct {
 	Nodes               []string // Node ranges inside the parent partition which this virtual partition applies to.
 }
 
-// TODO: Add docs
+// PartitionConfig represents a partition that contains both physical and virtual partitions.
 type PartitionConfig struct {
 	BasePartitionConfig                                   // Base partition configuration
 	VirtualPartitions   map[string]VirtualPartitionConfig // Virtual partitions inside this parent partition
