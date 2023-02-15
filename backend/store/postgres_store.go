@@ -22,6 +22,7 @@ type PostgresStore struct {
 	db     *bun.DB
 }
 
+// Init implements Init method of Store interface.
 func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 	s.config = c
 	s.influx = influx
@@ -66,22 +67,26 @@ func (s *PostgresStore) Migrate(source *Store) {
 	log.Printf("[Migration] Migrated: %v rows", rows)
 }
 
+// PutJob implements PutJob method of store interface.
 func (s *PostgresStore) PutJob(job job.JobMetadata) error {
 	_, err := s.db.NewInsert().Model(&job).Exec(context.Background())
 	return err
 }
 
+// GetJob implements GetJob method of store interface.
 func (s *PostgresStore) GetJob(id int) (job job.JobMetadata, err error) {
 	job.Id = id
 	err = s.db.NewSelect().Model(&job).WherePK().Relation("Tags").Scan(context.Background())
 	return job, err
 }
 
+// GetAllJobs implements GetAllJobs of store interface.
 func (s *PostgresStore) GetAllJobs() (jobs []job.JobMetadata, err error) {
 	err = s.db.NewSelect().Model(&jobs).Scan(context.Background())
 	return jobs, err
 }
 
+// GetFilteredJobs implements GetFilteredJobs of store interface.
 func (s *PostgresStore) GetFilteredJobs(filter job.JobFilter) (jobs []job.JobMetadata, err error) {
 	query := s.db.NewSelect().Model(&jobs).Relation("Tags")
 	query = appendTagFilter(query, filter.Tags, s.db)
@@ -99,6 +104,7 @@ func (s *PostgresStore) GetFilteredJobs(filter job.JobFilter) (jobs []job.JobMet
 	return
 }
 
+// GetJobTags implements GetJobTags of store interface.
 func (s *PostgresStore) GetJobTags(username string) (tags []job.JobTag, err error) {
 	query := s.db.NewSelect().Table("job_tags").ColumnExpr("job_tags.*").
 		Join("INNER JOIN job_to_tags ON job_tags.id=job_to_tags.tag_id").
@@ -110,6 +116,7 @@ func (s *PostgresStore) GetJobTags(username string) (tags []job.JobTag, err erro
 	return
 }
 
+// StopJob implements StopJob method of store interface.
 func (s *PostgresStore) StopJob(id int, stopJob job.StopJob) error {
 	job, err := s.GetJob(id)
 	if err != nil {
@@ -126,6 +133,7 @@ func (s *PostgresStore) StopJob(id int, stopJob job.StopJob) error {
 	return s.UpdateJob(job)
 }
 
+// GetUserSessionToken implements GetUserSessionToken method of store interface.
 func (s *PostgresStore) GetUserSessionToken(username string) (string, bool) {
 	user := UserSession{Username: username}
 	err := s.db.NewSelect().Model(&user).WherePK().Scan(context.Background())
@@ -135,6 +143,7 @@ func (s *PostgresStore) GetUserSessionToken(username string) (string, bool) {
 	return user.Token, true
 }
 
+// SetUserSessionToken implements SetUserSessionToken method of store interface.
 func (s *PostgresStore) SetUserSessionToken(username string, token string) {
 	user := UserSession{Username: username, Token: token}
 	s.db.NewInsert().
@@ -143,11 +152,13 @@ func (s *PostgresStore) SetUserSessionToken(username string, token string) {
 		Exec(context.Background())
 }
 
+// RemoveUserSessionToken implements RemoveUserSessionToken method of store interface.
 func (s *PostgresStore) RemoveUserSessionToken(username string) {
 	user := UserSession{Username: username}
 	s.db.NewDelete().Model(&user).WherePK().Exec(context.Background())
 }
 
+// GetUserRoles implements GetUserRoles method of store interface.
 func (s *PostgresStore) GetUserRoles(username string) (UserRoles, bool) {
 	user := UserRoles{Username: username}
 	err := s.db.NewSelect().Model(&user).WherePK().Scan(context.Background())
@@ -157,6 +168,7 @@ func (s *PostgresStore) GetUserRoles(username string) (UserRoles, bool) {
 	return user, true
 }
 
+// SetUserRoles implements SetUserRoles method of store interface.
 func (s *PostgresStore) SetUserRoles(username string, roles []string) {
 	user := UserRoles{Username: username, Roles: roles}
 	s.db.NewInsert().
@@ -165,15 +177,18 @@ func (s *PostgresStore) SetUserRoles(username string, roles []string) {
 		Exec(context.Background())
 }
 
+// Flush implements Flush method of store interface.
 func (s *PostgresStore) Flush() {
 	s.db.Close()
 }
 
+// UpdateJob implements UpdateJob method of store interface.
 func (s *PostgresStore) UpdateJob(job job.JobMetadata) error {
 	_, err := s.db.NewUpdate().Model(&job).WherePK().Exec(context.Background())
 	return err
 }
 
+// AddTag implements AddTag method of store interface.
 func (s *PostgresStore) AddTag(id int, tag *job.JobTag) error {
 	_, err := s.db.NewInsert().Model(tag).Exec(context.Background())
 	if err != nil {
@@ -184,12 +199,14 @@ func (s *PostgresStore) AddTag(id int, tag *job.JobTag) error {
 	return err
 }
 
+// RemoveTag implements RemoveTag method of store interface.
 func (s *PostgresStore) RemoveTag(id int, tag *job.JobTag) error {
 	j2t := job.JobToTags{JobId: id, TagId: tag.Id}
 	_, err := s.db.NewDelete().Model(&j2t).WherePK().Exec(context.Background())
 	return err
 }
 
+// finishOvertimeJobs changes running jobs that have exceeded MaxTime to finished jobs.
 func (s *PostgresStore) finishOvertimeJobs() {
 	now := int(time.Now().Unix())
 	for k, pc := range s.config.Partitions {
@@ -206,6 +223,7 @@ func (s *PostgresStore) finishOvertimeJobs() {
 	}
 }
 
+// startCleanJobsTimer resets the job timer.
 func (s *PostgresStore) startCleanJobsTimer() {
 	ticker := time.NewTicker(12 * time.Hour)
 	for {
@@ -214,6 +232,7 @@ func (s *PostgresStore) startCleanJobsTimer() {
 	}
 }
 
+// appendValueFilter appends filter values val with key to the query.
 func appendValueFilter[V int | string | bool](query *bun.SelectQuery, val *V, key string) *bun.SelectQuery {
 	if val != nil {
 		query = query.Where(fmt.Sprintf("%s=?", key), *val)
@@ -221,6 +240,7 @@ func appendValueFilter[V int | string | bool](query *bun.SelectQuery, val *V, ke
 	return query
 }
 
+// appendRangeFilter appends range filter values val with key to the query.
 func appendRangeFilter(query *bun.SelectQuery, val *job.RangeFilter, key string) *bun.SelectQuery {
 	if val != nil {
 		if val.From != nil {
@@ -233,6 +253,7 @@ func appendRangeFilter(query *bun.SelectQuery, val *job.RangeFilter, key string)
 	return query
 }
 
+// appendTagFilter appends a tag filter to the query.
 func appendTagFilter(query *bun.SelectQuery, tags *[]job.JobTag, db *bun.DB) *bun.SelectQuery {
 	if tags != nil {
 		var tagIds []int64

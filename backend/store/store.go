@@ -6,50 +6,73 @@ import (
 	"jobmon/job"
 )
 
+// Store is the interface that wraps a list of methods used for setting up, closing and working
+// with a PostgreSQL database.
 type Store interface {
+
+	// Init initializes the Postgres database based on the configuration
+	// c and InfluxDB database.
 	Init(c config.Configuration, database *db.DB)
+
+	// Close shuts down the connection to the Postgres database.
 	Flush()
 
-	// Add job metadata to store
+	// PutJob adds job metadata to store
 	PutJob(job job.JobMetadata) error
-	// Get job metadata by job id
+
+	// GetJob returns metadata for job with jobid id.
 	GetJob(id int) (job.JobMetadata, error)
-	// Get metadata of all jobs
+
+	// GetAllJobs returns metadata information for all jobs.
 	GetAllJobs() ([]job.JobMetadata, error)
-	// Get jobs filtered by filter
+
+	// GetFilteredJobs returns metadata information for all jobs that
+	// satisfy the predicate filter.
 	GetFilteredJobs(filter job.JobFilter) ([]job.JobMetadata, error)
-	// Mark the given job as stopped
+
+	// StopJob mark a job identified with id as stopped.
 	StopJob(id int, stopJob job.StopJob) error
-	// Updates the job metadata
+
+	// UpdateJob update the job metadata.
 	UpdateJob(job job.JobMetadata) error
-	// Get all tags for a specific user
+
+	// GetJobTags returns all job tags for the user 'username'
 	GetJobTags(username string) ([]job.JobTag, error)
 
-	// Add tag to job
+	// AddTag adds tag to the job identified with id.
 	AddTag(id int, tag *job.JobTag) error
-	// Remove tag from job
+
+	// RemoveTag removes tag from the job identified with id.
 	RemoveTag(id int, tag *job.JobTag) error
 
-	// Get user session token from session storage
+	// GetUserSessionToken returns the session token for user 'username'.
 	GetUserSessionToken(username string) (string, bool)
-	// Set user session token in session storage
+
+	// SetUserSessionToken sets the token for user 'username'.
 	SetUserSessionToken(username string, token string)
-	// Removes the user session token from the active sessions
+
+	// RemoveUserSessionToken removes token from the active sessions for user 'username'.
+
 	RemoveUserSessionToken(username string)
-	// Gets the user roles
+
+	// GetUserRoles returns the roles of user 'username'.
 	GetUserRoles(username string) (UserRoles, bool)
-	// Sets the user roles
+
+	// SetUserRoles sets roles for user 'username'.
 	SetUserRoles(username string, roles []string)
 }
 
+// UserSession represents a User session consisting of a username and a token.
 type UserSession struct {
 	Username string `bun:",pk"`
 	Token    string
 }
 
+// UserRoles represents the roles of a user.
 type UserRoles struct {
 	Username string `bun:",pk"`
 	Roles    []string
 }
 
+// deprecated
 type ColumnCount []map[string]interface{}
