@@ -8,6 +8,7 @@ import (
 	conf "jobmon/config"
 	database "jobmon/db"
 	"jobmon/job"
+	"jobmon/logging"
 	cache "jobmon/lru_cache"
 	"jobmon/store"
 	jobstore "jobmon/store"
@@ -87,30 +88,36 @@ func (r *Router) Init(store jobstore.Store, config *conf.Configuration, db *data
 
 func (r *Router) JobStart(w http.ResponseWriter, req *http.Request, params httprouter.Params, _ auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
+
+	// Read body
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		errStr := fmt.Sprintln("JobStart: Could not read http request body")
-		log.Println(errStr)
+		logging.Error(errStr)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(errStr))
 		return
 	}
 
+	// Read job metadata from body
 	var j job.JobMetadata
 	err = json.Unmarshal(body, &j)
 	if err != nil {
 		errStr := fmt.Sprintf("JobStart: Could not unmarshal http request body %v\n", string(body))
-		log.Println(errStr)
+		logging.Error(errStr)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(errStr))
 		return
 	}
 
+	logging.Info("Router: JobStart -> Read job start metadata for Job: ", j.Id)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte{})
+
+	// Store job metadata
 	err = r.store.PutJob(j)
 	if err != nil {
-		log.Println(err)
+		logging.Error(err)
 	}
 }
 
@@ -178,13 +185,16 @@ func (r *Router) GetJobs(w http.ResponseWriter, req *http.Request, _ httprouter.
 	if !utils.Contains(user.Roles, auth.ADMIN) {
 		filter.UserName = &user.Username
 	}
+
+	// Filter jobs
 	jobs, err := r.store.GetFilteredJobs(filter)
 	if err != nil {
-		log.Printf("Could not get jobs %v", err)
+		logging.Error("Could not get jobs: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	// Get job tags
 	var tags []job.JobTag
 	if utils.Contains(user.Roles, auth.ADMIN) {
 		// Get all if user is admin
@@ -193,14 +203,20 @@ func (r *Router) GetJobs(w http.ResponseWriter, req *http.Request, _ httprouter.
 		tags, err = r.store.GetJobTags(user.Username)
 	}
 	if err != nil {
-		log.Printf("Could not get job tags %v", err)
+		logging.Error("Could not get job tags: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	jobListData := job.JobListData{Jobs: jobs, Config: job.JobListConfig{
-		RadarChartMetrics: r.config.RadarChartMetrics,
-		Partitions:        r.config.Partitions, Tags: tags}}
+	// Send job list
+	jobListData := job.JobListData{
+		Jobs: jobs,
+		Config: job.JobListConfig{
+			RadarChartMetrics: r.config.RadarChartMetrics,
+			Partitions:        r.config.Partitions,
+			Tags:              tags,
+		}}
+	logging.Info("Router: GetJobs -> NumJobs: ", len(jobListData.Jobs))
 	data, err := json.Marshal(&jobListData)
 	if err != nil {
 		log.Printf("Could not marshal jobs to json")
@@ -218,9 +234,10 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 	raw := req.URL.Query().Get("raw") == "true"
 	strId := params.ByName("id")
 
+	// Read job ID
 	id, err := strconv.Atoi(strId)
 	if err != nil {
-		log.Printf("Could not job id data")
+		logging.Error("Could not convert '", strId, "' to job id")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -228,14 +245,14 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 	// Get job metadata from store
 	j, err := r.store.GetJob(id)
 	if err != nil {
-		log.Printf("Could not get job meta data: %v", err)
+		logging.Error("Could not get job meta data (job ID = ", id, "): ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	// Check user authorization
 	if !(utils.Contains(user.Roles, auth.ADMIN) || user.Username == j.UserName) {
-		log.Printf("User %v is not permitted to access job %v", user.Username, j.Id)
+		logging.Error("User ", user.Username, " is not permitted to access job ", j.Id)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -287,7 +304,7 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 	}
 
 	elapsed := time.Since(start)
-	log.Printf("Get job %v took %s", j.Id, elapsed)
+	logging.Info("Router: GetJob (job ID = ", j.Id, ") took ", elapsed)
 
 	w.Write(jsonData)
 }
@@ -422,60 +439,79 @@ func (r *Router) Login(w http.ResponseWriter, req *http.Request, params httprout
 }
 
 func (r *Router) LoginOAuth(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+
+	// Check if auth manager is available
 	if !r.authManager.OAuthAvailable() {
-		errStr := "OAuth login not avaiable"
-		log.Println(errStr)
+		errStr := fmt.Sprintln("OAuth login not available")
+		logging.Error(errStr)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(errStr))
 		return
 	}
+
+	// Generate session ID
 	sessionID, err := r.authManager.GenerateSession()
 	if err != nil {
-		log.Printf("Could not generate session: %v", err)
+		logging.Error("Could not generate session: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	cookie := http.Cookie{Name: "oauth_session", Value: sessionID, Expires: time.Now().Add(365 * 24 * time.Hour)}
+
+	// Set cookie with session ID
+	cookie := http.Cookie{
+		Name:    "oauth_session",
+		Value:   sessionID,
+		Expires: time.Now().Add(365 * 24 * time.Hour),
+	}
 	http.SetCookie(w, &cookie)
 
+	// Redirect after successful login
 	url := r.authManager.GetOAuthCodeURL(sessionID)
 	http.Redirect(w, req, url, http.StatusTemporaryRedirect)
+	logging.Info("Router: LoginOAuth -> redirect to OAuth provider")
 }
 
 func (r *Router) LoginOAuthCallback(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
 	sessionID, _ := req.Cookie("oauth_session")
+
+	// Check if session ID and state match
 	state := req.FormValue("state")
 	if state != sessionID.Value {
-		log.Printf("OAuth returned non matching state id")
+		logging.Error("OAuth returned non matching state id")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	// Get session from auth manager
 	session, ok := r.authManager.GetSession(state)
 	if !session.IsValid || !ok {
-		log.Printf("OAuth returned invalid state id")
+		logging.Error("OAuth returned invalid state id")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	// Read OAuth code
 	code := req.FormValue("code")
 	if code == "" {
-		log.Printf("OAuth returned no code")
+		logging.Error("OAuth returned no code")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	// Exchange OAuth token
 	token, err := r.authManager.ExchangeOAuthToken(code)
 	if err != nil {
-		log.Printf("Could not exchange token: %v", err)
+		logging.Error("Could not exchange token: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if !token.Valid() {
-		log.Printf("Token is invalid")
+		logging.Error("Token is invalid")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	// Read user information from OAuth provider
 	userInfo, err := r.authManager.GetOAuthUserInfo(token)
 	if err != nil {
 		log.Printf("Could not get oauth user info %v", err)
@@ -487,18 +523,27 @@ func (r *Router) LoginOAuthCallback(w http.ResponseWriter, req *http.Request, pa
 		userRoles.Roles = []string{auth.USER}
 	}
 
-	user := auth.UserInfo{Username: userInfo.Username, Roles: userRoles.Roles}
+	user := auth.UserInfo{
+		Username: userInfo.Username,
+		Roles:    userRoles.Roles,
+	}
+	logging.Info("Router: LoginOAuthCallback -> User: ", user.Username, ", Roles: ", user.Roles)
+
+	// Generate Java web token
 	err = r.authManager.AppendJWT(user, true, w)
 	if err != nil {
-		log.Printf("Could not generate JWT: %v", err)
+		logging.Error("Could not generate JWT: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, req, r.config.OAuth.AfterLoginRedirectUrl, http.StatusTemporaryRedirect)
+	logging.Info("Router: LoginOAuthCallback -> redirect to: ", r.config.OAuth.AfterLoginRedirectUrl)
 }
 
 func (r *Router) Logout(w http.ResponseWriter, req *http.Request, params httprouter.Params, _ auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
+
+	// Read body
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Printf("Could not read http request body")
@@ -521,7 +566,13 @@ func (r *Router) Logout(w http.ResponseWriter, req *http.Request, params httprou
 	}
 	r.authManager.Logout(dat.Username)
 
-	http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
+	http.SetCookie(w,
+		&http.Cookie{
+			Name:    "Authorization",
+			Value:   "",
+			Expires: time.Unix(0, 0),
+			Path:    "/",
+		})
 	w.WriteHeader(http.StatusOK)
 }
 
