@@ -13,6 +13,7 @@ ADD config ./config
 ADD db ./db
 ADD job ./job
 ADD lru_cache ./lru_cache
+ADD logging ./logging
 ADD store ./store
 ADD utils ./utils
 ADD router ./router
