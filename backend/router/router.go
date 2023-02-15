@@ -431,11 +431,9 @@ func (r *Router) LoginOAuth(w http.ResponseWriter, req *http.Request, params htt
 	}
 	sessionID, err := r.authManager.GenerateSession()
 	if err != nil {
-		if err != nil {
-			log.Printf("Could not generate session: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		log.Printf("Could not generate session: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	cookie := http.Cookie{Name: "oauth_session", Value: sessionID, Expires: time.Now().Add(365 * 24 * time.Hour)}
 	http.SetCookie(w, &cookie)
