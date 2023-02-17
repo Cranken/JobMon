@@ -8,7 +8,6 @@ import (
 	"jobmon/job"
 	"jobmon/logging"
 	"jobmon/utils"
-	"log"
 	"strings"
 	"sync"
 	"time"
@@ -36,28 +35,28 @@ func (db *InfluxDB) Init(c conf.Configuration) {
 
 	// Check if DBHost, and DBToken are set
 	if c.DBHost == "" {
-		log.Fatalln("db: Init(): No Influxdb host set")
+		logging.Fatal("db: Init(): No Influxdb host set")
 	}
 	if c.DBToken == "" {
-		log.Fatalln("db: Init(): No Influxdb token set")
+		logging.Fatal("db: Init(): No Influxdb token set")
 	}
 
 	// Connect to InfluxDB
 	db.client = influxdb2.NewClient(c.DBHost, c.DBToken)
 	ok, err := db.client.Ping(context.Background())
 	if !ok || err != nil {
-		log.Fatalf("db: Init(): Could not reach influxdb %v", err)
+		logging.Fatal("db: Init(): Could not reach influxdb: ", err)
 	}
 
 	// Initialize db data structure
 	if c.DBOrg == "" {
-		log.Fatalln("db: Init(): No Influxdb org set")
+		logging.Fatal("db: Init(): No Influxdb org set")
 	}
 	db.queryAPI = db.client.QueryAPI(c.DBOrg)
 	db.tasksAPI = db.client.TasksAPI()
 	db.organizationsAPI = db.client.OrganizationsAPI()
 	if c.DBBucket == "" {
-		log.Fatalln("db: Init(): No Influxdb bucket set")
+		logging.Fatal("db: Init(): No Influxdb bucket set")
 	}
 	db.bucket = c.DBBucket
 	db.org = c.DBOrg

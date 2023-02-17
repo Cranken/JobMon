@@ -4,6 +4,7 @@ import (
 	"jobmon/auth"
 	conf "jobmon/config"
 	database "jobmon/db"
+	"jobmon/logging"
 	cache "jobmon/lru_cache"
 	routerImport "jobmon/router"
 	jobstore "jobmon/store"
@@ -25,6 +26,7 @@ var webLogger = utils.WebLogger{}
 func main() {
 	webLogger.Init()
 	log.SetOutput(&webLogger)
+	logging.SetOutput(&webLogger)
 
 	config.Init()
 	db = &database.InfluxDB{}

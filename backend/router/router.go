@@ -69,7 +69,7 @@ func (r *Router) Init(store jobstore.Store, config *conf.Configuration, db *data
 	router.PATCH("/api/config/users/:user", authManager.Protected(r.SetUserConfig, auth.ADMIN))
 	router.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Access-Control-Request-Method") != "" {
-			// Set CORS headers
+			// Set Cross-Origin Resource Sharing (CORS) headers
 			header := w.Header()
 			header.Set("Access-Control-Allow-Methods", header.Get("Allow"))
 			header.Set("Access-Control-Allow-Origin", config.FrontendURL)
@@ -81,9 +81,13 @@ func (r *Router) Init(store jobstore.Store, config *conf.Configuration, db *data
 		w.WriteHeader(http.StatusNoContent)
 	})
 
-	server := &http.Server{Addr: ":8080", Handler: router}
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: router,
+	}
 
-	log.Fatal(server.ListenAndServe())
+	logging.Fatal(
+		server.ListenAndServe())
 }
 
 func (r *Router) JobStart(w http.ResponseWriter, req *http.Request, params httprouter.Params, _ auth.UserInfo) {

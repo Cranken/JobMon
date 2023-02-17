@@ -191,19 +191,19 @@ func (c *Configuration) Init() {
 
 	// Set log level
 	if err := logging.SetLogLevel(logLevel); err != nil {
-		log.Fatalf("config: Init(): Could not set log level: %v", err)
+		logging.Fatal("config: Init(): Could not set log level: ", err)
 	}
 
 	// Read config file
 	data, err := os.ReadFile(configFile)
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		log.Fatalf("config: Init(): Could not read config file: %v\n Error: %v\n", configFile, err)
+	if err != nil && errors.Is(err, fs.ErrNotExist) {
+		logging.Fatal("config: Init(): Could not read config file: '", configFile, "' Error: ", err)
 	}
 	logging.Info("config: Init(): Read config file '", configFile, "'")
 
 	err = json.Unmarshal(data, c)
 	if err != nil {
-		log.Fatalf("config: Init(): Could not unmarshal config file %v", err)
+		logging.Fatal("config: Init(): Could not unmarshal config file: ", err)
 	}
 	logging.Info("config: Init(): Parsed config file '", configFile, "'")
 

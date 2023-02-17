@@ -2,6 +2,7 @@ package logging
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 )
@@ -21,9 +22,15 @@ var (
 	// Loggers for various logging levels
 	errorLog *log.Logger = log.New(os.Stderr, "ERROR: ", log.LstdFlags)
 	warnLog  *log.Logger = log.New(os.Stderr, "WARN: ", log.LstdFlags)
-	infoLog  *log.Logger = log.New(os.Stdout, "INFO: ", log.LstdFlags)
+	infoLog  *log.Logger = log.New(os.Stderr, "INFO: ", log.LstdFlags)
 	debugLog *log.Logger = log.New(os.Stderr, "DEBUG: ", log.LstdFlags)
 )
+
+// Fatal prints fatal error and exits program
+func Fatal(e ...interface{}) {
+	errorLog.Print(e...)
+	os.Exit(1)
+}
 
 // Error prints an error logging message when allowed by log level
 func Error(e ...interface{}) {
@@ -63,4 +70,12 @@ func SetLogLevel(l int) error {
 	// Set log level
 	logLevel = l
 	return nil
+}
+
+// SetOutput for all logging functions
+func SetOutput(w io.Writer) {
+	errorLog.SetOutput(w)
+	warnLog.SetOutput(w)
+	infoLog.SetOutput(w)
+	debugLog.SetOutput(w)
 }

@@ -8,6 +8,7 @@ import (
 	"jobmon/config"
 	"jobmon/db"
 	"jobmon/job"
+	"jobmon/logging"
 	"log"
 	"time"
 
@@ -36,7 +37,7 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 	s.db = bun.NewDB(psqldb, pgdialect.New())
 	err := s.db.Ping()
 	if err != nil {
-		log.Fatalf("Could not connect to psql store: %v", err)
+		logging.Fatal("Could not connect to PostgreSQL store: ", err)
 	}
 	s.db.RegisterModel((*job.JobToTags)(nil))
 	s.db.NewCreateTable().Model((*job.JobToTags)(nil)).Exec(context.Background())

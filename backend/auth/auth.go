@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"jobmon/config"
+	"jobmon/logging"
 	"jobmon/store"
 	"jobmon/utils"
 	"log"
@@ -126,11 +127,11 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 
 func (auth *AuthManager) Init(c config.Configuration, store *store.Store) {
 	if c.JWTSecret == "" {
-		log.Fatalf("auth: No jwt secret set")
+		logging.Fatal("auth: No jwt secret set")
 	}
 	auth.hmacSampleSecret = []byte(c.JWTSecret)
 	if store == nil {
-		log.Fatalf("auth: No store given")
+		logging.Fatal("auth: No store given")
 	}
 	auth.store = store
 	auth.localUsers = c.LocalUsers
