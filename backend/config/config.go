@@ -3,7 +3,10 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"flag"
+	"fmt"
 	"io/fs"
+	"jobmon/logging"
 	"log"
 	"os"
 	"sort"
@@ -14,19 +17,17 @@ import (
 const CONFIG_FILE = "config.json"
 
 type Configuration struct {
-	// Complete URL of InfluxDB, i.e. protocol, address and port
-	DBHost string
-	// InfluxDB access token to bucket
-	DBToken string
-	// Org the InfluxDB bucket belongs to
-	DBOrg string
-	// InfluxDB bucket
-	DBBucket string
 
-	// Frontend URL
+	// Configuration for performance metrics database
+	// current implementation uses InfluxDB only
+	DBConfig
+
+	// Configuration for jobmon frontend
+	// Frontend URL e.g. http://my-jobmon-frontend.example.com:3000
 	FrontendURL string
 
-	// Configuration for the job store
+	// Configuration for job meta data database
+	// current implementations uses PostgreSQL only
 	JobStore JobStoreConfig
 
 	// Configuration for OAuth Login
@@ -65,7 +66,8 @@ type MetricConfig struct {
 	Categories []string
 	// Measurement name in Influxdb
 	Measurement string
-	// Default Aggregation function to use in aggregation of per device(cpu, socket, accelerator) data to node data.
+	// Default Aggregation function to use in aggregation of per device
+	// (cpu, socket, accelerator) data to node data.
 	// Not used for metrics with type == "node"
 	AggFn string
 	// List of all possible aggregation functions
@@ -116,12 +118,27 @@ type LocalUser struct {
 	Role string
 }
 
+// Configuration for performance metrics database
+// current implementation uses InfluxDB only
+type DBConfig struct {
+	// Complete URL of InfluxDB, e.g. http://my-inxuxdb.example.org:9200
+	DBHost string
+	// InfluxDB access token to bucket
+	DBToken string
+	// Org the InfluxDB bucket belongs to
+	DBOrg string
+	// InfluxDB bucket
+	DBBucket string
+}
+
+// Configuration for job meta data database
+// current implementation uses PostgreSQL only
 type JobStoreConfig struct {
 	// Supported types: "postgres"
 	Type string
 
-	// Postgres store config:
-	// Postgres host address
+	// PostgreSQL database config:
+	// Postgres host address e.g. my-postgresql.example.org:5432
 	PSQLHost string
 	// Postgres username
 	PSQLUsername string
@@ -150,21 +167,62 @@ type OAuthConfig struct {
 }
 
 func (c *Configuration) Init() {
-	data, err := os.ReadFile(CONFIG_FILE)
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		log.Fatalf("config: Could not read config file: %v\n Error: %v\n", CONFIG_FILE, err)
+
+	// Read command line options
+	var configFile string
+	var logLevel int
+	var help bool
+	flag.StringVar(&configFile, "config", CONFIG_FILE, "config file")
+	flag.IntVar(&logLevel, "debug", logging.WarningLogLevel,
+		fmt.Sprint("debug level:",
+			" off=", logging.OffLogLevel,
+			" error=", logging.ErrorLogLevel,
+			" warning=", logging.WarningLogLevel,
+			" info=", logging.InfoLogLevel,
+			" debug=", logging.DebugLogLevel))
+	flag.BoolVar(&help, "help", false, "print this help message")
+	flag.Parse()
+
+	// print help message
+	if help {
+		flag.Usage()
+		os.Exit(0)
 	}
+
+	// Set log level
+	if err := logging.SetLogLevel(logLevel); err != nil {
+		log.Fatalf("config: Init(): Could not set log level: %v", err)
+	}
+
+	// Read config file
+	data, err := os.ReadFile(configFile)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		log.Fatalf("config: Init(): Could not read config file: %v\n Error: %v\n", configFile, err)
+	}
+	logging.Info("config: Init(): Read config file '", configFile, "'")
+
 	err = json.Unmarshal(data, c)
 	if err != nil {
-		log.Fatalf("config: Could not unmarshal config file %v", err)
+		log.Fatalf("config: Init(): Could not unmarshal config file %v", err)
 	}
+	logging.Info("config: Init(): Parsed config file '", configFile, "'")
+
+	// Add GUIDs to metrics if any are missing
 	for i, mc := range c.Metrics {
 		if mc.GUID == "" {
 			mc.GUID = uuid.New().String()
 			c.Metrics[i] = mc
 		}
 	}
-	sort.SliceStable(c.Metrics, func(i, j int) bool { return c.Metrics[i].DisplayName < c.Metrics[j].DisplayName })
+
+	// Sort metrics by DisplayName
+	sort.SliceStable(
+		c.Metrics,
+		func(i, j int) bool {
+			return c.Metrics[i].DisplayName < c.Metrics[j].DisplayName
+		})
+
+	logging.Debug("Configuration: ", fmt.Sprintf("%+v", *c))
 }
 
 func (c *Configuration) Flush() {
