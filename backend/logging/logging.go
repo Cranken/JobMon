@@ -72,7 +72,7 @@ func SetLogLevel(l int) error {
 	return nil
 }
 
-// SetOutput for all logging functions
+// SetOutput sets output for all logging functions
 func SetOutput(w io.Writer) {
 	errorLog.SetOutput(w)
 	warnLog.SetOutput(w)

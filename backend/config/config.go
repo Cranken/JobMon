@@ -7,14 +7,13 @@ import (
 	"fmt"
 	"io/fs"
 	"jobmon/logging"
-	"log"
 	"os"
 	"sort"
 
 	"github.com/google/uuid"
 )
 
-const CONFIG_FILE = "config.json"
+var configFile string
 
 type Configuration struct {
 
@@ -169,10 +168,9 @@ type OAuthConfig struct {
 func (c *Configuration) Init() {
 
 	// Read command line options
-	var configFile string
 	var logLevel int
 	var help bool
-	flag.StringVar(&configFile, "config", CONFIG_FILE, "config file")
+	flag.StringVar(&configFile, "config", "config.json", "config file")
 	flag.IntVar(&logLevel, "debug", logging.WarningLogLevel,
 		fmt.Sprint("debug level:",
 			" off=", logging.OffLogLevel,
@@ -208,10 +206,10 @@ func (c *Configuration) Init() {
 	logging.Info("config: Init(): Parsed config file '", configFile, "'")
 
 	// Add GUIDs to metrics if any are missing
-	for i, mc := range c.Metrics {
+	for i := range c.Metrics {
+		mc := &c.Metrics[i]
 		if mc.GUID == "" {
 			mc.GUID = uuid.New().String()
-			c.Metrics[i] = mc
 		}
 	}
 
@@ -222,13 +220,21 @@ func (c *Configuration) Init() {
 			return c.Metrics[i].DisplayName < c.Metrics[j].DisplayName
 		})
 
-	logging.Debug("Configuration: ", fmt.Sprintf("%+v", *c))
+	logging.Debug("config: Init(): Configuration: ", fmt.Sprintf("%+v", *c))
 }
 
+// Flush writes current configuration to the config file
 func (c *Configuration) Flush() {
+
+	// marshal current configuration to json
 	data, err := json.MarshalIndent(c, "", "    ")
 	if err != nil {
-		log.Printf("Could not marshal config into json: %v\n", err)
+		logging.Error("config: Flush(): Could not marshal config into json: ", err)
 	}
-	os.WriteFile(CONFIG_FILE, data, 0644)
+
+	// Write json to config file
+	err = os.WriteFile(configFile, data, 0644)
+	if err != nil {
+		logging.Error("config: Flush(): Writing file '", configFile, "' failed: ", err)
+	}
 }

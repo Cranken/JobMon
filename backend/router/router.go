@@ -37,13 +37,23 @@ type Router struct {
 	logger      *utils.WebLogger
 }
 
-func (r *Router) Init(store jobstore.Store, config *conf.Configuration, db *database.DB, jobCache *cache.LRUCache, authManager *auth.AuthManager, logger *utils.WebLogger) {
+func (r *Router) Init(
+	store jobstore.Store,
+	config *conf.Configuration,
+	db *database.DB,
+	jobCache *cache.LRUCache,
+	authManager *auth.AuthManager,
+	logger *utils.WebLogger) {
+
 	r.store = store
 	r.config = config
 	r.db = db
 	r.jobCache = jobCache
 	r.authManager = authManager
-	r.upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
+	r.upgrader = websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		}}
 	r.logger = logger
 
 	router := httprouter.New()
@@ -67,19 +77,21 @@ func (r *Router) Init(store jobstore.Store, config *conf.Configuration, db *data
 	router.POST("/api/admin/refresh_metadata/:id", authManager.Protected(r.RefreshMetadata, auth.ADMIN))
 	router.GET("/api/config/users/:user", authManager.Protected(r.GetUserConfig, auth.ADMIN))
 	router.PATCH("/api/config/users/:user", authManager.Protected(r.SetUserConfig, auth.ADMIN))
-	router.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Access-Control-Request-Method") != "" {
-			// Set Cross-Origin Resource Sharing (CORS) headers
-			header := w.Header()
-			header.Set("Access-Control-Allow-Methods", header.Get("Allow"))
-			header.Set("Access-Control-Allow-Origin", config.FrontendURL)
-			header.Set("Access-Control-Allow-Credentials", "true")
-			header.Set("Access-Control-Expose-Headers", "Set-Cookie")
-		}
+	router.GlobalOPTIONS =
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				if r.Header.Get("Access-Control-Request-Method") != "" {
+					// Set Cross-Origin Resource Sharing (CORS) headers
+					header := w.Header()
+					header.Set("Access-Control-Allow-Methods", header.Get("Allow"))
+					header.Set("Access-Control-Allow-Origin", config.FrontendURL)
+					header.Set("Access-Control-Allow-Credentials", "true")
+					header.Set("Access-Control-Expose-Headers", "Set-Cookie")
+				}
 
-		// Adjust status code to 204
-		w.WriteHeader(http.StatusNoContent)
-	})
+				// Adjust status code to 204
+				w.WriteHeader(http.StatusNoContent)
+			})
 
 	server := &http.Server{
 		Addr:    ":8080",
@@ -313,7 +325,11 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 	w.Write(jsonData)
 }
 
-func (r *Router) GetMetric(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
+func (r *Router) GetMetric(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	user auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
 
 	strId := params.ByName("id")
@@ -321,14 +337,14 @@ func (r *Router) GetMetric(w http.ResponseWriter, req *http.Request, params http
 	aggFn := req.URL.Query().Get("aggFn")
 
 	if metric == "" || aggFn == "" {
-		log.Printf("Metric or aggFn was not provided")
+		logging.Error("router: GetMetric(): Metric or aggFn was not provided")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	id, err := strconv.Atoi(strId)
 	if err != nil {
-		log.Printf("Could not job id data")
+		logging.Error("router: GetMetric(): Could not read job id: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -336,14 +352,15 @@ func (r *Router) GetMetric(w http.ResponseWriter, req *http.Request, params http
 	// Get job metadata from store
 	j, err := r.store.GetJob(id)
 	if err != nil {
-		log.Printf("Could not get job meta data: %v", err)
+		logging.Error("router: GetMetric(): Could not get job meta data: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	// Check user authorization
-	if !(utils.Contains(user.Roles, auth.ADMIN) || user.Username == j.UserName) {
-		log.Printf("User %v is not permitted to access job %v", user.Username, j.Id)
+	if !(utils.Contains(user.Roles, auth.ADMIN) ||
+		user.Username == j.UserName) {
+		logging.Error("router: GetMetric(): User '", user.Username, "' is not permitted to access job ", j.Id)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -361,23 +378,29 @@ func (r *Router) GetMetric(w http.ResponseWriter, req *http.Request, params http
 		}
 	}
 
-	// Get job data
+	// Get job meta data
 	if j.IsRunning {
 		j.StartTime = int(time.Now().Unix()) - 3600
 	}
 	if j.IsRunning {
 		j.StopTime = int(time.Now().Unix())
 	}
-	mc := slices.IndexFunc(r.config.Metrics, func(c conf.MetricConfig) bool { return c.GUID == metric })
+	mc := slices.IndexFunc(
+		r.config.Metrics,
+		func(c conf.MetricConfig) bool {
+			return c.GUID == metric
+		})
 	if mc == -1 {
-		log.Printf("Requested metric with guid %v not found", metric)
+		logging.Error("router: GetMetric(): Requested metric with GUID '", metric, "' not found")
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
+	// Read performance metrics
+	logging.Info("router: GetMetric(): Reading metric with GUID", metric)
 	metricData, err := (*r.db).GetMetricDataWithAggFn(&j, r.config.Metrics[mc], aggFn, sampleInterval)
 	if err != nil {
-		log.Printf("Could not get metric data: %v\n", err)
+		logging.Error("router: GetMetric(): Could not get metric data: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -385,11 +408,12 @@ func (r *Router) GetMetric(w http.ResponseWriter, req *http.Request, params http
 	// Send data
 	jsonData, err := json.Marshal(&metricData)
 	if err != nil {
-		log.Printf("Could not marshal metric data to json")
+		logging.Error("router: GetMetric(): Could not marshal metric data to json")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	logging.Info("router: GetMetric(): Sending metric with GUID", metric)
 	w.Write(jsonData)
 }
 
