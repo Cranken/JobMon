@@ -2,6 +2,7 @@ package utils
 
 import (
 	"container/ring"
+	"fmt"
 	"io"
 	"log"
 
@@ -18,7 +19,7 @@ type WebLogger struct {
 }
 
 func (l *WebLogger) Init() {
-	// init writer to default error log
+	// Init writer to default error log
 	l.defaultWriter = log.Writer()
 
 	// Create empty list of websocket connections
@@ -29,7 +30,7 @@ func (l *WebLogger) Init() {
 }
 
 // Write writes log message p to the web socket
-func (l *WebLogger) Write(p []byte) (n int, err error) {
+func (l *WebLogger) Write(p []byte) (int, error) {
 	// Copy to value to avoid accessing temporary variables
 	l.ring.Value = make([]byte, len(p))
 	copy(l.ring.Value.([]byte), p)
@@ -41,7 +42,8 @@ func (l *WebLogger) Write(p []byte) (n int, err error) {
 	for _, c := range l.connections {
 		if err := c.WriteMessage(websocket.TextMessage, p); err != nil {
 			// in error case report error to default error log
-			l.defaultWriter.Write([]byte(err.Error()))
+			msg := fmt.Sprint("ERROR: utils: Write(): Failed to write to websocket: ", err)
+			l.defaultWriter.Write([]byte(msg))
 		}
 	}
 
@@ -58,8 +60,12 @@ func (l *WebLogger) AddConnection(c *websocket.Conn) {
 	l.ring.Do(
 		func(v any) {
 			if v != nil {
-				if msg := v.([]byte); len(msg) > 0 {
-					c.WriteMessage(websocket.TextMessage, msg)
+				if p := v.([]byte); len(p) > 0 {
+					if err := c.WriteMessage(websocket.TextMessage, p); err != nil {
+						// in error case report error to default error log
+						msg := fmt.Sprint("ERROR: utils: AddConnection(): Failed to write to new websocket: ", err)
+						l.defaultWriter.Write([]byte(msg))
+					}
 				}
 			}
 		})

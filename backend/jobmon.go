@@ -9,7 +9,6 @@ import (
 	routerImport "jobmon/router"
 	jobstore "jobmon/store"
 	"jobmon/utils"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -25,7 +24,6 @@ var webLogger = utils.WebLogger{}
 
 func main() {
 	webLogger.Init()
-	log.SetOutput(&webLogger)
 	logging.SetOutput(&webLogger)
 
 	config.Init()
