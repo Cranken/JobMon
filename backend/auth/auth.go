@@ -11,7 +11,6 @@ import (
 	"jobmon/logging"
 	"jobmon/store"
 	"jobmon/utils"
-	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -80,27 +79,51 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 		token, err := r.Cookie("Authorization")
 		if err != nil {
 			utils.AllowCors(r, w.Header())
-			http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
+			http.SetCookie(
+				w,
+				&http.Cookie{
+					Name:    "Authorization",
+					Value:   "",
+					Expires: time.Unix(0, 0),
+					Path:    "/",
+				},
+			)
 			w.WriteHeader(http.StatusUnauthorized)
-			log.Println("auth: No authorization cookie provided")
+			logging.Error("AuthManager: Protected(): No authorization cookie provided")
 			return
 		}
 
 		parts := strings.Split(token.Value, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			utils.AllowCors(r, w.Header())
-			http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
+			http.SetCookie(
+				w,
+				&http.Cookie{
+					Name:    "Authorization",
+					Value:   "",
+					Expires: time.Unix(0, 0),
+					Path:    "/",
+				},
+			)
 			w.WriteHeader(http.StatusUnauthorized)
-			log.Println("auth: not a valid bearer token")
+			logging.Error("AuthManager: Protected(): not a valid bearer token")
 			return
 		}
 
 		user, err := authManager.validate(parts[1])
 		if err != nil {
 			utils.AllowCors(r, w.Header())
-			http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
+			http.SetCookie(
+				w,
+				&http.Cookie{
+					Name:    "Authorization",
+					Value:   "",
+					Expires: time.Unix(0, 0),
+					Path:    "/",
+				},
+			)
 			w.WriteHeader(http.StatusUnauthorized)
-			log.Println("auth: not a valid user")
+			logging.Error("AuthManager: Protected(): not a valid user")
 			return
 		}
 
@@ -113,84 +136,116 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 			ok = true
 		}
 
-		if ok && (utils.Contains(userRoles.Roles, authLevel) || utils.Contains(user.Roles, ADMIN)) {
+		if ok &&
+			(utils.Contains(userRoles.Roles, authLevel) ||
+				utils.Contains(user.Roles, ADMIN)) {
 			h(w, r, ps, user)
 		} else {
 			utils.AllowCors(r, w.Header())
-			http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "", Expires: time.Unix(0, 0), Path: "/"})
+			http.SetCookie(
+				w,
+				&http.Cookie{
+					Name:    "Authorization",
+					Value:   "",
+					Expires: time.Unix(0, 0),
+					Path:    "/",
+				},
+			)
 			w.WriteHeader(http.StatusForbidden)
-			log.Println("auth: user not permitted")
+			logging.Error("AuthManager: Protected(): user not permitted")
 			return
 		}
 	}
 }
 
 func (auth *AuthManager) Init(c config.Configuration, store *store.Store) {
+
 	if c.JWTSecret == "" {
-		logging.Fatal("auth: No jwt secret set")
+		logging.Fatal("auth: Init(): No jwt secret set")
 	}
 	auth.hmacSampleSecret = []byte(c.JWTSecret)
+
 	if store == nil {
-		logging.Fatal("auth: No store given")
+		logging.Fatal("auth: Init(): No store given")
 	}
 	auth.store = store
 	auth.localUsers = c.LocalUsers
+
 	err := auth.createOAuthConfig(c)
 	if err != nil {
-		log.Printf("auth: OAuth is not available: %v", err)
+		logging.Error("auth: Protected(): OAuth is not available: ", err)
 	}
 	auth.sessions = make(map[string]UserSession)
 }
 
 func (auth *AuthManager) createOAuthConfig(c config.Configuration) error {
 	auth.oauthAvailable = false
+
 	if c.OAuth.ClientID == "" {
 		return fmt.Errorf("no OAuth ClientID set")
 	}
+
 	if c.OAuth.Secret == "" {
 		return fmt.Errorf("no OAuth Secret set")
 	}
+
 	if c.OAuth.RedirectURL == "" {
 		return fmt.Errorf("no OAuth RedirectURL set")
 	}
+
 	if c.OAuth.AuthURL == "" {
 		return fmt.Errorf("no OAuth AuthURL set")
 	}
+
 	if c.OAuth.TokenURL == "" {
 		return fmt.Errorf("no OAuth TokenURL set")
 	}
+
 	if c.OAuth.UserInfoURL == "" {
 		return fmt.Errorf("no OAuth UserInfoURL set")
 	}
-	auth.oauthConfig = oauth2.Config{
-		ClientID:     c.OAuth.ClientID,
-		ClientSecret: c.OAuth.Secret,
-		Scopes:       []string{"openid", "email", "profile"},
-		RedirectURL:  c.OAuth.RedirectURL,
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  c.OAuth.AuthURL,
-			TokenURL: c.OAuth.TokenURL,
-		},
-	}
+
+	auth.oauthConfig =
+		oauth2.Config{
+			ClientID:     c.OAuth.ClientID,
+			ClientSecret: c.OAuth.Secret,
+			Scopes: []string{
+				"openid",
+				"email",
+				"profile",
+			},
+			RedirectURL: c.OAuth.RedirectURL,
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  c.OAuth.AuthURL,
+				TokenURL: c.OAuth.TokenURL,
+			},
+		}
 	auth.oauthUserInfoURL = c.OAuth.UserInfoURL
 	auth.oauthAvailable = true
 	return nil
 }
 
-func (auth *AuthManager) validate(tokenStr string) (user UserInfo, err error) {
-	token, err := jwt.ParseWithClaims(tokenStr, &UserClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
+func (auth *AuthManager) validate(tokenStr string) (
+	user UserInfo,
+	err error) {
 
-		return auth.hmacSampleSecret, nil
-	})
+	token, err := jwt.ParseWithClaims(
+		tokenStr,
+		&UserClaims{},
+		func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+
+			return auth.hmacSampleSecret, nil
+		})
 	if err != nil {
 		return
 	}
 	claims, ok := token.Claims.(*UserClaims)
 	if ok && token.Valid {
-		if claims.VerifyExpiresAt(jwt.TimeFunc().Unix(), true) && claims.VerifyIssuer(ISSUER, true) {
+		if claims.VerifyExpiresAt(jwt.TimeFunc().Unix(), true) &&
+			claims.VerifyIssuer(ISSUER, true) {
 			if storeToken, ok := (*auth.store).GetUserSessionToken(claims.Username); ok && storeToken == tokenStr {
 				return claims.UserInfo, nil
 			} else {
@@ -207,26 +262,31 @@ func (auth *AuthManager) validate(tokenStr string) (user UserInfo, err error) {
 
 // Generate a JWT for the given user. Parameter 'remember' specifies if the JWT should be valid for a year
 func (auth *AuthManager) GenerateJWT(user UserInfo, remember bool) (string, error) {
+
 	expirationTime := EXPIRATIONTIME * time.Second
 	if remember {
 		expirationTime = time.Hour * 24 * 365
 	}
+
 	if utils.Contains(user.Roles, JOBCONTROL) {
 		expirationTime *= 10 // Slurm API should "never" expire
 	}
-	claims := UserClaims{
-		user,
-		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(expirationTime).Unix(),
-			Issuer:    ISSUER,
-		},
-	}
+
+	claims :=
+		UserClaims{
+			user,
+			jwt.StandardClaims{
+				ExpiresAt: time.Now().Add(expirationTime).Unix(),
+				Issuer:    ISSUER,
+			},
+		}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	ret, err := token.SignedString(auth.hmacSampleSecret)
 	if err == nil {
 		(*auth.store).SetUserSessionToken(user.Username, ret)
 	}
+
 	return ret, err
 }
 
@@ -241,25 +301,45 @@ func (auth *AuthManager) AppendJWT(user UserInfo, remember bool, w http.Response
 	if remember {
 		expirationTime = time.Hour * 24 * 365
 	}
-	http.SetCookie(w, &http.Cookie{Name: "Authorization", Value: "Bearer " + token, Expires: time.Now().Add(expirationTime), Path: "/"})
+
+	http.SetCookie(
+		w,
+		&http.Cookie{
+			Name:    "Authorization",
+			Value:   "Bearer " + token,
+			Expires: time.Now().Add(expirationTime),
+			Path:    "/",
+		},
+	)
 	return
 }
 
 // Check if given username and password are correct
-func (auth *AuthManager) AuthLocalUser(username string, password string) (user UserInfo, err error) {
+func (auth *AuthManager) AuthLocalUser(
+	username string,
+	password string,
+) (
+	user UserInfo,
+	err error,
+) {
 	if val, ok := auth.localUsers[username]; ok && password == val.Password {
-		user = UserInfo{Roles: []string{val.Role}, Username: username}
+		user =
+			UserInfo{
+				Roles:    []string{val.Role},
+				Username: username,
+			}
 		return
 	}
 	err = fmt.Errorf("no valid user or invalid password")
 	return
 }
 
-// Log given user out of active sessions
+// Logout logs out user <username> from active sessions
 func (auth *AuthManager) Logout(username string) {
 	(*auth.store).RemoveUserSessionToken(username)
 }
 
+// OAuthAvailable checks if
 func (auth *AuthManager) OAuthAvailable() bool {
 	return auth.oauthAvailable
 }
@@ -318,10 +398,12 @@ func (auth *AuthManager) GetOAuthUserInfo(token *oauth2.Token) (*OAuthUserInfo, 
 	if err != nil {
 		return nil, err
 	}
+
 	dat, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
+
 	var userInfo OAuthUserInfo
 	err = json.Unmarshal(dat, &userInfo)
 	return &userInfo, err

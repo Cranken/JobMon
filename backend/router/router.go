@@ -13,7 +13,6 @@ import (
 	"jobmon/store"
 	jobstore "jobmon/store"
 	"jobmon/utils"
-	"log"
 	"net/http"
 	"net/url"
 	"sort"
@@ -719,13 +718,13 @@ func (r *Router) LiveMonitoring(
 
 	c, err := r.upgrader.Upgrade(w, req, nil)
 	if err != nil {
-		log.Print("error upgrading connection:", err)
+		logging.Error("Router: LiveMonitoring(): error upgrading connection: ", err)
 		return
 	}
 
 	j, err := r.store.GetJob(id)
 	if err != nil {
-		log.Printf("Could not get job meta data: %v", err)
+		logging.Error("Router: LiveMonitoring(): Could not get job ", id, " meta data: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -791,6 +790,7 @@ func (r *Router) GetConfig(
 	params httprouter.Params,
 	user auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
+
 	// Restrict available configuration parameters for now
 	conf := conf.Configuration{}
 	conf.Metrics = r.config.Metrics
@@ -799,7 +799,7 @@ func (r *Router) GetConfig(
 
 	data, err := json.Marshal(conf)
 	if err != nil {
-		log.Println("Could not marshal config")
+		logging.Error("Router: GetConfig(): Could not marshal config")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -815,7 +815,7 @@ func (r *Router) UpdateConfig(
 	utils.AllowCors(req, w.Header())
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		log.Printf("Could not read update config request body")
+		logging.Error("Router: UpdateConfig(): Could not read update config request body: ", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -824,7 +824,7 @@ func (r *Router) UpdateConfig(
 	conf := conf.Configuration{}
 	err = json.Unmarshal(body, &conf)
 	if err != nil {
-		log.Printf("Could not unmarshal update config request body")
+		logging.Error("Router: UpdateConfig(): Could not unmarshal update config request body: ", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -848,13 +848,13 @@ func (r *Router) UpdateConfig(
 	r.config.Partitions = conf.Partitions
 	r.config.MetricCategories = conf.MetricCategories
 
-	// Reinit affected units
+	// Re-init affected units
 	// DB because of potential changes to metrics
 	(*r.config).Flush()
 	(*r.db).Init(*r.config)
 	data, err := json.Marshal(r.config)
 	if err != nil {
-		log.Printf("Could not unmarshal update config request body")
+		logging.Error("Router: UpdateConfig(): Could not unmarshal updated config: ", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -868,7 +868,7 @@ func (r *Router) LiveLog(
 	user auth.UserInfo) {
 	c, err := r.upgrader.Upgrade(w, req, nil)
 	if err != nil {
-		log.Print("error upgrading connection:", err)
+		logging.Error("Router: LiveLog(): error upgrading connection:", err)
 		return
 	}
 	r.logger.AddConnection(c)
@@ -903,28 +903,28 @@ func (r *Router) RefreshMetadata(
 	// Get job metadata from store
 	j, err := r.store.GetJob(id)
 	if err != nil {
-		log.Printf("Could not get job meta data: %v", err)
+		logging.Error("Router: RefreshMetadata(): Could not get meta data for job ", id, ": ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	data, err := (*r.db).GetJobMetadataMetrics(&j)
 	if err != nil {
-		log.Printf("Could not get job meta data metrics: %v", err)
+		logging.Error("Router: RefreshMetadata(): Could not get meta data metrics for job", id, ": ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	j.Data = data
 	err = r.store.UpdateJob(j)
 	if err != nil {
-		log.Printf("Could not update job in store: %v", err)
+		logging.Error("Router: RefreshMetadata(): Could not update job ", id, "in store: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	jsonData, err := json.Marshal(&j)
 	if err != nil {
-		log.Printf("Could not marhsal job metadata: %v", err)
+		logging.Error("Router: RefreshMetadata(): Could not marhsal metadata for job ", id, ": ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -940,7 +940,7 @@ func (r *Router) GetUserConfig(
 	utils.AllowCors(req, w.Header())
 	userStr := params.ByName("user")
 	if userStr == "" {
-		log.Println("Could not get user string from request params")
+		logging.Error("Router: GetUserConfig(): Could not get user string from request params")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -948,14 +948,14 @@ func (r *Router) GetUserConfig(
 	user, ok := r.store.GetUserRoles(userStr)
 
 	if !ok {
-		log.Println("Could not get user roles")
+		logging.Error("Router: GetUserConfig(): Could not get roles for user ", userStr)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	data, err := json.Marshal(user)
 	if err != nil {
-		log.Println("Could not marshal user")
+		logging.Error("Router: GetUserConfig(): Could not marshal user ", userStr)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -971,13 +971,13 @@ func (r *Router) SetUserConfig(
 	utils.AllowCors(req, w.Header())
 	userStr := params.ByName("user")
 	if userStr == "" {
-		log.Println("Could not get user string from request params")
+		logging.Error("Router: SetUserConfig(): Could not get user string from request params")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		log.Printf("Could not read update users request body")
+		logging.Error("Router: SetUserConfig(): Could not read request body for user ", userStr, ": ", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -986,7 +986,7 @@ func (r *Router) SetUserConfig(
 	user := store.UserRoles{}
 	err = json.Unmarshal(body, &user)
 	if err != nil {
-		log.Printf("Could not unmarshal set user config request body")
+		logging.Error("Router: SetUserConfig(): Could not unmarshal newly set user config for user ", userStr, ": ", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -994,7 +994,7 @@ func (r *Router) SetUserConfig(
 	r.store.SetUserRoles(user.Username, user.Roles)
 	data, err := json.Marshal(user)
 	if err != nil {
-		log.Println("Could not marshal user")
+		logging.Error("Router: SetUserConfig(): Could not marshal user ", userStr)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -1020,21 +1020,21 @@ func (r *Router) parseTag(
 
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		log.Printf("Could not read http request body")
+		logging.Error("Router: parseTag(): Could not read http request body")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	err = json.Unmarshal(body, &tag)
 	if err != nil {
-		log.Printf("Could not unmarshal http request body")
+		logging.Error("Router: parseTag(): Could not unmarshal http request body")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	job, err = r.store.GetJob(jobId)
 	if err != nil {
-		log.Printf("Could not get job with id: %v", jobId)
+		logging.Error("Router: parseTag(): Could not get job ", jobId, " meta data")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
