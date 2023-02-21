@@ -79,7 +79,8 @@ func (r *Router) Init(
 	router.PATCH("/api/config/users/:user", authManager.Protected(r.SetUserConfig, auth.ADMIN))
 	router.GlobalOPTIONS =
 		http.HandlerFunc(
-			func(w http.ResponseWriter, r *http.Request) {
+			func(w http.ResponseWriter,
+				r *http.Request) {
 				if r.Header.Get("Access-Control-Request-Method") != "" {
 					// Set Cross-Origin Resource Sharing (CORS) headers
 					header := w.Header()
@@ -102,7 +103,11 @@ func (r *Router) Init(
 		server.ListenAndServe())
 }
 
-func (r *Router) JobStart(w http.ResponseWriter, req *http.Request, params httprouter.Params, _ auth.UserInfo) {
+func (r *Router) JobStart(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	_ auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
 
 	// Read body
@@ -137,14 +142,18 @@ func (r *Router) JobStart(w http.ResponseWriter, req *http.Request, params httpr
 	}
 }
 
-func (r *Router) JobStop(w http.ResponseWriter, req *http.Request, params httprouter.Params, _ auth.UserInfo) {
+func (r *Router) JobStop(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	_ auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
 
 	// Parse job information
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		errStr := fmt.Sprintln("JobStop: Could not read http request body")
-		log.Println(errStr)
+		errStr := fmt.Sprintln("router: JobStop(): Could not read http request body")
+		logging.Error(errStr)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(errStr))
 		return
@@ -153,8 +162,8 @@ func (r *Router) JobStop(w http.ResponseWriter, req *http.Request, params httpro
 	var stopJob job.StopJob
 	err = json.Unmarshal(body, &stopJob)
 	if err != nil {
-		errStr := fmt.Sprintf("JobStop: Could not parse json from http request body %v", string(body))
-		log.Println(errStr)
+		errStr := fmt.Sprintf("router: JobStop(): Could not parse json from http request body %v", string(body))
+		logging.Error(errStr)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(errStr))
 		return
@@ -163,8 +172,8 @@ func (r *Router) JobStop(w http.ResponseWriter, req *http.Request, params httpro
 	strId := params.ByName("id")
 	id, err := strconv.Atoi(strId)
 	if err != nil {
-		errStr := fmt.Sprintf("JobStop: Id is not a valid integer %v", strId)
-		log.Println(errStr)
+		errStr := fmt.Sprintf("router: JobStop(): Id is not a valid integer %v", strId)
+		logging.Error(errStr)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(errStr))
 		return
@@ -193,7 +202,11 @@ func (r *Router) JobStop(w http.ResponseWriter, req *http.Request, params httpro
 	}()
 }
 
-func (r *Router) GetJobs(w http.ResponseWriter, req *http.Request, _ httprouter.Params, user auth.UserInfo) {
+func (r *Router) GetJobs(
+	w http.ResponseWriter,
+	req *http.Request,
+	_ httprouter.Params,
+	user auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
 	filter := r.parseGetJobParams(req.URL.Query())
 
@@ -232,17 +245,21 @@ func (r *Router) GetJobs(w http.ResponseWriter, req *http.Request, _ httprouter.
 			Partitions:        r.config.Partitions,
 			Tags:              tags,
 		}}
-	logging.Info("Router: GetJobs -> NumJobs: ", len(jobListData.Jobs))
+	logging.Info("Router: GetJobs(): NumJobs = ", len(jobListData.Jobs))
 	data, err := json.Marshal(&jobListData)
 	if err != nil {
-		log.Printf("Could not marshal jobs to json")
+		logging.Error("Router: GetJobs(): Could not marshal jobs to json")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	w.Write(data)
 }
 
-func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
+func (r *Router) GetJob(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	user auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
 	start := time.Now()
 
@@ -253,7 +270,7 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 	// Read job ID
 	id, err := strconv.Atoi(strId)
 	if err != nil {
-		logging.Error("Could not convert '", strId, "' to job id")
+		logging.Error("router: GetJob(): Could not convert '", strId, "' to job id")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -261,14 +278,14 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 	// Get job metadata from store
 	j, err := r.store.GetJob(id)
 	if err != nil {
-		logging.Error("Could not get job meta data (job ID = ", id, "): ", err)
+		logging.Error("router: GetJob(): Could not get job meta data (job ID = ", id, "): ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	// Check user authorization
 	if !(utils.Contains(user.Roles, auth.ADMIN) || user.Username == j.UserName) {
-		logging.Error("User ", user.Username, " is not permitted to access job ", j.Id)
+		logging.Error("router: GetJob(): User ", user.Username, " is not permitted to access job ", j.Id)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -302,7 +319,7 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 		jobData, err = (*r.db).GetJobData(&j, node, sampleInterval, raw)
 	}
 	if err != nil {
-		log.Printf("Could not get job metric data: %v\n", err)
+		logging.Error("router: GetJob(): Could not get job metric data (job ID = ", id, "): ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -314,7 +331,7 @@ func (r *Router) GetJob(w http.ResponseWriter, req *http.Request, params httprou
 	// Send data
 	jsonData, err := json.Marshal(&jobData)
 	if err != nil {
-		log.Printf("Could not marshal job to json")
+		logging.Error("router: GetJob(): Could not marshal job to json (job ID = ", id, ")")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -344,7 +361,7 @@ func (r *Router) GetMetric(
 
 	id, err := strconv.Atoi(strId)
 	if err != nil {
-		logging.Error("router: GetMetric(): Could not read job id: ", err)
+		logging.Error("router: GetMetric(): Could not convert '", strId, "' to job id")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -352,7 +369,7 @@ func (r *Router) GetMetric(
 	// Get job metadata from store
 	j, err := r.store.GetJob(id)
 	if err != nil {
-		logging.Error("router: GetMetric(): Could not get job meta data: ", err)
+		logging.Error("router: GetMetric(): Could not get job ", id, " meta data: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -417,7 +434,11 @@ func (r *Router) GetMetric(
 	w.Write(jsonData)
 }
 
-func (r *Router) Search(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
+func (r *Router) Search(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	user auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
 	searchTerm := params.ByName("term")
 
@@ -433,11 +454,14 @@ func (r *Router) Search(w http.ResponseWriter, req *http.Request, params httprou
 	w.Write([]byte(fmt.Sprintf("user:%v", searchTerm)))
 }
 
-func (r *Router) Login(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+func (r *Router) Login(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params) {
 	utils.AllowCors(req, w.Header())
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		log.Printf("Could not read http request body")
+		logging.Error("Router: Login(): Could not read http request body")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -445,28 +469,31 @@ func (r *Router) Login(w http.ResponseWriter, req *http.Request, params httprout
 	var dat auth.AuthPayload
 	err = json.Unmarshal(body, &dat)
 	if err != nil {
-		log.Printf("Could not unmarshal http request body")
+		logging.Error("Router: Login(): Could not unmarshal http request body")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	user, err := r.authManager.AuthLocalUser(dat.Username, dat.Password)
 	if err != nil {
-		log.Printf("Could not authenticate user: %v", err)
+		logging.Error("Router: Login(): Could not authenticate user '", dat.Username, "': ", err)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
 	err = r.authManager.AppendJWT(user, dat.Remember, w)
 	if err != nil {
-		log.Printf("Could not generate JWT: %v", err)
+		logging.Error("Router: Login(): Could not generate JWT for user '", dat.Username, "': ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
 }
 
-func (r *Router) LoginOAuth(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+func (r *Router) LoginOAuth(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params) {
 
 	// Check if auth manager is available
 	if !r.authManager.OAuthAvailable() {
@@ -499,7 +526,10 @@ func (r *Router) LoginOAuth(w http.ResponseWriter, req *http.Request, params htt
 	logging.Info("Router: LoginOAuth -> redirect to OAuth provider")
 }
 
-func (r *Router) LoginOAuthCallback(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+func (r *Router) LoginOAuthCallback(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params) {
 	sessionID, _ := req.Cookie("oauth_session")
 
 	// Check if session ID and state match
@@ -542,7 +572,7 @@ func (r *Router) LoginOAuthCallback(w http.ResponseWriter, req *http.Request, pa
 	// Read user information from OAuth provider
 	userInfo, err := r.authManager.GetOAuthUserInfo(token)
 	if err != nil {
-		log.Printf("Could not get oauth user info %v", err)
+		logging.Error("Router: LoginOAuthCallback(): Could not get oauth user info: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -555,7 +585,7 @@ func (r *Router) LoginOAuthCallback(w http.ResponseWriter, req *http.Request, pa
 		Username: userInfo.Username,
 		Roles:    userRoles.Roles,
 	}
-	logging.Info("Router: LoginOAuthCallback -> User: ", user.Username, ", Roles: ", user.Roles)
+	logging.Info("Router: LoginOAuthCallback(): User: ", user.Username, ", Roles: ", user.Roles)
 
 	// Generate Java web token
 	err = r.authManager.AppendJWT(user, true, w)
@@ -565,16 +595,20 @@ func (r *Router) LoginOAuthCallback(w http.ResponseWriter, req *http.Request, pa
 		return
 	}
 	http.Redirect(w, req, r.config.OAuth.AfterLoginRedirectUrl, http.StatusTemporaryRedirect)
-	logging.Info("Router: LoginOAuthCallback -> redirect to: ", r.config.OAuth.AfterLoginRedirectUrl)
+	logging.Info("Router: LoginOAuthCallback(): redirect to: ", r.config.OAuth.AfterLoginRedirectUrl)
 }
 
-func (r *Router) Logout(w http.ResponseWriter, req *http.Request, params httprouter.Params, _ auth.UserInfo) {
+func (r *Router) Logout(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	_ auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
 
 	// Read body
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		log.Printf("Could not read http request body")
+		logging.Error("Router: Logout(): Could not read http request body")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -582,13 +616,13 @@ func (r *Router) Logout(w http.ResponseWriter, req *http.Request, params httprou
 	var dat auth.AuthPayload
 	err = json.Unmarshal(body, &dat)
 	if err != nil {
-		log.Printf("Could not unmarshal http request body")
+		logging.Error("Router: Logout(): Could not unmarshal http request body")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if dat.Username == "" {
-		log.Printf("No username given on logout")
+		logging.Error("Router: Logout(): No username given on logout")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -602,20 +636,35 @@ func (r *Router) Logout(w http.ResponseWriter, req *http.Request, params httprou
 			Path:    "/",
 		})
 	w.WriteHeader(http.StatusOK)
+	logging.Info("Router: Logout(): logged out user ", dat.Username)
 }
 
-func (r *Router) GenerateAPIKey(w http.ResponseWriter, req *http.Request, params httprouter.Params, _ auth.UserInfo) {
+func (r *Router) GenerateAPIKey(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	_ auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
-	jwt, err := r.authManager.GenerateJWT(auth.UserInfo{Roles: []string{auth.JOBCONTROL}, Username: "api"}, true)
+	jwt, err :=
+		r.authManager.GenerateJWT(
+			auth.UserInfo{
+				Roles:    []string{auth.JOBCONTROL},
+				Username: "api"},
+			true)
 	if err != nil {
-		log.Printf("Could not generate JWT: %v", err)
+		logging.Error("Router: GenerateAPIKey(): Could not generate JWT: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	w.Write([]byte(jwt))
+	logging.Info("Router: GenerateAPIKey(): Generated API key")
 }
 
-func (r *Router) AddTag(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
+func (r *Router) AddTag(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	user auth.UserInfo) {
 	job, tag, ok := r.parseTag(w, req)
 	if ok {
 		role := auth.USER
@@ -629,32 +678,41 @@ func (r *Router) AddTag(w http.ResponseWriter, req *http.Request, params httprou
 
 		jsonData, err := json.Marshal(&tag)
 		if err != nil {
-			log.Printf("Could not marshal tag to json")
+			logging.Error("Router: AddTag(): Could not marshal tag to json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		w.Write(jsonData)
+		logging.Info("Router: AddTag(): Added tag ", tag.Name, " to job ", job.Id)
 	}
 }
 
-func (r *Router) RemoveTag(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
+func (r *Router) RemoveTag(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	user auth.UserInfo) {
 	job, tag, ok := r.parseTag(w, req)
 	if ok {
 		err := r.store.RemoveTag(job.Id, &tag)
 		if err != nil {
-			log.Println(err)
+			logging.Error("Router: RemoveTag(): Failed to remove tag: ", err)
 		}
 		r.jobCache.UpdateJob(job.Id)
 	}
 }
 
-func (r *Router) LiveMonitoring(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
+func (r *Router) LiveMonitoring(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	user auth.UserInfo) {
 	strId := params.ByName("id")
 
 	id, err := strconv.Atoi(strId)
 	if err != nil {
-		log.Printf("Could not job id data")
+		logging.Error("Router: LiveMonitoring(): Could not convert '", strId, "' to job id")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -727,7 +785,11 @@ func (r *Router) LiveMonitoring(w http.ResponseWriter, req *http.Request, params
 	}()
 }
 
-func (r *Router) GetConfig(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
+func (r *Router) GetConfig(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	user auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
 	// Restrict available configuration parameters for now
 	conf := conf.Configuration{}
@@ -745,7 +807,11 @@ func (r *Router) GetConfig(w http.ResponseWriter, req *http.Request, params http
 	w.Write(data)
 }
 
-func (r *Router) UpdateConfig(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
+func (r *Router) UpdateConfig(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	user auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
@@ -771,7 +837,11 @@ func (r *Router) UpdateConfig(w http.ResponseWriter, req *http.Request, params h
 		}
 	}
 
-	sort.SliceStable(conf.Metrics, func(i, j int) bool { return conf.Metrics[i].DisplayName < conf.Metrics[j].DisplayName })
+	sort.SliceStable(
+		conf.Metrics,
+		func(i, j int) bool {
+			return conf.Metrics[i].DisplayName < conf.Metrics[j].DisplayName
+		})
 
 	// Actually overwrite config
 	r.config.Metrics = conf.Metrics
@@ -791,7 +861,11 @@ func (r *Router) UpdateConfig(w http.ResponseWriter, req *http.Request, params h
 	w.Write(data)
 }
 
-func (r *Router) LiveLog(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
+func (r *Router) LiveLog(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	user auth.UserInfo) {
 	c, err := r.upgrader.Upgrade(w, req, nil)
 	if err != nil {
 		log.Print("error upgrading connection:", err)
@@ -811,13 +885,17 @@ func (r *Router) LiveLog(w http.ResponseWriter, req *http.Request, params httpro
 	}()
 }
 
-func (r *Router) RefreshMetadata(w http.ResponseWriter, req *http.Request, params httprouter.Params, user auth.UserInfo) {
+func (r *Router) RefreshMetadata(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	user auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
 	strId := params.ByName("id")
 
 	id, err := strconv.Atoi(strId)
 	if err != nil {
-		log.Printf("Could not parse job id data")
+		logging.Error("Router: RefreshMetadata(): Could not convert '", strId, "' to job id")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -854,7 +932,11 @@ func (r *Router) RefreshMetadata(w http.ResponseWriter, req *http.Request, param
 	w.Write(jsonData)
 }
 
-func (r *Router) GetUserConfig(w http.ResponseWriter, req *http.Request, params httprouter.Params, _ auth.UserInfo) {
+func (r *Router) GetUserConfig(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	_ auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
 	userStr := params.ByName("user")
 	if userStr == "" {
@@ -881,7 +963,11 @@ func (r *Router) GetUserConfig(w http.ResponseWriter, req *http.Request, params 
 	w.Write(data)
 }
 
-func (r *Router) SetUserConfig(w http.ResponseWriter, req *http.Request, params httprouter.Params, _ auth.UserInfo) {
+func (r *Router) SetUserConfig(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	_ auth.UserInfo) {
 	utils.AllowCors(req, w.Header())
 	userStr := params.ByName("user")
 	if userStr == "" {
@@ -915,14 +1001,19 @@ func (r *Router) SetUserConfig(w http.ResponseWriter, req *http.Request, params 
 
 	w.Write(data)
 }
-func (r *Router) parseTag(w http.ResponseWriter, req *http.Request) (job job.JobMetadata, tag job.JobTag, ok bool) {
+func (r *Router) parseTag(
+	w http.ResponseWriter,
+	req *http.Request) (
+	job job.JobMetadata,
+	tag job.JobTag,
+	ok bool) {
 	utils.AllowCors(req, w.Header())
 
 	jobStr := req.URL.Query().Get("job")
 
 	jobId, err := strconv.Atoi(jobStr)
 	if err != nil {
-		log.Printf("Could not parse job id")
+		logging.Error("Router: parseTag(): Could not convert '", jobStr, "' to job id")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
