@@ -41,7 +41,8 @@ func (l *WebLogger) Write(p []byte) (int, error) {
 	// Write message to all websocket connections
 	for _, c := range l.connections {
 		if err := c.WriteMessage(websocket.TextMessage, p); err != nil {
-			// in error case report error to default error log
+			// in error case write directly to default writer
+			// do not use logging.Error to avoid endless loop
 			msg := fmt.Sprint("ERROR: utils: Write(): Failed to write to websocket: ", err)
 			l.defaultWriter.Write([]byte(msg))
 		}
@@ -62,7 +63,8 @@ func (l *WebLogger) AddConnection(c *websocket.Conn) {
 			if v != nil {
 				if p := v.([]byte); len(p) > 0 {
 					if err := c.WriteMessage(websocket.TextMessage, p); err != nil {
-						// in error case report error to default error log
+						// in error case write directly to default writer
+						// do not use logging.Error to avoid endless loop
 						msg := fmt.Sprint("ERROR: utils: AddConnection(): Failed to write to new websocket: ", err)
 						l.defaultWriter.Write([]byte(msg))
 					}

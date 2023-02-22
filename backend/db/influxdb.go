@@ -272,7 +272,19 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (data []job.JobMetadataD
 	return
 }
 
-func (db *InfluxDB) query(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration, forceAggregate bool) (result map[string][]job.QueryResult, err error) {
+func (db *InfluxDB) query(
+	metric conf.MetricConfig,
+	j *job.JobMetadata,
+	nodes string,
+	sampleInterval time.Duration,
+	forceAggregate bool,
+) (
+	result map[string][]job.QueryResult,
+	err error,
+) {
+	logging.Debug("db: query(): ", fmt.Sprintf("%+v", metric))
+	start := time.Now()
+
 	var queryResult *api.QueryTableResult
 	separationKey := metric.SeparationKey
 	// If only one node is specified, always return detailed data, never aggregated data
@@ -289,6 +301,8 @@ func (db *InfluxDB) query(metric conf.MetricConfig, j *job.JobMetadata, nodes st
 	if err == nil {
 		result, err = parseQueryResult(queryResult, separationKey)
 	}
+
+	logging.Info("db: query for metric ", metric.GUID, " took ", time.Since(start))
 	return result, err
 }
 
