@@ -74,14 +74,30 @@ func (db *InfluxDB) Close() {
 	db.client.Close()
 }
 
-func (db *InfluxDB) GetJobData(j *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data job.JobData, err error) {
+func (db *InfluxDB) GetJobData(
+	j *job.JobMetadata,
+	nodes string,
+	sampleInterval time.Duration,
+	raw bool,
+) (
+	data job.JobData,
+	err error,
+) {
 	if nodes == "" {
 		nodes = j.NodeList
 	}
 	return db.getJobData(j, nodes, sampleInterval, raw, false)
 }
 
-func (db *InfluxDB) GetAggregatedJobData(j *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data job.JobData, err error) {
+func (db *InfluxDB) GetAggregatedJobData(
+	j *job.JobMetadata,
+	nodes string,
+	sampleInterval time.Duration,
+	raw bool,
+) (
+	data job.JobData,
+	err error,
+) {
 	if nodes == "" {
 		nodes = j.NodeList
 	}
@@ -170,36 +186,58 @@ func (db *InfluxDB) CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []job.
 	return monitor, done
 }
 
-func (db *InfluxDB) getJobData(j *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool, forceAggregate bool) (data job.JobData, err error) {
+func (db *InfluxDB) getJobData(
+	j *job.JobMetadata,
+	nodes string,
+	sampleInterval time.Duration,
+	raw bool,
+	forceAggregate bool,
+) (
+	data job.JobData,
+	err error,
+) {
 	var metricData []job.MetricData
 	var quantileData []job.QuantileData
 	var wg sync.WaitGroup
 	for _, m := range db.getPartition(j).Metrics {
+
+		// Query metric data
 		wg.Add(1)
 		go func(m conf.MetricConfig) {
+			defer wg.Done()
 			if raw {
-				defer wg.Done()
 				result, err := db.queryRaw(m, j, nodes, sampleInterval, forceAggregate)
 				if err != nil {
-					logging.Error("db: getJobData(): Job ", j.Id, ": could not get metric data: ", err)
+					logging.Error("db: getJobData(): Job ", j.Id, ": could not get raw metric data: ", err)
 					return
 				}
-				metricData = append(metricData,
-					job.MetricData{Config: m, RawData: result})
+				metricData =
+					append(metricData,
+						job.MetricData{
+							Config:  m,
+							RawData: result,
+						},
+					)
 			} else {
-				defer wg.Done()
 				result, err := db.query(m, j, nodes, sampleInterval, forceAggregate)
 				if err != nil {
 					logging.Error("db: getJobData(): Job ", j.Id, ": could not get metric data: ", err)
 					return
 				}
-				metricData = append(metricData,
-					job.MetricData{Config: m, Data: result})
+				metricData =
+					append(metricData,
+						job.MetricData{
+							Config: m,
+							Data:   result,
+						},
+					)
 			}
 		}(db.metrics[m])
 
 		if !j.IsRunning {
 			wg.Add(1)
+
+			// Query quantile measurements
 			go func(m conf.MetricConfig) {
 				defer wg.Done()
 				tempRes, err := db.queryQuantileMeasurement(m, j, db.metricQuantiles, sampleInterval)
@@ -212,16 +250,20 @@ func (db *InfluxDB) getJobData(j *job.JobMetadata, nodes string, sampleInterval 
 					logging.Error("db: getJobData(): Job ", j.Id, ": could not parse quantile data:", err)
 					return
 				}
-				quantileData = append(quantileData,
-					job.QuantileData{
-						Config:    m,
-						Data:      result,
-						Quantiles: db.metricQuantiles,
-					})
+				quantileData =
+					append(quantileData,
+						job.QuantileData{
+							Config:    m,
+							Data:      result,
+							Quantiles: db.metricQuantiles,
+						},
+					)
 			}(db.metrics[m])
 		}
 	}
 	wg.Wait()
+
+	// return metric and quantile data
 	data.MetricData = metricData
 	data.QuantileData = quantileData
 	data.Metadata = j
