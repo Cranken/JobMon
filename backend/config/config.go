@@ -213,7 +213,7 @@ func (c *Configuration) Init() {
 		}
 	}
 
-	// Check for each partition that all used metric GUIDs are configured
+	// Check for each partition and radar chart that all used metric GUIDs are configured
 	metricAvailable := make(map[string]bool)
 	for _, m := range c.Metrics {
 		metricAvailable[m.GUID] = true
@@ -223,6 +223,11 @@ func (c *Configuration) Init() {
 			if !metricAvailable[partMetrics] {
 				logging.Fatal("config: Init(): Metric ", partMetrics, " from partition ", partName, " config is not available")
 			}
+		}
+	}
+	for _, radarChartMetrics := range c.RadarChartMetrics {
+		if !metricAvailable[radarChartMetrics] {
+			logging.Fatal("config: Init(): Metric ", radarChartMetrics, " from radar chart config is not available")
 		}
 	}
 
