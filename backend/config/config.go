@@ -213,6 +213,19 @@ func (c *Configuration) Init() {
 		}
 	}
 
+	// Check for each partition that all used metric GUIDs are configured
+	metricAvailable := make(map[string]bool)
+	for _, m := range c.Metrics {
+		metricAvailable[m.GUID] = true
+	}
+	for partName, partConfig := range c.Partitions {
+		for _, partMetrics := range partConfig.Metrics {
+			if !metricAvailable[partMetrics] {
+				logging.Fatal("config: Init(): Metric ", partMetrics, " from partition ", partName, " config is not available")
+			}
+		}
+	}
+
 	// Sort metrics by DisplayName
 	sort.SliceStable(
 		c.Metrics,
