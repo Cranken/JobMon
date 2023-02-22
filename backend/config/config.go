@@ -33,7 +33,7 @@ type Configuration struct {
 	OAuth OAuthConfig
 
 	// Per partition metric config
-	Metrics []MetricConfig `json:"Metrics,omitempty"`
+	Metrics []MetricConfig `json:"Metrics"`
 	// Job data LRU cache size
 	CacheSize int
 	// Prefetch job data into LRU cache upon job completion
@@ -62,7 +62,7 @@ type MetricConfig struct {
 	// Metric type, e.g. "cpu", "node", "socket", "accelerator"
 	Type string `json:"Type"`
 	// Category the metric belongs to. Must be one of config->MetricCategories
-	Categories []string `json:"Category,omitempty"`
+	Categories []string `json:"Categories"`
 	// Measurement name in Influxdb
 	Measurement string `json:"Measurement"`
 	// Default Aggregation function to use in aggregation of per device
@@ -72,23 +72,23 @@ type MetricConfig struct {
 	// List of all possible aggregation functions
 	AvailableAggFns []string `json:"AvailableAggFns"`
 	// Sample interval of the metric
-	SampleInterval string `json:"SampleInterval,omitempty"`
+	SampleInterval string `json:"SampleInterval"`
 	// Unit; supported units are: "FLOP/s", "Bit/s", "°C", "B/s", "B", "%", ""
 	Unit string `json:"Unit"`
 	// Display name for the metric
 	DisplayName string `json:"DisplayName"`
 	// Custom filter function
-	FilterFunc string `json:"FilterFunc,omitempty"`
+	FilterFunc string `json:"FilterFunc"`
 	// Influxdb Flux query string executed after the query but before the parsing.
-	PostQueryOp string `json:"PostQueryOp,omitempty"`
+	PostQueryOp string `json:"PostQueryOp"`
 	// Custom separation key to use in parsing
-	SeparationKey string `json:"SeparationKey,omitempty"`
+	SeparationKey string `json:"SeparationKey"`
 	// Max value per node
-	MaxPerNode int `json:"MaxPerNode,omitempty"`
+	MaxPerNode int `json:"MaxPerNode"`
 	// max value per type
-	MaxPerType int `json:"MaxPerType,omitempty"`
+	MaxPerType int `json:"MaxPerType"`
 	// Which aggregation function to use when aggregating pthreads and their corresponding hyperthread
-	PThreadAggFn string `json:"PThreadAggFn,omitempty"`
+	PThreadAggFn string `json:"PThreadAggFn"`
 }
 
 type BasePartitionConfig struct {
