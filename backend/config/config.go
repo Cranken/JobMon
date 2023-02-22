@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"jobmon/logging"
+	"jobmon/utils"
 	"os"
 	"sort"
 
@@ -273,4 +274,26 @@ func (c *Configuration) Flush() {
 	if err != nil {
 		logging.Error("config: Flush(): Writing file '", configFile, "' failed: ", err)
 	}
+}
+
+// Metrics parameter contains all metrics GUID that should be deleted
+func (pc *PartitionConfig) RemoveMissingMetrics(metrics []string) {
+	for _, v := range metrics {
+		pc.Metrics = utils.Remove(pc.Metrics, v)
+	}
+}
+
+// Returns all metrics that have been deleted from the oldConf to the newConf
+func (newConf *Configuration) GetDeletedMetrics(oldConf Configuration) []string {
+	availableGuids := make([]string, 0)
+	for _, mc := range newConf.Metrics {
+		availableGuids = append(availableGuids, mc.GUID)
+	}
+	deletedGuids := make([]string, 0)
+	for _, mc := range oldConf.Metrics {
+		if !utils.Contains(availableGuids, mc.GUID) {
+			deletedGuids = append(deletedGuids, mc.GUID)
+		}
+	}
+	return deletedGuids
 }
