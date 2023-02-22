@@ -8,7 +8,7 @@ import (
 	"jobmon/config"
 	"jobmon/db"
 	"jobmon/job"
-	"log"
+	"jobmon/logging"
 	"time"
 
 	"github.com/uptrace/bun"
@@ -26,25 +26,40 @@ type PostgresStore struct {
 func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 	s.config = c
 	s.influx = influx
-	psqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithNetwork("tcp"),
-		pgdriver.WithAddr(c.JobStore.PSQLHost),
-		pgdriver.WithTLSConfig(&tls.Config{InsecureSkipVerify: true}),
-		pgdriver.WithInsecure(true),
-		pgdriver.WithUser(c.JobStore.PSQLUsername),
-		pgdriver.WithPassword(c.JobStore.PSQLPassword),
-		pgdriver.WithDatabase(c.JobStore.PSQLDB),
-		pgdriver.WithApplicationName("jobmon-backend")))
+	psqldb :=
+		sql.OpenDB(
+			pgdriver.NewConnector(
+				pgdriver.WithNetwork("tcp"),
+				pgdriver.WithAddr(c.JobStore.PSQLHost),
+				pgdriver.WithTLSConfig(&tls.Config{InsecureSkipVerify: true}),
+				pgdriver.WithInsecure(true),
+				pgdriver.WithUser(c.JobStore.PSQLUsername),
+				pgdriver.WithPassword(c.JobStore.PSQLPassword),
+				pgdriver.WithDatabase(c.JobStore.PSQLDB),
+				pgdriver.WithApplicationName("jobmon-backend"),
+			),
+		)
 	s.db = bun.NewDB(psqldb, pgdialect.New())
 	err := s.db.Ping()
 	if err != nil {
-		log.Fatalf("Could not connect to psql store: %v", err)
+		logging.Fatal("store: Init(): Could not connect to PostgreSQL store: ", err)
 	}
 	s.db.RegisterModel((*job.JobToTags)(nil))
-	s.db.NewCreateTable().Model((*job.JobToTags)(nil)).Exec(context.Background())
-	s.db.NewCreateTable().Model((*job.JobTag)(nil)).Exec(context.Background())
-	s.db.NewCreateTable().Model((*job.JobMetadata)(nil)).Exec(context.Background())
-	s.db.NewCreateTable().Model((*UserSession)(nil)).Exec(context.Background())
-	s.db.NewCreateTable().Model((*UserRoles)(nil)).Exec(context.Background())
+	s.db.NewCreateTable().
+		Model((*job.JobToTags)(nil)).
+		Exec(context.Background())
+	s.db.NewCreateTable().
+		Model((*job.JobTag)(nil)).
+		Exec(context.Background())
+	s.db.NewCreateTable().
+		Model((*job.JobMetadata)(nil)).
+		Exec(context.Background())
+	s.db.NewCreateTable().
+		Model((*UserSession)(nil)).
+		Exec(context.Background())
+	s.db.NewCreateTable().
+		Model((*UserRoles)(nil)).
+		Exec(context.Background())
 	go func() {
 		s.finishOvertimeJobs()
 	}()
@@ -52,42 +67,71 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 }
 
 func (s *PostgresStore) Migrate(source *Store) {
+	start := time.Now()
+
 	err := s.db.ResetModel(context.Background(), (*job.JobMetadata)(nil))
 	if err != nil {
-		log.Printf("[Migration] Err resetting: %v", err)
+		logging.Error("store: Migration(): Err resetting: ", err)
 		return
 	}
 	jobs, _ := (*source).GetAllJobs()
 	res, err := s.db.NewInsert().Model(&jobs).Exec(context.Background())
 	if err != nil {
-		log.Printf("[Migration] Err inserting: %v", err)
+		logging.Error("store: Migration(): Err inserting: ", err)
 		return
 	}
 	rows, _ := res.RowsAffected()
-	log.Printf("[Migration] Migrated: %v rows", rows)
+
+	logging.Info("store: Migration(): took ", time.Since(start))
+	logging.Info("store: Migration(): Migrated: ", rows, " rows")
 }
 
 // PutJob implements PutJob method of store interface.
 func (s *PostgresStore) PutJob(job job.JobMetadata) error {
-	_, err := s.db.NewInsert().Model(&job).Exec(context.Background())
+	start := time.Now()
+
+	_, err :=
+		s.db.NewInsert().
+			Model(&job).
+			Exec(context.Background())
+
+	logging.Info("store: PutJob (job ID = ", job.Id, ") took ", time.Since(start))
 	return err
 }
 
 // GetJob implements GetJob method of store interface.
 func (s *PostgresStore) GetJob(id int) (job job.JobMetadata, err error) {
+	start := time.Now()
+
 	job.Id = id
-	err = s.db.NewSelect().Model(&job).WherePK().Relation("Tags").Scan(context.Background())
+	err =
+		s.db.NewSelect().
+			Model(&job).
+			WherePK().
+			Relation("Tags").
+			Scan(context.Background())
+
+	logging.Info("store: GetJob (job ID = ", job.Id, ") took ", time.Since(start))
 	return job, err
 }
 
 // GetAllJobs implements GetAllJobs of store interface.
 func (s *PostgresStore) GetAllJobs() (jobs []job.JobMetadata, err error) {
-	err = s.db.NewSelect().Model(&jobs).Scan(context.Background())
+	start := time.Now()
+
+	err =
+		s.db.NewSelect().
+			Model(&jobs).
+			Scan(context.Background())
+
+	logging.Info("store: GetAllJob took ", time.Since(start))
 	return jobs, err
 }
 
 // GetFilteredJobs implements GetFilteredJobs of store interface.
 func (s *PostgresStore) GetFilteredJobs(filter job.JobFilter) (jobs []job.JobMetadata, err error) {
+	start := time.Now()
+
 	query := s.db.NewSelect().Model(&jobs).Relation("Tags")
 	query = appendTagFilter(query, filter.Tags, s.db)
 	query = appendValueFilter(query, filter.UserId, "user_id")
@@ -101,11 +145,15 @@ func (s *PostgresStore) GetFilteredJobs(filter job.JobFilter) (jobs []job.JobMet
 	query = appendRangeFilter(query, filter.NumGpus, "num_nodes * job_metadata.gp_us_per_node")
 	query = appendRangeFilter(query, filter.Time, "start_time")
 	err = query.Scan(context.Background())
+
+	logging.Info("store: GetFilteredJobs took ", time.Since(start))
 	return
 }
 
 // GetJobTags implements GetJobTags of store interface.
 func (s *PostgresStore) GetJobTags(username string) (tags []job.JobTag, err error) {
+	start := time.Now()
+
 	query := s.db.NewSelect().Table("job_tags").ColumnExpr("job_tags.*").
 		Join("INNER JOIN job_to_tags ON job_tags.id=job_to_tags.tag_id").
 		Join("INNER JOIN job_metadata ON job_metadata.id=job_to_tags.job_id")
@@ -113,11 +161,15 @@ func (s *PostgresStore) GetJobTags(username string) (tags []job.JobTag, err erro
 		query = query.Where("job_metadata.user_name=?", username)
 	}
 	err = query.Scan(context.Background(), &tags)
+
+	logging.Info("store: GetJobTags took ", time.Since(start))
 	return
 }
 
 // StopJob implements StopJob method of store interface.
 func (s *PostgresStore) StopJob(id int, stopJob job.StopJob) error {
+	start := time.Now()
+
 	job, err := s.GetJob(id)
 	if err != nil {
 		return err
@@ -130,51 +182,88 @@ func (s *PostgresStore) StopJob(id int, stopJob job.StopJob) error {
 		return err
 	}
 	job.Data = data
+
+	logging.Info("store: StopJob took ", time.Since(start))
 	return s.UpdateJob(job)
 }
 
 // GetUserSessionToken implements GetUserSessionToken method of store interface.
 func (s *PostgresStore) GetUserSessionToken(username string) (string, bool) {
+	start := time.Now()
+
 	user := UserSession{Username: username}
 	err := s.db.NewSelect().Model(&user).WherePK().Scan(context.Background())
 	if err != nil {
 		return "", false
 	}
+
+	logging.Info("store: GetUserSessionToken took ", time.Since(start))
 	return user.Token, true
 }
 
 // SetUserSessionToken implements SetUserSessionToken method of store interface.
 func (s *PostgresStore) SetUserSessionToken(username string, token string) {
-	user := UserSession{Username: username, Token: token}
+	start := time.Now()
+
+	user :=
+		UserSession{
+			Username: username,
+			Token:    token,
+		}
 	s.db.NewInsert().
 		Model(&user).
 		On("CONFLICT (username) DO UPDATE").
 		Exec(context.Background())
+
+	logging.Info("store: SetUserSessionToken took ", time.Since(start))
 }
 
 // RemoveUserSessionToken implements RemoveUserSessionToken method of store interface.
 func (s *PostgresStore) RemoveUserSessionToken(username string) {
+	start := time.Now()
+
 	user := UserSession{Username: username}
-	s.db.NewDelete().Model(&user).WherePK().Exec(context.Background())
+	s.db.NewDelete().
+		Model(&user).
+		WherePK().
+		Exec(context.Background())
+
+	logging.Info("store: RemoveUserSessionToken took ", time.Since(start))
 }
 
 // GetUserRoles implements GetUserRoles method of store interface.
 func (s *PostgresStore) GetUserRoles(username string) (UserRoles, bool) {
+	start := time.Now()
+
 	user := UserRoles{Username: username}
-	err := s.db.NewSelect().Model(&user).WherePK().Scan(context.Background())
+	err :=
+		s.db.NewSelect().
+			Model(&user).
+			WherePK().
+			Scan(context.Background())
 	if err != nil {
 		return user, false
 	}
+
+	logging.Info("store: GetUserRoles took ", time.Since(start))
 	return user, true
 }
 
 // SetUserRoles implements SetUserRoles method of store interface.
 func (s *PostgresStore) SetUserRoles(username string, roles []string) {
-	user := UserRoles{Username: username, Roles: roles}
+	start := time.Now()
+
+	user :=
+		UserRoles{
+			Username: username,
+			Roles:    roles,
+		}
 	s.db.NewInsert().
 		Model(&user).
 		On("CONFLICT (username) DO UPDATE").
 		Exec(context.Background())
+
+	logging.Info("store: SetUserRoles took ", time.Since(start))
 }
 
 // Flush implements Flush method of store interface.
@@ -184,43 +273,91 @@ func (s *PostgresStore) Flush() {
 
 // UpdateJob implements UpdateJob method of store interface.
 func (s *PostgresStore) UpdateJob(job job.JobMetadata) error {
-	_, err := s.db.NewUpdate().Model(&job).WherePK().Exec(context.Background())
+	start := time.Now()
+
+	_, err :=
+		s.db.NewUpdate().
+			Model(&job).
+			WherePK().
+			Exec(context.Background())
+
+	logging.Info("store: UpdateJob took ", time.Since(start))
 	return err
 }
 
 // AddTag implements AddTag method of store interface.
 func (s *PostgresStore) AddTag(id int, tag *job.JobTag) error {
-	_, err := s.db.NewInsert().Model(tag).Exec(context.Background())
+	start := time.Now()
+
+	_, err :=
+		s.db.NewInsert().
+			Model(tag).
+			Exec(context.Background())
 	if err != nil {
 		return err
 	}
-	j2t := job.JobToTags{JobId: id, TagId: tag.Id}
-	_, err = s.db.NewInsert().Model(&j2t).Exec(context.Background())
+	j2t :=
+		job.JobToTags{
+			JobId: id,
+			TagId: tag.Id,
+		}
+	_, err =
+		s.db.NewInsert().
+			Model(&j2t).
+			Exec(context.Background())
+
+	logging.Info("store: AddTag took ", time.Since(start))
 	return err
 }
 
 // RemoveTag implements RemoveTag method of store interface.
 func (s *PostgresStore) RemoveTag(id int, tag *job.JobTag) error {
-	j2t := job.JobToTags{JobId: id, TagId: tag.Id}
-	_, err := s.db.NewDelete().Model(&j2t).WherePK().Exec(context.Background())
+	start := time.Now()
+
+	j2t :=
+		job.JobToTags{
+			JobId: id,
+			TagId: tag.Id,
+		}
+	_, err :=
+		s.db.NewDelete().
+			Model(&j2t).
+			WherePK().
+			Exec(context.Background())
+
+	logging.Info("store: RemoveTag took ", time.Since(start))
 	return err
 }
 
 // finishOvertimeJobs changes running jobs that have exceeded MaxTime to finished jobs.
 func (s *PostgresStore) finishOvertimeJobs() {
+	start := time.Now()
+
 	now := int(time.Now().Unix())
 	for k, pc := range s.config.Partitions {
 		deadline := now - pc.MaxTime
 		var jobs []job.JobMetadata
-		err := s.db.NewSelect().Model(&jobs).
-			Where("is_running=true").Where("partition=?", k).Where("start_time<?", deadline).
-			Scan(context.Background())
+		err :=
+			s.db.NewSelect().
+				Model(&jobs).
+				Where("is_running=true").
+				Where("partition=?", k).
+				Where("start_time<?", deadline).
+				Scan(context.Background())
 		if err == nil && len(jobs) > 0 {
 			for _, j := range jobs {
-				s.StopJob(j.Id, job.StopJob{StopTime: j.StartTime + pc.MaxTime, ExitCode: 1})
+				s.StopJob(
+					j.Id,
+					job.StopJob{
+						StopTime: j.StartTime + pc.MaxTime,
+						ExitCode: 1,
+					},
+				)
 			}
 		}
 	}
+
+	logging.Info("store: finishOvertimeJobs took ", time.Since(start))
 }
 
 // startCleanJobsTimer resets the job timer.

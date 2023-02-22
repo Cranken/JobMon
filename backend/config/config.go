@@ -3,90 +3,94 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"flag"
+	"fmt"
 	"io/fs"
-	"log"
+	"jobmon/logging"
 	"os"
 	"sort"
 
 	"github.com/google/uuid"
 )
 
-const CONFIG_FILE = "config.json"
+var configFile string
 
 // Configuration stores the main configuration data required during the application launch.
 type Configuration struct {
-	DBHost string // Complete URL of InfluxDB, i.e. protocol, address and port
 
-	DBToken string // InfluxDB access token to bucket
+	// Configuration for performance metrics database
+	// current implementation uses InfluxDB only
+	DBConfig
 
-	DBOrg string // Org the InfluxDB bucket belongs to
+	// Configuration for jobmon frontend
+	// Frontend URL e.g. http://my-jobmon-frontend.example.com:3000
+	FrontendURL string
 
-	DBBucket string // InfluxDB bucket
+	// Configuration for job meta data database
+	// current implementations uses PostgreSQL only
+	JobStore JobStoreConfig
 
-	FrontendURL string // Frontend URL
+	// Configuration for OAuth Login
+	OAuth OAuthConfig
 
-	JobStore JobStoreConfig // Configuration for the job store
-
-	OAuth OAuthConfig // Configuration for OAuth Login
-
-	Metrics []MetricConfig // Per partition metric config
-
-	CacheSize int // Job data LRU cache size
-
-	Prefetch bool // Prefetch job data into LRU cache upon job completion
-
-	SampleInterval string // Sample interval of the metrics as configured in the
-	// metric collector String formatted as e.g. 30s or 1m
-
-	MetricQuantiles []string // Quantiles the frontend will display; Will be moved
-	// to frontend config Values are percentages formatted as decimal (0.X)
-
-	JWTSecret string // Secret to use when generating the JWT
-
-	LocalUsers map[string]LocalUser // Authentication for local users;
-	// Key is username and value is the config
-
-	Partitions map[string]PartitionConfig // Per partition configurations
-
-	MetricCategories []string // Categories used for grouping metrics
-
-	RadarChartMetrics []string // Metrics to display in the radar chart;
-	// Will be moved to frontend config
+	// Per partition metric config
+	Metrics []MetricConfig
+	// Job data LRU cache size
+	CacheSize int
+	// Prefetch job data into LRU cache upon job completion
+	Prefetch bool
+	// Sample interval of the metrics as configured in the metric collector
+	// String formatted as e.g. 30s or 1m
+	SampleInterval string
+	// Quantiles the frontend will display; Will be moved to frontend config
+	// Values are percentages formatted as decimal (0.X)
+	MetricQuantiles []string
+	// Secret to use when generating the JWT
+	JWTSecret string
+	// Authentication for local users; Key is username and value is the config
+	LocalUsers map[string]LocalUser
+	// Per partition configurations
+	Partitions map[string]PartitionConfig
+	// Categories used for grouping metrics
+	MetricCategories []string
+	// Metrics to display in the radar chart; Will be moved to frontend config
+	RadarChartMetrics []string
 }
 
 // MetricConfig represents a metric configuration configured by the admin.
 type MetricConfig struct {
-	GUID string // Global unique identifier for metric
-
-	Type string // Metric type, e.g. "cpu", "node", "socket", "accelerator"
-
-	Categories []string // Category the metric belongs to. Must be one of config->MetricCategories
-
-	Measurement string // Measurement name in Influxdb
-
-	AggFn string // Default Aggregation function to use in aggregation of per
-	// device(cpu, socket, accelerator) data to node data.Not used for metrics with type == "node"
-
-	AvailableAggFns []string // List of all possible aggregation functions
-
-	SampleInterval string // Sample interval of the metric
-
-	Unit string // Unit; supported units are: "FLOP/s", "Bit/s", "°C", "B/s", "B", "%", ""
-
-	DisplayName string // Display name for the metric
-
-	FilterFunc string // Custom filter function
-
-	PostQueryOp string // Influxdb Flux query string executed after the query but before the parsing.
-
-	SeparationKey string // Custom separation key to use in parsing
-
-	MaxPerNode int // Max value per node
-
-	MaxPerType int // max value per type
-
-	PThreadAggFn string // Which aggregation function to use when aggregating pthreads
-	// and their corresponding hyperthread
+	// Global unique identifier for metric
+	GUID string
+	// Metric type, e.g. "cpu", "node", "socket", "accelerator"
+	Type string
+	// Category the metric belongs to. Must be one of config->MetricCategories
+	Categories []string
+	// Measurement name in Influxdb
+	Measurement string
+	// Default Aggregation function to use in aggregation of per device
+	// (cpu, socket, accelerator) data to node data.
+	// Not used for metrics with type == "node"
+	AggFn string
+	// List of all possible aggregation functions
+	AvailableAggFns []string
+	// Sample interval of the metric
+	SampleInterval string
+	// Unit; supported units are: "FLOP/s", "Bit/s", "°C", "B/s", "B", "%", ""
+	Unit string
+	// Display name for the metric
+	DisplayName string
+	// Custom filter function
+	FilterFunc string
+	// Influxdb Flux query string executed after the query but before the parsing.
+	PostQueryOp string
+	// Custom separation key to use in parsing
+	SeparationKey string
+	// Max value per node
+	MaxPerNode int
+	// max value per type
+	MaxPerType int
+	// Which aggregation function to use when aggregating pthreads and their corresponding hyperthread
+	PThreadAggFn string
 }
 
 // A BasePartitionConfig represents a partition configuration
@@ -113,17 +117,34 @@ type LocalUser struct {
 	Role     string // Role can be "job-control", "user", "admin"
 }
 
-// JobStoreConfig represents a configuration for the job store
+// Configuration for performance metrics database
+// current implementation uses InfluxDB only
+type DBConfig struct {
+	// Complete URL of InfluxDB, e.g. http://my-inxuxdb.example.org:9200
+	DBHost string
+	// InfluxDB access token to bucket
+	DBToken string
+	// Org the InfluxDB bucket belongs to
+	DBOrg string
+	// InfluxDB bucket
+	DBBucket string
+}
+
+// Configuration for job meta data database
+// current implementation uses PostgreSQL only
 type JobStoreConfig struct {
-	Type string // Database type. Supported types: "postgres".
+	// Supported types: "postgres"
+	Type string
 
-	PSQLHost string // Postgres store config: Postgres host address.
-
-	PSQLUsername string // Postgres username
-
-	PSQLPassword string // Postgres password
-
-	PSQLDB string // Postgres db for job metadata store
+	// PostgreSQL database config:
+	// Postgres host address e.g. my-postgresql.example.org:5432
+	PSQLHost string
+	// Postgres username
+	PSQLUsername string
+	// Postgres password
+	PSQLPassword string
+	// Postgres db for job metadata store
+	PSQLDB string
 }
 
 // OAuthConfig represents a configuration for the OAuth login.
@@ -148,28 +169,75 @@ type OAuthConfig struct {
 // Init reads the config.json file and maps the data form the json file to the
 // configuration struct c.
 func (c *Configuration) Init() {
-	data, err := os.ReadFile(CONFIG_FILE)
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		log.Fatalf("config: Could not read config file: %v\n Error: %v\n", CONFIG_FILE, err)
+
+	// Read command line options
+	var logLevel int
+	var help bool
+	flag.StringVar(&configFile, "config", "config.json", "config file")
+	flag.IntVar(&logLevel, "debug", logging.WarningLogLevel,
+		fmt.Sprint("debug level:",
+			" off=", logging.OffLogLevel,
+			" error=", logging.ErrorLogLevel,
+			" warning=", logging.WarningLogLevel,
+			" info=", logging.InfoLogLevel,
+			" debug=", logging.DebugLogLevel))
+	flag.BoolVar(&help, "help", false, "print this help message")
+	flag.Parse()
+
+	// print help message
+	if help {
+		flag.Usage()
+		os.Exit(0)
 	}
+
+	// Set log level
+	if err := logging.SetLogLevel(logLevel); err != nil {
+		logging.Fatal("config: Init(): Could not set log level: ", err)
+	}
+
+	// Read config file
+	data, err := os.ReadFile(configFile)
+	if err != nil && errors.Is(err, fs.ErrNotExist) {
+		logging.Fatal("config: Init(): Could not read config file: '", configFile, "' Error: ", err)
+	}
+	logging.Info("config: Init(): Read config file '", configFile, "'")
+
 	err = json.Unmarshal(data, c)
 	if err != nil {
-		log.Fatalf("config: Could not unmarshal config file %v", err)
+		logging.Fatal("config: Init(): Could not unmarshal config file: ", err)
 	}
-	for i, mc := range c.Metrics {
+	logging.Info("config: Init(): Parsed config file '", configFile, "'")
+
+	// Add GUIDs to metrics if any are missing
+	for i := range c.Metrics {
+		mc := &c.Metrics[i]
 		if mc.GUID == "" {
 			mc.GUID = uuid.New().String()
-			c.Metrics[i] = mc
 		}
 	}
-	sort.SliceStable(c.Metrics, func(i, j int) bool { return c.Metrics[i].DisplayName < c.Metrics[j].DisplayName })
+
+	// Sort metrics by DisplayName
+	sort.SliceStable(
+		c.Metrics,
+		func(i, j int) bool {
+			return c.Metrics[i].DisplayName < c.Metrics[j].DisplayName
+		})
+
+	logging.Debug("config: Init(): Configuration: ", fmt.Sprintf("%+v", *c))
 }
 
 // Flush saves the state of the configuration c into the config.json file.
 func (c *Configuration) Flush() {
+
+	// marshal current configuration to json
 	data, err := json.MarshalIndent(c, "", "    ")
 	if err != nil {
-		log.Printf("Could not marshal config into json: %v\n", err)
+		logging.Error("config: Flush(): Could not marshal config into json: ", err)
 	}
-	os.WriteFile(CONFIG_FILE, data, 0644)
+
+	// Write json to config file
+	err = os.WriteFile(configFile, data, 0644)
+	if err != nil {
+		logging.Error("config: Flush(): Writing file '", configFile, "' failed: ", err)
+	}
 }

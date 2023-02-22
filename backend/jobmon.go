@@ -4,11 +4,11 @@ import (
 	"jobmon/auth"
 	conf "jobmon/config"
 	database "jobmon/db"
+	"jobmon/logging"
 	cache "jobmon/lru_cache"
 	routerImport "jobmon/router"
 	jobstore "jobmon/store"
 	"jobmon/utils"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -26,7 +26,7 @@ var (
 
 func main() {
 	webLogger.Init()
-	log.SetOutput(&webLogger)
+	logging.SetOutput(&webLogger)
 
 	// parse the json configuration file and map the data to config.
 	config.Init()

@@ -6,8 +6,8 @@ import (
 	"jobmon/analysis"
 	conf "jobmon/config"
 	"jobmon/job"
+	"jobmon/logging"
 	"jobmon/utils"
-	"log"
 	"strings"
 	"sync"
 	"time"
@@ -34,25 +34,31 @@ type InfluxDB struct {
 
 // Init implements Init method of DB interface.
 func (db *InfluxDB) Init(c conf.Configuration) {
+
+	// Check if DBHost, and DBToken are set
 	if c.DBHost == "" {
-		log.Fatalln("db: No Influxdb host set")
+		logging.Fatal("db: Init(): No Influxdb host set")
 	}
 	if c.DBToken == "" {
-		log.Fatalln("db: No Influxdb token set")
+		logging.Fatal("db: Init(): No Influxdb token set")
 	}
+
+	// Connect to InfluxDB
 	db.client = influxdb2.NewClient(c.DBHost, c.DBToken)
 	ok, err := db.client.Ping(context.Background())
 	if !ok || err != nil {
-		log.Fatalf("db: Could not reach influxdb %v", err)
+		logging.Fatal("db: Init(): Could not reach influxdb: ", err)
 	}
+
+	// Initialize db data structure
 	if c.DBOrg == "" {
-		log.Fatalln("db: No Influxdb org set")
+		logging.Fatal("db: Init(): No Influxdb org set")
 	}
 	db.queryAPI = db.client.QueryAPI(c.DBOrg)
 	db.tasksAPI = db.client.TasksAPI()
 	db.organizationsAPI = db.client.OrganizationsAPI()
 	if c.DBBucket == "" {
-		log.Fatalln("db: No Influxdb bucket set")
+		logging.Fatal("db: Init(): No Influxdb bucket set")
 	}
 	db.bucket = c.DBBucket
 	db.org = c.DBOrg
@@ -121,13 +127,13 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 func (db *InfluxDB) GetMetricDataWithAggFn(j *job.JobMetadata, m conf.MetricConfig, aggFn string, sampleInterval time.Duration) (data job.MetricData, err error) {
 	tempRes, err := db.queryAggregateMeasurement(m, j, j.NodeList, aggFn, sampleInterval)
 	if err != nil {
-		log.Printf("Job %v: could not get quantile data %v", j.Id, err)
+		logging.Error("db: GetMetricDataWithAggFn(): Job ", j.Id, ": could not get quantile data: ", err)
 		return
 	}
 
 	result, err := parseQueryResult(tempRes, "hostname")
 	if err != nil {
-		log.Printf("Job %v: could not parse quantile data %v", j.Id, err)
+		logging.Error("db: GetMetricDataWithAggFn(): Job ", j.Id, ": could not parse quantile data: ", err)
 		return
 	}
 	m.AggFn = aggFn
@@ -163,7 +169,7 @@ func (db *InfluxDB) CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []job.
 			case <-ticker.C:
 				data, err := db.queryLastDatapoints(liveJ)
 				if err != nil {
-					log.Printf("error getting job data for live monitoring: %v", err)
+					logging.Error("db: CreateLiveMonitoringChannel(): Error getting job data for live monitoring: ", err)
 					continue
 				}
 				monitor <- data
@@ -193,18 +199,20 @@ func (db *InfluxDB) getJobData(j *job.JobMetadata, nodes string, sampleInterval 
 				defer wg.Done()
 				result, err := db.queryRaw(m, j, nodes, sampleInterval, forceAggregate)
 				if err != nil {
-					log.Printf("Job %v: could not get metric data %v", j.Id, err)
+					logging.Error("db: getJobData(): Job ", j.Id, ": could not get metric data: ", err)
 					return
 				}
-				metricData = append(metricData, job.MetricData{Config: m, RawData: result})
+				metricData = append(metricData,
+					job.MetricData{Config: m, RawData: result})
 			} else {
 				defer wg.Done()
 				result, err := db.query(m, j, nodes, sampleInterval, forceAggregate)
 				if err != nil {
-					log.Printf("Job %v: could not get metric data %v", j.Id, err)
+					logging.Error("db: getJobData(): Job ", j.Id, ": could not get metric data: ", err)
 					return
 				}
-				metricData = append(metricData, job.MetricData{Config: m, Data: result})
+				metricData = append(metricData,
+					job.MetricData{Config: m, Data: result})
 			}
 		}(db.metrics[m])
 
@@ -214,15 +222,20 @@ func (db *InfluxDB) getJobData(j *job.JobMetadata, nodes string, sampleInterval 
 				defer wg.Done()
 				tempRes, err := db.queryQuantileMeasurement(m, j, db.metricQuantiles, sampleInterval)
 				if err != nil {
-					log.Printf("Job %v: could not get quantile data %v", j.Id, err)
+					logging.Error("db: getJobData(): Job ", j.Id, ": could not get quantile data: ", err)
 					return
 				}
 				result, err := parseQueryResult(tempRes, "_field")
 				if err != nil {
-					log.Printf("Job %v: could not parse quantile data %v", j.Id, err)
+					logging.Error("db: getJobData(): Job ", j.Id, ": could not parse quantile data:", err)
 					return
 				}
-				quantileData = append(quantileData, job.QuantileData{Config: m, Data: result, Quantiles: db.metricQuantiles})
+				quantileData = append(quantileData,
+					job.QuantileData{
+						Config:    m,
+						Data:      result,
+						Quantiles: db.metricQuantiles,
+					})
 			}(db.metrics[m])
 		}
 	}
@@ -242,13 +255,13 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (data []job.JobMetadataD
 			defer wg.Done()
 			tempRes, err := db.queryMetadataMeasurements(m, j)
 			if err != nil {
-				log.Printf("Job %v: could not get metadata data %v", j.Id, err)
+				logging.Error("db: getMetadataData(): Job ", j.Id, ": could not get metadata data: ", err)
 				return
 			}
 
 			result, err := parseQueryResult(tempRes, "result")
 			if err != nil {
-				log.Printf("Job %v: could not parse metadata data %v", j.Id, err)
+				logging.Error("db: getMetadataData(): Job ", j.Id, ": could not parse metadata data: ", err)
 				return
 			}
 
@@ -321,7 +334,7 @@ func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, j *job.JobM
 		metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
-		log.Printf("Error at simple query: %v : %v\n", query, err)
+		logging.Error("db: querySimpleMeasurement(): Error at simple query: '", query, "': ", err)
 	}
 	return result, err
 }
@@ -335,7 +348,7 @@ func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, j *job.J
 		metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
 	if err != nil {
-		log.Printf("Error at simple raw query: %v : %v\n", query, err)
+		logging.Error("db: querySimpleMeasurementRaw(): Error at simple raw query: '", query, "': ", err)
 	}
 	return result, err
 }
@@ -382,7 +395,7 @@ func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, j *job.J
 		nodes, sampleInterval, metric.FilterFunc, metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
-		log.Printf("Error at aggregate query: %v\n", err)
+		logging.Error("db: queryAggregateMeasurement(): Error at aggregate query '", query, "': ", err)
 	}
 	return
 }
@@ -396,7 +409,7 @@ func (db *InfluxDB) queryAggregateMeasurementRaw(metric conf.MetricConfig, j *jo
 		nodes, sampleInterval, metric.FilterFunc, metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
 	if err != nil {
-		log.Printf("Error at aggregate raw query: %v\n", err)
+		logging.Error("db: queryAggregateMeasurementRaw(): Error at aggregate raw query '", query, "': ", err)
 	}
 	return
 }
@@ -428,7 +441,7 @@ func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, j *job.Jo
 
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
-		log.Printf("Error at quantile query: %v\n", err)
+		logging.Error("db: queryQuantileMeasurement(): Error at quantile query '", query, "': ", err)
 	}
 	return
 }
@@ -452,7 +465,7 @@ func (db *InfluxDB) queryMetadataMeasurements(metric conf.MetricConfig, j *job.J
 		j.NodeList, metric.FilterFunc, metric.PostQueryOp)
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
-		log.Printf("Error at metadata query: %v\n", err)
+		logging.Error("db: queryMetadataMeasurements(): Error at metadata query '", query, "': ", err)
 	}
 	return
 }
@@ -481,13 +494,13 @@ func (db *InfluxDB) queryLastDatapoints(j job.JobMetadata) (metricData []job.Met
 				queryResult, err = db.queryAggregateMeasurement(m, &j, j.NodeList, m.AggFn, sampleInterval)
 			}
 			if err != nil {
-				log.Printf("Job %v: could not get last datapoints %v", j.Id, err)
+				logging.Error("db: queryLastDatapoints(): Job ", j.Id, ": could not get last datapoints: ", err)
 				return
 			}
 			if err == nil {
 				result, err := parseQueryResult(queryResult, separationKey)
 				if err != nil {
-					log.Printf("Job %v: could not parse last datapoints %v", j.Id, err)
+					logging.Error("Job ", j.Id, ": could not parse last datapoints: ", err)
 					return
 				}
 				metricData = append(metricData, job.MetricData{Config: m, Data: result})
@@ -502,7 +515,7 @@ func (db *InfluxDB) queryLastDatapoints(j job.JobMetadata) (metricData []job.Met
 func (db *InfluxDB) createTask(taskName string, taskStr string, orgId string) (task *domain.Task, err error) {
 	task, err = db.tasksAPI.CreateTaskWithEvery(context.Background(), taskName, taskStr, "1m", orgId)
 	if err != nil {
-		log.Printf("Could not create task: %v\n", err)
+		logging.Error("db: createTask(): Could not create task: ", err)
 		return
 	}
 	db.tasks = append(db.tasks, *task)
@@ -529,9 +542,10 @@ func (db *InfluxDB) createAggregationTask(metric conf.MetricConfig, aggFn string
 // then for each metric find the available aggregation functions adding this tasks
 // to db, finally it launches an aggregation task for each missing metric.
 func (db *InfluxDB) updateAggregationTasks() (err error) {
+
 	tasks, err := db.tasksAPI.FindTasks(context.Background(), nil)
 	if err != nil {
-		log.Printf("Could not get tasks from influxdb: %v\n", err)
+		logging.Error("db: updateAggregationTasks(): Could not get tasks from influxdb: ", err)
 		return
 	}
 
@@ -548,13 +562,18 @@ func (db *InfluxDB) updateAggregationTasks() (err error) {
 				}
 			}
 			if !found {
-				missingMetricTasks = append(missingMetricTasks, utils.Tuple[conf.MetricConfig, string]{First: metric, Second: aggFn})
+				missingMetricTasks =
+					append(missingMetricTasks,
+						utils.Tuple[conf.MetricConfig, string]{
+							First:  metric,
+							Second: aggFn,
+						})
 			}
 		}
 	}
 	org, err := db.organizationsAPI.FindOrganizationByName(context.Background(), db.org)
 	if err != nil {
-		log.Printf("Could not get orgId from influxdb: %v\n", err)
+		logging.Error("db: updateAggregationTasks(): Could not get orgId from influxdb: ", err)
 		return
 	}
 	for _, metric := range missingMetricTasks {
