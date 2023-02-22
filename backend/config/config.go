@@ -33,7 +33,7 @@ type Configuration struct {
 	OAuth OAuthConfig
 
 	// Per partition metric config
-	Metrics []MetricConfig
+	Metrics []MetricConfig `json:"Metrics,omitempty"`
 	// Job data LRU cache size
 	CacheSize int
 	// Prefetch job data into LRU cache upon job completion
@@ -58,37 +58,37 @@ type Configuration struct {
 
 type MetricConfig struct {
 	// Global unique identifier for metric
-	GUID string
+	GUID string `json:"GUID"`
 	// Metric type, e.g. "cpu", "node", "socket", "accelerator"
-	Type string
+	Type string `json:"Type"`
 	// Category the metric belongs to. Must be one of config->MetricCategories
-	Categories []string
+	Categories []string `json:"Category,omitempty"`
 	// Measurement name in Influxdb
-	Measurement string
+	Measurement string `json:"Measurement"`
 	// Default Aggregation function to use in aggregation of per device
 	// (cpu, socket, accelerator) data to node data.
 	// Not used for metrics with type == "node"
-	AggFn string
+	AggFn string `json:"AggFn"`
 	// List of all possible aggregation functions
-	AvailableAggFns []string
+	AvailableAggFns []string `json:"AvailableAggFns"`
 	// Sample interval of the metric
-	SampleInterval string
+	SampleInterval string `json:"SampleInterval,omitempty"`
 	// Unit; supported units are: "FLOP/s", "Bit/s", "°C", "B/s", "B", "%", ""
-	Unit string
+	Unit string `json:"Unit"`
 	// Display name for the metric
-	DisplayName string
+	DisplayName string `json:"DisplayName"`
 	// Custom filter function
-	FilterFunc string
+	FilterFunc string `json:"FilterFunc,omitempty"`
 	// Influxdb Flux query string executed after the query but before the parsing.
-	PostQueryOp string
+	PostQueryOp string `json:"PostQueryOp,omitempty"`
 	// Custom separation key to use in parsing
-	SeparationKey string
+	SeparationKey string `json:"SeparationKey,omitempty"`
 	// Max value per node
-	MaxPerNode int
+	MaxPerNode int `json:"MaxPerNode,omitempty"`
 	// max value per type
-	MaxPerType int
+	MaxPerType int `json:"MaxPerType,omitempty"`
 	// Which aggregation function to use when aggregating pthreads and their corresponding hyperthread
-	PThreadAggFn string
+	PThreadAggFn string `json:"PThreadAggFn,omitempty"`
 }
 
 type BasePartitionConfig struct {
