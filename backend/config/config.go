@@ -231,6 +231,24 @@ func (c *Configuration) Init() {
 		}
 	}
 
+	// Check that only allowed aggregation functions are used
+	aggFnAvailable := map[string]bool{
+		"max":  true,
+		"mean": true,
+		"min":  true,
+		"sum":  true,
+	}
+	for _, metricConfig := range c.Metrics {
+		if !aggFnAvailable[metricConfig.AggFn] {
+			logging.Fatal("config: Init(): Metric ", metricConfig.GUID, " uses unknown AggFn = ", metricConfig.AggFn)
+		}
+		for _, aggFn := range metricConfig.AvailableAggFns {
+			if !aggFnAvailable[aggFn] {
+				logging.Fatal("config: Init(): Metric ", metricConfig.GUID, " uses unknown AvailableAggFns = ", metricConfig.AggFn)
+			}
+		}
+	}
+
 	// Sort metrics by DisplayName
 	sort.SliceStable(
 		c.Metrics,
