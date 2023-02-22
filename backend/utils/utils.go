@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-// AllowCors is helper function to allow CORS.
+// AllowCors is helper function to allow CORS(Cross-Origin Resource Sharing).
 func AllowCors(r *http.Request, header http.Header) {
 	header.Set("Access-Control-Allow-Methods", r.Header.Get("Allow"))
 	header.Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
