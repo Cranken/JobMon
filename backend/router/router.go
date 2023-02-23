@@ -856,6 +856,18 @@ func (r *Router) UpdateConfig(
 			return conf.Metrics[i].DisplayName < conf.Metrics[j].DisplayName
 		})
 
+	// Check if metric was removed and remove all references
+	deletedGuids := conf.GetDeletedMetrics(*r.config)
+	if len(deletedGuids) > 0 {
+		for i, pc := range conf.Partitions {
+			pc.RemoveMissingMetrics(deletedGuids)
+			conf.Partitions[i] = pc
+		}
+		for _, v := range deletedGuids {
+			r.config.RadarChartMetrics = utils.Remove(r.config.RadarChartMetrics, v)
+		}
+	}
+
 	// Actually overwrite config
 	r.config.Metrics = conf.Metrics
 	r.config.Partitions = conf.Partitions

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"jobmon/logging"
+	"jobmon/utils"
 	"os"
 	"sort"
 
@@ -34,7 +35,7 @@ type Configuration struct {
 	OAuth OAuthConfig
 
 	// Per partition metric config
-	Metrics []MetricConfig
+	Metrics []MetricConfig `json:"Metrics"`
 	// Job data LRU cache size
 	CacheSize int
 	// Prefetch job data into LRU cache upon job completion
@@ -60,37 +61,37 @@ type Configuration struct {
 // MetricConfig represents a metric configuration configured by the admin.
 type MetricConfig struct {
 	// Global unique identifier for metric
-	GUID string
+	GUID string `json:"GUID"`
 	// Metric type, e.g. "cpu", "node", "socket", "accelerator"
-	Type string
+	Type string `json:"Type"`
 	// Category the metric belongs to. Must be one of config->MetricCategories
-	Categories []string
+	Categories []string `json:"Categories"`
 	// Measurement name in Influxdb
-	Measurement string
+	Measurement string `json:"Measurement"`
 	// Default Aggregation function to use in aggregation of per device
 	// (cpu, socket, accelerator) data to node data.
 	// Not used for metrics with type == "node"
-	AggFn string
+	AggFn string `json:"AggFn"`
 	// List of all possible aggregation functions
-	AvailableAggFns []string
+	AvailableAggFns []string `json:"AvailableAggFns"`
 	// Sample interval of the metric
-	SampleInterval string
+	SampleInterval string `json:"SampleInterval"`
 	// Unit; supported units are: "FLOP/s", "Bit/s", "°C", "B/s", "B", "%", ""
-	Unit string
+	Unit string `json:"Unit"`
 	// Display name for the metric
-	DisplayName string
+	DisplayName string `json:"DisplayName"`
 	// Custom filter function
-	FilterFunc string
+	FilterFunc string `json:"FilterFunc"`
 	// Influxdb Flux query string executed after the query but before the parsing.
-	PostQueryOp string
+	PostQueryOp string `json:"PostQueryOp"`
 	// Custom separation key to use in parsing
-	SeparationKey string
+	SeparationKey string `json:"SeparationKey"`
 	// Max value per node
-	MaxPerNode int
+	MaxPerNode int `json:"MaxPerNode"`
 	// max value per type
-	MaxPerType int
+	MaxPerType int `json:"MaxPerType"`
 	// Which aggregation function to use when aggregating pthreads and their corresponding hyperthread
-	PThreadAggFn string
+	PThreadAggFn string `json:"PThreadAggFn"`
 }
 
 // A BasePartitionConfig represents a partition configuration
@@ -216,6 +217,42 @@ func (c *Configuration) Init() {
 		}
 	}
 
+	// Check for each partition and radar chart that all used metric GUIDs are configured
+	metricAvailable := make(map[string]bool)
+	for _, m := range c.Metrics {
+		metricAvailable[m.GUID] = true
+	}
+	for partName, partConfig := range c.Partitions {
+		for _, partMetrics := range partConfig.Metrics {
+			if !metricAvailable[partMetrics] {
+				logging.Fatal("config: Init(): Metric ", partMetrics, " from partition ", partName, " config is not available")
+			}
+		}
+	}
+	for _, radarChartMetrics := range c.RadarChartMetrics {
+		if !metricAvailable[radarChartMetrics] {
+			logging.Fatal("config: Init(): Metric ", radarChartMetrics, " from radar chart config is not available")
+		}
+	}
+
+	// Check that only allowed aggregation functions are used
+	aggFnAvailable := map[string]bool{
+		"max":  true,
+		"mean": true,
+		"min":  true,
+		"sum":  true,
+	}
+	for _, metricConfig := range c.Metrics {
+		if !aggFnAvailable[metricConfig.AggFn] {
+			logging.Fatal("config: Init(): Metric ", metricConfig.GUID, " uses unknown AggFn = ", metricConfig.AggFn)
+		}
+		for _, aggFn := range metricConfig.AvailableAggFns {
+			if !aggFnAvailable[aggFn] {
+				logging.Fatal("config: Init(): Metric ", metricConfig.GUID, " uses unknown AvailableAggFns = ", metricConfig.AggFn)
+			}
+		}
+	}
+
 	// Sort metrics by DisplayName
 	sort.SliceStable(
 		c.Metrics,
@@ -240,4 +277,26 @@ func (c *Configuration) Flush() {
 	if err != nil {
 		logging.Error("config: Flush(): Writing file '", configFile, "' failed: ", err)
 	}
+}
+
+// Metrics parameter contains all metrics GUID that should be deleted
+func (pc *PartitionConfig) RemoveMissingMetrics(metrics []string) {
+	for _, v := range metrics {
+		pc.Metrics = utils.Remove(pc.Metrics, v)
+	}
+}
+
+// Returns all metrics that have been deleted from the oldConf to the newConf
+func (newConf *Configuration) GetDeletedMetrics(oldConf Configuration) []string {
+	availableGuids := make([]string, 0)
+	for _, mc := range newConf.Metrics {
+		availableGuids = append(availableGuids, mc.GUID)
+	}
+	deletedGuids := make([]string, 0)
+	for _, mc := range oldConf.Metrics {
+		if !utils.Contains(availableGuids, mc.GUID) {
+			deletedGuids = append(deletedGuids, mc.GUID)
+		}
+	}
+	return deletedGuids
 }

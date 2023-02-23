@@ -77,9 +77,18 @@ func (db *InfluxDB) Close() {
 	db.client.Close()
 }
 
+
 // GetJobData is just a wrapper for getJobData that initializes the nodes parameter
 // in case it was not specified.
-func (db *InfluxDB) GetJobData(j *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data job.JobData, err error) {
+func (db *InfluxDB) GetJobData(
+	j *job.JobMetadata,
+	nodes string,
+	sampleInterval time.Duration,
+	raw bool,
+) (
+	data job.JobData,
+	err error,
+) {
 	if nodes == "" {
 		nodes = j.NodeList
 	}
@@ -88,7 +97,16 @@ func (db *InfluxDB) GetJobData(j *job.JobMetadata, nodes string, sampleInterval 
 
 // GetAggregatedJobData similar to GetJobData except that it returns the data for single node jobs.
 // Single node jobs also return aggregated data for metrics with metric granularity finer than per node.
-func (db *InfluxDB) GetAggregatedJobData(j *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data job.JobData, err error) {
+func (db *InfluxDB) GetAggregatedJobData(
+	j *job.JobMetadata,
+	nodes string,
+	sampleInterval time.Duration,
+	raw bool,
+) (
+	data job.JobData,
+	err error,
+) {
+
 	if nodes == "" {
 		nodes = j.NodeList
 	}
@@ -184,40 +202,63 @@ func (db *InfluxDB) CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []job.
 	return monitor, done
 }
 
+
 // getJobData returns the data for job j for the given nodes and sampleInterval.
 // If raw is true then the MetricData contained in the result data contains the raw metric data.
 // Nodes should be specified as a list of nodes separated by a '|' character.
 // If no nodes are specified, data for all nodes are queried.
-func (db *InfluxDB) getJobData(j *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool, forceAggregate bool) (data job.JobData, err error) {
+func (db *InfluxDB) getJobData(
+	j *job.JobMetadata,
+	nodes string,
+	sampleInterval time.Duration,
+	raw bool,
+	forceAggregate bool,
+) (
+	data job.JobData,
+	err error,
+) {
 	var metricData []job.MetricData
 	var quantileData []job.QuantileData
 	var wg sync.WaitGroup
 	for _, m := range db.getPartition(j).Metrics {
+
+		// Query metric data
 		wg.Add(1)
 		go func(m conf.MetricConfig) {
+			defer wg.Done()
 			if raw {
-				defer wg.Done()
 				result, err := db.queryRaw(m, j, nodes, sampleInterval, forceAggregate)
 				if err != nil {
-					logging.Error("db: getJobData(): Job ", j.Id, ": could not get metric data: ", err)
+					logging.Error("db: getJobData(): Job ", j.Id, ": could not get raw metric data: ", err)
 					return
 				}
-				metricData = append(metricData,
-					job.MetricData{Config: m, RawData: result})
+				metricData =
+					append(metricData,
+						job.MetricData{
+							Config:  m,
+							RawData: result,
+						},
+					)
 			} else {
-				defer wg.Done()
 				result, err := db.query(m, j, nodes, sampleInterval, forceAggregate)
 				if err != nil {
 					logging.Error("db: getJobData(): Job ", j.Id, ": could not get metric data: ", err)
 					return
 				}
-				metricData = append(metricData,
-					job.MetricData{Config: m, Data: result})
+				metricData =
+					append(metricData,
+						job.MetricData{
+							Config: m,
+							Data:   result,
+						},
+					)
 			}
 		}(db.metrics[m])
 
 		if !j.IsRunning {
 			wg.Add(1)
+
+			// Query quantile measurements
 			go func(m conf.MetricConfig) {
 				defer wg.Done()
 				tempRes, err := db.queryQuantileMeasurement(m, j, db.metricQuantiles, sampleInterval)
@@ -230,16 +271,20 @@ func (db *InfluxDB) getJobData(j *job.JobMetadata, nodes string, sampleInterval 
 					logging.Error("db: getJobData(): Job ", j.Id, ": could not parse quantile data:", err)
 					return
 				}
-				quantileData = append(quantileData,
-					job.QuantileData{
-						Config:    m,
-						Data:      result,
-						Quantiles: db.metricQuantiles,
-					})
+				quantileData =
+					append(quantileData,
+						job.QuantileData{
+							Config:    m,
+							Data:      result,
+							Quantiles: db.metricQuantiles,
+						},
+					)
 			}(db.metrics[m])
 		}
 	}
 	wg.Wait()
+
+	// return metric and quantile data
 	data.MetricData = metricData
 	data.QuantileData = quantileData
 	data.Metadata = j
@@ -294,7 +339,19 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (data []job.JobMetadataD
 // query returns result which is a map with keys being the separation key and values being the table that
 // corresponds to the job j, list of nodes "nodes", within the sample interval
 // sampleInterval for the metric "metric".
-func (db *InfluxDB) query(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration, forceAggregate bool) (result map[string][]job.QueryResult, err error) {
+func (db *InfluxDB) query(
+	metric conf.MetricConfig,
+	j *job.JobMetadata,
+	nodes string,
+	sampleInterval time.Duration,
+	forceAggregate bool,
+) (
+	result map[string][]job.QueryResult,
+	err error,
+) {
+	logging.Debug("db: query(): ", fmt.Sprintf("%+v", metric))
+	start := time.Now()
+
 	var queryResult *api.QueryTableResult
 	separationKey := metric.SeparationKey
 	// If only one node is specified, always return detailed data, never aggregated data
@@ -311,6 +368,8 @@ func (db *InfluxDB) query(metric conf.MetricConfig, j *job.JobMetadata, nodes st
 	if err == nil {
 		result, err = parseQueryResult(queryResult, separationKey)
 	}
+
+	logging.Info("db: query for metric ", metric.GUID, " took ", time.Since(start))
 	return result, err
 }
 
