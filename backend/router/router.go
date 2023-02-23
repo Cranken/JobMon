@@ -85,8 +85,12 @@ func (r *Router) Init(
 				if r.Header.Get("Access-Control-Request-Method") != "" {
 					// Set Cross-Origin Resource Sharing (CORS) headers
 					header := w.Header()
-					header.Set("Access-Control-Allow-Methods", header.Get("Allow"))
-					header.Set("Access-Control-Allow-Origin", config.FrontendURL)
+					if m := header.Get("Allow"); m != "" {
+						header.Set("Access-Control-Allow-Methods", m)
+					}
+					if o := config.FrontendURL; o != "" {
+						header.Set("Access-Control-Allow-Origin", o)
+					}
 					header.Set("Access-Control-Allow-Credentials", "true")
 					header.Set("Access-Control-Expose-Headers", "Set-Cookie")
 				}
@@ -461,7 +465,6 @@ func (r *Router) Search(
 
 	w.Write([]byte(fmt.Sprintf("user:%v", searchTerm)))
 }
-
 
 // Login writes to the WriteHeader of w, for the given request req, params and user
 // if the authentication succeeded for a local user.
