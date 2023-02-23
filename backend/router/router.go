@@ -26,6 +26,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+// Router
 type Router struct {
 	store       jobstore.Store
 	config      *conf.Configuration
@@ -36,6 +37,7 @@ type Router struct {
 	logger      *utils.WebLogger
 }
 
+// Init starts up the server and sets up all the necessary handlers then it start the main web server.
 func (r *Router) Init(
 	store jobstore.Store,
 	config *conf.Configuration,
@@ -201,6 +203,7 @@ func (r *Router) JobStop(
 	}()
 }
 
+// GetJobs writes the job metadata to w, for the given request req and user.
 func (r *Router) GetJobs(
 	w http.ResponseWriter,
 	req *http.Request,
@@ -254,11 +257,13 @@ func (r *Router) GetJobs(
 	w.Write(data)
 }
 
+// GetJob writes the job data to w, for the given request req, params and user.
 func (r *Router) GetJob(
 	w http.ResponseWriter,
 	req *http.Request,
 	params httprouter.Params,
 	user auth.UserInfo) {
+
 	utils.AllowCors(req, w.Header())
 	start := time.Now()
 
@@ -341,11 +346,13 @@ func (r *Router) GetJob(
 	w.Write(jsonData)
 }
 
+// GetMetric writes the metric data to w, for the given request req, params and user.
 func (r *Router) GetMetric(
 	w http.ResponseWriter,
 	req *http.Request,
 	params httprouter.Params,
 	user auth.UserInfo) {
+
 	utils.AllowCors(req, w.Header())
 
 	strId := params.ByName("id")
@@ -433,11 +440,13 @@ func (r *Router) GetMetric(
 	w.Write(jsonData)
 }
 
+// Search writes the search result to w, for the given request req, params and user.
 func (r *Router) Search(
 	w http.ResponseWriter,
 	req *http.Request,
 	params httprouter.Params,
 	user auth.UserInfo) {
+
 	utils.AllowCors(req, w.Header())
 	searchTerm := params.ByName("term")
 
@@ -453,10 +462,14 @@ func (r *Router) Search(
 	w.Write([]byte(fmt.Sprintf("user:%v", searchTerm)))
 }
 
+
+// Login writes to the WriteHeader of w, for the given request req, params and user
+// if the authentication succeeded for a local user.
 func (r *Router) Login(
 	w http.ResponseWriter,
 	req *http.Request,
 	params httprouter.Params) {
+
 	utils.AllowCors(req, w.Header())
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {

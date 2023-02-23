@@ -16,6 +16,7 @@ import (
 
 var configFile string
 
+// Configuration stores the main configuration data required during the application launch.
 type Configuration struct {
 
 	// Configuration for performance metrics database
@@ -57,6 +58,7 @@ type Configuration struct {
 	RadarChartMetrics []string
 }
 
+// MetricConfig represents a metric configuration configured by the admin.
 type MetricConfig struct {
 	// Global unique identifier for metric
 	GUID string `json:"GUID"`
@@ -92,30 +94,28 @@ type MetricConfig struct {
 	PThreadAggFn string `json:"PThreadAggFn"`
 }
 
+// A BasePartitionConfig represents a partition configuration
 type BasePartitionConfig struct {
-	// Maximum wall clock time for a job in the partition
-	MaxTime int
-	// Metrics the partition provides.
-	// Array of measurement names as specified in the global metric config
-	Metrics []string
+	MaxTime int      // Maximum wall clock time for a job in the partition
+	Metrics []string // Metrics the partition provides. Array of measurement names as specified in the global metric config.
 }
 
+// VirtualPartitionConfig defines a virtual partition, for a subset of Nodes.
 type VirtualPartitionConfig struct {
-	BasePartitionConfig
-	// Node ranges inside the parent partition which this virtual partition applies to
-	Nodes []string
+	BasePartitionConfig          // Base partition config
+	Nodes               []string // Node ranges inside the parent partition which this virtual partition applies to.
 }
 
+// PartitionConfig represents a partition that contains both physical and virtual partitions.
 type PartitionConfig struct {
-	BasePartitionConfig
-	// Virtual partitions inside this parent partition
-	VirtualPartitions map[string]VirtualPartitionConfig
+	BasePartitionConfig                                   // Base partition configuration
+	VirtualPartitions   map[string]VirtualPartitionConfig // Virtual partitions inside this parent partition
 }
 
+// LocalUser stores the access credentials for local users.
 type LocalUser struct {
-	Password string
-	// Role can be "job-control", "user", "admin"
-	Role string
+	Password string // Password of LocalUser
+	Role     string // Role can be "job-control", "user", "admin"
 }
 
 // Configuration for performance metrics database
@@ -148,24 +148,27 @@ type JobStoreConfig struct {
 	PSQLDB string
 }
 
+// OAuthConfig represents a configuration for the OAuth login.
 type OAuthConfig struct {
-	// OAuth Client ID
-	ClientID string
-	// OAuth Secret
-	Secret string
-	// OAuth Endpoint Auth URL
-	AuthURL string
-	// OAuth Endpoint Token URL
-	TokenURL string
-	// OAuth Redirect URL, i.e. backend oauth callback endpoint ("<backend_host>/auth/oauth/callback")
-	RedirectURL string
-	// Oauth User Info URL
-	UserInfoURL string
-	// URL to which the user will be redirected to after successful login.
-	// Set to some frontend url, e.g. "<frontend_host>/jobs"
-	AfterLoginRedirectUrl string
+	ClientID string // OAuth Client ID
+
+	Secret string // OAuth Secret
+
+	AuthURL string // OAuth Endpoint Auth URL
+
+	TokenURL string // OAuth Endpoint Token URL
+
+	RedirectURL string // OAuth Redirect URL, i.e. backend oauth
+	// callback endpoint ("<backend_host>/auth/oauth/callback")
+
+	UserInfoURL string // Oauth User Info URL
+
+	AfterLoginRedirectUrl string // URL to which the user will be redirected
+	// to after successful login. Set to some frontend url, e.g. "<frontend_host>/jobs"
 }
 
+// Init reads the config.json file and maps the data form the json file to the
+// configuration struct c.
 func (c *Configuration) Init() {
 
 	// Read command line options
@@ -260,7 +263,7 @@ func (c *Configuration) Init() {
 	logging.Debug("config: Init(): Configuration: ", fmt.Sprintf("%+v", *c))
 }
 
-// Flush writes current configuration to the config file
+// Flush saves the state of the configuration c into the config.json file.
 func (c *Configuration) Flush() {
 
 	// marshal current configuration to json

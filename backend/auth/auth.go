@@ -21,28 +21,33 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// The user can have one of the following roles.
 const (
 	JOBCONTROL = "job-control"
 	USER       = "user"
 	ADMIN      = "admin"
 )
 
+// AuthPayLoad stores credentials of local users.
 type AuthPayload struct {
 	Username string
 	Password string
 	Remember bool
 }
 
+// UserInfo stores the roles and the username of a user.
 type UserInfo struct {
 	Roles    []string
 	Username string
 }
 
+// UserClaims stores UserInfo and jwt standard claims which include ExpiresAt and Issuer.
 type UserClaims struct {
 	UserInfo
 	jwt.StandardClaims
 }
 
+// OAuthUserInfo stores OAuthentication data for a given user.
 type OAuthUserInfo struct {
 	Name     string
 	Sub      string
@@ -51,14 +56,17 @@ type OAuthUserInfo struct {
 	Email    string
 }
 
+// UserSession stores session data for a user authenticated with OAuth.
 type UserSession struct {
 	OAuthUserInfo
 	Timestamp time.Time
 	IsValid   bool
 }
 
+// AuthManager is the main object that stores all the necessary information for
+// localUsers, OAuthUsers, sessions etc.
 type AuthManager struct {
-	hmacSampleSecret []byte
+	hmacSampleSecret []byte // JWT secret
 	store            *store.Store
 	localUsers       map[string]config.LocalUser
 	oauthAvailable   bool
@@ -68,14 +76,20 @@ type AuthManager struct {
 	sessionsLock     sync.Mutex
 }
 
+// default session time
 const EXPIRATIONTIME = 60 * 60 * 24 * 7
+
+// default JWT issuer
 const ISSUER = "monitoring-backend"
 
+// function type representing handlers
 type APIHandle func(http.ResponseWriter, *http.Request, httprouter.Params, UserInfo)
 
-// Create protected route which requires given authentication level
+// Protected is a high level function that creates a protected route which
+// requires authLevel authentication level.
 func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		// Check if r contains an authorization Cookie, get the full JWT token.
 		token, err := r.Cookie("Authorization")
 		if err != nil {
 			utils.AllowCors(r, w.Header())
@@ -92,7 +106,7 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 			logging.Error("AuthManager: Protected(): No authorization cookie provided")
 			return
 		}
-
+		// Check if the returned token contains a Bearer schema.
 		parts := strings.Split(token.Value, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			utils.AllowCors(r, w.Header())
@@ -110,6 +124,7 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 			return
 		}
 
+		// Get the user from the authorization header.
 		user, err := authManager.validate(parts[1])
 		if err != nil {
 			utils.AllowCors(r, w.Header())
@@ -127,6 +142,7 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 			return
 		}
 
+		// Check if the user has defined roles, if not give him a default USER role.
 		userRoles, ok := (*authManager.store).GetUserRoles(user.Username)
 		if !ok {
 			if !utils.Contains(userRoles.Roles, USER) {
@@ -158,6 +174,7 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 	}
 }
 
+// Init initializes auth with c and store.
 func (auth *AuthManager) Init(c config.Configuration, store *store.Store) {
 
 	if c.JWTSecret == "" {
@@ -178,6 +195,7 @@ func (auth *AuthManager) Init(c config.Configuration, store *store.Store) {
 	auth.sessions = make(map[string]UserSession)
 }
 
+// createOAuthConfig sets the oauthConfig field for auth based on the configuration c.
 func (auth *AuthManager) createOAuthConfig(c config.Configuration) error {
 	auth.oauthAvailable = false
 
@@ -225,6 +243,8 @@ func (auth *AuthManager) createOAuthConfig(c config.Configuration) error {
 	return nil
 }
 
+// validate checks if tokenStr is validated from auth, if that's the case
+// it returns the user information.
 func (auth *AuthManager) validate(tokenStr string) (
 	user UserInfo,
 	err error) {
@@ -260,7 +280,8 @@ func (auth *AuthManager) validate(tokenStr string) (
 	return
 }
 
-// Generate a JWT for the given user. Parameter 'remember' specifies if the JWT should be valid for a year
+// GenerateJWT, generates a JSON Web Token for the given user.
+// remember specifies if JWT should be valid for a year.
 func (auth *AuthManager) GenerateJWT(user UserInfo, remember bool) (string, error) {
 
 	expirationTime := EXPIRATIONTIME * time.Second
@@ -290,7 +311,7 @@ func (auth *AuthManager) GenerateJWT(user UserInfo, remember bool) (string, erro
 	return ret, err
 }
 
-// Append JWT cookie to the http response
+// AppendJWT appends a JWT cookie to the http response for user UserInfo to the writer w.
 func (auth *AuthManager) AppendJWT(user UserInfo, remember bool, w http.ResponseWriter) (err error) {
 	token, err := auth.GenerateJWT(user, remember)
 	if err != nil {
@@ -314,7 +335,8 @@ func (auth *AuthManager) AppendJWT(user UserInfo, remember bool, w http.Response
 	return
 }
 
-// Check if given username and password are correct
+
+// AuthLocalUser returns a user if username and password are valid credentials.
 func (auth *AuthManager) AuthLocalUser(
 	username string,
 	password string,
@@ -339,15 +361,17 @@ func (auth *AuthManager) Logout(username string) {
 	(*auth.store).RemoveUserSessionToken(username)
 }
 
-// OAuthAvailable checks if
+// OAuthAvailable checks if OAuth is available.
 func (auth *AuthManager) OAuthAvailable() bool {
 	return auth.oauthAvailable
 }
 
+// GetOAuthCodeURL returns the URL that redirects the user to the FeLS login page.
 func (auth *AuthManager) GetOAuthCodeURL(sessionID string) string {
 	return auth.oauthConfig.AuthCodeURL(sessionID, oauth2.AccessTypeOnline)
 }
 
+// GenerateSession creates a session, returns the session ID.
 func (auth *AuthManager) GenerateSession() (string, error) {
 	auth.sessionsLock.Lock()
 	defer auth.sessionsLock.Unlock()
@@ -367,6 +391,7 @@ func (auth *AuthManager) GenerateSession() (string, error) {
 	return sessionID, nil
 }
 
+// GetSession returns the created session.
 func (auth *AuthManager) GetSession(sessionID string) (UserSession, bool) {
 	auth.sessionsLock.Lock()
 	defer auth.sessionsLock.Unlock()
@@ -374,6 +399,7 @@ func (auth *AuthManager) GetSession(sessionID string) (UserSession, bool) {
 	return session, ok
 }
 
+// SetSessionUserInfo updates the session with id sessionID for the OAuthUser info.
 func (auth *AuthManager) SetSessionUserInfo(sessionID string, info OAuthUserInfo) {
 	auth.sessionsLock.Lock()
 	defer auth.sessionsLock.Unlock()
@@ -388,10 +414,12 @@ func (auth *AuthManager) SetSessionUserInfo(sessionID string, info OAuthUserInfo
 	}
 }
 
+// ExchangeOAuthToken returns authentication token in the case of OAuth authentication.
 func (auth *AuthManager) ExchangeOAuthToken(code string) (*oauth2.Token, error) {
 	return auth.oauthConfig.Exchange(context.Background(), code)
 }
 
+// GetOAuthUserInfo returns OAuth user info.
 func (auth *AuthManager) GetOAuthUserInfo(token *oauth2.Token) (*OAuthUserInfo, error) {
 	client := auth.oauthConfig.Client(context.Background(), token)
 	resp, err := client.Get(auth.oauthUserInfoURL)
