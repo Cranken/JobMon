@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// LRUCache represent a "Least Recently Used" caches used for storing job data.
 type LRUCache struct {
 	size  int
 	list  *list.List
@@ -19,11 +20,13 @@ type LRUCache struct {
 	store *store.Store
 }
 
+// Item represents a cache element.
 type Item struct {
 	id   int
 	data job.JobData
 }
 
+// Init sets up the cache based on the configuration config, for db and store.
 func (c *LRUCache) Init(config conf.Configuration, db *db.DB, store *store.Store) {
 	c.size = config.CacheSize
 	c.list = new(list.List)
@@ -31,7 +34,7 @@ func (c *LRUCache) Init(config conf.Configuration, db *db.DB, store *store.Store
 	c.store = store
 }
 
-// Get job data for the given sample interval from cache by job metadata
+// Get returns the job data for the given sample interval form cache by job metadata.
 func (c *LRUCache) Get(j *job.JobMetadata, sampleInterval time.Duration) (data job.JobData, err error) {
 	c.mut.Lock()
 	defer c.mut.Unlock()
@@ -51,6 +54,7 @@ func (c *LRUCache) Get(j *job.JobMetadata, sampleInterval time.Duration) (data j
 	return data, err
 }
 
+// UpdateJob updates the data stored in the cache for job identified with id.
 func (c *LRUCache) UpdateJob(id int) {
 	c.mut.Lock()
 	defer c.mut.Unlock()
@@ -63,12 +67,13 @@ func (c *LRUCache) UpdateJob(id int) {
 	if err != nil {
 		return
 	}
-	// Job is at front after retrieving it so it is fine to remove front
+	// Job is at front after retrieving it so it is fine to remove front.
 	c.list.Remove(c.list.Front())
 	data.Metadata = &job
 	c.put(Item{id: job.Id, data: data})
 }
 
+// put puts an item in the cache.
 func (c *LRUCache) put(data Item) {
 	if c.list.Len() >= c.size {
 		c.list.Remove(c.list.Back())
@@ -76,6 +81,7 @@ func (c *LRUCache) put(data Item) {
 	c.list.PushFront(data)
 }
 
+// find searches for an item in the cache, it returns its job data.
 func (c *LRUCache) find(id int) (data job.JobData, err error) {
 	for el := c.list.Front(); el != nil; el = el.Next() {
 		if el.Value.(Item).id == id {

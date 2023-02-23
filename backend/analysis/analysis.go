@@ -8,6 +8,7 @@ import (
 	"jobmon/job"
 )
 
+// TODO:Add docs
 func ChangePointDetection(j *job.JobData) map[string][]time.Time {
 	var wg sync.WaitGroup
 	var lock sync.Mutex

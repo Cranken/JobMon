@@ -22,6 +22,7 @@ type PostgresStore struct {
 	db     *bun.DB
 }
 
+// Init implements Init method of Store interface.
 func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 	s.config = c
 	s.influx = influx
@@ -85,6 +86,7 @@ func (s *PostgresStore) Migrate(source *Store) {
 	logging.Info("store: Migration(): Migrated: ", rows, " rows")
 }
 
+// PutJob implements PutJob method of store interface.
 func (s *PostgresStore) PutJob(job job.JobMetadata) error {
 	start := time.Now()
 
@@ -97,6 +99,7 @@ func (s *PostgresStore) PutJob(job job.JobMetadata) error {
 	return err
 }
 
+// GetJob implements GetJob method of store interface.
 func (s *PostgresStore) GetJob(id int) (job job.JobMetadata, err error) {
 	start := time.Now()
 
@@ -112,6 +115,7 @@ func (s *PostgresStore) GetJob(id int) (job job.JobMetadata, err error) {
 	return job, err
 }
 
+// GetAllJobs implements GetAllJobs of store interface.
 func (s *PostgresStore) GetAllJobs() (jobs []job.JobMetadata, err error) {
 	start := time.Now()
 
@@ -124,6 +128,7 @@ func (s *PostgresStore) GetAllJobs() (jobs []job.JobMetadata, err error) {
 	return jobs, err
 }
 
+// GetFilteredJobs implements GetFilteredJobs of store interface.
 func (s *PostgresStore) GetFilteredJobs(filter job.JobFilter) (jobs []job.JobMetadata, err error) {
 	start := time.Now()
 
@@ -145,6 +150,7 @@ func (s *PostgresStore) GetFilteredJobs(filter job.JobFilter) (jobs []job.JobMet
 	return
 }
 
+// GetJobTags implements GetJobTags of store interface.
 func (s *PostgresStore) GetJobTags(username string) (tags []job.JobTag, err error) {
 	start := time.Now()
 
@@ -160,6 +166,7 @@ func (s *PostgresStore) GetJobTags(username string) (tags []job.JobTag, err erro
 	return
 }
 
+// StopJob implements StopJob method of store interface.
 func (s *PostgresStore) StopJob(id int, stopJob job.StopJob) error {
 	start := time.Now()
 
@@ -180,6 +187,7 @@ func (s *PostgresStore) StopJob(id int, stopJob job.StopJob) error {
 	return s.UpdateJob(job)
 }
 
+// GetUserSessionToken implements GetUserSessionToken method of store interface.
 func (s *PostgresStore) GetUserSessionToken(username string) (string, bool) {
 	start := time.Now()
 
@@ -193,6 +201,7 @@ func (s *PostgresStore) GetUserSessionToken(username string) (string, bool) {
 	return user.Token, true
 }
 
+// SetUserSessionToken implements SetUserSessionToken method of store interface.
 func (s *PostgresStore) SetUserSessionToken(username string, token string) {
 	start := time.Now()
 
@@ -209,6 +218,7 @@ func (s *PostgresStore) SetUserSessionToken(username string, token string) {
 	logging.Info("store: SetUserSessionToken took ", time.Since(start))
 }
 
+// RemoveUserSessionToken implements RemoveUserSessionToken method of store interface.
 func (s *PostgresStore) RemoveUserSessionToken(username string) {
 	start := time.Now()
 
@@ -221,6 +231,7 @@ func (s *PostgresStore) RemoveUserSessionToken(username string) {
 	logging.Info("store: RemoveUserSessionToken took ", time.Since(start))
 }
 
+// GetUserRoles implements GetUserRoles method of store interface.
 func (s *PostgresStore) GetUserRoles(username string) (UserRoles, bool) {
 	start := time.Now()
 
@@ -238,6 +249,7 @@ func (s *PostgresStore) GetUserRoles(username string) (UserRoles, bool) {
 	return user, true
 }
 
+// SetUserRoles implements SetUserRoles method of store interface.
 func (s *PostgresStore) SetUserRoles(username string, roles []string) {
 	start := time.Now()
 
@@ -254,10 +266,12 @@ func (s *PostgresStore) SetUserRoles(username string, roles []string) {
 	logging.Info("store: SetUserRoles took ", time.Since(start))
 }
 
+// Flush implements Flush method of store interface.
 func (s *PostgresStore) Flush() {
 	s.db.Close()
 }
 
+// UpdateJob implements UpdateJob method of store interface.
 func (s *PostgresStore) UpdateJob(job job.JobMetadata) error {
 	start := time.Now()
 
@@ -271,6 +285,7 @@ func (s *PostgresStore) UpdateJob(job job.JobMetadata) error {
 	return err
 }
 
+// AddTag implements AddTag method of store interface.
 func (s *PostgresStore) AddTag(id int, tag *job.JobTag) error {
 	start := time.Now()
 
@@ -295,6 +310,7 @@ func (s *PostgresStore) AddTag(id int, tag *job.JobTag) error {
 	return err
 }
 
+// RemoveTag implements RemoveTag method of store interface.
 func (s *PostgresStore) RemoveTag(id int, tag *job.JobTag) error {
 	start := time.Now()
 
@@ -313,6 +329,7 @@ func (s *PostgresStore) RemoveTag(id int, tag *job.JobTag) error {
 	return err
 }
 
+// finishOvertimeJobs changes running jobs that have exceeded MaxTime to finished jobs.
 func (s *PostgresStore) finishOvertimeJobs() {
 	start := time.Now()
 
@@ -343,6 +360,7 @@ func (s *PostgresStore) finishOvertimeJobs() {
 	logging.Info("store: finishOvertimeJobs took ", time.Since(start))
 }
 
+// startCleanJobsTimer resets the job timer.
 func (s *PostgresStore) startCleanJobsTimer() {
 	ticker := time.NewTicker(12 * time.Hour)
 	for {
@@ -351,6 +369,7 @@ func (s *PostgresStore) startCleanJobsTimer() {
 	}
 }
 
+// appendValueFilter appends filter values val with key to the query.
 func appendValueFilter[V int | string | bool](query *bun.SelectQuery, val *V, key string) *bun.SelectQuery {
 	if val != nil {
 		query = query.Where(fmt.Sprintf("%s=?", key), *val)
@@ -358,6 +377,7 @@ func appendValueFilter[V int | string | bool](query *bun.SelectQuery, val *V, ke
 	return query
 }
 
+// appendRangeFilter appends range filter values val with key to the query.
 func appendRangeFilter(query *bun.SelectQuery, val *job.RangeFilter, key string) *bun.SelectQuery {
 	if val != nil {
 		if val.From != nil {
@@ -370,6 +390,7 @@ func appendRangeFilter(query *bun.SelectQuery, val *job.RangeFilter, key string)
 	return query
 }
 
+// appendTagFilter appends a tag filter to the query.
 func appendTagFilter(query *bun.SelectQuery, tags *[]job.JobTag, db *bun.DB) *bun.SelectQuery {
 	if tags != nil {
 		var tagIds []int64

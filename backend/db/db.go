@@ -6,24 +6,36 @@ import (
 	"time"
 )
 
+// DB is the interface that wraps a list of methods used for setting up, closing and
+// working with an InfluxDB.
 type DB interface {
+
+	// Init initializes a InfluxDB connection based on the configuration c.
 	Init(c conf.Configuration)
+
+	// Close shuts down the connection to the InfluxDB.
 	Close()
-	// Get job data of the given job for the specified nodes and sample interval.
-	// If raw is true then the MetricData contained in the result data contains the raw metric data.
-	// Nodes should be specified as a list of nodes separated by a '|' character.
-	// If no nodes are specified, data for all nodes are queried.
+
+	// GetJobData returns data for job executed on nodes for sampleInterval, if raw is true then
+	// result data contains the raw metric data.
 	GetJobData(job *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data job.JobData, err error)
-	// Get job metadata metrics for the given job
+
+	// GetJobMetadataMetrics returns the metadata metrics data for job j.
 	GetJobMetadataMetrics(job *job.JobMetadata) (data []job.JobMetadataData, err error)
-	// Behaves like GetJobData except for single node jobs.
+
+	// GetAggregatedJobData similar to GetJobData except that it returns the data for single node jobs.
 	// Single node jobs also return aggregated data for metrics with metric granularity finer than per node.
 	GetAggregatedJobData(job *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data job.JobData, err error)
-	// Get the data for a metric with the given aggFn
+
+	// GetMetricDataWithAggFn returns the the metric-data data for job j based on the configuration m
+	// and aggregated by function aggFn.
 	GetMetricDataWithAggFn(j *job.JobMetadata, m conf.MetricConfig, aggFn string, sampleInterval time.Duration) (data job.MetricData, err error)
-	// Run the aggregation for node data in the db
+
+	// RunAggregation runs the aggregation for node data in the db.
 	RunAggregation()
-	// Creates a channel which periodically returns the latest metric data for the given job.
-	// Also returns a channel which can be used to send an close signal
+
+	// CreateLiveMonitoringChannel creates a channel which periodically returns
+	// the latest metric data for the given job. Also it returns a channel
+	// which can be used to send a close signal.
 	CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []job.MetricData, chan bool)
 }
