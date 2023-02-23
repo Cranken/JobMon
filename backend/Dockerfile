@@ -1,4 +1,6 @@
-FROM golang:1.18.2-alpine
+# DockerHub Page: https://hub.docker.com/_/golang
+# GitHub Repository: https://github.com/docker-library/golang/
+FROM golang:1.20-alpine
 
 WORKDIR /app
 
