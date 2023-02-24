@@ -335,7 +335,6 @@ func (auth *AuthManager) AppendJWT(user UserInfo, remember bool, w http.Response
 	return
 }
 
-
 // AuthLocalUser returns a user if username and password are valid credentials.
 func (auth *AuthManager) AuthLocalUser(
 	username string,

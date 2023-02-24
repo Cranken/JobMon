@@ -77,7 +77,6 @@ func (db *InfluxDB) Close() {
 	db.client.Close()
 }
 
-
 // GetJobData is just a wrapper for getJobData that initializes the nodes parameter
 // in case it was not specified.
 func (db *InfluxDB) GetJobData(
@@ -201,7 +200,6 @@ func (db *InfluxDB) CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []job.
 	}()
 	return monitor, done
 }
-
 
 // getJobData returns the data for job j for the given nodes and sampleInterval.
 // If raw is true then the MetricData contained in the result data contains the raw metric data.
@@ -387,10 +385,13 @@ func (db *InfluxDB) queryRaw(metric conf.MetricConfig, j *job.JobMetadata, node 
 // querySimpleMeasurement returns a flux table result corresponding to a simple query based on the
 // given parameters.
 func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
-	query := fmt.Sprintf(SimpleMeasurementQuery,
-		db.bucket, j.StartTime, j.StopTime, metric.Measurement,
-		metric.Type, nodes, sampleInterval, metric.FilterFunc,
-		metric.PostQueryOp, sampleInterval)
+	query := createSimpleMeasurementQuery(
+		db.bucket,
+		j.StartTime, j.StopTime,
+		metric.Measurement, metric.Type,
+		nodes, sampleInterval,
+		metric.FilterFunc, metric.PostQueryOp,
+	)
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		logging.Error("db: querySimpleMeasurement(): Error at simple query: '", query, "': ", err)

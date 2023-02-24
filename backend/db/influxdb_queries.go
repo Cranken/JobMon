@@ -1,5 +1,10 @@
 package db
 
+import (
+	"fmt"
+	"time"
+)
+
 // Parameters: bucket, startTime, stopTime, measurement,
 // type, nodelist, sampleInterval, filterfunc,
 // postQueryOp, sampleInterval
@@ -14,6 +19,42 @@ from(bucket: "%v")
 	%v
 	|> truncateTimeColumn(unit: %v)
 `
+
+func createSimpleMeasurementQuery(
+	bucket string,
+	StartTime int, StopTime int,
+	measurement string,
+	metricType string,
+	nodes string,
+	sampleInterval time.Duration,
+	metricFilterFunc string,
+	metricPostQueryOp string,
+) string {
+
+	SimpleMeasurementQuery := `
+	from(bucket: "%s")
+		|> range(start: %d, stop: %d)
+		|> filter(fn: (r) => r["_measurement"] == "%s")
+		|> filter(fn: (r) => r["type"] == "%s")
+		|> filter(fn: (r) => r["hostname"] =~ /%s/)
+		|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
+		%s
+		%s
+		|> truncateTimeColumn(unit: %v)
+	`
+
+	return fmt.Sprintf(SimpleMeasurementQuery,
+		bucket,
+		StartTime, StopTime,
+		measurement,
+		metricType,
+		nodes,
+		sampleInterval,
+		metricFilterFunc,
+		metricPostQueryOp,
+		sampleInterval
+	)
+}
 
 // Parameters: bucket, startTime, stopTime, measurement,
 // type, nodelist, filterfunc, postQueryOp, sampleInterval,
