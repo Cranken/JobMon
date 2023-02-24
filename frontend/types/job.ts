@@ -1,3 +1,6 @@
+/**
+ * JobMetadata represents all the metadata of a job.
+ */
 export interface JobMetadata {
   Id: number;
   UserId: number;
@@ -21,23 +24,37 @@ export interface JobMetadata {
   Data: JobMetadataData[];
 }
 
+/**
+ * JobListData stores a list of JobMetadata for a specific configuration.
+ */
 export interface JobListData {
   Jobs: JobMetadata[];
   Config: JobListConfig;
 }
 
+/**
+ * JobListConfig stores metrics, partitions, and tags of jobs.
+ */
 export interface JobListConfig {
   RadarChartMetrics: string[];
   Partitions: DataMap<PartitionConfig>;
   Tags: JobTag[];
 }
 
+
+/**
+ * CollectionType gives a list of possible aggregation kinds.
+ * @deprecated: not used anywhere.
+ */
 export enum CollectionType {
   PerNode,
   PerSocket,
   PerThread,
 }
 
+/**
+ * AggFn give a list of possible aggregation functions.
+ */
 export enum AggFn {
   Mean = "mean",
   Sum = "sum",
@@ -46,6 +63,10 @@ export enum AggFn {
   Empty = ""
 }
 
+
+/**
+ * MetricConfig represents a metric configuration, configured by the admin.
+ */
 export interface MetricConfig {
   GUID: string;
   Type: string;
@@ -64,6 +85,9 @@ export interface MetricConfig {
   PostQueryOp: string;
 }
 
+/**
+ * MetricPoint represents a metric data point on the visualization chart.
+ */
 export interface MetricPoint {
   _field: string;
   _measurement: string;
@@ -80,6 +104,10 @@ export interface MetricPoint {
   device: string;
 }
 
+/**
+ * QuantilePoint represents a a metric data point on the visualization chart 
+ * which belongs to a given quantile.
+ */
 export interface QuantilePoint {
   _field: string;
   _measurement: string;
@@ -87,16 +115,27 @@ export interface QuantilePoint {
   _value: number;
 }
 
+/**
+ * DataMap 
+ */
 export interface DataMap<T> {
   [key: string]: T;
 }
 
+
+/**
+ * MetricData represents a type of objects used for storing metric data.
+ */
 export interface MetricData {
   Config: MetricConfig;
   Data: DataMap<MetricPoint[]>;
   RawData: string;
 }
 
+/**
+ * QuantileData, similar to MetricData except that the data is shown only for 
+ * a specific qunatile.
+ */
 export interface QuantileData {
   Config: MetricConfig;
   Quantiles: string[];
@@ -104,6 +143,10 @@ export interface QuantileData {
   RawData: string;
 }
 
+/**
+ * JobData is a generalization of the two previous types, the objects of this 
+ * type are used for storing all the necessary data that belonging to jobs.
+ */
 export interface JobData {
   Metadata: JobMetadata;
   MetricData: MetricData[];
@@ -111,12 +154,19 @@ export interface JobData {
   SampleInterval: number;
   SampleIntervals: number[];
 }
+
+/**
+ * JobMetaData represents a type of objects used for storing job metadata.
+ */
 export interface JobMetadataData {
   Config: MetricConfig;
   Data: number;
   Max: number;
 }
 
+/**
+ * JobTag represents a type of objects used for storing job tags.
+ */
 export interface JobTag {
   Id: number;
   Name: string;
@@ -124,6 +174,9 @@ export interface JobTag {
   CreatedBy: string;
 }
 
+/**
+ * JobSearchParams represents job filters.
+ */
 export interface JobSearchParams {
   UserId?: number;
   UserName?: string;
@@ -138,19 +191,34 @@ export interface JobSearchParams {
   Tags?: JobTag[];
 }
 
+/**
+ * RangeFilter represents an integer interval.
+ */
 type RangeFilter = [number | undefined, number | undefined];
 
+
+/**
+ * VirtualPartitionConfig represents virtual partitions which can be built
+ * based on a list of nodes and metrics.
+ */
 export interface VirtualPartitionConfig {
   Metrics: string[] | null;
   Nodes: string[] | null;
 }
 
+/**
+ * PartitionConfig represents a partition configuration, which stores
+ * the maximum time, a list of metrics and virtual partitions.
+ */
 export interface PartitionConfig {
   MaxTime: number;
   Metrics: string[] | null;
   VirtualPartitions: DataMap<VirtualPartitionConfig> | null;
 }
 
+/**
+ * WSMsgType TODO:
+ */
 export enum WSMsgType {
   LoadMetrics = 1,
   LoadMetricsResponse = 2,
@@ -160,6 +228,7 @@ export enum WSMsgType {
 export interface WSMsg {
   Type: number;
 }
+
 
 export interface WSLoadMetricsMsg extends WSMsg {
   StartTime: number;
