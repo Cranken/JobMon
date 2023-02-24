@@ -2,24 +2,11 @@ package db
 
 import (
 	"fmt"
+	"jobmon/logging"
 	"time"
 )
 
-// Parameters: bucket, startTime, stopTime, measurement,
-// type, nodelist, sampleInterval, filterfunc,
-// postQueryOp, sampleInterval
-const SimpleMeasurementQuery = `
-from(bucket: "%v")
-	|> range(start: %v, stop: %v)
-	|> filter(fn: (r) => r["_measurement"] == "%v")
-	|> filter(fn: (r) => r["type"] == "%v")
-	|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
-	%v
-	%v
-	|> truncateTimeColumn(unit: %v)
-`
-
+// createSimpleMeasurementQuery creates an InfluxDB flux query string
 func createSimpleMeasurementQuery(
 	bucket string,
 	StartTime int, StopTime int,
@@ -29,9 +16,29 @@ func createSimpleMeasurementQuery(
 	sampleInterval time.Duration,
 	metricFilterFunc string,
 	metricPostQueryOp string,
-) string {
+) (q string) {
 
-	SimpleMeasurementQuery := `
+	if bucket == "" {
+		logging.Error("db: createSimpleMeasurementQuery(): Missing bucket configuration")
+		return
+	}
+
+	if measurement == "" {
+		logging.Error("db: createSimpleMeasurementQuery(): Missing measurement configuration")
+		return
+	}
+
+	if metricType == "" {
+		logging.Error("db: createSimpleMeasurementQuery(): Missing metric type configuration")
+		return
+	}
+
+	if StartTime < 0 || StopTime < 0 || StartTime >= StopTime {
+		logging.Error("db: createSimpleMeasurementQuery(): Wrong start time = ", StartTime, ", StopTime = ", StopTime, " configuration")
+		return
+	}
+
+	q = fmt.Sprintf(`
 	from(bucket: "%s")
 		|> range(start: %d, stop: %d)
 		|> filter(fn: (r) => r["_measurement"] == "%s")
@@ -41,9 +48,7 @@ func createSimpleMeasurementQuery(
 		%s
 		%s
 		|> truncateTimeColumn(unit: %v)
-	`
-
-	return fmt.Sprintf(SimpleMeasurementQuery,
+	`,
 		bucket,
 		StartTime, StopTime,
 		measurement,
@@ -52,8 +57,11 @@ func createSimpleMeasurementQuery(
 		sampleInterval,
 		metricFilterFunc,
 		metricPostQueryOp,
-		sampleInterval
+		sampleInterval,
 	)
+
+	logging.Debug("db: createSimpleMeasurementQuery(): flux query string = ", q)
+	return
 }
 
 // Parameters: bucket, startTime, stopTime, measurement,

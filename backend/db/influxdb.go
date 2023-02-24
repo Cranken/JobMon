@@ -402,10 +402,13 @@ func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, j *job.JobM
 // querySimpleMeasurementRaw is similar to querySimpleMeasurement except that this one returns the table as string,
 // with table annotations according to dialect.
 func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result string, err error) {
-	query := fmt.Sprintf(SimpleMeasurementQuery,
-		db.bucket, j.StartTime, j.StopTime, metric.Measurement,
-		metric.Type, nodes, sampleInterval, metric.FilterFunc,
-		metric.PostQueryOp, sampleInterval)
+	query := createSimpleMeasurementQuery(
+		db.bucket,
+		j.StartTime, j.StopTime,
+		metric.Measurement, metric.Type,
+		nodes, sampleInterval,
+		metric.FilterFunc, metric.PostQueryOp,
+	)
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
 	if err != nil {
 		logging.Error("db: querySimpleMeasurementRaw(): Error at simple raw query: '", query, "': ", err)
