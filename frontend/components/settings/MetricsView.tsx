@@ -281,7 +281,7 @@ const MetricItem = ({ metricConfig, setMetricConfig, ...category }: IMetricItemP
 export default MetricsView;
 
 const TOOLTIP_TYPE = "Supported types: cpu, node, socket, accelerator.";
-const TOOLTIP_UNIT = "Supported units: FLOP/s, Bit/s, °C, B/s, B, %, Packet/s, W. Default is none(empty string). \
+const TOOLTIP_UNIT = "Supported units: FLOP/s, Bit/s, °C, B/s, B, %, Packet/s, W, OPs/s. Default is none(empty string). \
                       Can be prefixed by SI-prefixes.";
 const TOOLTIP_CATEGORIES = "Select metric categories the metric belongs to.";
 

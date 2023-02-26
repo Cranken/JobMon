@@ -45,6 +45,10 @@ const Units: UnitsType = {
     DisplayFormat: "W",
     Prefix: PrefixType.Metric,
   },
+  Opss: {
+    DisplayFormat: "OPs/s",
+    Prefix: PrefixType.Exponential,
+  },
   None: {
     DisplayFormat: "",
     Prefix: PrefixType.None,
