@@ -6,6 +6,7 @@
 enum PrefixType {
   None,
   Metric,
+  OPS,
   Exponential,
 }
 
@@ -62,19 +63,19 @@ const Units: UnitsType = {
   },
   Reads: {
     DisplayFormat: "Reads/s",
-    Prefix: PrefixType.None
+    Prefix: PrefixType.OPS
   },
   Writes: {
     DisplayFormat: "Writes/s",
-    Prefix: PrefixType.None
+    Prefix: PrefixType.OPS
   },
-  IOPS: {
-    DisplayFormat: "IOPS/s",
-    Prefix: PrefixType.Metric
+  IOps: {
+    DisplayFormat: "IOps",
+    Prefix: PrefixType.OPS
   },
   MetaOPS: {
-    DisplayFormat: "MetaOPS/s",
-    Prefix: PrefixType.Metric
+    DisplayFormat: "MetaOps",
+    Prefix: PrefixType.OPS
   },
   None: {
     DisplayFormat: "",
@@ -104,7 +105,7 @@ interface PrefixesType {
  */
 const Prefixes: PrefixesType = {
   kilo: {
-    Short: "k",
+    Short: "K",
     Exp: 3,
     Base: 10,
   },
@@ -181,14 +182,19 @@ export class Unit {
       case PrefixType.Exponential:
         return this.value.toExponential(2) + ` ${this.type.DisplayFormat}`;
       default:
-        let best = this.bestPrefix();
-        best = prefix ? prefix : best;
+        let best = prefix ? prefix : this.bestPrefix();  
         if (best) {
           const prefix = Prefixes[best];
           const exp = Math.pow(prefix.Base, prefix.Exp);
           const value = this.value / exp;
-          return `${value.toFixed(2)} ${prefix.Short}${this.type.DisplayFormat
-            }`;
+          let displayFormat;
+          // TODO: Find a better idea!
+          if (this.type.Prefix === PrefixType.OPS) {
+            displayFormat = "";
+          } else {
+            displayFormat = this.type.DisplayFormat;
+          }
+          return `${value.toFixed(2)} ${prefix.Short}${displayFormat}`;
         }
         return `${this.value.toFixed(2)} ${this.type.DisplayFormat}`;
     }
@@ -207,8 +213,12 @@ export class Unit {
           const value = this.value / exp;
           return 1 <= value && value < 1000;
         });
+      case PrefixType.OPS:
+        return (this.value >= 1000) ? "kilo" : undefined;
+        
       case PrefixType.Exponential:
         return "None";
+      
     }
   }
 }
@@ -222,7 +232,7 @@ const getBaseUnit = (str: string) => {
   const key = Object.keys(Units).find((val) =>
     // str should be equal to one of the units DisplayFormat.  
     str === Units[val].DisplayFormat 
-    // str.includes(Units[val].DisplayFormat)
+    
   );
   return key ? Units[key] : Units.None;
 };
@@ -234,10 +244,11 @@ const getBaseUnit = (str: string) => {
  * @returns the corresponding prefix, or a default one which is none.
  */
 const getPrefix = (str: string, type: UnitType) => {
+  
   switch (type.Prefix) {
     case PrefixType.Metric:
       const prefix = Object.keys(Prefixes).find((key) =>
-        str.includes(`${Prefixes[key].Short}${type.DisplayFormat}`)
+        str === `${Prefixes[key].Short}${type.DisplayFormat}`
       );
       return prefix ? Prefixes[prefix] : Prefixes.None;
   }

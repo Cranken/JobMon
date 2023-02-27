@@ -18,6 +18,7 @@ from(bucket: "%v")
 // Parameters: bucket, startTime, stopTime, measurement,
 // type, nodelist, filterfunc, postQueryOp, sampleInterval,
 // aggFn, sampleInterval
+// Deprecated: This query isn't used anywhere.
 const SimpleAggMeasurementQuery = `
 from(bucket: "%v")
 	|> range(start: %v, stop: %v)
@@ -120,4 +121,193 @@ from(bucket: "%v")
 	|> set(key: "_measurement", value: "%v")
 	|> set(key: "_field", value: "%v")
 	|> to(bucket: "%v", org: "%v")
+`
+
+////////////////////////////////////////////////////////////////
+// The following queries are used as a hack for supporting//
+// synthesized metrics for IOPs and MetaOps				  //
+////////////////////////////////////////////////////////////
+
+// Parameters: bucket, startTime, stopTime
+// _measurement(just a dummy variable to avoid making drastic changes to the query functions.)
+// type, nodelist, sampleInterval, filterfunc,
+// postQueryOp, sampleInterval
+const IOpsSimpleMeasurementQuery = `
+from(bucket: "%v")
+	|> range(start: %v, stop: %v)
+    |> filter(fn: (r) => r["_measurement"] == "gpfs_num_reads" 
+		or r["_measurement"] == "gpfs_num_writes"
+		or r["_measurement"] == "%v")
+	|> filter(fn: (r) => r["type"] == "%v")
+	|> filter(fn: (r) => r["hostname"] =~/"%v"/)
+    |> pivot(rowKey: ["_time"], columnKey: ["_measurement"], valueColumn: "_value")
+    |> map(fn: (r) => ({r with _value: r["gpfs_num_reads"] + r["gpfs_num_writes"]}))
+	|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
+	%v
+	%v
+	|> truncateTimeColumn(unit: %v)
+`
+
+// Parameters: bucket, startTime, stopTime,
+// _measurement(just a dummy variable to avoid making drastic changes to the query functions.)
+// gpfs_num_closes, gpfs_num_opens, gpfs_num_inode_updates, gpfs_num_readdirs,
+// type, nodelist, sampleInterval, filterfunc,
+// postQueryOp, sampleInterval
+const MetaOpsSimpleMeasurementQuery = `
+from(bucket: "%v")
+	|> range(start: %v, stop: %v)
+    |> filter(fn: (r) => r["_measurement"] == "gpfs_num_closes" 
+		or r["_measurement"] == "gpfs_num_opens" 
+		or r["_measurement"] == "gpfs_num_inode_updates" 
+		or r["_measurement"] == "gpfs_num_readdirs"
+		or r["_measurement"] == "%v")
+	|> filter(fn: (r) => r["type"] == "%v")
+	|> filter(fn: (r) => r["hostname"] =~/"%v"/)
+    |> pivot(rowKey: ["_time"], columnKey: ["_measurement"], valueColumn: "_value")
+    |> map(fn: (r) => ({r with _value: r["gpfs_num_closes"] + r["gpfs_num_opens"] + r["gpfs_num_inode_updates"] + r["gpfs_num_readdirs"]}))
+	|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
+	%v
+	%v
+	|> truncateTimeColumn(unit: %v)
+`
+
+// Parameters: bucket, startTime, stopTime, measurement,
+// gpfs_num_reads and gpfs_num_writes measurements,
+// nodelist, sampleInterval, filterfunc,
+// postQueryOp, sampleInterval
+const IOpsAggregatedMeasurementQuery = `
+from(bucket: "%v")
+	|> range(start: %v, stop: %v)
+	|> filter(fn: (r) => r["_measurement"] == "gpfs_num_reads" 
+		or r["_measurement"] == "gpfs_num_writes"
+		or r["_measurement"] == "%v")
+	|> filter(fn: (r) => r["hostname"] =~/"%v"/)
+    |> pivot(rowKey: ["_time"], columnKey: ["_measurement"], valueColumn: "_value")
+    |> map(fn: (r) => ({r with _value: r["gpfs_num_reads"] + r["gpfs_num_writes"]}))
+	|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
+	%v
+	%v
+	|> truncateTimeColumn(unit: %v)
+`
+
+// Parameters: bucket, startTime, stopTime,
+// gpfs_num_closes, gpfs_num_opens, gpfs_num_inode_updates, gpfs_num_readdirs,
+// type, nodelist, sampleInterval, filterfunc,
+// postQueryOp, sampleInterval
+const MetaOpsAggregatedMeasurementQuery = `
+from(bucket: "%v")
+	|> range(start: %v, stop: %v)
+	|> filter(fn: (r) => r["_measurement"] == "gpfs_num_closes" 
+		or r["_measurement"] == "gpfs_num_opens" 
+		or r["_measurement"] == "gpfs_num_inode_updates" 
+		or r["_measurement"] == "gpfs_num_readdirs"
+		or r["_measurement"] == "%v")
+	|> filter(fn: (r) => r["hostname"] =~/"%v"/)
+    |> pivot(rowKey: ["_time"], columnKey: ["_measurement"], valueColumn: "_value")
+    |> map(fn: (r) => ({r with _value: r["gpfs_num_closes"] + r["gpfs_num_opens"] + r["gpfs_num_inode_updates"] + r["gpfs_num_readdirs"]}))
+	|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
+	%v
+	%v
+	|> truncateTimeColumn(unit: %v)
+`
+
+// Parameters: bucket, startTime, stopTime, measurement,
+// gpfs_num_reads and gpfs_num_writes measurements,
+// nodelist, sampleInterval, filterfunc,
+// postQueryOp, sampleInterval
+const IOpsQQuantileMeasurementQuery = `
+from(bucket: "%v")
+	|> range(start: %v, stop: %v)
+	|> filter(fn: (r) => r["_measurement"] == "gpfs_num_reads" 
+		or r["_measurement"] == "gpfs_num_writes"
+		or r["_measurement"] == "%v")
+	|> filter(fn: (r) => r["hostname"] =~/"%v"/)
+    |> pivot(rowKey: ["_time"], columnKey: ["_measurement"], valueColumn: "_value")
+    |> map(fn: (r) => ({r with _value: r["gpfs_num_reads"] + r["gpfs_num_writes"]}))
+	|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
+	%v
+	%v
+	|> truncateTimeColumn(unit: %v)
+	|> group(columns: ["_time"], mode: "by")
+%v
+	|> group(columns: ["_field"])
+`
+
+// Parameters: bucket, startTime, stopTime,
+// type, nodelist, sampleInterval, filterfunc,
+// postQueryOp, sampleInterval
+const MetaOpsQuantileMeasurementQuery = `
+from(bucket: "%v")
+	|> range(start: %v, stop: %v)
+	|> filter(fn: (r) => r["hostname"] =~/"%v"/)
+	|> filter(fn: (r) => r["_measurement"] == "gpfs_num_closes" 
+		or r["_measurement"] == "gpfs_num_opens" 
+		or r["_measurement"] == "gpfs_num_inode_updates" 
+		or r["_measurement"] == "gpfs_num_readdirs"
+		or r["_measurement"] == "%v")
+    |> pivot(rowKey: ["_time"], columnKey: ["_measurement"], valueColumn: "_value")
+    |> map(fn: (r) => ({r with _value: r["gpfs_num_closes"] + r["gpfs_num_opens"] + r["gpfs_num_inode_updates"] + r["gpfs_num_readdirs"]}))
+	|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
+	%v
+	%v
+	|> truncateTimeColumn(unit: %v)
+	|> group(columns: ["_time"], mode: "by")
+%v
+	|> group(columns: ["_field"])
+`
+
+// Parameters: bucket, startTime, stopTime, measurement,
+// nodelist, filterFunc, postQueryOp
+const IOpsMetadataMeasurementsQuery = `
+data = from(bucket: "%v")
+	|> range(start: %v, stop: %v)
+	|> filter(fn: (r) => r["_measurement"] == "gpfs_num_reads" 
+		or r["_measurement"] == "gpfs_num_writes"
+		or r["_measurement"] == "%v")
+	|> pivot(rowKey: ["_time"], columnKey: ["_measurement"], valueColumn: "_value")
+	|> map(fn: (r) => ({r with _value: r["gpfs_num_reads"] + r["gpfs_num_writes"]}))
+	|> filter(fn: (r) => r["hostname"] =~ /%v/)
+	%v
+	%v
+mean = data
+	|> mean(column: "_value")
+	|> group()
+	|> mean(column: "_value")
+	|> set(key: "_field", value: "mean")
+
+max = data
+	|> highestMax(n:5, groupColumns: ["_time"])
+  	|> median()
+  	|> set(key: "_field", value: "max")
+	
+union(tables: [mean, max])	
+`
+
+// Parameters: bucket, startTime, stopTime, measurement,
+// nodelist, filterFunc, postQueryOp
+const MetaOpsMetadataMeasurementsQuery = `
+data = from(bucket: "%v")
+	|> range(start: %v, stop: %v)
+	|> filter(fn: (r) => r["_measurement"] == "gpfs_num_closes" 
+		or r["_measurement"] == "gpfs_num_opens" 
+		or r["_measurement"] == "gpfs_num_inode_updates" 
+		or r["_measurement"] == "gpfs_num_readdirs"
+		or r["_measurement"] == "%v")
+	|> filter(fn: (r) => r["hostname"] =~ /%v/)
+	|> pivot(rowKey: ["_time"], columnKey: ["_measurement"], valueColumn: "_value")
+    |> map(fn: (r) => ({r with _value: r["gpfs_num_closes"] + r["gpfs_num_opens"] + r["gpfs_num_inode_updates"] + r["gpfs_num_readdirs"]}))
+	%v
+	%v
+mean = data
+	|> mean(column: "_value")
+	|> group()
+	|> mean(column: "_value")
+	|> set(key: "_field", value: "mean")
+
+max = data
+	|> highestMax(n:5, groupColumns: ["_time"])
+  	|> median()
+  	|> set(key: "_field", value: "max")
+	
+union(tables: [mean, max])	
 `

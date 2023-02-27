@@ -77,7 +77,6 @@ func (db *InfluxDB) Close() {
 	db.client.Close()
 }
 
-
 // GetJobData is just a wrapper for getJobData that initializes the nodes parameter
 // in case it was not specified.
 func (db *InfluxDB) GetJobData(
@@ -201,7 +200,6 @@ func (db *InfluxDB) CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []job.
 	}()
 	return monitor, done
 }
-
 
 // getJobData returns the data for job j for the given nodes and sampleInterval.
 // If raw is true then the MetricData contained in the result data contains the raw metric data.
@@ -387,7 +385,20 @@ func (db *InfluxDB) queryRaw(metric conf.MetricConfig, j *job.JobMetadata, node 
 // querySimpleMeasurement returns a flux table result corresponding to a simple query based on the
 // given parameters.
 func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
-	query := fmt.Sprintf(SimpleMeasurementQuery,
+
+	measurement := metric.Measurement
+	var simpleQuery string
+
+	// In the case of gpfs_iops and gpfs_metaops measurements special queries are used.
+	if measurement == "gpfs_iops" {
+		simpleQuery = IOpsSimpleMeasurementQuery
+	} else if measurement == "gpfs_metaops" {
+		simpleQuery = MetaOpsSimpleMeasurementQuery
+	} else {
+		simpleQuery = SimpleMeasurementQuery
+	}
+
+	query := fmt.Sprintf(simpleQuery,
 		db.bucket, j.StartTime, j.StopTime, metric.Measurement,
 		metric.Type, nodes, sampleInterval, metric.FilterFunc,
 		metric.PostQueryOp, sampleInterval)
@@ -401,7 +412,20 @@ func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, j *job.JobM
 // querySimpleMeasurementRaw is similar to querySimpleMeasurement except that this one returns the table as string,
 // with table annotations according to dialect.
 func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result string, err error) {
-	query := fmt.Sprintf(SimpleMeasurementQuery,
+
+	measurement := metric.Measurement
+
+	var simpleRawQuery string
+	// In the case of gpfs_iops and gpfs_metaops measurements special queries are used.
+	if measurement == "gpfs_iops" {
+		simpleRawQuery = IOpsSimpleMeasurementQuery
+	} else if measurement == "gpfs_metaops" {
+		simpleRawQuery = MetaOpsSimpleMeasurementQuery
+	} else {
+		simpleRawQuery = SimpleMeasurementQuery
+	}
+
+	query := fmt.Sprintf(simpleRawQuery,
 		db.bucket, j.StartTime, j.StopTime, metric.Measurement,
 		metric.Type, nodes, sampleInterval, metric.FilterFunc,
 		metric.PostQueryOp, sampleInterval)
@@ -449,7 +473,18 @@ func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (
 // over the metric type is performed.
 func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, j *job.JobMetadata, nodes string, aggFn string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement + "_" + aggFn
-	query := fmt.Sprintf(AggregateMeasurementQuery,
+
+	var aggregatedQuery string
+	// In the case of gpfs_iops and gpfs_metaops measurements special queries are used.
+	if measurement == "gpfs_iops" {
+		aggregatedQuery = IOpsAggregatedMeasurementQuery
+	} else if measurement == "gpfs_metaops" {
+		aggregatedQuery = MetaOpsAggregatedMeasurementQuery
+	} else {
+		aggregatedQuery = AggregateMeasurementQuery
+	}
+
+	query := fmt.Sprintf(aggregatedQuery,
 		db.bucket, j.StartTime, j.StopTime, measurement,
 		nodes, sampleInterval, metric.FilterFunc, metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.Query(context.Background(), query)
@@ -463,7 +498,18 @@ func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, j *job.J
 // over the metric type is performed.
 func (db *InfluxDB) queryAggregateMeasurementRaw(metric conf.MetricConfig, j *job.JobMetadata, nodes string, aggFn string, sampleInterval time.Duration) (result string, err error) {
 	measurement := metric.Measurement + "_" + aggFn
-	query := fmt.Sprintf(AggregateMeasurementQuery,
+
+	var aggregatedRawQuery string
+	// In the case of gpfs_iops and gpfs_metaops measurements special queries are used.
+	if measurement == "gpfs_iops" {
+		aggregatedRawQuery = IOpsAggregatedMeasurementQuery
+	} else if measurement == "gpfs_metaops" {
+		aggregatedRawQuery = MetaOpsAggregatedMeasurementQuery
+	} else {
+		aggregatedRawQuery = AggregateMeasurementQuery
+	}
+
+	query := fmt.Sprintf(aggregatedRawQuery,
 		db.bucket, j.StartTime, j.StopTime, measurement,
 		nodes, sampleInterval, metric.FilterFunc, metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
@@ -493,7 +539,18 @@ func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, j *job.Jo
 
 	tempKeyAggregation := "[" + strings.Join(tempKeys[0:len(quantiles)], ",") + "]"
 
-	query := fmt.Sprintf(QuantileMeasurementQuery,
+	var quantileQuery string
+
+	// In the case of gpfs_iops and gpfs_metaops measurements special queries are used.
+	if measurement == "gpfs_iops" {
+		quantileQuery = IOpsQQuantileMeasurementQuery
+	} else if measurement == "gpfs_metaops" {
+		quantileQuery = MetaOpsQuantileMeasurementQuery
+	} else {
+		quantileQuery = QuantileMeasurementQuery
+	}
+
+	query := fmt.Sprintf(quantileQuery,
 		db.bucket, j.StartTime, j.StopTime, measurement,
 		j.NodeList, sampleInterval, filterFunc, metric.PostQueryOp,
 		sampleInterval, quantileSubQuery, tempKeyAggregation)
