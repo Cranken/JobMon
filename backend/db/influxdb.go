@@ -623,7 +623,14 @@ func (db *InfluxDB) createTask(taskName string, taskStr string, orgId string) (t
 
 // createAggregationTasks calls the function createTasks where the query is built on top
 // of the metric, aggFn and orgID arguments.
-func (db *InfluxDB) createAggregationTask(metric conf.MetricConfig, aggFn string, orgId string) (task *domain.Task, err error) {
+func (db *InfluxDB) createAggregationTask(
+	metric conf.MetricConfig,
+	aggFn string,
+	orgId string,
+) (
+	task *domain.Task,
+	err error,
+) {
 	measurement := metric.Measurement + "_" + aggFn
 	taskName := db.bucketName + "_" + metric.Measurement + "_" + aggFn
 	sampleInterval := metric.SampleInterval
