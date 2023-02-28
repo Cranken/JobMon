@@ -182,7 +182,8 @@ func (r *Router) JobStop(
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Success"))
 
-	// Mark job as stopped in store
+	//TODO: Document better!
+	// Mark job as stopped in stor
 	go func() {
 		err := r.store.StopJob(id, stopJob)
 
@@ -461,7 +462,6 @@ func (r *Router) Search(
 
 	w.Write([]byte(fmt.Sprintf("user:%v", searchTerm)))
 }
-
 
 // Login writes to the WriteHeader of w, for the given request req, params and user
 // if the authentication succeeded for a local user.
