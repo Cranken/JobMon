@@ -642,22 +642,24 @@ func (db *InfluxDB) createAggregationTask(metric conf.MetricConfig, aggFn string
 // to db, finally it launches an aggregation task for each missing metric.
 func (db *InfluxDB) updateAggregationTasks() (err error) {
 
+	// Get configured tasks from InfluxDB
 	tasks, err := db.tasksAPI.FindTasks(context.Background(), nil)
 	if err != nil {
 		logging.Error("db: updateAggregationTasks(): Could not get tasks from influxdb: ", err)
 		return
 	}
 
-	type tuple struct {
-		config conf.MetricConfig
-		aggFn  string
-	}
 	// Create empty list of missing tasks
-	missingMetricTasks := make([]tuple, 0)
+	type tuple struct {
+		metricConf conf.MetricConfig
+		aggFn      string
+	}
+	missingAggTasks := make([]tuple, 0)
+
 	for _, metricConfig := range db.metrics {
 		for _, aggFn := range metricConfig.AvailableAggFns {
 
-			// For each configured metric and its aggregation functions create a task
+			// For each configured metric and its aggregation functions create a aggregation task
 			name := db.bucketName + "_" + metricConfig.Measurement + "_" + aggFn
 
 			// Check if this task already exists
@@ -670,23 +672,35 @@ func (db *InfluxDB) updateAggregationTasks() (err error) {
 				}
 			}
 
-			// If task is missing, add it to to the list of missing metric tasks
+			// If task is missing, add it to to the list of missing aggregation tasks
 			if !found {
-				missingMetricTasks =
-					append(missingMetricTasks,
+				missingAggTasks =
+					append(missingAggTasks,
 						tuple{
-							config: metricConfig,
-							aggFn:  aggFn,
-						})
+							metricConf: metricConfig,
+							aggFn:      aggFn,
+						},
+					)
+				logging.Info("db: updateAggregationTasks(): Create missing aggregation task ", name)
 			}
 		}
 	}
 
-	// Create tasks for all missing metric tasks
-	for _, metric := range missingMetricTasks {
-		go func(metric conf.MetricConfig, aggFn string) {
-			_, err = db.createAggregationTask(metric, aggFn, *db.organization.Id)
-		}(metric.config, metric.aggFn)
+	// Create aggregation tasks for all missing tasks
+	for _, t := range missingAggTasks {
+		go func(
+			metricConfig conf.MetricConfig,
+			aggFn string,
+		) {
+			if _, err :=
+				db.createAggregationTask(
+					metricConfig,
+					aggFn,
+					*db.organization.Id,
+				); err != nil {
+				logging.Error("db: updateAggregationTasks(): Failed to create aggregation task: ", err)
+			}
+		}(t.metricConf, t.aggFn)
 	}
 	return
 }
