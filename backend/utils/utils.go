@@ -36,9 +36,3 @@ func Remove[T comparable](container []T, target T) []T {
 	}
 	return container
 }
-
-// Tuple with elements <First> and <Second>
-type Tuple[T any, V any] struct {
-	First  T
-	Second V
-}

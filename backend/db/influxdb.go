@@ -648,13 +648,17 @@ func (db *InfluxDB) updateAggregationTasks() (err error) {
 		return
 	}
 
+	type tuple struct {
+		config conf.MetricConfig
+		aggFn  string
+	}
 	// Create empty list of missing tasks
-	missingMetricTasks := make([]utils.Tuple[conf.MetricConfig, string], 0)
-	for _, metric := range db.metrics {
-		for _, aggFn := range metric.AvailableAggFns {
+	missingMetricTasks := make([]tuple, 0)
+	for _, metricConfig := range db.metrics {
+		for _, aggFn := range metricConfig.AvailableAggFns {
 
 			// For each configured metric and its aggregation functions create a task
-			name := db.bucketName + "_" + metric.Measurement + "_" + aggFn
+			name := db.bucketName + "_" + metricConfig.Measurement + "_" + aggFn
 
 			// Check if this task already exists
 			found := false
@@ -670,9 +674,9 @@ func (db *InfluxDB) updateAggregationTasks() (err error) {
 			if !found {
 				missingMetricTasks =
 					append(missingMetricTasks,
-						utils.Tuple[conf.MetricConfig, string]{
-							First:  metric,
-							Second: aggFn,
+						tuple{
+							config: metricConfig,
+							aggFn:  aggFn,
 						})
 			}
 		}
@@ -682,7 +686,7 @@ func (db *InfluxDB) updateAggregationTasks() (err error) {
 	for _, metric := range missingMetricTasks {
 		go func(metric conf.MetricConfig, aggFn string) {
 			_, err = db.createAggregationTask(metric, aggFn, *db.organization.Id)
-		}(metric.First, metric.Second)
+		}(metric.config, metric.aggFn)
 	}
 	return
 }
