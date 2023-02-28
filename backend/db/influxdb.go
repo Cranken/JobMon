@@ -29,8 +29,10 @@ type InfluxDB struct {
 	organizationsAPI api.OrganizationsAPI
 
 	tasks                 []domain.Task
-	org                   string
-	bucket                string
+	organization          *domain.Organization
+	organizationName      string
+	bucket                *domain.Bucket
+	bucketName            string
 	metrics               map[string]conf.MetricConfig
 	partitionConfig       map[string]conf.PartitionConfig
 	defaultSampleInterval string
@@ -59,22 +61,47 @@ func (db *InfluxDB) Init(c conf.Configuration) {
 	}
 	logging.Info("db: Init(): Connected to ", c.DBHost)
 
-	// Initialize db data structure
+	// API to managing Organizations in a InfluxDB server
+	db.organizationsAPI = db.client.OrganizationsAPI()
 	if c.DBOrg == "" {
 		logging.Fatal("db: Init(): No Influxdb org set")
 	}
-	db.queryAPI = db.client.QueryAPI(c.DBOrg)
+	o, err :=
+		db.organizationsAPI.
+			FindOrganizationByName(context.Background(), c.DBOrg)
+	if err != nil {
+		logging.Fatal("db: Init(): Could not get organization from influxdb: ", err)
+	}
+	db.organization = o
+	db.organizationName = o.Name
+	logging.Info("db: Init(): Initialized organization API for ", db.organizationName)
+
+	// API for performing synchronously flux query against InfluxDB server
+	db.queryAPI = db.client.QueryAPI(db.organizationName)
+	logging.Info("db: Init(): Initialized query API for ", db.organizationName)
+
+	// API to managing tasks and task runs in an InfluxDB server
 	db.tasksAPI = db.client.TasksAPI()
-	db.organizationsAPI = db.client.OrganizationsAPI()
+	logging.Info("db: Init(): Initialized task API")
+
+	// Bucket
 	if c.DBBucket == "" {
 		logging.Fatal("db: Init(): No Influxdb bucket set")
 	}
-	db.bucket = c.DBBucket
-	db.org = c.DBOrg
+	b, err := db.client.BucketsAPI().FindBucketByName(context.Background(), c.DBBucket)
+	if err != nil {
+		logging.Fatal("db: Init(): Could not get bucket from influxdb: ", err)
+	}
+	db.bucket = b
+	db.bucketName = b.Name
+	logging.Info("db: Init(): Initialized bucket ", db.bucketName)
+
+	// Metrics
 	db.metrics = make(map[string]conf.MetricConfig)
 	for _, mc := range c.Metrics {
 		db.metrics[mc.GUID] = mc
 	}
+
 	db.partitionConfig = c.Partitions
 	db.defaultSampleInterval = c.SampleInterval
 	db.metricQuantiles = c.MetricQuantiles
@@ -395,7 +422,7 @@ func (db *InfluxDB) queryRaw(metric conf.MetricConfig, j *job.JobMetadata, node 
 // given parameters.
 func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
 	query := createSimpleMeasurementQuery(
-		db.bucket,
+		db.bucketName,
 		j.StartTime, j.StopTime,
 		metric.Measurement, metric.Type,
 		nodes, sampleInterval,
@@ -412,7 +439,7 @@ func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, j *job.JobM
 // with table annotations according to dialect.
 func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result string, err error) {
 	query := createSimpleMeasurementQuery(
-		db.bucket,
+		db.bucketName,
 		j.StartTime, j.StopTime,
 		metric.Measurement, metric.Type,
 		nodes, sampleInterval,
@@ -463,7 +490,7 @@ func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (
 func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, j *job.JobMetadata, nodes string, aggFn string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement + "_" + aggFn
 	query := fmt.Sprintf(AggregateMeasurementQuery,
-		db.bucket, j.StartTime, j.StopTime, measurement,
+		db.bucketName, j.StartTime, j.StopTime, measurement,
 		nodes, sampleInterval, metric.FilterFunc, metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
@@ -477,7 +504,7 @@ func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, j *job.J
 func (db *InfluxDB) queryAggregateMeasurementRaw(metric conf.MetricConfig, j *job.JobMetadata, nodes string, aggFn string, sampleInterval time.Duration) (result string, err error) {
 	measurement := metric.Measurement + "_" + aggFn
 	query := fmt.Sprintf(AggregateMeasurementQuery,
-		db.bucket, j.StartTime, j.StopTime, measurement,
+		db.bucketName, j.StartTime, j.StopTime, measurement,
 		nodes, sampleInterval, metric.FilterFunc, metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
 	if err != nil {
@@ -507,7 +534,7 @@ func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, j *job.Jo
 	tempKeyAggregation := "[" + strings.Join(tempKeys[0:len(quantiles)], ",") + "]"
 
 	query := fmt.Sprintf(QuantileMeasurementQuery,
-		db.bucket, j.StartTime, j.StopTime, measurement,
+		db.bucketName, j.StartTime, j.StopTime, measurement,
 		j.NodeList, sampleInterval, filterFunc, metric.PostQueryOp,
 		sampleInterval, quantileSubQuery, tempKeyAggregation)
 
@@ -533,7 +560,7 @@ func (db *InfluxDB) queryMetadataMeasurements(metric conf.MetricConfig, j *job.J
 		measurement += "_" + metric.AggFn
 	}
 	query := fmt.Sprintf(MetadataMeasurementsQuery,
-		db.bucket, j.StartTime, j.StopTime, measurement,
+		db.bucketName, j.StartTime, j.StopTime, measurement,
 		j.NodeList, metric.FilterFunc, metric.PostQueryOp)
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
@@ -598,15 +625,15 @@ func (db *InfluxDB) createTask(taskName string, taskStr string, orgId string) (t
 // of the metric, aggFn and orgID arguments.
 func (db *InfluxDB) createAggregationTask(metric conf.MetricConfig, aggFn string, orgId string) (task *domain.Task, err error) {
 	measurement := metric.Measurement + "_" + aggFn
-	taskName := db.bucket + "_" + metric.Measurement + "_" + aggFn
+	taskName := db.bucketName + "_" + metric.Measurement + "_" + aggFn
 	sampleInterval := metric.SampleInterval
 	if sampleInterval == "" {
 		sampleInterval = db.defaultSampleInterval
 	}
 	query := fmt.Sprintf(AggregationTaskQuery,
-		db.bucket, metric.Measurement, metric.Type, metric.FilterFunc,
+		db.bucketName, metric.Measurement, metric.Type, metric.FilterFunc,
 		metric.PostQueryOp, sampleInterval, aggFn,
-		measurement, measurement, db.bucket, db.org)
+		measurement, measurement, db.bucketName, db.organizationName)
 	return db.createTask(taskName, query, orgId)
 }
 
@@ -621,10 +648,15 @@ func (db *InfluxDB) updateAggregationTasks() (err error) {
 		return
 	}
 
+	// Create empty list of missing tasks
 	missingMetricTasks := make([]utils.Tuple[conf.MetricConfig, string], 0)
 	for _, metric := range db.metrics {
 		for _, aggFn := range metric.AvailableAggFns {
-			name := db.bucket + "_" + metric.Measurement + "_" + aggFn
+
+			// For each configured metric and its aggregation functions create a task
+			name := db.bucketName + "_" + metric.Measurement + "_" + aggFn
+
+			// Check if this task already exists
 			found := false
 			for _, task := range tasks {
 				if task.Name == name {
@@ -633,6 +665,8 @@ func (db *InfluxDB) updateAggregationTasks() (err error) {
 					break
 				}
 			}
+
+			// If task is missing, add it to to the list of missing metric tasks
 			if !found {
 				missingMetricTasks =
 					append(missingMetricTasks,
@@ -643,14 +677,11 @@ func (db *InfluxDB) updateAggregationTasks() (err error) {
 			}
 		}
 	}
-	org, err := db.organizationsAPI.FindOrganizationByName(context.Background(), db.org)
-	if err != nil {
-		logging.Error("db: updateAggregationTasks(): Could not get orgId from influxdb: ", err)
-		return
-	}
+
+	// Create tasks for all missing metric tasks
 	for _, metric := range missingMetricTasks {
 		go func(metric conf.MetricConfig, aggFn string) {
-			_, err = db.createAggregationTask(metric, aggFn, *org.Id)
+			_, err = db.createAggregationTask(metric, aggFn, *db.organization.Id)
 		}(metric.First, metric.Second)
 	}
 	return
