@@ -17,12 +17,17 @@ import (
 	"github.com/influxdata/influxdb-client-go/v2/domain"
 )
 
-// InfluxDB represents an InfluxDB object used for storing job data.
+// InfluxDB represents an InfluxDB object used for storing job performance metric data.
 type InfluxDB struct {
-	client                influxdb2.Client
-	queryAPI              api.QueryAPI
-	tasksAPI              api.TasksAPI
-	organizationsAPI      api.OrganizationsAPI
+	// client to communicate with InfluxDBServer
+	client influxdb2.Client
+	// API for performing synchronously flux query against InfluxDB server
+	queryAPI api.QueryAPI
+	// API to managing tasks and task runs in an InfluxDB server
+	tasksAPI api.TasksAPI
+	// API to managing Organizations in a InfluxDB server
+	organizationsAPI api.OrganizationsAPI
+
 	tasks                 []domain.Task
 	org                   string
 	bucket                string
@@ -45,10 +50,14 @@ func (db *InfluxDB) Init(c conf.Configuration) {
 
 	// Connect to InfluxDB
 	db.client = influxdb2.NewClient(c.DBHost, c.DBToken)
-	ok, err := db.client.Ping(context.Background())
-	if !ok || err != nil {
+	// validate client connection and health
+	if ok, err := db.client.Ping(context.Background()); !ok || err != nil {
 		logging.Fatal("db: Init(): Could not reach influxdb: ", err)
 	}
+	if _, err := db.client.Health(context.Background()); err != nil {
+		logging.Fatal("db: Init(): influxdb health check failed: ", err)
+	}
+	logging.Info("db: Init(): Connected to ", c.DBHost)
 
 	// Initialize db data structure
 	if c.DBOrg == "" {
