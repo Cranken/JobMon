@@ -1,7 +1,8 @@
 /**
  * PrefixType represents a list of possible prefixes that can be used for different metric units.
- * Metric - it will use the usual data units like B, kB, MB, GB etc.
- * Exponential - it will use the 'e' notation for showing large numbers.
+ * Metric - it will use the usual data unit prefixes like B, KB, MB, GB etc.
+ * Exponential - it will use the 'e' notation prefix for showing large numbers.
+ * OPS - it will use K as a prefix for values greater than 10^3 otherwise it will show the actual value.
  */
 enum PrefixType {
   None,
@@ -84,8 +85,8 @@ const Units: UnitsType = {
 };
 
 /**
- * Prefix represents a possible prefix used for a data units, it can be a symbol, 
- * e-notation, or the default base 10 prefix.
+ * Prefix represents a possible prefix used for data units given as a symbol.
+ * The value that the prefix represents can be calculated form Exp and Base.
  */
 interface Prefix {
   Short: string;
@@ -189,6 +190,7 @@ export class Unit {
           const value = this.value / exp;
           let displayFormat;
           // TODO: Find a better idea!
+          // In the case of OPS prefix no need to show the units.
           if (this.type.Prefix === PrefixType.OPS) {
             displayFormat = "";
           } else {
@@ -214,7 +216,7 @@ export class Unit {
           return 1 <= value && value < 1000;
         });
       case PrefixType.OPS:
-        return (this.value >= 1000) ? "kilo" : undefined;
+        return (this.value >= 1000) ? "kilo" : "None";
         
       case PrefixType.Exponential:
         return "None";
