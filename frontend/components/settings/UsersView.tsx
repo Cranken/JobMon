@@ -1,8 +1,8 @@
 import { Stack, useToast, Input, FormLabel, Button, Box, Wrap } from "@chakra-ui/react";
 import { Field, Form, Formik } from "formik";
 import React, { useEffect, useState } from "react";
-import { AvailableUserRoles, UserRoles } from "../../types/config";
-import { authFetch } from "../../utils/auth";
+import {UserRoles} from "../../types/config";
+import {authFetch, UserRole} from "../../utils/auth";
 
 const UsersView = () => {
     const [username, setUsername] = useState<string>();
@@ -43,7 +43,7 @@ const UserConfigItem = ({ user, updateUser }: IUserConfigItemProps) => {
                     <Box>
                         <FormLabel pt={1}>Select User Roles</FormLabel>
                         <Wrap gap={5}>
-                            {Object.values(AvailableUserRoles).map((val) =>
+                            {Object.values(UserRole).map((val) =>
                                 <FormLabel key={val}>
                                     <Field type="checkbox" name="Roles" value={val} />
                                     {val}
