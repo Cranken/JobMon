@@ -173,12 +173,9 @@ export class Unit {
     this.type = baseUnit;
   }
 
-  /**
-   * toString converts a unit to a string.
-   * @param prefix - an optional argument defining the prefix type used for the unit.
-   * @returns string version of the unit.
-   */
-  toString(prefix?: string) {
+  //            DEPRECATED                //
+  // Older version of the toString method //
+  toString_old(prefix?: string) {
     switch (this.type.Prefix) {
       case PrefixType.Exponential:
         return this.value.toExponential(2) + ` ${this.type.DisplayFormat}`;
@@ -199,6 +196,59 @@ export class Unit {
           return `${value.toFixed(2)} ${prefix.Short}${displayFormat}`;
         }
         return `${this.value.toFixed(2)} ${this.type.DisplayFormat}`;
+    }
+  }
+  
+  /**
+   * toString converts a unit into a string.
+   * @param prefix - an optional argument defining the prefix type used for the unit.
+   * @returns a string version of the unit.
+   */
+  toString(prefix?: string) {
+    const valStr = this.valueToString(prefix);
+    const prefixStr = this.prefixToString(prefix);
+    return valStr + ' ' + prefixStr;
+  }
+  
+  /**
+   * Calls bestPrefix method to get the best prefix for the given value of the unit.
+   * @param prefix - an optional argument defining the prefix type used for the unit.
+   * @returns - the prefix of the unit as a string.
+   */
+  prefixToString(prefix?: string){
+    switch (this.type.Prefix) {
+      case PrefixType.Exponential:
+        return `${this.type.DisplayFormat}`;
+      default:
+        let best = prefix ? prefix : this.bestPrefix();
+        if (best) {
+          const displayFormat = 
+            (this.type.Prefix === PrefixType.OPS) ? "" : this.type.DisplayFormat;
+          const prefix = Prefixes[best];
+          return `${prefix.Short}${displayFormat}`;
+        }
+        return `${this.type.DisplayFormat}`;
+    }
+  }
+
+  /**
+   * Get a prefixed value of the unit.
+   * @param prefix - an optional argument defining the prefix type used for the unit.
+   * @returns the value for the given prefix as a string
+   */
+  valueToString(prefix? : string) {
+    switch (this.type.Prefix) {
+      case PrefixType.Exponential:
+        return this.value.toExponential(2);
+      default:
+        let best = prefix ? prefix : this.bestPrefix();
+        if (best) {
+          const prefix = Prefixes[best];
+          const exp = Math.pow(prefix.Base, prefix.Exp);
+          const value = this.value / exp;
+          return `${value.toFixed(2)}`;
+        }
+        return `${this.value.toFixed(2)}`;
     }
   }
 
