@@ -219,13 +219,15 @@ export class Unit {
     switch (this.type.Prefix) {
       case PrefixType.Exponential:
         return `${this.type.DisplayFormat}`;
+      
+      case PrefixType.OPS:
+        // In the case of IOPS the prefix is always K.
+        return `${Prefixes["kilo"].Short}`
       default:
         let best = prefix ? prefix : this.bestPrefix();
         if (best) {
-          const displayFormat = 
-            (this.type.Prefix === PrefixType.OPS) ? "" : this.type.DisplayFormat;
           const prefix = Prefixes[best];
-          return `${prefix.Short}${displayFormat}`;
+          return `${prefix.Short}${this.type.DisplayFormat}`;
         }
         return `${this.type.DisplayFormat}`;
     }
@@ -240,6 +242,11 @@ export class Unit {
     switch (this.type.Prefix) {
       case PrefixType.Exponential:
         return this.value.toExponential(2);
+      case PrefixType.OPS:
+        const prefix = Prefixes["kilo"];
+        const exp = Math.pow(prefix.Base, prefix.Exp);
+        const value = this.value / exp;
+        return `${value.toFixed(2)}`;
       default:
         let best = prefix ? prefix : this.bestPrefix();
         if (best) {
@@ -265,10 +272,7 @@ export class Unit {
           const value = this.value / exp;
           return 1 <= value && value < 1000;
         });
-      case PrefixType.OPS:
-        return (this.value >= 1000) ? "kilo" : "None";
-        
-      case PrefixType.Exponential:
+      default:
         return "None";
       
     }
