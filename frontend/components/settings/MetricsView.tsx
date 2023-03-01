@@ -66,51 +66,67 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
       /> */}
       {/* <StackDivider /> */}
       <Accordion allowMultiple>
-        {lConfig.Metrics.map((m, i) => (
-          <MetricItem
-            // Hack to avoid duplicate keys if adding multiple new (empty) metrics
-            key={m.GUID + i.toString()}
-            metricConfig={m}
-            setMetricConfig={(m: MetricConfig, del = false) => {
-              const curConfig = { ...lConfig };
-              if (!del && curConfig.Metrics[i].DisplayName === "New Metric") {
-                toast({
-                  description: "Remember to assign newly created metrics to partitions.",
-                  status: "info",
-                  isClosable: true
-                });
-              }
-              if (del) {
-                curConfig.Metrics = curConfig.Metrics.filter((_, ind) => ind != i);
-              } else {
-                curConfig.Metrics[i] = m;
-              }
-              setLConfig(curConfig);
-              setConfig(curConfig);
-            }}
-            availableCategories={lConfig.MetricCategories}
-            addCategory={(c) => {
-              const curConfig = { ...lConfig };
-              if (!(c in curConfig.MetricCategories)) {
-                curConfig.MetricCategories.push(c);
+        {
+          lConfig.MetricCategories.map((cat) => (
+            <AccordionItem key={cat}>
+            <h2>  
+                <AccordionButton>
+                <Box flex='1' textAlign='left'>
+                  {cat}
+                </Box>
+                <AccordionIcon/>
+                </AccordionButton>
+            </h2>  
+            <AccordionPanel>
+            <Accordion allowMultiple>
+            {
+            // Only metrics belonging to the category c are shown.
+            lConfig.Metrics.filter(m => m.Categories.includes(cat)).map((m, i) => (
+            <MetricItem
+              // Hack to avoid duplicate keys if adding multiple new (empty) metrics
+              key={m.GUID + (i+1).toString()}
+              metricConfig={m}
+              setMetricConfig={(m: MetricConfig, del = false) => {
+                const curConfig = { ...lConfig };
+                if (!del && curConfig.Metrics[i+1].DisplayName === "New Metric") {
+                  toast({
+                    description: "Remember to assign newly created metrics to partitions.",
+                    status: "info",
+                    isClosable: true
+                  });
+                }
+                if (del) {
+                  curConfig.Metrics = curConfig.Metrics.filter((_, ind) => ind != i+1);
+                } else {
+                  curConfig.Metrics[i+1] = m;
+                }
                 setLConfig(curConfig);
                 setConfig(curConfig);
-              }
-            }}
-            removeCategory={(c) => {
-              const curConfig = { ...lConfig };
-              curConfig.MetricCategories = curConfig.MetricCategories.filter((v) => v !== c);
-              setLConfig(curConfig);
-              setConfig(curConfig);
-            }}
-          />
-        ))}
+              }}
+              availableCategories={lConfig.MetricCategories}
+              addCategory={(c) => {
+                const curConfig = { ...lConfig };
+                if (!(c in curConfig.MetricCategories)) {
+                  curConfig.MetricCategories.push(c);
+                  setLConfig(curConfig);
+                  setConfig(curConfig);
+                }
+              }}
+              removeCategory={(c) => {
+                const curConfig = { ...lConfig };
+                curConfig.MetricCategories = curConfig.MetricCategories.filter((v) => v !== c);
+                setLConfig(curConfig);
+                setConfig(curConfig);
+              }}
+            />
+          ))}
       </Accordion>
       <Box>
         <Button onClick={() => {
           const curConfig = { ...lConfig };
           curConfig.Metrics.push({
-            Type: "node", Measurement: "",
+            Type: "node", Categories: [cat],
+            Measurement: "",
             AggFn: AggFn.Mean, SampleInterval: "",
             Unit: "", DisplayName: "New Metric",
             SeparationKey: "hostname",
@@ -122,6 +138,12 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
         }
         }>Add</Button>
       </Box>
+      </AccordionPanel>
+      </AccordionItem>
+            
+          ))
+        }
+      </Accordion>
     </Stack>
   );
 };
