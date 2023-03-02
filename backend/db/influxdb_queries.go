@@ -162,32 +162,3 @@ max = data
 	
 union(tables: [mean, max])	
 `
-
-// Parameters: bucket, startTime, stopTime, measurement,
-// type, filterFunc, postQueryOp, sampleInterval, aggFn
-// measurement, measurement, bucket, org
-const AggregationTaskQuery = `
-from(bucket: "%v")
-	|> range(start: -task.every)
-	|> filter(fn: (r) => r["_measurement"] == "%v")
-	|> filter(fn: (r) => r.type == "%v")
-	%v
-	%v
-	|> group(columns: ["_measurement", "hostname"], mode:"by")
-	|> aggregateWindow(every: %v, fn: %v, createEmpty: false)
-	|> group(columns: ["hostname"], mode:"by")
-	|> keep(
-        columns: [
-            "hostname",
-            "_start",
-            "_stop",
-            "_time",
-            "_value",
-            "cluster",
-            "hostname",
-        ],
-    )
-	|> set(key: "_measurement", value: "%v")
-	|> set(key: "_field", value: "%v")
-	|> to(bucket: "%v", org: "%v")
-`

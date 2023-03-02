@@ -631,17 +631,50 @@ func (db *InfluxDB) createAggregationTask(
 	task *domain.Task,
 	err error,
 ) {
-	measurement := metric.Measurement + "_" + aggFn
-	taskName := db.bucketName + "_" + metric.Measurement + "_" + aggFn
+	aggMeasurement := metric.Measurement + "_" + aggFn
+	aggTaskName := db.bucketName + "_" + metric.Measurement + "_" + aggFn
 	sampleInterval := metric.SampleInterval
 	if sampleInterval == "" {
 		sampleInterval = db.defaultSampleInterval
 	}
-	query := fmt.Sprintf(AggregationTaskQuery,
-		db.bucketName, metric.Measurement, metric.Type, metric.FilterFunc,
-		metric.PostQueryOp, sampleInterval, aggFn,
-		measurement, measurement, db.bucketName, db.organizationName)
-	return db.createTask(taskName, query, orgId)
+
+	query := fmt.Sprintf(`
+	from(bucket: "%s")
+		|> range(start: -task.every)
+		|> filter(fn: (r) => r["_measurement"] == "%s")
+		|> filter(fn: (r) => r.type == "%s")
+		%s
+		%s
+		|> group(columns: ["_measurement", "hostname"], mode:"by")
+		|> aggregateWindow(every: %s, fn: %s, createEmpty: false)
+		|> group(columns: ["hostname"], mode:"by")
+		|> keep(
+			columns: [
+				"hostname",
+				"_start",
+				"_stop",
+				"_time",
+				"_value",
+				"cluster",
+				"hostname",
+			],
+		)
+		|> set(key: "_measurement", value: "%s")
+		|> set(key: "_field", value: "%s")
+		|> to(bucket: "%s", org: "%s")
+	`,
+		db.bucketName,
+		metric.Measurement,
+		metric.Type,
+		metric.FilterFunc,
+		metric.PostQueryOp,
+		sampleInterval, aggFn,
+		aggMeasurement,
+		aggMeasurement,
+		db.bucketName,
+		db.organizationName)
+
+	return db.createTask(aggTaskName, query, orgId)
 }
 
 // updateAggregationTask finds first all the missing tasks for job metrics.
