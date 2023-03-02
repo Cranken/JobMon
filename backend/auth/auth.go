@@ -138,7 +138,7 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 				},
 			)
 			w.WriteHeader(http.StatusUnauthorized)
-			logging.Error("AuthManager: Protected(): not a valid user")
+			logging.Error("AuthManager: Protected(): validate", user, err)
 			return
 		}
 
@@ -263,6 +263,7 @@ func (auth *AuthManager) validate(tokenStr string) (
 		return
 	}
 	claims, ok := token.Claims.(*UserClaims)
+	user = claims.UserInfo
 	if ok && token.Valid {
 		if claims.VerifyExpiresAt(jwt.TimeFunc().Unix(), true) &&
 			claims.VerifyIssuer(ISSUER, true) {
