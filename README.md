@@ -50,11 +50,52 @@ After setting the values in the `.env` and `backend/config.json` files, docker-c
 
 The `.env` file specifies the frontend database authentication keys as well as the ports the docker containers will run on.
 
-The config.json contains the configuration for the backend as well as the metrics.
+The `backend/config.json` contains the configuration for the backend as well as the metrics.
+
+The command
 
 ```bash
 docker-compose up [-d]
 ```
+
+brings up the whole stack which consist of the five containers:
+
+* JobMonFrontend (Next.js server for the frontend)
+* JobMonBackend (golang backend)
+* JobMonInfluxDB (InfluxDB as time series database)
+* JobMonPostgres (PostgreSQL for job metadata store)
+* JobMonNginx (NGinx as SSL endpoint for frontend and backend)
+
+You can access the containers with the `docker` command.
+Some examples for common tasks:
+
+* Query the InfluxDB
+
+  ```bash
+  docker exec hk-jobmon-influxdb-1 influx query ...
+  ```
+
+* Access the PostgreSQL interactive terminal
+
+  ```bash
+  docker exec -it JobMonPostgres \
+      psql --username=postgres --password --dbname=jobmon --host my-monitor-db.example.org --port 5432
+  ```
+
+* Dump the PostgreSQL database for backup purpose
+
+  ```bash
+  docker exec -it JobMonPostgres \
+      pg_dump --username=postgres --password --dbname=jobmon --host my-monitor-db.example.org --port 5432 | \
+          tee jobmon-psql.dump
+  ```
+
+* Watch the log output of the frontend or backend
+
+  ```bash
+  docker logs --follow JobMonFrontend
+  docker logs --follow JobMonBackend
+  ```
 
 ## API Documentation
 
