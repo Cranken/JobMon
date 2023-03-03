@@ -8,8 +8,10 @@ import {
   Button,
   ButtonGroup,
   Flex,
+  FormControl,
   FormLabel,
   HStack,
+  Input,
   Popover,
   PopoverArrow,
   PopoverBody,
@@ -26,7 +28,7 @@ import {
 } from "@chakra-ui/react";
 import { CreatableSelect } from "chakra-react-select";
 import { Field, FieldHookConfig, Form, Formik, useField } from "formik";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Configuration } from "../../types/config";
 import { AggFn, MetricConfig } from "../../types/job";
 import { NumberField, TextField } from "./FormComponents";
@@ -36,128 +38,13 @@ interface IMetricsViewProps {
   setConfig: (c: Configuration) => void;
 }
 
-const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
-  const [lConfig, setLConfig] = useState(config);
-  useEffect(() => {
-    setLConfig(config);
-  }, [config]);
-  const toast = useToast();
-  if (!lConfig) {
-    return null;
-  }
-  return (
-    <Stack gap={2}>
-      {/* <CategoryPanel
-        availableCategories={lConfig.MetricCategories}
-        addCategory={(c) => {
-          let curConfig = { ...lConfig };
-          if (!(c in curConfig.MetricCategories)) {
-            curConfig.MetricCategories.push(c);
-            setLConfig(curConfig);
-            setConfig(curConfig);
-          }
-        }}
-        removeCategory={(c) => {
-          let curConfig = { ...lConfig };
-          curConfig.MetricCategories = curConfig.MetricCategories.filter((v) => v !== c);
-          setLConfig(curConfig);
-          setConfig(curConfig);
-        }}
-      /> */}
-      {/* <StackDivider /> */}
-      <Accordion allowMultiple>
-        {
-          lConfig.MetricCategories.map((cat) => (
-            <AccordionItem key={cat}>
-            <h2>  
-                <AccordionButton>
-                <Box flex='1' textAlign='left'>
-                  {cat}
-                </Box>
-                <AccordionIcon/>
-                </AccordionButton>
-            </h2>  
-            <AccordionPanel>
-            <Accordion allowMultiple>
-            {
-            // Only metrics belonging to the category c are shown.
-            lConfig.Metrics.filter(m => m.Categories.includes(cat)).map((m, i) => (
-            <MetricItem
-              // Hack to avoid duplicate keys if adding multiple new (empty) metrics
-              key={m.GUID + (i+1).toString()}
-              metricConfig={m}
-              setMetricConfig={(m: MetricConfig, del = false) => {
-                const curConfig = { ...lConfig };
-                if (!del && curConfig.Metrics[i+1].DisplayName === "New Metric") {
-                  toast({
-                    description: "Remember to assign newly created metrics to partitions.",
-                    status: "info",
-                    isClosable: true
-                  });
-                }
-                if (del) {
-                  curConfig.Metrics = curConfig.Metrics.filter((_, ind) => ind != i+1);
-                } else {
-                  curConfig.Metrics[i+1] = m;
-                }
-                setLConfig(curConfig);
-                setConfig(curConfig);
-              }}
-              availableCategories={lConfig.MetricCategories}
-              addCategory={(c) => {
-                const curConfig = { ...lConfig };
-                if (!(c in curConfig.MetricCategories)) {
-                  curConfig.MetricCategories.push(c);
-                  setLConfig(curConfig);
-                  setConfig(curConfig);
-                }
-              }}
-              removeCategory={(c) => {
-                const curConfig = { ...lConfig };
-                curConfig.MetricCategories = curConfig.MetricCategories.filter((v) => v !== c);
-                setLConfig(curConfig);
-                setConfig(curConfig);
-              }}
-            />
-          ))}
-      </Accordion>
-      <Box>
-        <Button onClick={() => {
-          const curConfig = { ...lConfig };
-          curConfig.Metrics.push({
-            Type: "node", Categories: [cat],
-            Measurement: "",
-            AggFn: AggFn.Mean, SampleInterval: "",
-            Unit: "", DisplayName: "New Metric",
-            SeparationKey: "hostname",
-            MaxPerNode: 0, MaxPerType: 0,
-            PThreadAggFn: "",
-            FilterFunc: "", PostQueryOp: "",
-          } as MetricConfig);
-          setLConfig(curConfig);
-        }
-        }>Add</Button>
-      </Box>
-      </AccordionPanel>
-      </AccordionItem>
-            
-          ))
-        }
-      </Accordion>
-    </Stack>
-  );
-};
+
 
 interface ICategoryPanelProps {
   availableCategories: string[];
   addCategory: (c: string) => void;
   removeCategory: (c: string) => void;
-}
-
-
-interface IMetricItemProps {
-  metricConfig: MetricConfig;
-  setMetricConfig: (m: MetricConfig, del?: boolean) => void;
+  currentCategory: string
 }
 
 const AggFnSelection = (displayName: string, name: string, availableAggFns: string[]) => {
@@ -198,7 +85,7 @@ const AvailableAggFns = (displayName: string) => {
   );
 };
 
-const CategorySelect = ({ availableCategories, addCategory, ...props }: FieldHookConfig<string[]> & ICategoryPanelProps) => {
+const CategorySelect = ({ availableCategories, addCategory, currentCategory, ...props }: FieldHookConfig<string[]> & ICategoryPanelProps) => {
   const [field, , helpers] = useField(props);
   return (
     <>
@@ -216,91 +103,8 @@ const CategorySelect = ({ availableCategories, addCategory, ...props }: FieldHoo
   );
 };
 
-const MetricItem = ({ metricConfig, setMetricConfig, ...category }: IMetricItemProps & ICategoryPanelProps) => {
-  return (
-    <AccordionItem >
-      <h2>
-        <AccordionButton>
-          <Box flex='1' textAlign='left'>
-            {metricConfig.DisplayName}
-          </Box>
-          <AccordionIcon />
-        </AccordionButton>
-      </h2>
-      <AccordionPanel>
-        <Formik
-          initialValues={metricConfig}
-          onSubmit={(values) => {
-            values.MaxPerNode = Number(values.MaxPerNode);
-            values.MaxPerType = Number(values.MaxPerType);
-            setMetricConfig(values);
-          }
-          }
-        >
-          {({ values, errors }) => (
-            <Form autoComplete="off">
-              <FormLabel pt={1}>GUID: {values.GUID}</FormLabel>
-              {TextField("Display Name", "DisplayName", errors.DisplayName)}
-              {TextField("Measurement", "Measurement", errors.Measurement)}
-              {TextField("Type", "Type", errors.Type, undefined, undefined, TOOLTIP_TYPE)}
-              <>
-                <FormLabel pt={1}>Categories</FormLabel>
-                <Tooltip label={TOOLTIP_CATEGORIES}>
-                  <Box>
-                    <CategorySelect name="Categories" {...category} />
-                  </Box>
-                </Tooltip>
-              </>
-              {values.Type === "cpu" ? AggFnSelection("PThread Aggregation Function", "PThreadAggFn", Object.values(AggFn)) : null}
-              {TextField("Sample Interval", "SampleInterval", "", false)}
-              {AvailableAggFns("Available Aggregation Functions")}
-              {AggFnSelection("Default Aggregation Function", "AggFn", values.AvailableAggFns)}
-              {TextField("Unit", "Unit", "", false, undefined, TOOLTIP_UNIT)}
-              {NumberField("Max per Node", "MaxPerNode", errors.MaxPerNode, TOOLTIP_MAX_PER_NODES)}
-              {NumberField("Max per Type", "MaxPerType", errors.MaxPerType, TOOLTIP_MAX_PER_TYPE)}
-              {TextField("Separation Key", "SeparationKey", errors.SeparationKey, true, undefined, TOOLTIP_SEPARATION_KEY)}
-              {TextField("Filter Function", "FilterFunc", "", false, undefined, TOOLTIP_FILTER_FUNC)}
-              {TextField("Post Query Operation", "PostQueryOp", "", false, undefined, TOOLTIP_POST_QUERY_OP)}
-              <Flex mt={3} justify="space-between" gap={2}>
-                <HStack>
-                  <Button type="reset" colorScheme="gray">
-                    Reset
-                  </Button>
-                  <Button type="submit" colorScheme="green">
-                    Save
-                  </Button>
-                </HStack>
-                <Popover>
-                  {({ onClose }) => (
-                    <>
-                      <PopoverTrigger>
-                        <Button colorScheme="red">Delete</Button>
-                      </PopoverTrigger>
-                      <PopoverContent>
-                        <PopoverArrow />
-                        <PopoverCloseButton />
-                        <PopoverHeader>Confirmation</PopoverHeader>
-                        <PopoverBody>Are you sure you want to delete this metric configuration?</PopoverBody>
-                        <PopoverFooter display='flex' justifyContent='flex-end'>
-                          <ButtonGroup size='sm'>
-                            <Button variant='outline' onClick={onClose}>Cancel</Button>
-                            <Button colorScheme='red' onClick={() => setMetricConfig(metricConfig, true)}>Delete</Button>
-                          </ButtonGroup>
-                        </PopoverFooter>
-                      </PopoverContent>
-                    </>
-                  )}
-                </Popover>
-              </Flex>
-            </Form>
-          )}
-        </Formik>
-      </AccordionPanel>
-    </AccordionItem>
-  );
-};
 
-export default MetricsView;
+
 
 const TOOLTIP_TYPE = "Supported types: cpu, node, socket, accelerator.";
 const TOOLTIP_UNIT = "Supported units: FLOP/s, Bit/s, °C, B/s, B, %, Packet/s, W, Reads, Writes, IOps, MetaOps. Default is none(empty string). \
@@ -315,3 +119,250 @@ const TOOLTIP_MAX_PER_TYPE = "Maximum value a unit as specified in the above \"T
 const TOOLTIP_SEPARATION_KEY = "Separation key used to differentiate between nodes in the InfluxDB query.";
 const TOOLTIP_FILTER_FUNC = "Optional filter function used in InfluxDB queries. Must be a valid Flux query.";
 const TOOLTIP_POST_QUERY_OP = "Optional post query function used in InfluxDB queries. Must be a valid Flux query.";
+
+
+
+//////////////////////////////////////////////////////////////
+///         NEW_MetricsView //////////////////////////////////
+//////////////////////////////////////////////////////////////
+
+const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
+  const [lConfig, setLConfig] = useState(config);
+  const [metricCategories, setMetricCategories] = useState(config.MetricCategories);
+  const [metricsConfig, setMetricsConfig] = useState(config.Metrics);
+  const newCategoryRef = useRef("");
+  useEffect( () => {
+    setLConfig(config);
+  }, [config]);
+  const toast = useToast();
+  if (!lConfig) {
+    return null;
+  }
+
+  return (
+    <Stack gap={2}>
+      {/* <StackDivider/> */}
+      <Accordion allowMultiple>
+        {
+          metricCategories.map((category) => (
+            <AccordionItem key={category}>
+              <h2>
+                <AccordionButton>
+                  <Box flex='1' textAlign='left'>{category}</Box>
+                <AccordionIcon/>
+                </AccordionButton>
+              </h2>
+              <AccordionPanel>
+                <Accordion allowMultiple>
+                  {
+                    // Only metrics belonging to the category c are shown.
+                    metricsConfig.map((m, i) => (
+                      (m.Categories.includes(category)) ? 
+                      <>
+                      <AccordionItem key={m.GUID}>
+                        <h2>
+                          <AccordionButton>
+                            <Box flex='1' textAlign='left'>{m.DisplayName}</Box>
+                            <AccordionIcon/>
+                          </AccordionButton>
+                        </h2>
+                        <AccordionPanel>
+                          <MetricForm
+                            isNewMetric = {false}
+                            metricConfig={m}
+                            setMetricConfig={(m: MetricConfig, del = false) => {
+                              let curMetricsConfig = metricsConfig;
+                              
+                              if (del) {
+                                curMetricsConfig = curMetricsConfig.filter((_, ind) => ind != i);
+                              } else {
+                                curMetricsConfig[i] = m;
+                              }
+                              setMetricsConfig(curMetricsConfig);
+                            }}
+                            
+                            availableCategories={metricCategories}
+                            addCategory={(c) => {
+                              let curMetricCategories = metricCategories;
+                              curMetricCategories.push(c);
+                              setMetricCategories(curMetricCategories)}}
+                            removeCategory={(c) => {
+                              let curMetricCategories = metricCategories;
+                              curMetricCategories.push(c);
+                              setMetricCategories(curMetricCategories)}}
+                            currrentCategory={category}
+                          />
+                          
+                        </AccordionPanel>
+                      </AccordionItem>
+                      </> : null
+                    ))
+                  }
+                </Accordion>
+                <HStack>
+                <Popover>
+                      {({ onClose }) => (
+                        <>
+                          <PopoverTrigger>
+                            <Button colorScheme='blue'>Add Metric</Button>
+                          </PopoverTrigger>
+                          <PopoverContent>
+                            <PopoverArrow/>
+                            <PopoverCloseButton/>
+                            <PopoverHeader>Confirmation</PopoverHeader>
+                            <PopoverBody>
+                            <MetricForm
+                                metricConfig = {{
+                                  Type: "node", Categories: [category],
+                                  Measurement: "",
+                                  AggFn: AggFn.Mean, SampleInterval: "",
+                                  Unit: "", DisplayName: "New Metric",
+                                  SeparationKey: "hostname",
+                                  MaxPerNode: 0, MaxPerType: 0,
+                                  PThreadAggFn: "",
+                                  FilterFunc: "", PostQueryOp: "",
+                                }}
+                                setMetricConfig={(m: MetricConfig) => {
+                                  const curMetricsConfig = {...metricsConfig};
+                                  curMetricsConfig.push(m);
+                                  setMetricsConfig(curMetricsConfig);
+                                }}
+                                availableCategories= {[category]}
+                                addCategory={(c) => {setMetricCategories(mc => mc)}}
+                                removeCategory={(c) => {setMetricCategories(mc => mc)}}
+                            />
+
+                            </PopoverBody>
+                            <PopoverFooter/>
+                          </PopoverContent>
+                        
+                        </>
+                      )}
+                    </Popover>
+                  <Box>
+                  
+                  <Button colorScheme='red' onClick={() => {
+                    setMetricCategories(mc =>
+                      metricCategories.filter(c => c != category)  
+                    )
+                  }}>Delete Category</Button>
+                  </Box>
+                </HStack>
+              </AccordionPanel>
+            </AccordionItem>
+          ))
+        }
+      </Accordion>
+      <Popover>
+                      {({ onClose }) => (
+                        <>
+                          <PopoverTrigger>
+                            <Button colorScheme='blue'>Add Category</Button>
+                          </PopoverTrigger>
+                          <PopoverContent>
+                            <PopoverArrow/>
+                            <PopoverCloseButton/>
+                            <PopoverHeader>Please enter the name of the new category!</PopoverHeader>
+                            <PopoverBody/>
+                            <PopoverFooter/>
+                          </PopoverContent>
+                        
+                        </>
+                      )}
+                    </Popover>
+    </Stack>
+  )
+}
+
+export default MetricsView;
+
+interface IMetricsFormProps {
+  isNewMetric: boolean,
+  metricConfig: MetricConfig;
+  setMetricConfig: (mC: MetricConfig, del?: boolean) => void;
+}
+
+const MetricForm = ({ isNewMetric, metricConfig, setMetricConfig, ...categories}: IMetricsFormProps & ICategoryPanelProps) => {
+  return (
+  <Formik
+    initialValues={metricConfig}
+    onSubmit={(values) => {
+      values.MaxPerNode = Number(values.MaxPerNode);
+      values.MaxPerType = Number(values.MaxPerType);
+      setMetricConfig(values);
+    }
+    }
+  >
+    {({ values, errors}) => (
+      <Form autoComplete="off">
+        <FormLabel pt={1}>GUID: {values.GUID}</FormLabel>
+        {TextField("Display Name", "DisplayName", errors.DisplayName)}
+        {TextField("Measurement", "Measurement", errors.Measurement)}
+        {TextField("Type", "Type", errors.Type, undefined, undefined, TOOLTIP_TYPE)}
+        <>
+          <FormLabel pt={1}>Categories</FormLabel>
+          <Tooltip label={TOOLTIP_CATEGORIES}>
+            <Box>
+              <CategorySelect name="Categories" {...categories} />
+            </Box>
+          </Tooltip>
+        </>
+        {values.Type === "cpu" ? AggFnSelection("PThread Aggregation Function", "PThreadAggFn", Object.values(AggFn)) : null}
+        {TextField("Sample Interval", "SampleInterval", "", false)}
+        {AvailableAggFns("Available Aggregation Functions")}
+        {AggFnSelection("Default Aggregation Function", "AggFn", values.AvailableAggFns)}
+        {TextField("Unit", "Unit", "", false, undefined, TOOLTIP_UNIT)}
+        {NumberField("Max per Node", "MaxPerNode", errors.MaxPerNode, TOOLTIP_MAX_PER_NODES)}
+        {NumberField("Max per Type", "MaxPerType", errors.MaxPerType, TOOLTIP_MAX_PER_TYPE)}
+        {TextField("Separation Key", "SeparationKey", errors.SeparationKey, true, undefined, TOOLTIP_SEPARATION_KEY)}
+        {TextField("Filter Function", "FilterFunc", "", false, undefined, TOOLTIP_FILTER_FUNC)}
+        {TextField("Post Query Operation", "PostQueryOp", "", false, undefined, TOOLTIP_POST_QUERY_OP)}
+        <Flex mt={3} justify="space-between" gap={2}>
+        <HStack>
+          <Button type="reset" colorScheme="gray">
+            Reset
+          </Button>
+          <Button type="submit" colorScheme="green">
+            Save
+          </Button>
+        </HStack>
+        
+        { // Popover should appear only if metric was already defined.
+          <Popover>
+            {({ onClose }) => (
+            <>
+            <PopoverTrigger>
+              <Button colorScheme="red" isDisabled={isNewMetric}>Delete</Button>
+            </PopoverTrigger>
+            <PopoverContent>
+              <PopoverArrow />
+              <PopoverCloseButton />
+              <PopoverHeader>Confirmation</PopoverHeader>
+              <PopoverBody>Are you sure you want to delete this metric configuration?</PopoverBody>
+              <PopoverFooter display='flex' justifyContent='flex-end'>
+                <ButtonGroup size='sm'>
+                  <Button variant='outline' onClick={onClose}>Cancel</Button>
+                  <Button colorScheme='red' onClick={() => {
+                    let curMetricConfig = metricConfig;
+                    // If the metric belongs to a single category it will be removed from the metric configuration.
+                    if (curMetricConfig.Categories.includes(currentCategory) && curMetricConfig.Categories.length === 1){
+                      setMetricConfig(metricConfig, del=true);
+                      
+                    } else {
+                      // Delete a metric by removing the current category, this way the metric will not be deleted
+                      // completely but it will be just removed from this category
+                      removeCategory(currentCategory);
+                    }
+                    setMetricConfig(curMetricConfig)
+                  }}>Delete</Button>
+                </ButtonGroup>
+              </PopoverFooter>
+            </PopoverContent>
+            </>)}
+        </Popover>}
+        </Flex>
+      </Form>
+    )}
+  </Formik>
+  )
+}
