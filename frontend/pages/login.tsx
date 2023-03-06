@@ -62,7 +62,7 @@ export const Login = () => {
             value={username}
             borderColor={borderColor}
             onChange={(e) => setUsername(e.target.value)}
-            onKeyPress={submit}
+            onKeyDown={submit}
           />
           <FormLabel htmlFor="password">Password</FormLabel>
           <Input
@@ -71,7 +71,7 @@ export const Login = () => {
             value={password}
             borderColor={borderColor}
             onChange={(e) => setPassword(e.target.value)}
-            onKeyPress={submit}
+            onKeyDown={submit}
           />
           <Flex mt={5} justify="space-between">
             <Checkbox
