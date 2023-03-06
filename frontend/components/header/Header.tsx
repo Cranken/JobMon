@@ -17,6 +17,10 @@ import { useIsAuthenticated, UserRole } from "../../utils/auth";
 import { useGetUser } from "../../utils/auth";
 import React from "react";
 
+/**
+ * Header is a React component for the navigation-bar displayed at the top of a page.
+ * The navigation-bar adapts based on the role of the user.
+ */
 export const Header = () => {
   const user = useGetUser();
   const { colorMode, toggleColorMode } = useColorMode();
@@ -66,7 +70,7 @@ export const Header = () => {
           {isAuthenticated ? (
             <Input
               placeholder="Search user/job"
-              onKeyPress={(ev) => searchHandler(ev.key, ev.currentTarget.value)}
+              onKeyDown={(ev) => searchHandler(ev.key, ev.currentTarget.value)}
               borderColor={searchInputColor}
               _placeholder={{ color: searchInputColor }}
             />
@@ -91,6 +95,11 @@ export const Header = () => {
   );
 };
 
+/**
+ * Handles a search request.
+ * @param key The key pressed by the user. A search is only started, when this key equals "Enter".
+ * @param term The term that will be searched.
+ */
 const searchHandler = (key: string, term: string) => {
   if (key === "Enter") {
     fetch("http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/${term}`, {

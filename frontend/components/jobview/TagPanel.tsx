@@ -96,7 +96,7 @@ export const TagPanel = ({ job }: TagPanelProps) => {
                 borderRadius="lg"
                 value={addTagText}
                 onChange={(ev) => setAddTagText(ev.target.value)}
-                onKeyPress={(ev) => {
+                onKeyDown={(ev) => {
                   if (
                     ev.key === "Enter" &&
                     !ev.altKey &&
