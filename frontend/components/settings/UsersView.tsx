@@ -64,7 +64,8 @@ const useGetUser: (username?: string) => [UserRoles | undefined, (user: UserRole
     const [user, setUser] = useState<UserRoles>();
     const toast = useToast();
     const url = new URL(
-        "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/config/users/${username}`
+        process.env.NEXT_PUBLIC_BACKEND_URL +
+        `/api/config/users/${username}`
     );
 
     const updateUser = (user: UserRoles) => {

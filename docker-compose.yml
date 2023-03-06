@@ -7,14 +7,14 @@ services:
     build:
       context: ./frontend
       args:
-        - NEXT_PUBLIC_BACKEND_URL=${BACKEND_HOSTNAME}:${BACKEND_PORT}
+        - NEXT_PUBLIC_BACKEND_URL=${BACKEND_URL}
+        - NEXT_PUBLIC_BACKEND_WS=${BACKEND_WS}
     container_name: JobMonFrontend
     environment:
-      - NEXT_PUBLIC_BACKEND_URL=${BACKEND_HOSTNAME}:${BACKEND_PORT}
+      - NEXT_PUBLIC_BACKEND_URL=${BACKEND_URL}
+      - NEXT_PUBLIC_BACKEND_WS=${BACKEND_WS}
     depends_on:
       - backend
-    ports:
-      - ${FRONTEND_PORT}:3000
 
   # See: ./backend/Dockerfile
   # Image based on golang:1.20-alpine
@@ -30,8 +30,6 @@ services:
     depends_on:
       - influxdb
       - postgres
-    ports:
-      - ${BACKEND_PORT}:8080
 
   # DockerHub Page: https://hub.docker.com/_/influxdb
   # GitHub Repository: https://github.com/influxdata/influxdata-docker/

@@ -21,7 +21,7 @@ const APIView = () => {
   const [apiKey, setApiKey] = useState("");
   const { isOpen, onOpen, onClose } = useDisclosure();
   const generateApiKey = () => {
-    fetch("http://" + process.env.NEXT_PUBLIC_BACKEND_URL + "/api/generateAPIKey", {
+    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/generateAPIKey", {
       method: "POST",
       credentials: "include",
     }).then((resp) =>

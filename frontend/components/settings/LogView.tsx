@@ -8,7 +8,8 @@ const LogView = () => {
 
     useEffect(() => {
         const url = new URL(
-            "ws://" + process.env.NEXT_PUBLIC_BACKEND_URL + "/api/admin/livelog"
+            process.env.NEXT_PUBLIC_BACKEND_WS +
+            "/api/admin/livelog"
         );
         const ws = new WebSocket(url);
         ws.onmessage = (msg) => {

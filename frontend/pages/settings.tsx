@@ -94,7 +94,7 @@ const useGetConfig: () => [
     setConfig(c);
 
     const url = new URL(
-      "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + "/api/config/update"
+      process.env.NEXT_PUBLIC_BACKEND_URL + "/api/config/update"
     );
 
     authFetch(url.toString(), { method: "PATCH", body: JSON.stringify(c) }).then((data: Configuration) => {
@@ -116,7 +116,7 @@ const useGetConfig: () => [
 
   useEffect(() => {
     const url = new URL(
-      "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + "/api/config"
+      process.env.NEXT_PUBLIC_BACKEND_URL + "/api/config"
     );
 
     fetch(url.toString(), { credentials: "include" }).then((res) => {

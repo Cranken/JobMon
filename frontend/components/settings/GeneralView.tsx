@@ -28,7 +28,8 @@ const GeneralView = () => {
 
 const refreshJobMetadata = (id: string) => {
     const url = new URL(
-        "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/admin/refresh_metadata/${id.toString()}`
+        process.env.NEXT_PUBLIC_BACKEND_URL +
+        `/api/admin/refresh_metadata/${id.toString()}`
     );
     fetch(url.toString(), {
         credentials: "include",
