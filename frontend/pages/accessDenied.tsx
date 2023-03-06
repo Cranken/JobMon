@@ -5,11 +5,13 @@ const AccessDenied = () => {
     const borderColor = useColorModeValue("gray.500", "whiteAlpha.500");
     return <Center>
         <Stack borderWidth="1px" borderRadius="lg" p={5} margin={4} borderColor={borderColor}>
-            <Heading>
-                Access Denied
-            </Heading>
+            <Center>
+                <Heading>
+                    Access Denied
+                </Heading>
+            </Center>
             <Text>
-                You need more rights access this page
+                You need more rights access this page.
             </Text>
         </Stack>
     </Center>;
