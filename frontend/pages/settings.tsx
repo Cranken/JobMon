@@ -15,7 +15,8 @@ import MetricsView from "../components/settings/MetricsView";
 import PartitionsView from "../components/settings/PartitionsView";
 import UsersView from "../components/settings/UsersView";
 import { Configuration } from "../types/config";
-import { authFetch } from "../utils/auth";
+import {authFetch, useGetUser, UserRole} from "../utils/auth";
+import AccessDenied from "./accessDenied";
 
 enum SettingsView {
   General = "General Settings",
@@ -27,6 +28,9 @@ enum SettingsView {
 }
 
 export const Settings = () => {
+  if (!(useGetUser().Roles?.includes(UserRole.Admin) ?? false)) {
+    return <AccessDenied/>;
+  }
   const [settingsView, setSettingsView] = useState(SettingsView.General);
   const [config, setConfig] = useGetConfig();
   if (!config) {
