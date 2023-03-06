@@ -190,7 +190,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
                               let curMetricCategories = metricCategories;
                               curMetricCategories.push(c);
                               setMetricCategories(curMetricCategories)}}
-                            currrentCategory={category}
+                              currrentCategory={category}
                           />
                           
                         </AccordionPanel>
@@ -204,7 +204,9 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
                       {({ onClose }) => (
                         <>
                           <PopoverTrigger>
-                            <Button colorScheme='blue'>Add Metric</Button>
+                            <Tooltip label={`Add a new metric!`}>
+                              <Button colorScheme='blue'>+</Button>
+                            </Tooltip>
                           </PopoverTrigger>
                           <PopoverContent>
                             <PopoverArrow/>
@@ -240,12 +242,14 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
                       )}
                     </Popover>
                   <Box>
-                  
-                  <Button colorScheme='red' onClick={() => {
-                    setMetricCategories(mc =>
-                      metricCategories.filter(c => c != category)  
-                    )
-                  }}>Delete Category</Button>
+                  <Tooltip label={`Delete category!!!`}>
+                    <Button  colorScheme='red' onClick={() => {
+                      
+                      setMetricCategories(mc =>
+                        metricCategories.filter(c => c != category)  
+                      )
+                    }}>X</Button>
+                  </Tooltip>
                   </Box>
                 </HStack>
               </AccordionPanel>
@@ -253,23 +257,23 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
           ))
         }
       </Accordion>
-      <Popover>
-                      {({ onClose }) => (
-                        <>
-                          <PopoverTrigger>
-                            <Button colorScheme='blue'>Add Category</Button>
-                          </PopoverTrigger>
-                          <PopoverContent>
-                            <PopoverArrow/>
-                            <PopoverCloseButton/>
-                            <PopoverHeader>Please enter the name of the new category!</PopoverHeader>
-                            <PopoverBody/>
-                            <PopoverFooter/>
-                          </PopoverContent>
-                        
-                        </>
-                      )}
-                    </Popover>
+          <Popover>
+            {({ onClose }) => (
+              <>
+                <PopoverTrigger>
+                  <Tooltip label={`Add a new category!`}>
+                  <Button colorScheme='blue'>+</Button>
+                  </Tooltip>
+                </PopoverTrigger>
+                <PopoverContent>
+                  <PopoverArrow/>
+                  <PopoverCloseButton/>
+                  <PopoverHeader>Please enter the name of the new category!</PopoverHeader>
+                  <PopoverBody/>
+                  <PopoverFooter/>
+                </PopoverContent>
+              </>)}
+          </Popover>
     </Stack>
   )
 }
