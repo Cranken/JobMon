@@ -31,6 +31,10 @@ import { useStorageState } from "../../utils/utils";
 import { WSLoadMetricsMsg } from "../../types/job";
 import { authFetch } from "../../utils/auth";
 
+/**
+ * Job gives a Fragment that displays detailed information on a job.
+ * The job is specified by its id via router query.
+ */
 const Job: NextPage = () => {
   const router = useRouter();
   const jobId = router.query["id"];
@@ -115,6 +119,8 @@ const Job: NextPage = () => {
     }
   }, [data?.Metadata]);
 
+  // Display spinner while data is not available.
+  // The Spinner gets replaced with content when data was loaded successfully.
   if (!data) {
     return (
       <Center>

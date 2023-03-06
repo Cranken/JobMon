@@ -15,6 +15,10 @@ import {
 import React, { useState } from "react";
 import { useRouter } from "next/router";
 
+/**
+ * Login is a React component providing login-interface to the user.
+ * Login provides a login for local users as well as the option to log in via OICD.
+ */
 export const Login = () => {
   const borderColor = useColorModeValue("gray.500", "whiteAlpha.500");
   const router = useRouter();

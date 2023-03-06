@@ -1,7 +1,7 @@
 import { MetricConfig, PartitionConfig } from "./job";
 
 /**
- * Configuration represents a container for all metrics, metric-categories and partitions.
+ * Configuration represents a container for metrics, metric-categories and partitions.
  */
 export interface Configuration {
   Metrics: MetricConfig[];

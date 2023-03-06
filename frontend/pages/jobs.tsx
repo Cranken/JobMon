@@ -8,6 +8,9 @@ import { Box, Center, Divider, Spinner, Stack } from "@chakra-ui/react";
 import JoblistPageSelection from "../components/joblist/JoblistPageSelection";
 import { JobListDisplaySettings } from "../components/joblist/JobListDisplaySettings";
 
+/**
+ * Jobs is a React Component providing an overview over jobs
+ */
 export const Jobs = () => {
   const router = useRouter();
   const [joblistLimit, setJoblistLimit] = useStorageState("joblistLimit", 25);
@@ -32,6 +35,8 @@ export const Jobs = () => {
     if (!isLoadingParams) {
       setParams({
         ...params,
+
+        // Set default timespan to two weeks from now
         Time: [
           dateToUnix(
             new Date(Math.floor(Date.now()) - 60 * 60 * 24 * 14 * 1000)

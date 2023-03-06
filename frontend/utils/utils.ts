@@ -29,7 +29,7 @@ export function checkBetween<T>(d1: T, d2: T, point: T) {
  * Stores element in browser storage.
  * Localstorage data has no expiration time, so the stored data is saved across browser sessions.
  * @param key The key for the element.
- * @param value The value to store.
+ * @param value The default value, to return if no other value is provided in local storage
  * @returns Returns four elements,
  *          the state of the stored element,
  *          a function to modify the value,

@@ -14,15 +14,23 @@ import { useGetJobs, useStorageState } from "../utils/utils";
 import { StatItem } from "../components/statistics/StatItem";
 import React from "react";
 
+/**
+ * Statistic is a React component displaying statistics summarizing the load on the system.
+ */
 export const Statistics = () => {
+  //Load filter parameters
   const [params, setParams, , isLoadingParams] =
     useStorageState<JobSearchParams>("statistics-params", {
       NumGpus: [0, 224],
       NumNodes: [1, 192],
     });
+
+  //Load jobs
   const [jobListData, isLoading] = useGetJobs(
     isLoadingParams ? undefined : params
   );
+
+  // Load selected metrics
   const [selectedPanels, setSelectedPanels] = useStorageState<Panel[]>(
     "statistics-panel-config",
     []

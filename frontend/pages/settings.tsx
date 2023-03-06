@@ -26,7 +26,11 @@ enum SettingsView {
   Users = "Users"
 }
 
+/**
+ * Settings is a React component allowing the user to change settings like displayed metrics and user-roles.
+ */
 export const Settings = () => {
+  // Open general settings as default
   const [settingsView, setSettingsView] = useState(SettingsView.General);
   const [config, setConfig] = useGetConfig();
   if (!config) {
@@ -62,6 +66,12 @@ export const Settings = () => {
   );
 };
 
+/**
+ * Switch to choose the correct settings menu.
+ * @param view The currently selected view.
+ * @param config The current configuration of metrics and partitions
+ * @param setConfig A callback function to set a new configuration.
+ */
 const renderSettingsView = (
   view: SettingsView,
   config: Configuration,
@@ -84,19 +94,26 @@ const renderSettingsView = (
   return null;
 };
 
+/**
+ * Fetches a currently made configurations for metrics and partitions.
+ * @return useGetConfig provides a configuration element storing all configurations and a setter to change configurations
+ */
 const useGetConfig: () => [
   Configuration | undefined,
   (c: Configuration) => void
 ] = () => {
   const [config, setConfig] = useState<Configuration>();
   const toast = useToast();
+
+  // Defining methode to set configurations.
   const setAndSubmit = (c: Configuration) => {
+    // Updating configuration locally.
     setConfig(c);
 
+    // Setting configuration remotely on the backend
     const url = new URL(
       "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + "/api/config/update"
     );
-
     authFetch(url.toString(), { method: "PATCH", body: JSON.stringify(c) }).then((data: Configuration) => {
       setConfig(data);
       toast({
@@ -114,6 +131,7 @@ const useGetConfig: () => [
 
   };
 
+  // Fetching configurations from the backend
   useEffect(() => {
     const url = new URL(
       "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + "/api/config"
