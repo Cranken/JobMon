@@ -7,7 +7,7 @@
 ARG DEBIAN_RELEASE=bullseye
 ARG GOLANG_RELEASE=1.20
 
-FROM golang:${GOLANG_RELEASE}-${DEBIAN_RELEASE} AS build
+FROM golang:${GOLANG_RELEASE}-${DEBIAN_RELEASE} AS builder
 
 WORKDIR /app
 
@@ -37,14 +37,14 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # Create minimal Debian backend image
 # * [DockerHub Page](https://hub.docker.com/_/debian)
 # * [GitHub Repository](https://github.com/docker-library/docs/tree/master/debian)
-# * [Debian Relases](https://wiki.debian.org/DebianReleases)
+# * [Debian Releases](https://wiki.debian.org/DebianReleases)
 ###
-FROM debian:${DEBIAN_RELEASE}
+FROM debian:${DEBIAN_RELEASE} AS runner
 
 WORKDIR /app
 
 # Use binary from build image
-COPY --from=build /app/docker-jobmon-backend ./docker-jobmon-backend
+COPY --from=builder /app/docker-jobmon-backend ./docker-jobmon-backend
 
 EXPOSE 8080
 
