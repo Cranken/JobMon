@@ -155,7 +155,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
                       {({ onClose }) => (
                         <>
                           <PopoverTrigger>
-                            <Button colorScheme='blue'><AddIcon/></Button>
+                              <Button colorScheme='blue'><AddIcon/></Button>
                           </PopoverTrigger>
                               <PopoverContent>
                                 <PopoverArrow/>
@@ -163,6 +163,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
                                 <PopoverHeader>Confirmation</PopoverHeader>
                                 <PopoverBody>
                                 <MetricForm
+                                    isNewMetric={true}
                                     metricConfig = {{
                                       Type: "node", Categories: [category],
                                       Measurement: "",
@@ -176,7 +177,9 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
                                     setMetricConfig={(m: MetricConfig, del=false) => {
                                       const curConfig = {...lConfig};
                                       curConfig.Metrics.push(m);
-                                      setLConfig(curConfig)
+                                      setLConfig(curConfig);
+                                      setConfig(curConfig);
+                                      onClose()
                                     }}
                                     availableCategories= {[category]}
                                     addCategory={addCategory}
@@ -190,12 +193,33 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
                         </>
                       )}
                     </Popover>
-                  <Box>
-                    <Button 
-                      colorScheme='red' 
-                      onClick={() => {removeCategory(category)}}>
-                      <DeleteIcon/></Button>
-                  </Box>
+                  <Popover>
+                    {({ onClose }) => 
+                    <>
+                      <PopoverTrigger>
+                        <Button 
+                            colorScheme='red' 
+                            >
+                            <DeleteIcon/>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent>
+                        <PopoverArrow/>
+                        <PopoverCloseButton />
+                        <PopoverHeader>Confirmation</PopoverHeader>
+                        <PopoverBody>{`Are you sure you want to delete "${category}"`}</PopoverBody>
+                        <PopoverFooter display='flex' justifyContent='flex-end'>
+                            <ButtonGroup size='sm'>
+                              <Button variant='outline' onClick={onClose}>Cancel</Button>
+                              <Button colorScheme='red' onClick={() => 
+                                {{removeCategory(category)}}}
+                              >Yes</Button>
+                            </ButtonGroup>
+                        </PopoverFooter>
+                      </PopoverContent>
+                    </>
+                    }
+                  </Popover>
                 </HStack>
               </AccordionPanel>
             </AccordionItem>
@@ -228,7 +252,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
           <Tooltip label={`Save the current configuration`}>
             <Button colorScheme='green' onClick={() => {
                 toast({
-                  description: "Configuration was updated, remember to assign newly created metrics to partitions.",
+                  description: "Remember to assign newly created metrics to partitions.",
                   status: "info",
                   isClosable: true
                 });
@@ -300,21 +324,26 @@ const MetricForm = ({ isNewMetric, metricConfig, setMetricConfig, ...categories}
         {TextField("Filter Function", "FilterFunc", "", false, undefined, TOOLTIP_FILTER_FUNC)}
         {TextField("Post Query Operation", "PostQueryOp", "", false, undefined, TOOLTIP_POST_QUERY_OP)}
         <Flex mt={3} justify="space-between" gap={2}>
-        <HStack>
-          <Button type="reset" colorScheme="gray">
-            Reset
-          </Button>
-          <Button type="submit" colorScheme="green">
-            Save
-          </Button>
-        </HStack>
+        {
+          // Show the Reset and Submit buttons only if a metric configuration is being inserted.
+          isNewMetric ? 
+          <HStack>
+            <Button type="reset" colorScheme="gray">
+              Reset
+            </Button> : null
+            <Button type="submit" colorScheme="green" isDisabled={!isNewMetric}>
+              Save
+            </Button>
+          </HStack> : null
+        }        
         
         { // This popover should appear only if metric was already defined.
+          !isNewMetric ?
           <Popover>
             {({ onClose }) => (
             <>
             <PopoverTrigger>
-              <Button colorScheme="red" isDisabled={isNewMetric}>Delete</Button>
+              <Button colorScheme="red">Delete</Button>
             </PopoverTrigger>
             <PopoverContent>
               <PopoverArrow />
@@ -340,7 +369,7 @@ const MetricForm = ({ isNewMetric, metricConfig, setMetricConfig, ...categories}
               </PopoverFooter>
             </PopoverContent>
             </>)}
-        </Popover>}
+        </Popover> : null}
         </Flex>
       </Form>
     )}

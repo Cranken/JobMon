@@ -224,7 +224,7 @@ export function LineChart<T>({
     const min = new Unit(d3.min(Y) ?? 0, unit ?? "");
     const max = new Unit(d3.max(Y) ?? 0, unit ?? "");
 
-    const yLabel = max.prefixToString();
+    const yLabel = max.prefixToString(prefix);
     
 
     svg

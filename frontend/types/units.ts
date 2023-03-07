@@ -209,6 +209,7 @@ export class Unit {
       case PrefixType.Exponential:
         return this.value.toExponential(2);
       case PrefixType.OPS:
+        // All IOPS units are normalized by default to the 'kilo' prefix.
         const prefix = Prefixes["kilo"];
         const exp = Math.pow(prefix.Base, prefix.Exp);
         const value = this.value / exp;
@@ -226,7 +227,7 @@ export class Unit {
   }
 
   /**
-   * bestPrefix tries to guess the best possible prefix for the unit,
+   * bestPrefix tries to guess the best possible prefix for the given unit,
    * it is used mainly for Metric units.
    * @returns the best possible data prefix for the unit.
    */
