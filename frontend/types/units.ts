@@ -62,14 +62,6 @@ const Units: UnitsType = {
     DisplayFormat: "W",
     Prefix: PrefixType.Metric,
   },
-  Reads: {
-    DisplayFormat: "Reads/s",
-    Prefix: PrefixType.OPS
-  },
-  Writes: {
-    DisplayFormat: "Writes/s",
-    Prefix: PrefixType.OPS
-  },
   IOps: {
     DisplayFormat: "IOps",
     Prefix: PrefixType.OPS
@@ -173,32 +165,6 @@ export class Unit {
     this.type = baseUnit;
   }
 
-  //            DEPRECATED                //
-  // Older version of the toString method //
-  toString_old(prefix?: string) {
-    switch (this.type.Prefix) {
-      case PrefixType.Exponential:
-        return this.value.toExponential(2) + ` ${this.type.DisplayFormat}`;
-      default:
-        let best = prefix ? prefix : this.bestPrefix();  
-        if (best) {
-          const prefix = Prefixes[best];
-          const exp = Math.pow(prefix.Base, prefix.Exp);
-          const value = this.value / exp;
-          let displayFormat;
-          // TODO: Find a better idea!
-          // In the case of OPS prefix no need to show the units.
-          if (this.type.Prefix === PrefixType.OPS) {
-            displayFormat = "";
-          } else {
-            displayFormat = this.type.DisplayFormat;
-          }
-          return `${value.toFixed(2)} ${prefix.Short}${displayFormat}`;
-        }
-        return `${this.value.toFixed(2)} ${this.type.DisplayFormat}`;
-    }
-  }
-  
   /**
    * toString converts a unit into a string.
    * @param prefix - an optional argument defining the prefix type used for the unit.
@@ -286,8 +252,7 @@ export class Unit {
  */
 const getBaseUnit = (str: string) => {
   const key = Object.keys(Units).find((val) =>
-    // str should be equal to one of the units DisplayFormat.  
-    str === Units[val].DisplayFormat 
+    str.includes(Units[val].DisplayFormat )
     
   );
   return key ? Units[key] : Units.None;
@@ -300,7 +265,6 @@ const getBaseUnit = (str: string) => {
  * @returns the corresponding prefix, or a default one which is none.
  */
 const getPrefix = (str: string, type: UnitType) => {
-  
   switch (type.Prefix) {
     case PrefixType.Metric:
       const prefix = Object.keys(Prefixes).find((key) =>
