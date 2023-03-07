@@ -105,7 +105,8 @@ const exportData = (
   removeCookie: (name: "Authorization") => void
 ) => {
   const url = new URL(
-    "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}?raw=true`
+    process.env.NEXT_PUBLIC_BACKEND_URL +
+    `/api/job/${id}?raw=true`
   );
   fetch(url.toString(), { credentials: "include" }).then((res) => {
     if (!res.ok && (res.status === 401 || res.status === 403)) {

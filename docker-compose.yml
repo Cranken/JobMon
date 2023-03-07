@@ -1,34 +1,47 @@
 services:
+
+  # See: ./frontend/Dockerfile
   frontend:
     restart: always
     build:
       context: ./frontend
       args:
-        - NEXT_PUBLIC_BACKEND_URL=${HOSTNAME}:${BACKEND_PORT}
+        # Image based on node:16-alpine
+        - NODE_TAG=16-alpine
+        - NEXT_PUBLIC_BACKEND_URL=${BACKEND_URL}
+        - NEXT_PUBLIC_BACKEND_WS=${BACKEND_WS}
+    container_name: JobMonFrontend
     environment:
-      - NEXT_PUBLIC_BACKEND_URL=${HOSTNAME}:${BACKEND_PORT}
+      - NEXT_PUBLIC_BACKEND_URL=${BACKEND_URL}
+      - NEXT_PUBLIC_BACKEND_WS=${BACKEND_WS}
     depends_on:
       - backend
-      - influxdb
-      - psql
-    ports:
-      - ${FRONTEND_PORT}:3000
+
+  # See: ./backend/Dockerfile
   backend:
     restart: always
-    build: ./backend
+    build:
+      context: ./backend
+      args:
+        # Image based on golang:1.20-bullseye
+        - GOLANG_RELEASE=1.20
+        - DEBIAN_RELEASE=bullseye
+    container_name: JobMonBackend
     volumes:
+      # Configuration config.json needs to be writable to allow backend to add new metrics
       - type: bind
         source: ./backend/config.json
         target: /app/config.json
-      - ./backend/store:/app/store
     depends_on:
       - influxdb
-      - psql
-    ports:
-      - ${BACKEND_PORT}:8080
+      - postgres
+
+  # DockerHub Page: https://hub.docker.com/_/influxdb
+  # GitHub Repository: https://github.com/influxdata/influxdata-docker/
   influxdb:
     restart: always
     image: influxdb
+    container_name: JobMonInfluxDB
     environment:
       DOCKER_INFLUXDB_INIT_MODE: setup
       DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USER}
@@ -41,11 +54,63 @@ services:
     volumes:
       - ./influxdb/data:/var/lib/influxdb2
       - ./influxdb/config:/etc/influxdb2
-  psql:
+
+  # DockerHub Page: https://hub.docker.com/_/postgres
+  # GitHub Repository: https://github.com/docker-library/postgres
+  postgres:
     restart: always
     image: postgres
+    container_name: JobMonPostgres
     environment:
-      POSTGRES_PASSWORD: ${PSQL_PASSWORD}
-      POSTGRES_DB: ${PSQL_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - ${PSQL_PORT}:5432
+      - ${POSTGRES_PORT}:5432
+
+  # DockerHub Page: https://hub.docker.com/_/nginx
+  # GitHub Repository: https://github.com/nginxinc/docker-nginx
+  # Dockerfile for tag latest:
+  #   https://github.com/nginxinc/docker-nginx/blob/master/mainline/debian/Dockerfile
+  nginx:
+    restart: always
+    env_file: .env
+    image: nginx
+    container_name: JobMonNginx
+    secrets:
+      - source: nginxFullchain
+        target: /etc/nginx/certs.d/fullchain.pem
+        uid: "nginx"
+        gid: "nginx"
+        mode: 400
+      - source: nginxPrivkey
+        target: /etc/nginx/certs.d/privkey.pem
+        uid: "nginx"
+        gid: "nginx"
+        mode: 400
+      - source: nginxChain
+        target: /etc/nginx/certs.d/chain.pem
+        uid: "nginx"
+        gid: "nginx"
+        mode: 400
+    configs:
+      - source: nginxDefaultConfig
+        target: /etc/nginx/conf.d/default.conf
+        uid: "nginx"
+        gid: "nginx"
+    ports:
+      - ${NGINX_HTTP_PORT}:80
+      - ${NGINX_HTTPS_PORT}:443
+    depends_on:
+      - frontend
+
+configs:
+  nginxDefaultConfig:
+    file: ./nginx/configs/default.conf
+
+secrets:
+  nginxFullchain:
+    file: ./nginx/secrets/fullchain.pem
+  nginxPrivkey:
+    file: ./nginx/secrets/privkey.pem
+  nginxChain:
+    file: ./nginx/secrets/chain.pem
