@@ -22,7 +22,8 @@ ADD router ./router
 
 COPY jobmon.go ./
 
-RUN go build -o /docker-jobmon-backend
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    go build -o /docker-jobmon-backend
 
 EXPOSE 8080
 
