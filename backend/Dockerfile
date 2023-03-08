@@ -40,6 +40,9 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # * [Debian Releases](https://wiki.debian.org/DebianReleases)
 ###
 FROM debian:${DEBIAN_RELEASE} AS runner
+ARG CONFIG="/app/config.json"
+ARG LOGLEVEL=3
+ARG LISTEN_ADDR=":8080"
 
 WORKDIR /app
 
@@ -48,4 +51,7 @@ COPY --from=builder /app/docker-jobmon-backend ./docker-jobmon-backend
 
 EXPOSE 8080
 
-CMD [ "./docker-jobmon-backend" ]
+ENV CONFIG="${CONFIG}"
+ENV LOGLEVEL="${LOGLEVEL}"
+ENV LISTEN_ADDR="${LISTEN_ADDR}"
+CMD /app/docker-jobmon-backend --config=${CONFIG} --log=${LOGLEVEL} --listen-addr=${LISTEN_ADDR}
