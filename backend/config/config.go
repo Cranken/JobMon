@@ -15,10 +15,11 @@ import (
 	"github.com/google/uuid"
 )
 
-var configFile string
-
 // Configuration stores the main configuration data required during the application launch.
 type Configuration struct {
+
+	// Config from the command line interface
+	CLIConfig `json:"-"`
 
 	// Configuration for performance metrics database
 	// current implementation uses InfluxDB only
@@ -57,6 +58,13 @@ type Configuration struct {
 	MetricCategories []string `json:"MetricCategories"`
 	// Metrics to display in the radar chart; Will be moved to frontend config
 	RadarChartMetrics []string `json:"RadarChartMetrics"`
+}
+
+// Config from the command line interface
+type CLIConfig struct {
+	ConfigFile    string // config file
+	LogLevel      int    // log level
+	ListenAddress string // TCP address for the server to listen on
 }
 
 // MetricConfig represents a metric configuration configured by the admin.
@@ -182,16 +190,16 @@ type OAuthConfig struct {
 func (c *Configuration) Init() {
 
 	// Read command line options
-	var logLevel int
 	var help bool
-	flag.StringVar(&configFile, "config", "config.json", "config file")
-	flag.IntVar(&logLevel, "debug", logging.WarningLogLevel,
-		fmt.Sprint("debug level:",
+	flag.StringVar(&c.ConfigFile, "config", "config.json", "config file")
+	flag.IntVar(&c.LogLevel, "log", logging.WarningLogLevel,
+		fmt.Sprint("log level:",
 			" off=", logging.OffLogLevel,
 			" error=", logging.ErrorLogLevel,
 			" warning=", logging.WarningLogLevel,
 			" info=", logging.InfoLogLevel,
 			" debug=", logging.DebugLogLevel))
+	flag.StringVar(&c.ListenAddress, "listen-addr", ":8080", "TCP address for the server to listen on")
 	flag.BoolVar(&help, "help", false, "print this help message")
 	flag.Parse()
 
@@ -202,16 +210,16 @@ func (c *Configuration) Init() {
 	}
 
 	// Set log level
-	if err := logging.SetLogLevel(logLevel); err != nil {
+	if err := logging.SetLogLevel(c.LogLevel); err != nil {
 		logging.Fatal("config: Init(): Could not set log level: ", err)
 	}
 
 	// Read config file
-	data, err := os.ReadFile(configFile)
+	data, err := os.ReadFile(c.ConfigFile)
 	if err != nil && errors.Is(err, fs.ErrNotExist) {
-		logging.Fatal("config: Init(): Could not read config file: '", configFile, "' Error: ", err)
+		logging.Fatal("config: Init(): Could not read config file: '", c.ConfigFile, "' Error: ", err)
 	}
-	logging.Info("config: Init(): Read config file '", configFile, "'")
+	logging.Info("config: Init(): Read config file '", c.ConfigFile, "'")
 
 	// Decode JSON
 	d := json.NewDecoder(bytes.NewReader(data))
@@ -219,7 +227,7 @@ func (c *Configuration) Init() {
 	if err := d.Decode(c); err != nil {
 		logging.Fatal("config: Init(): Could not decode config file: ", err)
 	}
-	logging.Info("config: Init(): Parsed config file '", configFile, "'")
+	logging.Info("config: Init(): Parsed config file '", c.ConfigFile, "'")
 
 	// Add GUIDs to metrics if any are missing
 	for i := range c.Metrics {
@@ -285,9 +293,9 @@ func (c *Configuration) Flush() {
 	}
 
 	// Write json to config file
-	err = os.WriteFile(configFile, data, 0644)
+	err = os.WriteFile(c.ConfigFile, data, 0644)
 	if err != nil {
-		logging.Error("config: Flush(): Writing file '", configFile, "' failed: ", err)
+		logging.Error("config: Flush(): Writing file '", c.ConfigFile, "' failed: ", err)
 	}
 }
 

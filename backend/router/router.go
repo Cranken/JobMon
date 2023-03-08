@@ -100,10 +100,11 @@ func (r *Router) Init(
 			})
 
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    r.config.ListenAddress,
 		Handler: router,
 	}
 
+	logging.Info("router: Init(): Listen and serve on ", r.config.ListenAddress)
 	logging.Fatal(
 		server.ListenAndServe())
 }
