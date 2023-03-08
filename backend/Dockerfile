@@ -54,4 +54,4 @@ EXPOSE 8080
 ENV CONFIG="${CONFIG}"
 ENV LOGLEVEL="${LOGLEVEL}"
 ENV LISTEN_ADDR="${LISTEN_ADDR}"
-CMD /app/docker-jobmon-backend --config=${CONFIG} --log=${LOGLEVEL} --listen-addr=${LISTEN_ADDR}
+CMD [ "/bin/bash", "-c", "exec /app/docker-jobmon-backend --config=\"${CONFIG}\" --log=\"${LOGLEVEL}\" --listen-addr=\"${LISTEN_ADDR}\"" ]
