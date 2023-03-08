@@ -35,15 +35,15 @@
     "MetricCategories": [],
     "LocalUsers": {
         "user123": {
-            "Password": "s3cr3t",
+            "BCryptHash": "$2b$12$autyf5ohFPAnLIAqszvcBuAo1Rod94dN8ZgnRNe0zRir1XDrCmc8K",
             "Role": "user"
         },
         "api": {
-            "Password": "s4f3_passw0rd",
+            "BCryptHash": "$2b$12$Z5YxT9GkLmmIFYtuBj/k.ugoTrjsLSKdeqKGxHG0cyOc/HDK7W056",
             "Role": "job-control"
         },
         "admin": {
-            "Password": "4dmin123",
+            "BCryptHash": "$2b$12$CnEzpQF5Mj9vuVmuQFgwJufnArhWZDbSvE/QjVIcRQVZ27W7YVMJu",
             "Role": "admin"
         }
     }

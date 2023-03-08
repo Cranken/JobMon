@@ -129,8 +129,8 @@ type PartitionConfig struct {
 
 // LocalUser stores the access credentials for local users.
 type LocalUser struct {
-	// Password of LocalUser
-	Password string `json:"Password"`
+	// bcrypt hash of password of LocalUser
+	BCryptHash string `json:"BCryptHash"`
 	// Role can be "job-control", "user", "admin"
 	Role string `json:"Role"`
 }
