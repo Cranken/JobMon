@@ -4,8 +4,8 @@
 # * [GitHub Repository](https://github.com/docker-library/golang/)
 # * [Release History](https://go.dev/doc/devel/release)
 ###
-ARG DEBIAN_RELEASE=bullseye
-ARG GOLANG_RELEASE=1.20
+ARG DEBIAN_RELEASE=bullseye \
+    GOLANG_RELEASE=1.20
 
 FROM golang:${GOLANG_RELEASE}-${DEBIAN_RELEASE} AS builder
 
@@ -40,18 +40,14 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # * [Debian Releases](https://wiki.debian.org/DebianReleases)
 ###
 FROM debian:${DEBIAN_RELEASE} AS runner
-ARG CONFIG="/app/config.json"
-ARG LOGLEVEL=3
-ARG LISTEN_ADDR=":8080"
 
 WORKDIR /app
 
 # Use binary from build image
 COPY --from=builder /app/docker-jobmon-backend ./docker-jobmon-backend
 
-EXPOSE 8080
-
-ENV CONFIG="${CONFIG}"
-ENV LOGLEVEL="${LOGLEVEL}"
-ENV LISTEN_ADDR="${LISTEN_ADDR}"
+# Default environment settigs
+ENV CONFIG="/app/config.json" \
+    LOGLEVEL=3 \
+    LISTEN_ADDR=":8080"
 CMD [ "/bin/bash", "-c", "exec /app/docker-jobmon-backend --config=\"${CONFIG}\" --log=\"${LOGLEVEL}\" --listen-addr=\"${LISTEN_ADDR}\"" ]
