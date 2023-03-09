@@ -66,28 +66,42 @@ brings up the whole stack which consist of the five containers:
 * JobMonPostgres (PostgreSQL for job metadata store)
 * JobMonNginx (NGinx as SSL endpoint for frontend and backend)
 
+To rebuild the whole software stack with the latest docker images you can use:
+
+```bash
+sudo docker-compose build --pull
+```
+
 You can access the containers with the `docker` command.
 Some examples for common tasks:
 
 * Query the InfluxDB
 
   ```bash
-  docker exec hk-jobmon-influxdb-1 influx query ...
+  sudo docker exec JobMonInfluxDB influx query ...
   ```
 
 * Access the PostgreSQL interactive terminal
 
   ```bash
-  docker exec -it JobMonPostgres \
-      psql --username=postgres --password --dbname=jobmon --host my-monitor-db.example.org --port 5432
+  sudo docker exec --interactive --tty JobMonPostgres \
+      psql --username=postgres --password --dbname=jobmon --host postgres --port 5432
   ```
 
 * Dump the PostgreSQL database for backup purpose
 
   ```bash
-  docker exec -it JobMonPostgres \
-      pg_dump --username=postgres --password --dbname=jobmon --host my-monitor-db.example.org --port 5432 | \
-          tee jobmon-psql.dump
+  sudo docker exec --env PGPASSWORD="<PSQL_PASSWORD>" JobMonPostgres \
+      pg_dump --username=postgres --dbname=jobmon --host postgres --port 5432 | \
+          zstd - -o jobmon-psql.dump.zstd
+  ```
+
+* Restore the PostgreSQL database from backup
+
+  ```bash
+  zstdcat jobmon-psql.dump.zstd |
+      sudo docker exec --interactive --env PGPASSWORD="<PSQL_PASSWORD>" JobMonPostgres \
+          psql --username=postgres --dbname=jobmon --host postgres --port 5432
   ```
 
 * Watch the log output of the frontend or backend
