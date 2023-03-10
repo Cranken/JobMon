@@ -1,6 +1,6 @@
 store.json
 config.json*
 influxdb/
-psql/
+postgres/
 
 .vscode
