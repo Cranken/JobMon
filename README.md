@@ -81,6 +81,33 @@ Some examples for common tasks:
   sudo docker exec JobMonInfluxDB influx query ...
   ```
 
+* Export InfluxDB metrics in line protocol format
+  (See: [influxd inspect export-lp](https://docs.influxdata.com/influxdb/v2.6/reference/cli/influxd/inspect/export-lp/))
+
+  ```bash
+  sudo docker exec JobMonInfluxDB \
+      influx bucket list
+
+  # -> Set bucket IDs
+  BUCKET_ID="..."
+  # -> Set start time e.g. one hour ago
+  START=$(date --iso-8601=sec -d '1 hour ago')
+
+  sudo docker exec JobMonInfluxDB \
+      influxd inspect export-lp --bucket-id ${BUCKET_ID} --engine-path /var/lib/influxdb2/engine/ --output-path - --start "${START}" |
+          pzstd - -o lp.zstd
+  ```
+
+* Write metrics in line protocol format to the InfluxDB
+  (see [influx write]( https://docs.influxdata.com/influxdb/v2.6/reference/cli/influx/write/))
+
+  ```bash
+  BUCKET_NAME="collector"
+  zstdcat lp.zstd |
+      sudo docker exec --interactive JobMonInfluxDB \
+          influx write --format lp --bucket ${BUCKET_NAME}
+  ```
+
 * Access the PostgreSQL interactive terminal
 
   ```bash
