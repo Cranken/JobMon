@@ -70,6 +70,10 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - ${POSTGRES_PORT}:5432
+    volumes:
+      - type: bind
+        source: ./postgres/data
+        target: /var/lib/postgresql/data
 
   # DockerHub Page: https://hub.docker.com/_/nginx
   # GitHub Repository: https://github.com/nginxinc/docker-nginx
