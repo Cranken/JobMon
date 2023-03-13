@@ -7,13 +7,17 @@ services:
       context: ./frontend
       args:
         # Image based on node:16-alpine
-        - NODE_TAG=16-alpine
-        - NEXT_PUBLIC_BACKEND_URL=${BACKEND_URL}
-        - NEXT_PUBLIC_BACKEND_WS=${BACKEND_WS}
+        NODE_TAG: 16-alpine
+        # Public URL to access the the backend from the clients webbrowser
+        # e.g. https://my-monitor-db.example.org
+        NEXT_PUBLIC_BACKEND_URL: ${BACKEND_URL}
+        # Public websocket URL to access the backend from the clients webbrowser
+        # e.g. wss://my-monitor-db.example.org
+        NEXT_PUBLIC_BACKEND_WS: ${BACKEND_WS}
     container_name: jobmon_frontend
     environment:
-      - NEXT_PUBLIC_BACKEND_URL=${BACKEND_URL}
-      - NEXT_PUBLIC_BACKEND_WS=${BACKEND_WS}
+      NEXT_PUBLIC_BACKEND_URL: ${BACKEND_URL}
+      NEXT_PUBLIC_BACKEND_WS: ${BACKEND_WS}
     depends_on:
       - jobmon_backend
 
@@ -24,13 +28,14 @@ services:
       context: ./backend
       args:
         # Image based on golang:1.20-bullseye
-        - GOLANG_RELEASE=1.20
-        - DEBIAN_RELEASE=bullseye
+        GOLANG_RELEASE: "1.20"
+        DEBIAN_RELEASE: bullseye
     container_name: jobmon_backend
     environment:
-      - CONFIG=/app/config.json
-      - LOGLEVEL=3
-      - LISTEN_ADDR=:8080
+      # command line options for config file, log leven and listen address
+      CONFIG: /app/config.json
+      LOGLEVEL: "3"
+      LISTEN_ADDR: :8080
     volumes:
       # Configuration config.json needs to be writable to allow backend to add new metrics
       - type: bind
@@ -47,16 +52,24 @@ services:
     image: influxdb
     container_name: jobmon_influxdb
     environment:
+      # init mode setup is used to automatically bootstrap the system
       DOCKER_INFLUXDB_INIT_MODE: setup
+      # The username to set for the system's initial super-user (Required)
       DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USER}
+      # The password to set for the system's inital super-user (Required)
       DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD}
+      # The name to set for the system's initial organization (Required)
       DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG}
+      # The name to set for the system's initial bucket (Required).
       DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET}
+      #  The authentication token to associate with the system's initial super-user.
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN}
     ports:
       - ${INFLUXDB_PORT}:8086
     volumes:
       - ./influxdb/data:/var/lib/influxdb2
+      # You can use `influxd print-config` to get a default config file for
+      # /etc/influxdb2/config.yml
       - ./influxdb/config:/etc/influxdb2
 
   # DockerHub Page: https://hub.docker.com/_/postgres
@@ -66,7 +79,10 @@ services:
     image: postgres
     container_name: jobmon_postgres
     environment:
+      # Inital superuser password for PostgreSQL (required)
+      # default username for superuser: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Default database that is created when the image is first started
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - ${POSTGRES_PORT}:5432
