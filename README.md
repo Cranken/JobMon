@@ -69,31 +69,59 @@ brings up the whole stack which consist of the five services:
 To rebuild the whole software stack with the latest docker images you can use:
 
 ```bash
-sudo docker compose build --pull
+sudo docker compose up --build --pull always [--detach]
 ```
 
 You can access the containers with the `docker` command.
 Some examples for common tasks:
 
+* List authentication tokens
+
+  ```bash
+  sudo docker exec jobmon_influxdb \
+      influx auth list
+  ```
+
+* Create authentication token for the collector
+
+  ```bash
+  sudo docker exec jobmon_influxdb \
+      influx bucket list --org myOrg --name myBucket
+
+  # -> Set bucket IDs
+  BUCKET_ID="..."
+
+  sudo docker exec jobmon_influxdb \
+      influx auth create --description collector --write-bucket ${BUCKET_ID} 
+  ```
+
+* Create authentication token for the backend
+
+  ```bash
+  sudo docker exec jobmon_influxdb \
+      influx auth create --description jobmon_backend --org myOrg --all-access
+  ```
+
 * Query the InfluxDB
 
   ```bash
-  sudo docker exec JobMonInfluxDB influx query ...
+  sudo docker exec jobmon_influxdb \
+      influx query ...
   ```
 
 * Export InfluxDB metrics in line protocol format
   (See: [influxd inspect export-lp](https://docs.influxdata.com/influxdb/v2.6/reference/cli/influxd/inspect/export-lp/))
 
   ```bash
-  sudo docker exec JobMonInfluxDB \
-      influx bucket list
+  sudo docker exec jobmon_influxdb \
+      influx bucket list --org myOrg --name myBucket
 
   # -> Set bucket IDs
   BUCKET_ID="..."
   # -> Set start time e.g. one hour ago
   START=$(date --iso-8601=sec -d '1 hour ago')
 
-  sudo docker exec JobMonInfluxDB \
+  sudo docker exec jobmon_influxdb \
       influxd inspect export-lp --bucket-id ${BUCKET_ID} --engine-path /var/lib/influxdb2/engine/ --output-path - --start "${START}" |
           pzstd - -o lp.zstd
   ```
@@ -104,7 +132,7 @@ Some examples for common tasks:
   ```bash
   BUCKET_NAME="collector"
   zstdcat lp.zstd |
-      sudo docker exec --interactive JobMonInfluxDB \
+      sudo docker exec --interactive jobmon_influxdb \
           influx write --format lp --bucket ${BUCKET_NAME}
   ```
 
