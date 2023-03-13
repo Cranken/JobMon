@@ -1,8 +1,8 @@
 {
-    "DBHost": "<db_host>:<db_port>",
-    "DBToken": "<db_auth_token>",
-    "DBOrg": "org",
-    "DBBucket": "collector",
+    "DBHost": "<influxdb_host>:<influxdb_port>",
+    "DBToken": "<influxdb_auth_token>",
+    "DBOrg": "myOrg",
+    "DBBucket": "myBucket",
     "JWTSecret": "<jwt_secret>",
     "FrontendURL": "http://<frontend_url>:<frontend_port>",
     "JobStore": {
