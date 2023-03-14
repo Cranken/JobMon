@@ -25,7 +25,7 @@ export interface LineChartProps<T> {
   yDomain?: [number, number]; // [ymin, ymax]
   yRange?: [number, number]; // [bottom, top]
   yFormat?: string; // a format specifier string for the y-axis
-  yLabel?: string; // a label for the y-axis
+  chartTitle?: string; // title of the chart
   zDomain?: (string | number)[]; // array of z-values
   color?: string; // stroke color of line
   strokeLinecap?: string; // stroke line cap of the line
@@ -74,7 +74,7 @@ export function LineChart<T>({
   xRange = [marginLeft, width - marginRight], // [left, right]
   yDomain, // [ymin, ymax]
   yRange = [height - marginBottom, marginTop], // [bottom, top]
-  yLabel = "Metric Data", // a label for the y-axis
+  chartTitle = "Metric Data", // title of the chart
   zDomain, // array of z-values
   color = "currentColor", // stroke color of line
   strokeLinecap = "round", // stroke line cap of the line
@@ -146,7 +146,7 @@ export function LineChart<T>({
     const yAxis = d3
       .axisLeft<number>(yScale)
       .ticks(height / 40)
-      .tickFormat((val) => new Unit(val, unit ?? "").toString(prefix));
+      .tickFormat((val) => new Unit(val, unit ?? "").valueToString(prefix));
 
     // Construct a line generator.
     const line = d3
@@ -224,6 +224,9 @@ export function LineChart<T>({
     const min = new Unit(d3.min(Y) ?? 0, unit ?? "");
     const max = new Unit(d3.max(Y) ?? 0, unit ?? "");
 
+    const yLabel = max.prefixToString(prefix);
+    
+
     svg
       .append("g")
       .attr("transform", `translate(${marginLeft},0)`)
@@ -239,7 +242,7 @@ export function LineChart<T>({
       .call((g) =>
         g
           .append("text")
-          .attr("x", -marginLeft + 5)
+          .attr("x", -marginLeft + 50)
           .attr("y", 10)
           .attr("fill", "currentColor")
           .attr("text-anchor", "start")
@@ -248,11 +251,20 @@ export function LineChart<T>({
       .call((g) =>
         g
           .append("text")
+          .attr("x", width - marginRight - marginLeft - 500 )
+          .attr("y", 10)
+          .attr("fill", "currentColor")
+          .attr("text-anchor", "start")
+          .text(chartTitle)
+      )
+      .call((g) =>
+        g
+          .append("text")
           .attr("fill", "currentColor")
           .attr("x", width - marginRight - marginLeft - 90)
           .attr("y", 10)
           .attr("text-anchor", "end")
-          .text(`Min: ${min.toString()}, Mean: ${mean.toString()}, Max: ${max.toString()}`)
+          .text(`Min: ${min.valueToString()}, Mean: ${mean.valueToString()}, Max: ${max.valueToString()}`)
       );
 
     svg
@@ -336,13 +348,13 @@ export function LineChart<T>({
         if (showTooltipMean) {
           const mean = d3.mean(pointValues);
           addLine(
-            `Mean: ${mean ? new Unit(mean, unit ?? "").toString(prefix) : 0}`
+            `Mean: ${mean ? new Unit(mean, unit ?? "").valueToString(prefix) : 0}`
           );
         }
 
         if (showTooltipSum) {
           const sum = d3.sum(pointValues);
-          addLine(`Sum: ${new Unit(sum, unit ?? "").toString(prefix)}`);
+          addLine(`Sum: ${new Unit(sum, unit ?? "").valueToString(prefix)}`);
         }
       }
       if (values.length > 6) {

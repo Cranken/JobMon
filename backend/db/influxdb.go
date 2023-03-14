@@ -106,6 +106,7 @@ func (db *InfluxDB) Init(c conf.Configuration) {
 	db.defaultSampleInterval = c.SampleInterval
 	db.metricQuantiles = c.MetricQuantiles
 	go db.updateAggregationTasks()
+	go db.updateSynthesizedMetricTask()
 }
 
 // Close implements Close method of DB interface.
@@ -532,7 +533,6 @@ func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, j *job.Jo
 	}
 
 	tempKeyAggregation := "[" + strings.Join(tempKeys[0:len(quantiles)], ",") + "]"
-
 	query := fmt.Sprintf(QuantileMeasurementQuery,
 		db.bucketName, j.StartTime, j.StopTime, measurement,
 		j.NodeList, sampleInterval, filterFunc, metric.PostQueryOp,
@@ -621,7 +621,10 @@ func (db *InfluxDB) createTask(taskName string, taskStr string, orgId string) (t
 	return
 }
 
-// createAggregationTasks calls the function createTasks where the query is built on top
+// createAggregationTask prepares the query for the createTask method, this query
+// is used to build aggregated metrics where the aggregation is done based on the aggFn function.
+//
+// createAggregationTasks calls the function createTask where the query is built on top
 // of the metric, aggFn and orgID arguments.
 func (db *InfluxDB) createAggregationTask(
 	metric conf.MetricConfig,
@@ -675,6 +678,23 @@ func (db *InfluxDB) createAggregationTask(
 		db.organizationName)
 
 	return db.createTask(aggTaskName, query, orgId)
+}
+
+// createSynthesizedMetricTask calls the function createTask
+func (db *InfluxDB) createSynthesizedMetricTask(metric conf.MetricConfig, subMeasurements, orgId string) (task *domain.Task, err error) {
+	taskName := strings.Join([]string{db.bucketName, metric.Measurement, subMeasurements}, "_")
+	subMeasurementsRegex := strings.Join(metric.SubMeasurements, "|")
+	quotedSubMeasurements := strings.Join(utils.SliceMap(utils.ApplyQuotes, metric.SubMeasurements), ", ")
+	addedSubMeasurements := strings.Join(
+		utils.SliceMap(func(s string) string {
+			return fmt.Sprintf(`r["%v"]`, s)
+		}, metric.SubMeasurements), " + ")
+
+	query := fmt.Sprintf(SynthesizedMetricsCreationQuery,
+		db.bucketName, subMeasurementsRegex, metric.Type, metric.FilterFunc,
+		metric.PostQueryOp, addedSubMeasurements, quotedSubMeasurements,
+		metric.Measurement, db.bucketName, db.organizationName)
+	return db.createTask(taskName, query, orgId)
 }
 
 // updateAggregationTask finds first all the missing tasks for job metrics.
@@ -743,6 +763,56 @@ func (db *InfluxDB) updateAggregationTasks() (err error) {
 		}(t.metricConf, t.aggFn)
 	}
 	return
+}
+
+// updateSynthesizedMetricTask adds aggregated metrics that are computed from other measurements(metrics),
+// these measurements can be found in the metric configuration.
+func (db *InfluxDB) updateSynthesizedMetricTask() (err error) {
+	tasks, err := db.tasksAPI.FindTasks(context.Background(), nil)
+	if err != nil {
+		logging.Error("db: addAggregatedMetrics(): Could not get tasks from influxdb: ")
+		return
+	}
+
+	missingMetricTasks := make([]utils.Tuple[conf.MetricConfig, string], 0)
+	for _, metric := range db.metrics {
+		// Check if the metric is a synthesized metric.
+		if len(metric.SubMeasurements) != 0 {
+
+			joinedSubMeasurements := strings.Join(metric.SubMeasurements, "_")
+			name := strings.Join([]string{db.bucketName, metric.Measurement, joinedSubMeasurements}, "_")
+			found := false
+			for _, task := range tasks {
+				if task.Name == name {
+					db.tasks = append(db.tasks, task)
+					found = true
+					break
+				}
+			}
+			if !found {
+				missingMetricTasks =
+					append(missingMetricTasks,
+						utils.Tuple[conf.MetricConfig, string]{
+							First:  metric,
+							Second: joinedSubMeasurements,
+						})
+			}
+
+		}
+	}
+	org, err := db.organizationsAPI.FindOrganizationByName(context.Background(), db.organizationName)
+	if err != nil {
+		logging.Error("db: addAggregatedMetrics(): Could not get orgId from influxdb: ", err)
+		return
+	}
+	for _, metric := range missingMetricTasks {
+		go func(metric conf.MetricConfig, subMeasurements string) {
+			_, err = db.createSynthesizedMetricTask(metric, subMeasurements, *org.Id)
+		}(metric.First, metric.Second)
+
+	}
+	return
+
 }
 
 // getPartition returns a partition configuration for job j.
