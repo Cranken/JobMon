@@ -36,20 +36,11 @@ const UserConfigItem = ({ user, updateUser }: IUserConfigItemProps) => {
     if (!user) {
         return null;
     }
-    const toast = useToast({
-        description: "User " + user.Username + " updated",
-        status: "success",
-        duration: 30000,
-        isClosable: true
-    });
     return (
         <Formik
             enableReinitialize={true}
             initialValues={{ Roles: user.Roles }}
-            onSubmit={(values) => {
-                updateUser({ ...user, Roles: values.Roles })
-                toast()
-            }}>
+            onSubmit={(values) => updateUser({ ...user, Roles: values.Roles })}>
             <Form>
                 <Stack direction="row">
                     <Box>
@@ -82,7 +73,15 @@ const useGetUser: (username?: string) => [UserRoles | undefined, (user: UserRole
 
     const updateUser = (user: UserRoles) => {
         authFetch(url.toString(), { method: "PATCH", body: JSON.stringify(user) }).then(
-            (data) => setUser(data),
+            (data) => {
+                setUser(data)
+                toast({
+                    description: "User " + user.Username + " updated",
+                    status: "success",
+                    duration: 30000,
+                    isClosable: true
+                })
+            },
             (reason) =>
                 toast({
                     description: `Could not update user config: ${reason}`,
