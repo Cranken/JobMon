@@ -20,7 +20,11 @@ import humanizeDuration from "humanize-duration";
 import { BarChart } from "../charts/BarChart";
 import { QuestionIcon } from "@chakra-ui/icons";
 
+/**
+ * shortHumanizer is a function to convert durations from milliseconds into units with better readability.
+ */
 const shortHumanizer = humanizeDuration.humanizer({
+  // Defining new language for the humanization.
   language: "short",
   languages: {
     short: {
@@ -36,12 +40,22 @@ const shortHumanizer = humanizeDuration.humanizer({
   },
 });
 
+/**
+ * StatItemProps is a container that associates data and panels.
+ */
 interface StatItemProps {
   data: JobListData;
   panel: Panel;
 }
 
+/**
+ * Creates item for the statistics if possible.
+ * @param data The data to display in the statistics item.
+ * @param panel The panel to use for the display.
+ * @return The fragment to render the statistics or null if no data was given.
+ */
 export const StatItem = ({ data, panel }: StatItemProps) => {
+  //Retrieves the rendered panel.
   const element = useRenderPanel(data, panel);
   if (data) {
     return (
@@ -56,8 +70,16 @@ export const StatItem = ({ data, panel }: StatItemProps) => {
   }
 };
 
+/**
+ * Selects the corret renderer for the given panel-key and renders the statistics.
+ * @param data The data to render
+ * @param panel The panel
+ * @return The rendered statistics in case the value of panel was supported, null otherwise.
+ */
 const useRenderPanel = (data: JobListData, panel: Panel) => {
+  // State for statistics computing grouped values.
   const [groupKey, setGroupKey] = useState("Id");
+  // Select the panel.
   switch (OPanel[panel]) {
     case OPanel.Partition:
       return renderSimpleAttribute(
@@ -99,6 +121,7 @@ const useRenderPanel = (data: JobListData, panel: Panel) => {
       return renderComputedAttribute(
         data,
         panel,
+        (acc, cv) => acc + cv.NumNodes * (cv.StopTime - cv.StartTime),
         groupKey,
         setGroupKey,
         `Compute time grouped by ${groupKey}. ` +
@@ -109,6 +132,7 @@ const useRenderPanel = (data: JobListData, panel: Panel) => {
       return renderComputedAttribute(
         data,
         panel,
+        (acc, cv) => acc + cv.StopTime - cv.StartTime,
         groupKey,
         setGroupKey,
         `Job length grouped by ${groupKey}`,
@@ -119,6 +143,15 @@ const useRenderPanel = (data: JobListData, panel: Panel) => {
   return null;
 };
 
+/**
+ * Renders a barchart for panels that do not group values by keys.
+ * @param data The data.
+ * @param attribute The attribute to filter from the data.
+ * @param sortByValue Determines if the values should be sorted
+ * @param horizontal Determines if the orientation of the barchart. True for horizontal, false for vertical bars.
+ * @param tooltip The tooltip describing the panel
+ * @param title The title of the panel
+ */
 const renderSimpleAttribute = (
   data: JobListData,
   attribute: keyof JobMetadata,
@@ -165,35 +198,37 @@ const renderSimpleAttribute = (
   );
 };
 
+/**
+ * Renders a barchart for panels, grouping values with the given key.
+ * @param data The data
+ * @param panel The panel currently displayed
+ * @param reduceFunction The function used to reduce the data.
+ * @param groupKey The key to group vales from data
+ * @param setGroupKey A function to set a new key grouping values
+ * @param tooltip The tooltip describing the panel
+ * @param title The title of the panel
+ */
 const renderComputedAttribute = (
   data: JobListData,
   panel: Panel,
+  reduceFunction: (acc: number, cv: JobMetadata) => number,
   groupKey: string,
   setGroupKey: (k: string) => void,
   tooltip: string,
   title: string
 ) => {
+
+  // extracting grouped values from data. Values are grouped by groupKey afterwards.
   const groups = groupBy(data?.Jobs ?? [], (obj) =>
     obj[groupKey as keyof JobMetadata].toString()
   );
   let tuples: [string, number][] = [];
-  switch (OPanel[panel]) {
-    case OPanel.ComputeTime:
-      tuples = Object.keys(groups).map((g) => [
-        g,
-        groups[g].reduce(
-          (acc, cv) => acc + cv.NumNodes * (cv.StopTime - cv.StartTime),
-          0
-        ),
-      ]);
-      break;
-    case OPanel.JobLength:
-      tuples = Object.keys(groups).map((g) => [
-        g,
-        groups[g].reduce((acc, cv) => acc + cv.StopTime - cv.StartTime, 0),
-      ]);
-      break;
-  }
+
+  // Reducing data-groups with the given reduction function. Groups are reduced to a single value-
+  tuples = Object.keys(groups).map((g) => [
+    g,
+    groups[g].reduce(reduceFunction, 0),
+  ]);
   tuples.sort((a, b) => b[1] - a[1]);
   return (
     <Stack>
