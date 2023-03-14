@@ -43,6 +43,12 @@ FROM debian:${DEBIAN_RELEASE} AS runner
 
 WORKDIR /app
 
+# Install CA certificates to verify certificate of OpenID providers
+RUN apt-get update \
+    && apt-get install -y ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 # Use binary from build image
 COPY --from=builder /app/docker-jobmon-backend ./docker-jobmon-backend
 
