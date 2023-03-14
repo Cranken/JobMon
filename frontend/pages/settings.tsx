@@ -15,7 +15,8 @@ import MetricsView from "../components/settings/MetricsView";
 import PartitionsView from "../components/settings/PartitionsView";
 import UsersView from "../components/settings/UsersView";
 import { Configuration } from "../types/config";
-import { authFetch } from "../utils/auth";
+import {authFetch, useGetUser, UserRole} from "../utils/auth";
+import AccessDenied from "./accessDenied";
 
 enum SettingsView {
   General = "General Settings",
@@ -30,6 +31,9 @@ enum SettingsView {
  * Settings is a React component allowing the user to change settings like displayed metrics and user-roles.
  */
 export const Settings = () => {
+  if (!(useGetUser().Roles?.includes(UserRole.Admin) ?? false)) {
+    return <AccessDenied/>;
+  }
   // Open general settings as default
   const [settingsView, setSettingsView] = useState(SettingsView.General);
   const [config, setConfig] = useGetConfig();
@@ -112,7 +116,7 @@ const useGetConfig: () => [
 
     // Setting configuration remotely on the backend
     const url = new URL(
-      "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + "/api/config/update"
+      process.env.NEXT_PUBLIC_BACKEND_URL + "/api/config/update"
     );
     authFetch(url.toString(), { method: "PATCH", body: JSON.stringify(c) }).then((data: Configuration) => {
       setConfig(data);
@@ -134,7 +138,7 @@ const useGetConfig: () => [
   // Fetching configurations from the backend
   useEffect(() => {
     const url = new URL(
-      "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + "/api/config"
+      process.env.NEXT_PUBLIC_BACKEND_URL + "/api/config"
     );
 
     fetch(url.toString(), { credentials: "include" }).then((res) => {

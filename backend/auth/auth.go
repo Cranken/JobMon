@@ -18,6 +18,7 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/julienschmidt/httprouter"
+	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
 )
 
@@ -138,7 +139,7 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 				},
 			)
 			w.WriteHeader(http.StatusUnauthorized)
-			logging.Error("AuthManager: Protected(): not a valid user")
+			logging.Error("AuthManager: Protected(): validate", user, err)
 			return
 		}
 
@@ -263,6 +264,7 @@ func (auth *AuthManager) validate(tokenStr string) (
 		return
 	}
 	claims, ok := token.Claims.(*UserClaims)
+	user = claims.UserInfo
 	if ok && token.Valid {
 		if claims.VerifyExpiresAt(jwt.TimeFunc().Unix(), true) &&
 			claims.VerifyIssuer(ISSUER, true) {
@@ -343,15 +345,26 @@ func (auth *AuthManager) AuthLocalUser(
 	user UserInfo,
 	err error,
 ) {
-	if val, ok := auth.localUsers[username]; ok && password == val.Password {
-		user =
-			UserInfo{
-				Roles:    []string{val.Role},
-				Username: username,
-			}
+	// Check if username is valid
+	val, ok := auth.localUsers[username]
+	if !ok {
+		err = fmt.Errorf("auth: AuthLocalUser(): invalid user '%s'", username)
 		return
 	}
-	err = fmt.Errorf("no valid user or invalid password")
+
+	// Check if password is valid
+	if bcrypt_err := bcrypt.CompareHashAndPassword([]byte(val.BCryptHash), []byte(password)); bcrypt_err != nil {
+		err = fmt.Errorf("auth: AuthLocalUser(): %w", bcrypt_err)
+		return
+	}
+
+	// Return user information
+	user =
+		UserInfo{
+			Roles:    []string{val.Role},
+			Username: username,
+		}
+	logging.Info("auth: AuthLocalUser(): Authenticated local user '", username, "' with role '", val.Role, "'")
 	return
 }
 

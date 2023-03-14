@@ -13,11 +13,16 @@ import { JobSearchParams } from "../types/job";
 import { useGetJobs, useStorageState } from "../utils/utils";
 import { StatItem } from "../components/statistics/StatItem";
 import React from "react";
+import {useGetUser, UserRole} from "../utils/auth";
+import AccessDenied from "./accessDenied";
 
 /**
  * Statistic is a React component displaying statistics summarizing the load on the system.
  */
 export const Statistics = () => {
+  if (!(useGetUser().Roles?.includes(UserRole.Admin) ?? false)) {
+    return <AccessDenied/>;
+  }
   //Load filter parameters
   const [params, setParams, , isLoadingParams] =
     useStorageState<JobSearchParams>("statistics-params", {

@@ -5,6 +5,9 @@
 ###
 function KMS_slurm() {
 
+    local DEBUG=false
+    local DEBUG_OUT="/tmp/job_mon.debug"
+
     # Predefined Slurm environmen variables
     # * SLURM_CLUSTER_NAME
     # * SLURM_JOB_ACCOUNT
@@ -37,14 +40,14 @@ function KMS_slurm() {
     # Number of nodes
     local REGEX_NUM_NODES='(^|[[:space:]])NumNodes=([[:digit:]]+)([[:space:]]|$)'
     if [[ "${JOB_DETAILS}" =~ ${REGEX_NUM_NODES} ]]; then
-       local NUM_NODES="${BASH_REMATCH[2]}"
+        local NUM_NODES="${BASH_REMATCH[2]}"
     fi
 
     # Number of tasks
     local REGEX_NUM_TASKS='(^|[[:space:]])NumTasks=([[:digit:]]+)([[:space:]]|$)'
     if [[ "${JOB_DETAILS}" =~ ${REGEX_NUM_TASKS} ]]; then
         local NUM_TASKS="${BASH_REMATCH[2]}"
-    fi 
+    fi
 
     # Tasks per node
     local REGEX_TASKS_PER_NODE='(^|[[:space:]])NtasksPerN:B:S:C=([[:digit:]]+):'
@@ -69,17 +72,14 @@ function KMS_slurm() {
     local X_AUTH_TOKEN="Bearer <API_TOKEN>"
 
     # decide whether start or stop event
-    local    CURL_OUT
+    if ${DEBUG}; then
+        echo "SLURM_SCRIPT_CONTEXT: ${SLURM_SCRIPT_CONTEXT}" >>"${DEBUG_OUT}"
+    fi
+    local DATA
+    local CURL_OUT
     local -i CURL_RET
-    if   [[ "${SLURM_SCRIPT_CONTEXT}" == prolog_slurmctld ]]; then
-        CURL_OUT=$(
-            curl -X 'PUT' \
-                "${API_URL}/job_start" \
-                --max-time 10 \
-                --silent \
-                --show-error \
-                --cookie "Authorization=${X_AUTH_TOKEN}" \
-                -d "{
+    if [[ "${SLURM_SCRIPT_CONTEXT}" == prolog_slurmctld ]]; then
+        DATA="{
                        \"Id\": ${SLURM_JOB_ID},
                        \"userName\": \"${SLURM_JOB_USER}\",
                        \"userId\": ${SLURM_JOB_UID},
@@ -98,29 +98,61 @@ function KMS_slurm() {
                        \"isRunning\": true,
                        \"jobScript\": \"noJobSript\",
                        \"projectId\": \"noProject\"
-                 }" 2>&1
+                 }"
+
+        CURL_OUT=$(
+            curl -X 'PUT' \
+                "${API_URL}/job_start" \
+                --max-time 10 \
+                --silent \
+                --show-error \
+                --write-out "HTTP_CODE=%{http_code}" \
+                --cookie "Authorization=${X_AUTH_TOKEN}" \
+                --data "${DATA}" 2>&1
         )
         CURL_RET="$?"
+        if ${DEBUG}; then
+            echo "DATA: ${DATA}" >>"${DEBUG_OUT}"
+            echo "CURL_OUT: ${CURL_OUT}" >>"${DEBUG_OUT}"
+            echo "CURL_RET: ${CURL_RET}" >>"${DEBUG_OUT}"
+        fi
     elif [[ "${SLURM_SCRIPT_CONTEXT}" == epilog_slurmctld ]]; then
+        DATA="{
+                        \"exitCode\": ${SLURM_JOB_EXIT_CODE},
+                        \"stopTime\": $(date +%s)
+                    }"
         CURL_OUT=$(
             curl -X 'PATCH' \
                 "${API_URL}/job_stop/${SLURM_JOB_ID}" \
                 --max-time 10 \
                 --silent \
                 --show-error \
+                --write-out "HTTP_CODE=%{http_code}" \
                 --cookie "Authorization=${X_AUTH_TOKEN}" \
-                -d "{
-                        \"exitCode\": ${SLURM_JOB_EXIT_CODE},
-                        \"stopTime\": $(date +%s)
-                    }" 2>&1
+                --data "${DATA}" 2>&1
         )
         CURL_RET="$?"
+        if ${DEBUG}; then
+            echo "DATA: ${DATA}" >>"${DEBUG_OUT}"
+            echo "CURL_OUT: ${CURL_OUT}" >>"${DEBUG_OUT}"
+            echo "CURL_RET: ${CURL_RET}" >>"${DEBUG_OUT}"
+        fi
     else
+        logger --tag "jobmon_slurm" "Unknown SLURM_SCRIPT_CONTEXT: ${SLURM_SCRIPT_CONTEXT}"
         return 1
     fi
 
     if [[ ${CURL_RET} -ne 0 ]]; then
         logger --tag "jobmon_slurm" "${CURL_OUT}"
+    fi
+
+    local HTTP_CODE_REGEX='HTTP_CODE=([[:digit:]]+)'
+    local -i HTTP_CODE
+    if [[ "${CURL_OUT}" =~ ${HTTP_CODE_REGEX} ]]; then
+        HTTP_CODE="${BASH_REMATCH[1]}"
+    fi
+    if [[ ${HTTP_CODE} -ne 200 ]]; then
+        logger --tag "jobmon_slurm" "HTTP response code '${HTTP_CODE}' != 200 (OK)"
     fi
 }
 

@@ -100,10 +100,11 @@ func (r *Router) Init(
 			})
 
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    r.config.ListenAddress,
 		Handler: router,
 	}
 
+	logging.Info("router: Init(): Listen and serve on ", r.config.ListenAddress)
 	logging.Fatal(
 		server.ListenAndServe())
 }
@@ -186,7 +187,8 @@ func (r *Router) JobStop(
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Success"))
 
-	// Mark job as stopped in store
+	//TODO: Document better!
+	// Mark job as stopped in stor
 	go func() {
 		err := r.store.StopJob(id, stopJob)
 

@@ -1,7 +1,8 @@
 import { MetricConfig, PartitionConfig } from "./job";
 
 /**
- * Configuration represents a container for metrics, metric-categories and partitions.
+ * Configuration represents a configuration structure used for storing 
+ * configured metrics, partitions and metric categories.
  */
 export interface Configuration {
   Metrics: MetricConfig[];
@@ -10,7 +11,7 @@ export interface Configuration {
 }
 
 /**
- * UserRoles connects a username with roles. Roles are represented by their name.
+ * UserRoles represents a type for storing a users username and roles.
  */
 export interface UserRoles {
   Username: string;

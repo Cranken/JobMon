@@ -31,7 +31,7 @@ export const Header = () => {
   const isAuthenticated = useIsAuthenticated();
 
   const logout = () => {
-    fetch("http://" + process.env.NEXT_PUBLIC_BACKEND_URL + "/api/logout", {
+    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/logout", {
       method: "POST",
       credentials: "include",
       body: JSON.stringify(user),
@@ -63,6 +63,13 @@ export const Header = () => {
                   </LinkOverlay>
                 </LinkBox>
               ) : null}
+              {/* {user.Roles?.includes(UserRole.Admin) ?? false ? (
+                <LinkBox>
+                  <LinkOverlay href="/bad_jobs">
+                    <Button bg={buttonBg}>Optimization Candidates</Button>
+                  </LinkOverlay>
+                </LinkBox>
+              ): null} */}
             </>
           ) : null}
         </Flex>
@@ -102,7 +109,7 @@ export const Header = () => {
  */
 const searchHandler = (key: string, term: string) => {
   if (key === "Enter") {
-    fetch("http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/${term}`, {
+    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/${term}`, {
       credentials: "include",
     }).then((res) =>
       res.text().then((val) => {

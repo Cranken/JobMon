@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -41,4 +42,18 @@ func Remove[T comparable](container []T, target T) []T {
 type Tuple[T any, V any] struct {
 	First  T
 	Second V
+}
+
+// SliceMap applies f to all the elements of TSlice.
+func SliceMap[T comparable](f func(T) T, TSlice []T) []T {
+	TSliceCopy := make([]T, len(TSlice))
+	for i, sliceElement := range TSlice {
+		TSliceCopy[i] = f(sliceElement)
+	}
+	return TSliceCopy
+}
+
+// applyQuotes encloses s into double quotes.
+func ApplyQuotes(s string) string {
+	return fmt.Sprintf(`"%v"`, s)
 }

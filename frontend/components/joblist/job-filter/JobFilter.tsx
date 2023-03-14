@@ -20,7 +20,7 @@ import { dateToUnix } from "../../../utils/utils";
 
 import style from "./JobFilter.module.css";
 import { Stepper } from "./Stepper";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { JobTag } from "../../../types/job";
 import { useGetUser, UserRole } from "../../../utils/auth";
 
@@ -57,6 +57,12 @@ export const JobFilter = ({
       dateToUnix(new Date()),
     ],
   });
+  
+  // These references are used for storing the current value of the Thumbs used for 
+  // filtering out jobs based on the number of nodes or GPUs.
+  const leftThumbUpdatedRef = useRef(-1);
+  const rightThumbUpdatedRef = useRef(-1);
+
   const [shouldApply, setShouldApply] = useState(false);
   const user = useGetUser();
   const tagListBackground = useColorModeValue("gray.400", "gray.500");
@@ -151,39 +157,56 @@ export const JobFilter = ({
                   title="Number of Nodes"
                   minimum={1}
                   lowerLimit={filterParams.NumNodes?.[0] ?? 1}
-                  setLowerLimit={(val) =>
-                    setFilterParams({
-                      ...filterParams,
-                      NumNodes: [val, filterParams.NumNodes?.[1]],
-                    })
-                  }
+                  // TODO: Factorize this pattern.
+                  setLowerLimit={(val) => {
+                    if (leftThumbUpdatedRef.current === val){
+                      return
+                    } else {
+                      leftThumbUpdatedRef.current = val;
+                      setFilterParams({
+                        ...filterParams,
+                        NumNodes: [val, filterParams.NumNodes?.[1]]})
+                    }
+                  }}
                   maximum={192}
                   upperLimit={filterParams.NumNodes?.[1] ?? 1}
-                  setUpperLimit={(val) =>
-                    setFilterParams({
-                      ...filterParams,
-                      NumNodes: [filterParams.NumNodes?.[0], val],
-                    })
-                  }
+                  setUpperLimit={(val) => {
+                    if (rightThumbUpdatedRef.current === val) {
+                      return
+                    } else {
+                      rightThumbUpdatedRef.current = val;
+                      setFilterParams({
+                        ...filterParams,
+                        NumNodes: [filterParams.NumNodes?.[0], val]})
+                    }
+                  }}
                 ></Stepper>
                 <Stepper
                   title="Number of GPUs"
                   minimum={0}
                   lowerLimit={filterParams.NumGpus?.[0] ?? 1}
-                  setLowerLimit={(val) =>
-                    setFilterParams({
+                  setLowerLimit={(val) => {
+                    if (leftThumbUpdatedRef.current === val) {
+                      return
+                    } else {
+                      leftThumbUpdatedRef.current = val;
+                      setFilterParams({
                       ...filterParams,
                       NumGpus: [val, filterParams.NumGpus?.[1]],
-                    })
-                  }
+                    })}
+                  }}
                   maximum={224}
                   upperLimit={filterParams.NumGpus?.[1] ?? 1}
-                  setUpperLimit={(val) =>
+                  setUpperLimit={(val) => {
+                    if (rightThumbUpdatedRef.current === val){
+                      return
+                    } else {
+                    rightThumbUpdatedRef.current = val;
                     setFilterParams({
                       ...filterParams,
                       NumGpus: [filterParams.NumGpus?.[0], val],
-                    })
-                  }
+                    })}
+                  }}
                 ></Stepper>
               </Stack>
             </Stack>

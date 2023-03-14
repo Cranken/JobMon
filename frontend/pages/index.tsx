@@ -3,7 +3,8 @@ import React from "react";
 import Jobs from "./jobs";
 
 /**
- * Home redirects to the React component Jobs
+ * Homepage component.
+ * @returns the Jobs components which shows a list of jobs.
  */
 const Home: NextPage = () => {
   return <Jobs />;
