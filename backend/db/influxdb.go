@@ -682,7 +682,7 @@ func (db *InfluxDB) createAggregationTask(
 
 // createSynthesizedMetricTask calls the function createTask
 func (db *InfluxDB) createSynthesizedMetricTask(metric conf.MetricConfig, subMeasurements, orgId string) (task *domain.Task, err error) {
-	taskName := strings.Join([]string{db.bucket, metric.Measurement, subMeasurements}, "_")
+	taskName := strings.Join([]string{db.bucketName, metric.Measurement, subMeasurements}, "_")
 	subMeasurementsRegex := strings.Join(metric.SubMeasurements, "|")
 	quotedSubMeasurements := strings.Join(utils.SliceMap(utils.ApplyQuotes, metric.SubMeasurements), ", ")
 	addedSubMeasurements := strings.Join(
@@ -691,9 +691,9 @@ func (db *InfluxDB) createSynthesizedMetricTask(metric conf.MetricConfig, subMea
 		}, metric.SubMeasurements), " + ")
 
 	query := fmt.Sprintf(SynthesizedMetricsCreationQuery,
-		db.bucket, subMeasurementsRegex, metric.Type, metric.FilterFunc,
+		db.bucketName, subMeasurementsRegex, metric.Type, metric.FilterFunc,
 		metric.PostQueryOp, addedSubMeasurements, quotedSubMeasurements,
-		metric.Measurement, db.bucket, db.org)
+		metric.Measurement, db.bucketName, db.organizationName)
 	return db.createTask(taskName, query, orgId)
 }
 
@@ -780,7 +780,7 @@ func (db *InfluxDB) updateSynthesizedMetricTask() (err error) {
 		if len(metric.SubMeasurements) != 0 {
 
 			joinedSubMeasurements := strings.Join(metric.SubMeasurements, "_")
-			name := strings.Join([]string{db.bucket, metric.Measurement, joinedSubMeasurements}, "_")
+			name := strings.Join([]string{db.bucketName, metric.Measurement, joinedSubMeasurements}, "_")
 			found := false
 			for _, task := range tasks {
 				if task.Name == name {
@@ -800,7 +800,7 @@ func (db *InfluxDB) updateSynthesizedMetricTask() (err error) {
 
 		}
 	}
-	org, err := db.organizationsAPI.FindOrganizationByName(context.Background(), db.org)
+	org, err := db.organizationsAPI.FindOrganizationByName(context.Background(), db.organizationName)
 	if err != nil {
 		logging.Error("db: addAggregatedMetrics(): Could not get orgId from influxdb: ", err)
 		return
