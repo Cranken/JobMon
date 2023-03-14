@@ -36,8 +36,20 @@ const UserConfigItem = ({ user, updateUser }: IUserConfigItemProps) => {
     if (!user) {
         return null;
     }
+    const toast = useToast({
+        description: "User " + user.Username + " updated",
+        status: "success",
+        duration: 30000,
+        isClosable: true
+    });
     return (
-        <Formik enableReinitialize={true} initialValues={{ Roles: user.Roles }} onSubmit={(values) => updateUser({ ...user, Roles: values.Roles })}>
+        <Formik
+            enableReinitialize={true}
+            initialValues={{ Roles: user.Roles }}
+            onSubmit={(values) => {
+                updateUser({ ...user, Roles: values.Roles })
+                toast()
+            }}>
             <Form>
                 <Stack direction="row">
                     <Box>
