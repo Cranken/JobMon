@@ -73,7 +73,8 @@ sudo docker compose up --build --pull always [--detach]
 ```
 
 You can access the containers with the `docker` command.
-Some examples for common tasks:
+
+### Maintenance Tasks for InfluxDB
 
 * List authentication tokens
 
@@ -136,34 +137,53 @@ Some examples for common tasks:
           influx write --format lp --bucket ${BUCKET_NAME}
   ```
 
+### Maintenance Tasks for PostgreSQL
+
+* Get version information
+
+  ``` bash
+  sudo docker exec jobmon_postgres \
+      psql --version
+  ```
+
 * Access the PostgreSQL interactive terminal
 
   ```bash
-  sudo docker exec --interactive --tty JobMonPostgres \
-      psql --username=postgres --password --dbname=jobmon --host postgres --port 5432
+  sudo docker exec --interactive --tty jobmon_postgres \
+      psql --username=postgres --password --dbname=jobmon --host jobmon_postgres --port 5432
   ```
 
-* Dump the PostgreSQL database for backup purpose
+* Dump the jobmon PostgreSQL database for backup purpose
 
   ```bash
-  sudo docker exec --env PGPASSWORD="<PSQL_PASSWORD>" JobMonPostgres \
-      pg_dump --username=postgres --dbname=jobmon --host postgres --port 5432 | \
-          zstd - -o jobmon-psql.dump.zstd
+  sudo docker exec --env PGPASSWORD="<PSQL_PASSWORD>" jobmon_postgres \
+      pg_dump --username=postgres --dbname=jobmon --host jobmon_postgres --port 5432 | \
+          zstd - -o jobmon_postgres.dump.zstd
   ```
 
-* Restore the PostgreSQL database from backup
+* Dump all PostgreSQL database for backup purpose
 
   ```bash
-  zstdcat jobmon-psql.dump.zstd |
-      sudo docker exec --interactive --env PGPASSWORD="<PSQL_PASSWORD>" JobMonPostgres \
-          psql --username=postgres --dbname=jobmon --host postgres --port 5432
+  sudo docker exec --env PGPASSWORD="<PSQL_PASSWORD>" jobmon_postgres \
+      pg_dumpall --username=postgres --host jobmon_postgres --port 5432 | \
+          zstd - -o postgres.dumpall.zstd
   ```
+
+* Restore the jobmon PostgreSQL database from backup
+
+  ```bash
+  zstdcat jobmon_postgres.dump.zstd |
+      sudo docker exec --interactive --env PGPASSWORD="<PSQL_PASSWORD>" jobmon_postgres \
+          psql --username=postgres --dbname=jobmon --host jobmon_postgres --port 5432
+  ```
+
+### Maintenance Tasks for Frontend and Backend
 
 * Watch the log output of the frontend or backend
 
   ```bash
-  docker logs --follow JobMonFrontend
-  docker logs --follow JobMonBackend
+  docker logs --follow jobmon_frontend
+  docker logs --follow jobmon_backend
   ```
 
 ## API Documentation
