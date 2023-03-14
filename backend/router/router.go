@@ -187,7 +187,8 @@ func (r *Router) JobStop(
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Success"))
 
-	// Mark job as stopped in store
+	//TODO: Document better!
+	// Mark job as stopped in stor
 	go func() {
 		err := r.store.StopJob(id, stopJob)
 

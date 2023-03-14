@@ -59,6 +59,13 @@ export const Header = () => {
                   </LinkOverlay>
                 </LinkBox>
               ) : null}
+              {/* {user.Roles?.includes(UserRole.Admin) ?? false ? (
+                <LinkBox>
+                  <LinkOverlay href="/bad_jobs">
+                    <Button bg={buttonBg}>Optimization Candidates</Button>
+                  </LinkOverlay>
+                </LinkBox>
+              ): null} */}
             </>
           ) : null}
         </Flex>

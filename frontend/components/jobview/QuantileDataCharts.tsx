@@ -82,7 +82,7 @@ export const QuantileDataCharts = ({
               `${d._field}: ${new Unit(d._value, unitStr).toString(maxPrefix)}`;
           })(metric.Config.Unit, maxPrefix)}
           unit={metric.Config.Unit}
-          yLabel={metric.Config.DisplayName}
+          chartTitle={metric.Config.DisplayName}
           showTooltipSum={false}
           showTooltipMean={false}
           yDomain={yDomain}

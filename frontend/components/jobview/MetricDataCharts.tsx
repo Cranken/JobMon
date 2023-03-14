@@ -81,7 +81,7 @@ export const MetricDataCharts = ({
           width={document.body.clientWidth / 2}
           title={title}
           unit={metric.Config.Unit}
-          yLabel={metric.Config.DisplayName}
+          chartTitle={metric.Config.DisplayName}
           yDomain={yDomain}
           showTooltipSum={metric.Config.AggFn === "sum"}
         />
