@@ -1,36 +1,105 @@
 package db
 
-// Parameters: bucket, startTime, stopTime, measurement,
-// type, nodelist, sampleInterval, filterfunc,
-// postQueryOp, sampleInterval
-const SimpleMeasurementQuery = `
-from(bucket: "%v")
-	|> range(start: %v, stop: %v)
-	|> filter(fn: (r) => r["_measurement"] == "%v")
-	|> filter(fn: (r) => r["type"] == "%v")
-	|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
-	%v
-	%v
-	|> truncateTimeColumn(unit: %v)
-`
+import (
+	"fmt"
+	"jobmon/logging"
+	"time"
+)
 
-// Parameters: bucket, startTime, stopTime, measurement,
-// type, nodelist, filterfunc, postQueryOp, sampleInterval,
-// aggFn, sampleInterval
-// Deprecated: This query isn't used anywhere.
-const SimpleAggMeasurementQuery = `
-from(bucket: "%v")
-	|> range(start: %v, stop: %v)
-	|> filter(fn: (r) => r["_measurement"] == "%v")
-	|> filter(fn: (r) => r["type"] == "%v")
-	|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	%v
-	%v
-	|> group(columns: ["_measurement", "hostname"], mode:"by")
-	|> aggregateWindow(every: %v, fn: %v, createEmpty: true)
-	|> truncateTimeColumn(unit: %v)
-`
+// createSimpleMeasurementQuery creates an InfluxDB flux query string
+func createSimpleMeasurementQuery(
+	bucket string,
+	StartTime int, StopTime int,
+	measurement string,
+	metricType string,
+	nodes string,
+	sampleInterval time.Duration,
+	metricFilterFunc string,
+	metricPostQueryOp string,
+) (q string) {
+
+	if bucket == "" {
+		logging.Error("db: createSimpleMeasurementQuery(): Missing bucket configuration")
+		return
+	}
+
+	if measurement == "" {
+		logging.Error("db: createSimpleMeasurementQuery(): Missing measurement configuration")
+		return
+	}
+
+	if metricType == "" {
+		logging.Error("db: createSimpleMeasurementQuery(): Missing metric type configuration")
+		return
+	}
+
+	if StartTime < 0 || StopTime < 0 || StartTime >= StopTime {
+		logging.Error("db: createSimpleMeasurementQuery(): Wrong start time = ", StartTime, ", StopTime = ", StopTime, " configuration")
+		return
+	}
+
+	q = fmt.Sprintf(`
+	from(bucket: "%s")
+		|> range(start: %d, stop: %d)
+		|> filter(fn: (r) => r["_measurement"] == "%s")
+		|> filter(fn: (r) => r["type"] == "%s")
+		|> filter(fn: (r) => r["hostname"] =~ /%s/)
+		|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
+		%s
+		%s
+		|> truncateTimeColumn(unit: %v)
+	`,
+		bucket,
+		StartTime, StopTime,
+		measurement,
+		metricType,
+		nodes,
+		sampleInterval,
+		metricFilterFunc,
+		metricPostQueryOp,
+		sampleInterval,
+	)
+
+	logging.Debug("db: createSimpleMeasurementQuery(): flux query string = ", q)
+	return
+}
+
+// createSimpleAggMeasurementQuery creates a simple flux aggregation query
+func createSimpleAggMeasurementQuery(
+	bucket string,
+	StartTime int, StopTime int,
+	measurement string,
+	metricType string,
+	nodes string,
+	sampleInterval time.Duration,
+	metricFilterFunc string,
+	metricPostQueryOp string,
+	aggregationFunc string,
+) (q string) {
+	q = fmt.Sprintf(`
+    from(bucket: "%v")
+		|> range(start: %v, stop: %v)
+		|> filter(fn: (r) => r["_measurement"] == "%v")
+		|> filter(fn: (r) => r["type"] == "%v")
+    	|> filter(fn: (r) => r["hostname"] =~ /%v/)
+		%v
+		%v
+		|> group(columns: ["_measurement", "hostname"], mode:"by")
+		|> aggregateWindow(every: %v, fn: %v, createEmpty: true)
+		|> truncateTimeColumn(unit: %v)
+	`,
+		bucket,
+		StartTime, StopTime,
+		measurement,
+		metricType,
+		nodes,
+		metricFilterFunc,
+		metricPostQueryOp,
+		sampleInterval, aggregationFunc,
+		sampleInterval,
+	)
+	return
+}
 
 // Parameters: bucket, startTime, stopTime, measurement,
 // nodelist, sampleInterval, filterfunc, postQueryOp, sampleInterval

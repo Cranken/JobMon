@@ -1,8 +1,8 @@
 {
-    "DBHost": "<db_host>:<db_port>",
-    "DBToken": "<db_auth_token>",
-    "DBOrg": "org",
-    "DBBucket": "collector",
+    "DBHost": "<influxdb_host>:<influxdb_port>",
+    "DBToken": "<influxdb_auth_token>",
+    "DBOrg": "myOrg",
+    "DBBucket": "myBucket",
     "JWTSecret": "<jwt_secret>",
     "FrontendURL": "http://<frontend_url>:<frontend_port>",
     "JobStore": {
@@ -35,15 +35,15 @@
     "MetricCategories": [],
     "LocalUsers": {
         "user123": {
-            "Password": "s3cr3t",
+            "BCryptHash": "$2b$12$autyf5ohFPAnLIAqszvcBuAo1Rod94dN8ZgnRNe0zRir1XDrCmc8K",
             "Role": "user"
         },
         "api": {
-            "Password": "s4f3_passw0rd",
+            "BCryptHash": "$2b$12$Z5YxT9GkLmmIFYtuBj/k.ugoTrjsLSKdeqKGxHG0cyOc/HDK7W056",
             "Role": "job-control"
         },
         "admin": {
-            "Password": "4dmin123",
+            "BCryptHash": "$2b$12$CnEzpQF5Mj9vuVmuQFgwJufnArhWZDbSvE/QjVIcRQVZ27W7YVMJu",
             "Role": "admin"
         }
     }

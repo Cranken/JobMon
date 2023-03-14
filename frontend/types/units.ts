@@ -70,6 +70,10 @@ const Units: UnitsType = {
     DisplayFormat: "MetaOps",
     Prefix: PrefixType.Normalized
   },
+  Opss: {
+    DisplayFormat: "OPs/s",
+    Prefix: PrefixType.Exponential,
+  },
   None: {
     DisplayFormat: "",
     Prefix: PrefixType.None,

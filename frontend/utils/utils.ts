@@ -55,7 +55,7 @@ export const useGetJobs: (
   useEffect(() => {
     setIsLoading(true);
     const url = new URL(
-      "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + "/api/jobs"
+      process.env.NEXT_PUBLIC_BACKEND_URL + "/api/jobs"
     );
     if (params) {
       Object.keys(params).forEach((val) => {
@@ -106,7 +106,6 @@ export function groupBy<T>(
 
 export const addJobTag = (jobId: number, tag: string) => {
   const url = new URL(
-    "http://" +
     process.env.NEXT_PUBLIC_BACKEND_URL +
     `/api/tags/add_tag?job=${jobId}`
   );
@@ -116,7 +115,6 @@ export const addJobTag = (jobId: number, tag: string) => {
 
 export const removeJobTag = (jobId: number, tag: JobTag) => {
   const url = new URL(
-    "http://" +
     process.env.NEXT_PUBLIC_BACKEND_URL +
     `/api/tags/remove_tag?job=${jobId}`
   );

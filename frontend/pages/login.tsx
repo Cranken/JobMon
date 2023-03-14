@@ -29,7 +29,7 @@ export const Login = () => {
 
   const submit = (e?: React.KeyboardEvent) => {
     if (!e || e.key == "Enter") {
-      fetch("http://" + process.env.NEXT_PUBLIC_BACKEND_URL + "/api/login", {
+      fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/login", {
         method: "POST",
         body: JSON.stringify({ username, password, remember }),
         credentials: "include",
@@ -91,7 +91,6 @@ export const Login = () => {
         <Button
           onClick={() =>
             router.push(
-              "http://" +
                 process.env.NEXT_PUBLIC_BACKEND_URL +
                 "/auth/oauth/login"
             )

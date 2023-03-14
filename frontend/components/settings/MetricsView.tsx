@@ -514,3 +514,18 @@ const CategorySelect = ({ availableCategories, addCategory, currentCategory, ...
 };
 
 
+export default MetricsView;
+
+const TOOLTIP_TYPE = "Supported types: cpu, node, socket, accelerator.";
+const TOOLTIP_UNIT = "Supported units: FLOP/s, Bit/s, °C, B/s, B, %, Packet/s, W, OPs/s. Default is none(empty string). \
+                      Can be prefixed by SI-prefixes.";
+const TOOLTIP_CATEGORIES = "Select metric categories the metric belongs to.";
+
+const TOOLTIP_MAX_PER_NODES = "Maximum value a node can have for this metric. \
+                               This value must be in the same unit as specified in the above unit field.";
+const TOOLTIP_MAX_PER_TYPE = "Maximum value a unit as specified in the above \"Type\" field can have for this metric. \
+                              This value must be in the same unit as specified in the above unit field.";
+
+const TOOLTIP_SEPARATION_KEY = "Separation key used to differentiate between nodes in the InfluxDB query.";
+const TOOLTIP_FILTER_FUNC = "Optional filter function used in InfluxDB queries. Must be a valid Flux query.";
+const TOOLTIP_POST_QUERY_OP = "Optional post query function used in InfluxDB queries. Must be a valid Flux query.";

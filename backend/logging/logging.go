@@ -69,6 +69,7 @@ func SetLogLevel(l int) error {
 
 	// Set log level
 	logLevel = l
+	Info("logging: SetLogLevel(): Set log level to ", l)
 	return nil
 }
 

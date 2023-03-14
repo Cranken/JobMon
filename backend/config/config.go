@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -14,10 +15,11 @@ import (
 	"github.com/google/uuid"
 )
 
-var configFile string
-
 // Configuration stores the main configuration data required during the application launch.
 type Configuration struct {
+
+	// Config from the command line interface
+	CLIConfig `json:"-"`
 
 	// Configuration for performance metrics database
 	// current implementation uses InfluxDB only
@@ -25,37 +27,44 @@ type Configuration struct {
 
 	// Configuration for jobmon frontend
 	// Frontend URL e.g. http://my-jobmon-frontend.example.com:3000
-	FrontendURL string
+	FrontendURL string `json:"FrontendURL"`
 
 	// Configuration for job meta data database
 	// current implementations uses PostgreSQL only
-	JobStore JobStoreConfig
+	JobStore JobStoreConfig `json:"JobStore"`
 
 	// Configuration for OAuth Login
-	OAuth OAuthConfig
+	OAuth OAuthConfig `json:"OAuth"`
 
 	// Per partition metric config
 	Metrics []MetricConfig `json:"Metrics"`
 	// Job data LRU cache size
-	CacheSize int
+	CacheSize int `json:"CacheSize"`
 	// Prefetch job data into LRU cache upon job completion
-	Prefetch bool
+	Prefetch bool `json:"Prefetch"`
 	// Sample interval of the metrics as configured in the metric collector
 	// String formatted as e.g. 30s or 1m
-	SampleInterval string
+	SampleInterval string `json:"SampleInterval"`
 	// Quantiles the frontend will display; Will be moved to frontend config
 	// Values are percentages formatted as decimal (0.X)
-	MetricQuantiles []string
+	MetricQuantiles []string `json:"MetricQuantiles"`
 	// Secret to use when generating the JWT
-	JWTSecret string
+	JWTSecret string `json:"JWTSecret"`
 	// Authentication for local users; Key is username and value is the config
-	LocalUsers map[string]LocalUser
+	LocalUsers map[string]LocalUser `json:"LocalUsers"`
 	// Per partition configurations
-	Partitions map[string]PartitionConfig
+	Partitions map[string]PartitionConfig `json:"Partitions"`
 	// Categories used for grouping metrics
-	MetricCategories []string
+	MetricCategories []string `json:"MetricCategories"`
 	// Metrics to display in the radar chart; Will be moved to frontend config
-	RadarChartMetrics []string
+	RadarChartMetrics []string `json:"RadarChartMetrics"`
+}
+
+// Config from the command line interface
+type CLIConfig struct {
+	ConfigFile    string // config file
+	LogLevel      int    // log level
+	ListenAddress string // TCP address for the server to listen on
 }
 
 // MetricConfig represents a metric configuration configured by the admin.
@@ -98,75 +107,84 @@ type MetricConfig struct {
 
 // A BasePartitionConfig represents a partition configuration
 type BasePartitionConfig struct {
-	MaxTime int      // Maximum wall clock time for a job in the partition
-	Metrics []string // Metrics the partition provides. Array of measurement names as specified in the global metric config.
+	// Maximum wall clock time for a job in the partition
+	MaxTime int `json:"MaxTime"`
+	// Metrics the partition provides. Array of measurement names as specified in the global metric config.
+	Metrics []string `json:"Metrics"`
 }
 
 // VirtualPartitionConfig defines a virtual partition, for a subset of Nodes.
 type VirtualPartitionConfig struct {
-	BasePartitionConfig          // Base partition config
-	Nodes               []string // Node ranges inside the parent partition which this virtual partition applies to.
+	// Base partition config
+	BasePartitionConfig
+	// Node ranges inside the parent partition which this virtual partition applies to.
+	Nodes []string `json:"Nodes"`
 }
 
 // PartitionConfig represents a partition that contains both physical and virtual partitions.
 type PartitionConfig struct {
-	BasePartitionConfig                                   // Base partition configuration
-	VirtualPartitions   map[string]VirtualPartitionConfig // Virtual partitions inside this parent partition
+	// Base partition configuration
+	BasePartitionConfig
+	// Virtual partitions inside this parent partition
+	VirtualPartitions map[string]VirtualPartitionConfig `json:"VirtualPartitions"`
 }
 
 // LocalUser stores the access credentials for local users.
 type LocalUser struct {
-	Password string // Password of LocalUser
-	Role     string // Role can be "job-control", "user", "admin"
+	// bcrypt hash of password of LocalUser
+	BCryptHash string `json:"BCryptHash"`
+	// Role can be "job-control", "user", "admin"
+	Role string `json:"Role"`
 }
 
 // Configuration for performance metrics database
 // current implementation uses InfluxDB only
 type DBConfig struct {
 	// Complete URL of InfluxDB, e.g. http://my-inxuxdb.example.org:9200
-	DBHost string
+	DBHost string `json:"DBHost"`
 	// InfluxDB access token to bucket
-	DBToken string
+	DBToken string `json:"DBToken"`
 	// Org the InfluxDB bucket belongs to
-	DBOrg string
+	DBOrg string `json:"DBOrg"`
 	// InfluxDB bucket
-	DBBucket string
+	DBBucket string `json:"DBBucket"`
 }
 
 // Configuration for job meta data database
 // current implementation uses PostgreSQL only
 type JobStoreConfig struct {
 	// Supported types: "postgres"
-	Type string
+	Type string `json:"Type"`
 
 	// PostgreSQL database config:
 	// Postgres host address e.g. my-postgresql.example.org:5432
-	PSQLHost string
+	PSQLHost string `json:"PSQLHost"`
 	// Postgres username
-	PSQLUsername string
+	PSQLUsername string `json:"PSQLUsername"`
 	// Postgres password
-	PSQLPassword string
+	PSQLPassword string `json:"PSQLPassword"`
 	// Postgres db for job metadata store
-	PSQLDB string
+	PSQLDB string `json:"PSQLDB"`
 }
 
 // OAuthConfig represents a configuration for the OAuth login.
 type OAuthConfig struct {
-	ClientID string // OAuth Client ID
-
-	Secret string // OAuth Secret
-
-	AuthURL string // OAuth Endpoint Auth URL
-
-	TokenURL string // OAuth Endpoint Token URL
-
-	RedirectURL string // OAuth Redirect URL, i.e. backend oauth
+	// OAuth Client ID
+	ClientID string `json:"ClientID"`
+	// OAuth Secret
+	Secret string `json:"Secret"`
+	// OAuth Endpoint Auth URL
+	AuthURL string `json:"AuthURL"`
+	// OAuth Endpoint Token URL
+	TokenURL string `json:"TokenURL"`
+	// OAuth Redirect URL, i.e. backend oauth
 	// callback endpoint ("<backend_host>/auth/oauth/callback")
-
-	UserInfoURL string // Oauth User Info URL
-
-	AfterLoginRedirectUrl string // URL to which the user will be redirected
+	RedirectURL string `json:"RedirectURL"`
+	// Oauth User Info URL
+	UserInfoURL string `json:"UserInfoURL"`
+	// URL to which the user will be redirected
 	// to after successful login. Set to some frontend url, e.g. "<frontend_host>/jobs"
+	AfterLoginRedirectUrl string `json:"AfterLoginRedirectUrl"`
 }
 
 // Init reads the config.json file and maps the data form the json file to the
@@ -174,16 +192,16 @@ type OAuthConfig struct {
 func (c *Configuration) Init() {
 
 	// Read command line options
-	var logLevel int
 	var help bool
-	flag.StringVar(&configFile, "config", "config.json", "config file")
-	flag.IntVar(&logLevel, "debug", logging.WarningLogLevel,
-		fmt.Sprint("debug level:",
+	flag.StringVar(&c.ConfigFile, "config", "config.json", "config file")
+	flag.IntVar(&c.LogLevel, "log", logging.WarningLogLevel,
+		fmt.Sprint("log level:",
 			" off=", logging.OffLogLevel,
 			" error=", logging.ErrorLogLevel,
 			" warning=", logging.WarningLogLevel,
 			" info=", logging.InfoLogLevel,
 			" debug=", logging.DebugLogLevel))
+	flag.StringVar(&c.ListenAddress, "listen-addr", ":8080", "TCP address for the server to listen on")
 	flag.BoolVar(&help, "help", false, "print this help message")
 	flag.Parse()
 
@@ -194,22 +212,24 @@ func (c *Configuration) Init() {
 	}
 
 	// Set log level
-	if err := logging.SetLogLevel(logLevel); err != nil {
+	if err := logging.SetLogLevel(c.LogLevel); err != nil {
 		logging.Fatal("config: Init(): Could not set log level: ", err)
 	}
 
 	// Read config file
-	data, err := os.ReadFile(configFile)
+	data, err := os.ReadFile(c.ConfigFile)
 	if err != nil && errors.Is(err, fs.ErrNotExist) {
-		logging.Fatal("config: Init(): Could not read config file: '", configFile, "' Error: ", err)
+		logging.Fatal("config: Init(): Could not read config file: '", c.ConfigFile, "' Error: ", err)
 	}
-	logging.Info("config: Init(): Read config file '", configFile, "'")
+	logging.Info("config: Init(): Read config file '", c.ConfigFile, "'")
 
-	err = json.Unmarshal(data, c)
-	if err != nil {
-		logging.Fatal("config: Init(): Could not unmarshal config file: ", err)
+	// Decode JSON
+	d := json.NewDecoder(bytes.NewReader(data))
+	d.DisallowUnknownFields()
+	if err := d.Decode(c); err != nil {
+		logging.Fatal("config: Init(): Could not decode config file: ", err)
 	}
-	logging.Info("config: Init(): Parsed config file '", configFile, "'")
+	logging.Info("config: Init(): Parsed config file '", c.ConfigFile, "'")
 
 	// Add GUIDs to metrics if any are missing
 	for i := range c.Metrics {
@@ -277,9 +297,9 @@ func (c *Configuration) Flush() {
 	}
 
 	// Write json to config file
-	err = os.WriteFile(configFile, data, 0644)
+	err = os.WriteFile(c.ConfigFile, data, 0644)
 	if err != nil {
-		logging.Error("config: Flush(): Writing file '", configFile, "' failed: ", err)
+		logging.Error("config: Flush(): Writing file '", c.ConfigFile, "' failed: ", err)
 	}
 }
 

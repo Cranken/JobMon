@@ -324,7 +324,7 @@ export const useGetJobData: (
         return;
       }
       const url = new URL(
-        "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}`
+        process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}`
       );
       if (sampleInterval) {
         if (!(sampleInterval in jobCache)) {
@@ -358,7 +358,7 @@ export const useGetJobData: (
             return intervalData[m.Config.GUID][aggFn];
           } else {
             const url = new URL(
-              "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/metric/${id}`
+              process.env.NEXT_PUBLIC_BACKEND_URL + `/api/metric/${id}`
             );
             url.searchParams.append("sampleInterval", sampleInterval.toString());
             url.searchParams.append("metric", m.Config.GUID);
@@ -394,7 +394,7 @@ export const useGetJobData: (
           }
         }
         const url = new URL(
-          "http://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}`
+          process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}`
         );
         url.searchParams.append("sampleInterval", sampleInterval.toString());
         url.searchParams.append("node", node);
@@ -415,7 +415,7 @@ export const useGetJobData: (
     useEffect(() => {
       if (jobData?.Metadata.IsRunning && jobData.MetricData) {
         const url = new URL(
-          "ws://" + process.env.NEXT_PUBLIC_BACKEND_URL + `/api/live/${id}`
+          process.env.NEXT_PUBLIC_BACKEND_WS + `/api/live/${id}`
         );
         const ws = new WebSocket(url);
         ws.onmessage = (msg) => {

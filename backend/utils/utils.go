@@ -8,8 +8,12 @@ import (
 // AllowCors is a helper function to allow CORS(Cross-Origin Resource Sharing).
 // See: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
 func AllowCors(r *http.Request, header http.Header) {
-	header.Set("Access-Control-Allow-Methods", r.Header.Get("Allow"))
-	header.Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+	if m := r.Header.Get("Allow"); m != "" {
+		header.Set("Access-Control-Allow-Methods", m)
+	}
+	if o := r.Header.Get("Origin"); o != "" {
+		header.Set("Access-Control-Allow-Origin", o)
+	}
 	header.Set("Access-Control-Allow-Credentials", "true")
 	header.Set("Access-Control-Expose-Headers", "Set-Cookie")
 }

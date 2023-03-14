@@ -85,8 +85,12 @@ func (r *Router) Init(
 				if r.Header.Get("Access-Control-Request-Method") != "" {
 					// Set Cross-Origin Resource Sharing (CORS) headers
 					header := w.Header()
-					header.Set("Access-Control-Allow-Methods", header.Get("Allow"))
-					header.Set("Access-Control-Allow-Origin", config.FrontendURL)
+					if m := header.Get("Allow"); m != "" {
+						header.Set("Access-Control-Allow-Methods", m)
+					}
+					if o := config.FrontendURL; o != "" {
+						header.Set("Access-Control-Allow-Origin", o)
+					}
 					header.Set("Access-Control-Allow-Credentials", "true")
 					header.Set("Access-Control-Expose-Headers", "Set-Cookie")
 				}
@@ -96,10 +100,11 @@ func (r *Router) Init(
 			})
 
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    r.config.ListenAddress,
 		Handler: router,
 	}
 
+	logging.Info("router: Init(): Listen and serve on ", r.config.ListenAddress)
 	logging.Fatal(
 		server.ListenAndServe())
 }
