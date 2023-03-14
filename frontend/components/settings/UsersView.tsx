@@ -4,6 +4,11 @@ import React, { useEffect, useState } from "react";
 import {UserRoles} from "../../types/config";
 import {authFetch, UserRole} from "../../utils/auth";
 
+/**
+ * UserView is a React Component providing options to view and change roles of users.
+ * UserView provides a form allowing the administrator to search for users.
+ * In case the administrator searches a valid user, its roles are displayed and can be modified.
+ */
 const UsersView = () => {
     const [username, setUsername] = useState<string>();
     const [user, updateUser] = useGetUser(username);
@@ -27,11 +32,19 @@ const UsersView = () => {
     );
 };
 
+/**
+ * IUserConfigItemProps is an interface to store a user with his roles and a function to modify roles.
+ */
 interface IUserConfigItemProps {
     user?: UserRoles;
     updateUser: (user: UserRoles) => void;
 }
 
+/**
+ * UserConfigItem is a React Component that displays a users roles and provides options to modify them
+ * @param user The user to display and modify
+ * @param updateUser A function to update the user
+ */
 const UserConfigItem = ({ user, updateUser }: IUserConfigItemProps) => {
     if (!user) {
         return null;
@@ -60,6 +73,11 @@ const UserConfigItem = ({ user, updateUser }: IUserConfigItemProps) => {
     );
 };
 
+/**
+ * Retrieves the given user from the backend.
+ * @param username The username identifying the searched user
+ * @return The user, its roles and a function to modify them
+ */
 const useGetUser: (username?: string) => [UserRoles | undefined, (user: UserRoles) => void] = (username?: string) => {
     const [user, setUser] = useState<UserRoles>();
     const toast = useToast();

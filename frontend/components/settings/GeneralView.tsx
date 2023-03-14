@@ -2,6 +2,10 @@ import { Box, Button, Heading, Input, Stack, StackDivider } from "@chakra-ui/rea
 import React, { useState } from "react";
 import { JobMetadata } from "../../types/job";
 
+/**
+ * GeneralView is a React Component providing general settings.
+ * This settings-page allows the user to initiate the refreshing of metadata for a given job.
+ */
 const GeneralView = () => {
     const [id, setId] = useState("");
     return <>

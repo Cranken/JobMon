@@ -5,12 +5,17 @@ import { Configuration } from "../../types/config";
 import { MetricConfig, PartitionConfig as ParentPartitionConfig, VirtualPartitionConfig } from "../../types/job";
 import { NumberField, TextField } from "./FormComponents";
 
+/**
+ * IPartitionsViewProps is an interface to store partition-configurations and a function to modify them.
+ */
 interface IPartitionsViewProps {
     config: Configuration;
     setConfig: (c: Configuration) => void;
 }
 
-
+/**
+ * ExtendedConfig is an interface to store information around partitions.
+ */
 interface ExtendedConfig {
     displayName: string;
     availableMetrics: MetricConfig[];
@@ -24,12 +29,25 @@ interface ExtendedVirtualPartitionConfig extends ExtendedConfig, VirtualPartitio
 
 type PartitionConfig = ExtendedPartitionConfig | ExtendedVirtualPartitionConfig;
 
+/**
+ * PartitionsView is a React Component providing settings for partitions.
+ * PartitionsView displays all existing partitions.
+ * The User is able to modify existing partitions, delete them and create new partitions.
+ * @param config The current configuration
+ * @param setConfig A function to set new configurations
+ */
 const PartitionsView = ({ config, setConfig }: IPartitionsViewProps) => {
     const [lConfig, setLConfig] = useState(config);
     const [accIndex, setAccIndex] = useState<number | undefined>(undefined);
     if (!lConfig) {
         return null;
     }
+    /**
+     * Creating an item for the given partition
+     * @param pName The name of the partition
+     * @param i The index identifying the menu for this partition
+     * @param parent The parent of the partition if existent
+     */
     const createPartitionItem = (pName: string, i: number, parent?: string) => {
         let partitionConfig: PartitionConfig;
         if (parent) {
@@ -134,13 +152,21 @@ const PartitionsView = ({ config, setConfig }: IPartitionsViewProps) => {
     );
 };
 
+/**
+ * IPartitionItemProps is an interface for partition configurations.
+ */
 interface IPartitionItemProps {
     partitionConfig: PartitionConfig;
     setPartitionConfig: (m: PartitionConfig, del?: boolean) => void;
     parentPartitions: string[];
 }
 
-
+/**
+ * PartitionItem is a React Component displaying the configuration of a particular partition.
+ * @param partitionConfig The configuration.
+ * @param setPartitionConfig A function to modify partitions.
+ * @param parentPartitions The parents configuration.
+ */
 const PartitionItem = ({ partitionConfig, setPartitionConfig, parentPartitions }: IPartitionItemProps) => {
     return (
         <AccordionItem >
@@ -241,6 +267,11 @@ const PartitionItem = ({ partitionConfig, setPartitionConfig, parentPartitions }
     );
 };
 
+/**
+ * Function to validate a given slurm-node-range
+ * @param s The given range
+ * @return True, if the range is valid, false otherwise
+ */
 const validateSlurmNodeRange = (s: string) => {
     // Can be better but good enough for frontend validation
     const match = s.match(/\w*\[{1}(?:\d|-|,)+\]{1}|^(?:\d|-|,)+$/);

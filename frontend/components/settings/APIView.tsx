@@ -17,6 +17,9 @@ import {
 } from "@chakra-ui/react";
 import React, { useState } from "react";
 
+/**
+ * APIView is a React Component allowing the user to generate an API key.
+ */
 const APIView = () => {
   const [apiKey, setApiKey] = useState("");
   const { isOpen, onOpen, onClose } = useDisclosure();

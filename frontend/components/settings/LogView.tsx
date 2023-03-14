@@ -1,6 +1,10 @@
 import { Textarea } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 
+/**
+ * LogView is a React Component displaying the backend log.
+ * The log gets updated automatically by the backend if needed.
+ */
 const LogView = () => {
     const [, setWs] = useState<WebSocket>();
     const [lastMessage, setLastMessage] = useState();
