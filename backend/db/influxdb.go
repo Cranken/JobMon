@@ -70,6 +70,7 @@ func (db *InfluxDB) Init(c conf.Configuration) {
 	db.defaultSampleInterval = c.SampleInterval
 	db.metricQuantiles = c.MetricQuantiles
 	go db.updateAggregationTasks()
+	go db.updateSynthesizedMetricTask()
 }
 
 // Close implements Close method of DB interface.
@@ -386,19 +387,19 @@ func (db *InfluxDB) queryRaw(metric conf.MetricConfig, j *job.JobMetadata, node 
 // given parameters.
 func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
 
-	measurement := metric.Measurement
-	var simpleQuery string
+	// measurement := metric.Measurement
+	// var simpleQuery string
 
 	// In the case of gpfs_iops and gpfs_metaops measurements special queries are used.
-	if measurement == "gpfs_iops" {
-		simpleQuery = IOpsSimpleMeasurementQuery
-	} else if measurement == "gpfs_metaops" {
-		simpleQuery = MetaOpsSimpleMeasurementQuery
-	} else {
-		simpleQuery = SimpleMeasurementQuery
-	}
+	// if measurement == "gpfs_iops" {
+	// simpleQuery = IOpsSimpleMeasurementQuery
+	// } else if measurement == "gpfs_metaops" {
+	// simpleQuery = MetaOpsSimpleMeasurementQuery
+	// } else {
+	// simpleQuery = SimpleMeasurementQuery
+	//}
 
-	query := fmt.Sprintf(simpleQuery,
+	query := fmt.Sprintf(SimpleMeasurementQuery,
 		db.bucket, j.StartTime, j.StopTime, metric.Measurement,
 		metric.Type, nodes, sampleInterval, metric.FilterFunc,
 		metric.PostQueryOp, sampleInterval)
@@ -413,19 +414,18 @@ func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, j *job.JobM
 // with table annotations according to dialect.
 func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result string, err error) {
 
-	measurement := metric.Measurement
-
-	var simpleRawQuery string
+	// measurement := metric.Measurement
+	// var simpleRawQuery string
 	// In the case of gpfs_iops and gpfs_metaops measurements special queries are used.
-	if measurement == "gpfs_iops" {
-		simpleRawQuery = IOpsSimpleMeasurementQuery
-	} else if measurement == "gpfs_metaops" {
-		simpleRawQuery = MetaOpsSimpleMeasurementQuery
-	} else {
-		simpleRawQuery = SimpleMeasurementQuery
-	}
+	// if measurement == "gpfs_iops" {
+	// 	simpleRawQuery = IOpsSimpleMeasurementQuery
+	// } else if measurement == "gpfs_metaops" {
+	// 	simpleRawQuery = MetaOpsSimpleMeasurementQuery
+	// } else {
+	// 	simpleRawQuery = SimpleMeasurementQuery
+	// }
 
-	query := fmt.Sprintf(simpleRawQuery,
+	query := fmt.Sprintf(SimpleMeasurementQuery,
 		db.bucket, j.StartTime, j.StopTime, metric.Measurement,
 		metric.Type, nodes, sampleInterval, metric.FilterFunc,
 		metric.PostQueryOp, sampleInterval)
@@ -473,18 +473,17 @@ func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (
 // over the metric type is performed.
 func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, j *job.JobMetadata, nodes string, aggFn string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
 	measurement := metric.Measurement + "_" + aggFn
-
-	var aggregatedQuery string
+	// var aggregatedQuery string
 	// In the case of gpfs_iops and gpfs_metaops measurements special queries are used.
-	if measurement == "gpfs_iops" {
-		aggregatedQuery = IOpsAggregatedMeasurementQuery
-	} else if measurement == "gpfs_metaops" {
-		aggregatedQuery = MetaOpsAggregatedMeasurementQuery
-	} else {
-		aggregatedQuery = AggregateMeasurementQuery
-	}
+	// if measurement == "gpfs_iops" {
+	// 	aggregatedQuery = IOpsAggregatedMeasurementQuery
+	// } else if measurement == "gpfs_metaops" {
+	// 	aggregatedQuery = MetaOpsAggregatedMeasurementQuery
+	// } else {
+	// 	aggregatedQuery = AggregateMeasurementQuery
+	// }
 
-	query := fmt.Sprintf(aggregatedQuery,
+	query := fmt.Sprintf(AggregateMeasurementQuery,
 		db.bucket, j.StartTime, j.StopTime, measurement,
 		nodes, sampleInterval, metric.FilterFunc, metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.Query(context.Background(), query)
@@ -497,19 +496,19 @@ func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, j *job.J
 // queryAggregateMeasurementRaw is similar to querySimpleMeasurementRaw except that here an aggregation
 // over the metric type is performed.
 func (db *InfluxDB) queryAggregateMeasurementRaw(metric conf.MetricConfig, j *job.JobMetadata, nodes string, aggFn string, sampleInterval time.Duration) (result string, err error) {
+
 	measurement := metric.Measurement + "_" + aggFn
-
-	var aggregatedRawQuery string
+	// var aggregatedRawQuery string
 	// In the case of gpfs_iops and gpfs_metaops measurements special queries are used.
-	if measurement == "gpfs_iops" {
-		aggregatedRawQuery = IOpsAggregatedMeasurementQuery
-	} else if measurement == "gpfs_metaops" {
-		aggregatedRawQuery = MetaOpsAggregatedMeasurementQuery
-	} else {
-		aggregatedRawQuery = AggregateMeasurementQuery
-	}
+	// if measurement == "gpfs_iops" {
+	// 	aggregatedRawQuery = IOpsAggregatedMeasurementQuery
+	// } else if measurement == "gpfs_metaops" {
+	// 	aggregatedRawQuery = MetaOpsAggregatedMeasurementQuery
+	// } else {
+	// 	aggregatedRawQuery = AggregateMeasurementQuery
+	// }
 
-	query := fmt.Sprintf(aggregatedRawQuery,
+	query := fmt.Sprintf(AggregateMeasurementQuery,
 		db.bucket, j.StartTime, j.StopTime, measurement,
 		nodes, sampleInterval, metric.FilterFunc, metric.PostQueryOp, sampleInterval)
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
@@ -539,18 +538,18 @@ func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, j *job.Jo
 
 	tempKeyAggregation := "[" + strings.Join(tempKeys[0:len(quantiles)], ",") + "]"
 
-	var quantileQuery string
+	// var quantileQuery string
 
 	// In the case of gpfs_iops and gpfs_metaops measurements special queries are used.
-	if measurement == "gpfs_iops" {
-		quantileQuery = IOpsQQuantileMeasurementQuery
-	} else if measurement == "gpfs_metaops" {
-		quantileQuery = MetaOpsQuantileMeasurementQuery
-	} else {
-		quantileQuery = QuantileMeasurementQuery
-	}
+	// if measurement == "gpfs_iops" {
+	// 	quantileQuery = IOpsQQuantileMeasurementQuery
+	// } else if measurement == "gpfs_metaops" {
+	// 	quantileQuery = MetaOpsQuantileMeasurementQuery
+	// } else {
+	// 	quantileQuery = QuantileMeasurementQuery
+	// }
 
-	query := fmt.Sprintf(quantileQuery,
+	query := fmt.Sprintf(QuantileMeasurementQuery,
 		db.bucket, j.StartTime, j.StopTime, measurement,
 		j.NodeList, sampleInterval, filterFunc, metric.PostQueryOp,
 		sampleInterval, quantileSubQuery, tempKeyAggregation)
@@ -638,7 +637,10 @@ func (db *InfluxDB) createTask(taskName string, taskStr string, orgId string) (t
 	return
 }
 
-// createAggregationTasks calls the function createTasks where the query is built on top
+// createAggregationTask prepares the query for the createTask method, this query
+// is used to build aggregated metrics where the aggregation is done based on the aggFn function.
+//
+// createAggregationTasks calls the function createTask where the query is built on top
 // of the metric, aggFn and orgID arguments.
 func (db *InfluxDB) createAggregationTask(metric conf.MetricConfig, aggFn string, orgId string) (task *domain.Task, err error) {
 	measurement := metric.Measurement + "_" + aggFn
@@ -651,6 +653,23 @@ func (db *InfluxDB) createAggregationTask(metric conf.MetricConfig, aggFn string
 		db.bucket, metric.Measurement, metric.Type, metric.FilterFunc,
 		metric.PostQueryOp, sampleInterval, aggFn,
 		measurement, measurement, db.bucket, db.org)
+	return db.createTask(taskName, query, orgId)
+}
+
+// createSynthesizedMetricTask calls the function createTask
+func (db *InfluxDB) createSynthesizedMetricTask(metric conf.MetricConfig, subMeasurements, orgId string) (task *domain.Task, err error) {
+	taskName := strings.Join([]string{db.bucket, metric.Measurement, subMeasurements}, "_")
+	subMeasurementsRegex := strings.Join(metric.SubMeasurements, "|")
+	quotedSubMeasurements := strings.Join(utils.SliceMap(utils.ApplyQuotes, metric.SubMeasurements), ", ")
+	addedSubMeasurements := strings.Join(
+		utils.SliceMap(func(s string) string {
+			return fmt.Sprintf(`r["%v"]`, s)
+		}, metric.SubMeasurements), " + ")
+
+	query := fmt.Sprintf(SynthesizedMetricsCreationQuery,
+		db.bucket, subMeasurementsRegex, metric.Type, metric.FilterFunc,
+		metric.PostQueryOp, addedSubMeasurements, quotedSubMeasurements,
+		metric.Measurement, db.bucket, db.org)
 	return db.createTask(taskName, query, orgId)
 }
 
@@ -698,6 +717,56 @@ func (db *InfluxDB) updateAggregationTasks() (err error) {
 		}(metric.First, metric.Second)
 	}
 	return
+}
+
+// updateSynthesizedMetricTask adds aggregated metrics that are computed from other measurements(metrics),
+// these measurements can be found in the metric configuration.
+func (db *InfluxDB) updateSynthesizedMetricTask() (err error) {
+	tasks, err := db.tasksAPI.FindTasks(context.Background(), nil)
+	if err != nil {
+		logging.Error("db: addAggregatedMetrics(): Could not get tasks from influxdb: ")
+		return
+	}
+
+	missingMetricTasks := make([]utils.Tuple[conf.MetricConfig, string], 0)
+	for _, metric := range db.metrics {
+		// Check if the metric is a synthesized metric.
+		if len(metric.SubMeasurements) != 0 {
+
+			joinedSubMeasurements := strings.Join(metric.SubMeasurements, "_")
+			name := strings.Join([]string{db.bucket, metric.Measurement, joinedSubMeasurements}, "_")
+			found := false
+			for _, task := range tasks {
+				if task.Name == name {
+					db.tasks = append(db.tasks, task)
+					found = true
+					break
+				}
+			}
+			if !found {
+				missingMetricTasks =
+					append(missingMetricTasks,
+						utils.Tuple[conf.MetricConfig, string]{
+							First:  metric,
+							Second: joinedSubMeasurements,
+						})
+			}
+
+		}
+	}
+	org, err := db.organizationsAPI.FindOrganizationByName(context.Background(), db.org)
+	if err != nil {
+		logging.Error("db: addAggregatedMetrics(): Could not get orgId from influxdb: ", err)
+		return
+	}
+	for _, metric := range missingMetricTasks {
+		go func(metric conf.MetricConfig, subMeasurements string) {
+			_, err = db.createSynthesizedMetricTask(metric, subMeasurements, *org.Id)
+		}(metric.First, metric.Second)
+
+	}
+	return
+
 }
 
 // getPartition returns a partition configuration for job j.

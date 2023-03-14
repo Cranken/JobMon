@@ -32,9 +32,10 @@ import { Field, FieldHookConfig, Form, Formik, useField } from "formik";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Configuration } from "../../types/config";
 import { AggFn, MetricConfig } from "../../types/job";
-import { NumberField, TextField } from "./FormComponents";
+import { NumberField, TextField, validateNotEmpty } from "./FormComponents";
 import { CheckCircleIcon, AddIcon, CheckIcon, DeleteIcon } from "@chakra-ui/icons";
 import { on } from "events";
+import { join } from "path";
 
 
 interface IMetricsViewProps {
@@ -173,6 +174,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
                                       MaxPerNode: 0, MaxPerType: 0,
                                       PThreadAggFn: "",
                                       FilterFunc: "", PostQueryOp: "",
+                                      SubMeasurements: ","
                                     }}
                                     setMetricConfig={(m: MetricConfig, del=false) => {
                                       const curConfig = {...lConfig};
@@ -323,6 +325,8 @@ const MetricForm = ({ isNewMetric, metricConfig, setMetricConfig, ...categories}
         {TextField("Separation Key", "SeparationKey", errors.SeparationKey, true, undefined, TOOLTIP_SEPARATION_KEY)}
         {TextField("Filter Function", "FilterFunc", "", false, undefined, TOOLTIP_FILTER_FUNC)}
         {TextField("Post Query Operation", "PostQueryOp", "", false, undefined, TOOLTIP_POST_QUERY_OP)}
+        {/* {TextField("SubMeasurements", "SubMeas", "", false, undefined, TOOLTIP_SUB_MEASUREMENTS)} */}
+        {/* {StringFromStringList("SubMeasurements", "SubMeas", values.SubMeasurements, TOOLTIP_SUB_MEASUREMENTS)} */}
         <Flex mt={3} justify="space-between" gap={2}>
         {
           // Show the Reset and Submit buttons only if a metric configuration is being inserted.
@@ -430,7 +434,9 @@ const TOOLTIP_MAX_PER_TYPE = "Maximum value a unit as specified in the above \"T
 const TOOLTIP_SEPARATION_KEY = "Separation key used to differentiate between nodes in the InfluxDB query.";
 const TOOLTIP_FILTER_FUNC = "Optional filter function used in InfluxDB queries. Must be a valid Flux query.";
 const TOOLTIP_POST_QUERY_OP = "Optional post query function used in InfluxDB queries. Must be a valid Flux query.";
-
+const TOOLTIP_SUB_MEASUREMENTS = "If the metric is a synthesized metric, a sum of two or more metrics. Then these metrics \
+                                  should be entered as comma separated string.";
+                      
 const AggFnSelection = (displayName: string, name: string, availableAggFns: string[]) => {
   if ((availableAggFns?.length ?? 0) === 0) {
     return null;
@@ -469,6 +475,26 @@ const AvailableAggFns = (displayName: string) => {
   );
 };
 
+// const StringFromStringList = <T,>(displayName: string, key: keyof T, stringList: string[], validate = true, tooltip?: string) => {
+  
+//   const validationFunc = (s: string) => {
+//     const subMeasurements = s.split(',');
+//     const validCondition = subMeasurements.length != 0 || s === "";
+//     return validCondition
+//   }  
+//   let joinedString = stringList.join(',')
+//   return (
+//     <>
+//       <FormLabel pt={1}>{displayName}</FormLabel>
+//       <Tooltip label={tooltip}>
+//         <Box>
+//           <Field name={key} placeholder={displayName} value={joinedString} as={Input} validate={validate ? (validationFunc ?? validateNotEmpty) : undefined}/>
+//         </Box>
+//       </Tooltip>
+//     </>
+//   )
+// }
+
 const CategorySelect = ({ availableCategories, addCategory, currentCategory, ...props }: FieldHookConfig<string[]> & ICategoryPanelProps) => {
   const [field, , helpers] = useField(props);
   return (
@@ -486,3 +512,5 @@ const CategorySelect = ({ availableCategories, addCategory, currentCategory, ...
     </>
   );
 };
+
+

@@ -2,12 +2,12 @@
  * PrefixType represents a list of possible prefixes that can be used for different metric units.
  * Metric - it will use the usual data unit prefixes like B, KB, MB, GB etc.
  * Exponential - it will use the 'e' notation prefix for showing large numbers.
- * OPS - it will use K as a prefix for values greater than 10^3 otherwise it will show the actual value.
+ * Normalized - it will use K as a prefix for values greater than 10^3 otherwise it will show the actual value.
  */
 enum PrefixType {
   None,
   Metric,
-  OPS,
+  Normalized,
   Exponential,
 }
 
@@ -60,15 +60,15 @@ const Units: UnitsType = {
   },
   Watts: {
     DisplayFormat: "W",
-    Prefix: PrefixType.Metric,
+    Prefix: PrefixType.Normalized,
   },
   IOps: {
     DisplayFormat: "IOps",
-    Prefix: PrefixType.OPS
+    Prefix: PrefixType.Normalized
   },
   MetaOPS: {
     DisplayFormat: "MetaOps",
-    Prefix: PrefixType.OPS
+    Prefix: PrefixType.Normalized
   },
   None: {
     DisplayFormat: "",
@@ -186,9 +186,11 @@ export class Unit {
       case PrefixType.Exponential:
         return `${this.type.DisplayFormat}`;
       
-      case PrefixType.OPS:
-        // In the case of IOPS the prefix is always K.
-        return `${Prefixes["kilo"].Short}`
+      case PrefixType.Normalized:
+        // In the case of IOPS and W the prefix is always K.
+        // However, in the case of Wats the unit also appears.
+        let displayFormat = (this.type.DisplayFormat === "W") ? "W" : "";
+        return `${Prefixes["kilo"].Short}${displayFormat}`
       default:
         let best = prefix ? prefix : this.bestPrefix();
         if (best) {
@@ -208,7 +210,7 @@ export class Unit {
     switch (this.type.Prefix) {
       case PrefixType.Exponential:
         return this.value.toExponential(2);
-      case PrefixType.OPS:
+      case PrefixType.Normalized:
         // All IOPS units are normalized by default to the 'kilo' prefix.
         const prefix = Prefixes["kilo"];
         const exp = Math.pow(prefix.Base, prefix.Exp);

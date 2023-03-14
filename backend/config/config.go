@@ -92,6 +92,8 @@ type MetricConfig struct {
 	MaxPerType int `json:"MaxPerType"`
 	// Which aggregation function to use when aggregating pthreads and their corresponding hyperthread
 	PThreadAggFn string `json:"PThreadAggFn"`
+	//A list of measurements from which the actual measurement is computed.
+	SubMeasurements []string `json:"SubMeasurements"`
 }
 
 // A BasePartitionConfig represents a partition configuration
@@ -252,6 +254,8 @@ func (c *Configuration) Init() {
 			}
 		}
 	}
+
+	//TODO: Write a check for the SubMeasurements, one needs to check if the subMeasurements belong to the list of measurements.
 
 	// Sort metrics by DisplayName
 	sort.SliceStable(
