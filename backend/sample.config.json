@@ -1,9 +1,9 @@
 {
     "DBHost": "<influxdb_host>:<influxdb_port>",
-    "DBToken": "<influxdb_auth_token>",
+    "DBToken": "<influxdb_auth_token (access token to bucket myBucket>",
     "DBOrg": "myOrg",
     "DBBucket": "myBucket",
-    "JWTSecret": "<jwt_secret>",
+    "JWTSecret": "<jwt_secret (secret to use when generating java web tokens)>",
     "FrontendURL": "http://<frontend_url>:<frontend_port>",
     "JobStore": {
         "Type": "postgres",
