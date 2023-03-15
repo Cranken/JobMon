@@ -196,7 +196,8 @@ export class Unit {
         let displayFormat = (this.type.DisplayFormat === "W") ? "W" : "";
         return `${Prefixes["kilo"].Short}${displayFormat}`
       default:
-        let best = prefix ? prefix : this.bestPrefix();
+        let best = this.bestPrefix();
+        best = (typeof prefix !== 'undefined') ? prefix : best;
         if (best) {
           const prefix = Prefixes[best];
           return `${prefix.Short}${this.type.DisplayFormat}`;
@@ -216,12 +217,13 @@ export class Unit {
         return this.value.toExponential(2);
       case PrefixType.Normalized:
         // All IOPS units are normalized by default to the 'kilo' prefix.
-        const prefix = Prefixes["kilo"];
-        const exp = Math.pow(prefix.Base, prefix.Exp);
+        const defaultPrefix = Prefixes["kilo"];
+        const exp = Math.pow(defaultPrefix.Base, defaultPrefix.Exp);
         const value = this.value / exp;
         return `${value.toFixed(2)}`;
       default:
-        let best = prefix ? prefix : this.bestPrefix();
+        let best = this.bestPrefix();
+        best = (typeof prefix !== 'undefined') ? prefix : best;
         if (best) {
           const prefix = Prefixes[best];
           const exp = Math.pow(prefix.Base, prefix.Exp);

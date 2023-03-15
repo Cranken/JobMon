@@ -8,7 +8,6 @@ import {
   Button,
   ButtonGroup,
   Flex,
-  FormControl,
   FormLabel,
   HStack,
   Input,
@@ -29,14 +28,11 @@ import {
 } from "@chakra-ui/react";
 import { CreatableSelect } from "chakra-react-select";
 import { Field, FieldHookConfig, Form, Formik, useField } from "formik";
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useState} from "react";
 import { Configuration } from "../../types/config";
 import { AggFn, MetricConfig } from "../../types/job";
-import { NumberField, TextField, validateNotEmpty } from "./FormComponents";
+import { NumberField, TextField} from "./FormComponents";
 import { CheckCircleIcon, AddIcon, CheckIcon, DeleteIcon } from "@chakra-ui/icons";
-import { on } from "events";
-import { join } from "path";
-
 
 interface IMetricsViewProps {
   config: Configuration;
@@ -49,6 +45,21 @@ interface ICategoryPanelProps {
   addCategory: (c: string) => void;
   removeCategoryFromMetric: (m: MetricConfig, c: string) => void;
   currentCategory: string
+}
+
+interface INewCategoryInputProps {
+  onClose: () => void
+  addCategory: (c: string) => void
+}
+
+/**
+ * IMetricsFormProps is an interface that describes the props that are passed as arguments 
+ * to the MetricFrom component.   
+*/
+interface IMetricsFormProps {
+  isNewMetric: boolean, 
+  metricConfig: MetricConfig;
+  setMetricConfig: (mC: MetricConfig, del?: boolean) => void;
 }
 
 /**
@@ -64,9 +75,6 @@ interface ICategoryPanelProps {
 const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
   // State for storing the local configuration.
   const [lConfig, setLConfig] = useState(config);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  
-  const newCategory = useRef();
 
   const addCategory = (c: string) => {
     const curConfig = {...lConfig};
@@ -129,7 +137,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
                             key={m.GUID+1}
                             isNewMetric = {false}
                             metricConfig={m}
-                            setMetricConfig={(m: MetricConfig, del = false) => {
+                            setMetricConfig={(m: MetricConfig, del=false) => {
                               const curConfig = {...lConfig};
                               if (del) {
                                 curConfig.Metrics = curConfig.Metrics.filter((_, ind) => ind != i);
@@ -142,7 +150,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
                             availableCategories={lConfig.MetricCategories}
                             addCategory={addCategory}
                             removeCategoryFromMetric={removeCategoryFromMetric}
-                            currrentCategory={category}
+                            currentCategory={category}
                           />
                           
                         </AccordionPanel>
@@ -166,17 +174,23 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
                                 <MetricForm
                                     isNewMetric={true}
                                     metricConfig = {{
-                                      Type: "node", Categories: [category],
+                                      GUID: "",
+                                      Type: "node", 
+                                      Categories: [category],
                                       Measurement: "",
-                                      AggFn: AggFn.Mean, SampleInterval: "",
-                                      Unit: "", DisplayName: "New Metric",
+                                      AggFn: AggFn.Mean, 
+                                      AvailableAggFns: [],
+                                      SampleInterval: "",
+                                      Unit: "", 
+                                      DisplayName: "New Metric",
                                       SeparationKey: "hostname",
-                                      MaxPerNode: 0, MaxPerType: 0,
-                                      PThreadAggFn: "",
-                                      FilterFunc: "", PostQueryOp: "",
-                                      SubMeasurements: ","
+                                      MaxPerNode: 0, 
+                                      MaxPerType: 0,
+                                      PThreadAggFn: AggFn.Mean,
+                                      FilterFunc: "", 
+                                      PostQueryOp: "",
                                     }}
-                                    setMetricConfig={(m: MetricConfig, del=false) => {
+                                    setMetricConfig={(m: MetricConfig, del = false) => {
                                       const curConfig = {...lConfig};
                                       curConfig.Metrics.push(m);
                                       setLConfig(curConfig);
@@ -251,7 +265,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
               </>)}
           </Popover>
           </Flex>
-          <Tooltip label={`Save the current configuration`}>
+          <Tooltip label={"Save the current configuration"}>
             <Button colorScheme='green' onClick={() => {
                 toast({
                   description: "Remember to assign newly created metrics to partitions.",
@@ -270,15 +284,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
 
 export default MetricsView;
 
-/**
- * IMetricsFormProps is an interface that describes the props that are passed as arguments 
- * to the MetricFrom component.   
-*/
-interface IMetricsFormProps {
-  isNewMetric: boolean, 
-  metricConfig: MetricConfig;
-  setMetricConfig: (mC: MetricConfig, del?: boolean) => void;
-}
+
 
 /**
  * MetricForm is a React component that contains the logic of a metric form, this component is used
@@ -358,10 +364,10 @@ const MetricForm = ({ isNewMetric, metricConfig, setMetricConfig, ...categories}
                 <ButtonGroup size='sm'>
                   <Button variant='outline' onClick={onClose}>Cancel</Button>
                   <Button colorScheme='red' onClick={() => {
-                    let curMetricConfig = metricConfig;
+                    const curMetricConfig = metricConfig;
                     // If the metric belongs to a single category it will be removed from the metric configuration.
                     if (curMetricConfig.Categories.includes(currentCategory) && curMetricConfig.Categories.length === 1){
-                      setMetricConfig(metricConfig, del=true);
+                      setMetricConfig(metricConfig, true);
                     } else {
                       // Delete a metric by removing the current category, this way the metric will not be deleted
                       // completely but it will be just removed from the current category.
@@ -389,8 +395,11 @@ const MetricForm = ({ isNewMetric, metricConfig, setMetricConfig, ...categories}
  * @param addCategory - prop passed from the parent component for inserting a new category.
  * @returns an input component used for inserting a new category.
  */
-const NewCategoryInput = ({ onClose, addCategory } ) => {
-  const [name, setName] = useState('New category');
+
+
+
+const NewCategoryInput = ({ onClose, addCategory }: INewCategoryInputProps ) => {
+  const [name, setName] = useState("New category");
   return (
     <>
     <Text>Name:</Text>
@@ -403,7 +412,7 @@ const NewCategoryInput = ({ onClose, addCategory } ) => {
       }}
       // Submit the input if Enter key was pressed.
       onKeyDown={(e) => {
-        if (e.key === 'Enter') {
+        if (e.key === "Enter") {
           addCategory(name);
           onClose()
         }
@@ -434,8 +443,8 @@ const TOOLTIP_MAX_PER_TYPE = "Maximum value a unit as specified in the above \"T
 const TOOLTIP_SEPARATION_KEY = "Separation key used to differentiate between nodes in the InfluxDB query.";
 const TOOLTIP_FILTER_FUNC = "Optional filter function used in InfluxDB queries. Must be a valid Flux query.";
 const TOOLTIP_POST_QUERY_OP = "Optional post query function used in InfluxDB queries. Must be a valid Flux query.";
-const TOOLTIP_SUB_MEASUREMENTS = "If the metric is a synthesized metric, a sum of two or more metrics. Then these metrics \
-                                  should be entered as comma separated string.";
+// const TOOLTIP_SUB_MEASUREMENTS = "If the metric is a synthesized metric, a sum of two or more metrics. Then these metrics \
+//                                   should be entered as comma separated string.";
                       
 const AggFnSelection = (displayName: string, name: string, availableAggFns: string[]) => {
   if ((availableAggFns?.length ?? 0) === 0) {
@@ -495,7 +504,7 @@ const AvailableAggFns = (displayName: string) => {
 //   )
 // }
 
-const CategorySelect = ({ availableCategories, addCategory, currentCategory, ...props }: FieldHookConfig<string[]> & ICategoryPanelProps) => {
+const CategorySelect = ({ availableCategories, addCategory, ...props }: FieldHookConfig<string[]> & ICategoryPanelProps) => {
   const [field, , helpers] = useField(props);
   return (
     <>

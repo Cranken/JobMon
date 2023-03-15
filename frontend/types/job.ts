@@ -83,7 +83,6 @@ export interface MetricConfig {
   PThreadAggFn: AggFn;
   FilterFunc: string;
   PostQueryOp: string;
-  SubMeasurements: string[];
 }
 
 /**
