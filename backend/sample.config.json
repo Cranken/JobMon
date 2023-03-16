@@ -1,13 +1,13 @@
 {
-    "DBHost": "<influxdb_host>:<influxdb_port>",
+    "DBHost": "http://jobmon_influxdb:8086",
     "DBToken": "<influxdb_auth_token (access token to bucket myBucket>",
     "DBOrg": "myOrg",
     "DBBucket": "myBucket",
     "JWTSecret": "<jwt_secret (secret to use when generating java web tokens)>",
-    "FrontendURL": "http://<frontend_url>:<frontend_port>",
+    "FrontendURL": "https://<frontend_url>",
     "JobStore": {
         "Type": "postgres",
-        "PSQLHost": "<psql_host>:<psql_port>",
+        "PSQLHost": "jobmon_postgres:5432",
         "PSQLUsername": "postgres",
         "PSQLPassword": "<psql_password>",
         "PSQLDB": "jobmon"

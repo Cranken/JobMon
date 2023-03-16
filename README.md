@@ -83,26 +83,6 @@ You can access the containers with the `docker` command.
       influx auth list
   ```
 
-* Create authentication token for the collector
-
-  ```bash
-  sudo docker exec jobmon_influxdb \
-      influx bucket list --org myOrg --name myBucket
-
-  # -> Set bucket IDs
-  BUCKET_ID="..."
-
-  sudo docker exec jobmon_influxdb \
-      influx auth create --description collector --write-bucket ${BUCKET_ID} 
-  ```
-
-* Create authentication token for the backend
-
-  ```bash
-  sudo docker exec jobmon_influxdb \
-      influx auth create --description jobmon_backend --org myOrg --all-access
-  ```
-
 * Query the InfluxDB
 
   ```bash
