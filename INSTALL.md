@@ -1,5 +1,13 @@
 # Installation
 
+The Jobmon software stack consists of several services, all managed by docker. Environment variables used by these services are stored in the `.env` file. To see the full Docker configuration, with variables resolved, the following command can be used:
+
+```bash
+docker compose convert
+```
+
+In the following sections we describe for each service how to configure and start it.
+
 ## InfluxDB
 
 * Configure InfluxDB variables in the Docker environment file `.env`:
@@ -212,4 +220,3 @@
     }
   }
   ```
-
