@@ -137,7 +137,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
                             key={m.GUID+1}
                             isNewMetric = {false}
                             metricConfig={m}
-                            setMetricConfig={(m: MetricConfig, del=false) => {
+                            setMetricConfig={(m: MetricConfig, del?: boolean) => {
                               const curConfig = {...lConfig};
                               if (del) {
                                 curConfig.Metrics = curConfig.Metrics.filter((_, ind) => ind != i);
@@ -190,7 +190,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
                                       FilterFunc: "", 
                                       PostQueryOp: "",
                                     }}
-                                    setMetricConfig={(m: MetricConfig, del = false) => {
+                                    setMetricConfig={(m: MetricConfig) => {
                                       const curConfig = {...lConfig};
                                       curConfig.Metrics.push(m);
                                       setLConfig(curConfig);
