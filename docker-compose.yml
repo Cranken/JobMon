@@ -42,8 +42,10 @@ services:
         source: ./backend/config.json
         target: /app/config.json
     depends_on:
-      - jobmon_influxdb
-      - jobmon_postgres
+      jobmon_influxdb:
+        condition: service_healthy
+      jobmon_postgres:
+        condition: service_healthy
 
   # DockerHub Page: https://hub.docker.com/_/influxdb
   # GitHub Repository: https://github.com/influxdata/influxdata-docker/
@@ -71,6 +73,14 @@ services:
       # You can use `influxd print-config` to get a default config file for
       # /etc/influxdb2/config.yml
       - ./influxdb/config:/etc/influxdb2
+    healthcheck:
+      test: "curl --fail http://jobmon_influxdb:8086/ping"
+      # time between the health checks
+      interval: 10s
+      # time that the health check waits for a response
+      timeout: 5s
+      # number of consecutive health check failures required to declare the container status as unhealthy
+      retries: 5
 
   # DockerHub Page: https://hub.docker.com/_/postgres
   # GitHub Repository: https://github.com/docker-library/postgres
@@ -90,6 +100,15 @@ services:
       - type: bind
         source: ./postgres/data
         target: /var/lib/postgresql/data
+    healthcheck:
+      # See: https://www.postgresql.org/docs/current/app-pg-isready.html
+      test: "pg_isready --host jobmon_postgres --port=5432"
+      # time between the health checks
+      interval: 10s
+      # time that the health check waits for a response
+      timeout: 5s
+      # number of consecutive health check failures required to declare the container status as unhealthy
+      retries: 5
 
   # DockerHub Page: https://hub.docker.com/_/nginx
   # GitHub Repository: https://github.com/nginxinc/docker-nginx
@@ -126,6 +145,7 @@ services:
       - ${NGINX_HTTPS_PORT}:443
     depends_on:
       - jobmon_frontend
+      - jobmon_backend
 
 configs:
   nginxDefaultConfig:
