@@ -2,6 +2,9 @@
 # * [DockerHub Page](https://hub.docker.com/_/node)
 ARG NODE_TAG=16-alpine
 
+###
+# node.js dependencies
+###
 # Taken from https://nextjs.org/docs/deployment
 # Install dependencies only when needed
 FROM node:${NODE_TAG} AS deps
@@ -22,16 +25,25 @@ RUN \
         echo "Lockfile not found." && exit 1; \
     fi
 
-
-# Rebuild the source code only when needed
-FROM node:${NODE_TAG} AS builder
+###
+# Development environment
+###
+FROM deps AS dev_env
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+ENV NODE_ENV development
+# Disable telemetry during the build. See: https://nextjs.org/telemetry
+ENV NEXT_TELEMETRY_DISABLED 1
+# reads NEXT_PUBLIC_BACKEND_URL and NEXT_PUBLIC_BACKEND_WS from frontend/.env.development
+CMD [ "yarn", "dev" ]
 
-# Next.js collects completely anonymous telemetry data about general usage.
-# Learn more here: https://nextjs.org/telemetry
-# Uncomment the following line in case you want to disable telemetry during the build.
+###
+# Builder
+###
+FROM deps AS builder
+WORKDIR /app
+# Copy source code to the image
+COPY . .
+# Disable telemetry during the build. See: https://nextjs.org/telemetry
 ENV NEXT_TELEMETRY_DISABLED 1
 
 ARG NEXT_PUBLIC_BACKEND_URL
@@ -40,17 +52,14 @@ ENV NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
 ARG NEXT_PUBLIC_BACKEND_WS
 ENV NEXT_PUBLIC_BACKEND_WS=${NEXT_PUBLIC_BACKEND_WS}
 
-RUN yarn build
-
-# If using npm comment out above and use below instead
-# RUN npm run build
+RUN ["yarn", "build"]
 
 # Production image, copy all the files and run next
 FROM node:${NODE_TAG} AS runner
 WORKDIR /app
 
 ENV NODE_ENV production
-# Uncomment the following line in case you want to disable telemetry during runtime.
+# Disable telemetry during runtime. See: https://nextjs.org/telemetry# Uncomment the following line in case you want to disable telemetry during runtime.
 ENV NEXT_TELEMETRY_DISABLED 1
 
 RUN addgroup --system --gid 1001 nodejs
