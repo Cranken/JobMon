@@ -153,9 +153,18 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 			ok = true
 		}
 
+		/*
+		* Three checks are performed to check the users role.
+		* userRoles.Roles contains the roles stored in the Postgres database.
+		* user.Roles contains the roles send in the authorization header.
+		*
+		* Users are allowed if one of both lists contains the needed auth-level or one of both contains the role "admin"
+		 */
 		if ok &&
 			(utils.Contains(userRoles.Roles, authLevel) ||
-				utils.Contains(user.Roles, ADMIN)) {
+				utils.Contains(userRoles.Roles, ADMIN) ||
+				utils.Contains(user.Roles, ADMIN) ||
+				utils.Contains(user.Roles, authLevel)) {
 			h(w, r, ps, user)
 		} else {
 			utils.AllowCors(r, w.Header())
