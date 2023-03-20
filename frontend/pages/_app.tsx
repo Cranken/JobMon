@@ -3,7 +3,7 @@ import type {AppProps} from "next/app";
 import {Center, ChakraProvider} from "@chakra-ui/react";
 import theme from "../styles/theme";
 import Header from "../components/header/Header";
-import {useGetUser, useIsAuthenticated, UserRole} from "../utils/auth";
+import {useGetUser, useIsAllowedRole, useIsAuthenticated} from "../utils/auth";
 import {useRouter} from "next/router";
 import React, {useEffect} from "react";
 import dynamic from "next/dynamic";
@@ -26,8 +26,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   let redirectionString;
   if (isAuthenticated &&
       router.pathname !== "/role-error" &&
-      (user.Roles.indexOf(UserRole.Admin) < 0) &&
-      (user.Roles.indexOf(UserRole.User) < 0)) {
+      useIsAllowedRole(user)) {
     useEffect(() => {
       router.push("/role-error")
     });
