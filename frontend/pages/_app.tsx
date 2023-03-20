@@ -1,11 +1,11 @@
 import "../styles/globals.css";
-import type { AppProps } from "next/app";
-import { Center, ChakraProvider } from "@chakra-ui/react";
+import type {AppProps} from "next/app";
+import {Center, ChakraProvider} from "@chakra-ui/react";
 import theme from "../styles/theme";
 import Header from "../components/header/Header";
-import { useIsAuthenticated } from "../utils/auth";
-import { useRouter } from "next/router";
-import React, { useEffect } from "react";
+import {useGetUser, useIsAuthenticated, UserRole} from "../utils/auth";
+import {useRouter} from "next/router";
+import React, {useEffect} from "react";
 import dynamic from "next/dynamic";
 
 /**
@@ -22,20 +22,33 @@ import dynamic from "next/dynamic";
 function MyApp({ Component, pageProps }: AppProps) {
   const isAuthenticated = useIsAuthenticated();
   const router = useRouter();
-  useEffect(() => {
+  const user = useGetUser();
+  let redirectionString;
+  if (isAuthenticated &&
+      router.pathname !== "/role-error" &&
+      (user.Roles.indexOf(UserRole.Admin) < 0) &&
+      (user.Roles.indexOf(UserRole.User) < 0)) {
+    useEffect(() => {
+      router.push("/role-error")
+    });
+    redirectionString = "Checking user-roles";
+  }
+  else {
+    useEffect(() => {
+      if (!isAuthenticated && router.pathname !== "/login") {
+        router.push("/login");
+      }
+      if (isAuthenticated && router.pathname === "/login") {
+        router.push("/jobs");
+      }
+    });
+
     if (!isAuthenticated && router.pathname !== "/login") {
-      router.push("/login");
+      redirectionString = "Redirecting to login...";
     }
     if (isAuthenticated && router.pathname === "/login") {
-      router.push("/jobs");
+      redirectionString = "Redirecting to jobs...";
     }
-  });
-  let redirectionString;
-  if (!isAuthenticated && router.pathname !== "/login") {
-    redirectionString = "Redirecting to login...";
-  }
-  if (isAuthenticated && router.pathname === "/login") {
-    redirectionString = "Redirecting to jobs...";
   }
 
   const content = redirectionString ? (
