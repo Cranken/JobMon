@@ -154,7 +154,6 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 		}
 
 		/*
-		* Three checks are performed to check the users role.
 		* userRoles.Roles contains the roles stored in the Postgres database.
 		* user.Roles contains the roles send in the authorization header.
 		*
