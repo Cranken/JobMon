@@ -4,10 +4,12 @@
 # * [GitHub Repository](https://github.com/docker-library/golang/)
 # * [Release History](https://go.dev/doc/devel/release)
 ###
-ARG DEBIAN_RELEASE=bullseye \
-    GOLANG_RELEASE=1.20
+ARG GOLANG_RELEASE=1.20 \
+    DEBIAN_RELEASE=bullseye \
+    GOLANG_TAG=${GOLANG_RELEASE}-${DEBIAN_RELEASE} \
+    DEBIAN_TAG=${DEBIAN_RELEASE}
 
-FROM golang:${GOLANG_RELEASE}-${DEBIAN_RELEASE} AS builder
+FROM golang:${GOLANG_TAG} AS builder
 
 WORKDIR /app
 
@@ -39,7 +41,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # * [GitHub Repository](https://github.com/docker-library/docs/tree/master/debian)
 # * [Debian Releases](https://wiki.debian.org/DebianReleases)
 ###
-FROM debian:${DEBIAN_RELEASE} AS runner
+FROM debian:${DEBIAN_TAG} AS runner
 
 WORKDIR /app
 
