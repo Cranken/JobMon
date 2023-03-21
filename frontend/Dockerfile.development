@@ -1,0 +1,17 @@
+# Node.js Docker Image
+# * [DockerHub Page](https://hub.docker.com/_/node)
+ARG NODE_TAG=16-alpine
+
+# Taken from https://nextjs.org/docs/deployment
+# Install dependencies only when needed
+FROM node:${NODE_TAG} AS deps
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+ENV NODE_ENV development
+# Disable telemetry during the build. See: https://nextjs.org/telemetry
+ENV NEXT_TELEMETRY_DISABLED 1
+
+# reads NEXT_PUBLIC_BACKEND_URL and NEXT_PUBLIC_BACKEND_WS from frontend/.env.development
+CMD [ "sh", "-c", "yarn --frozen-lockfile && exec yarn dev" ]

@@ -2,9 +2,6 @@
 # * [DockerHub Page](https://hub.docker.com/_/node)
 ARG NODE_TAG=16-alpine
 
-###
-# node.js dependencies
-###
 # Taken from https://nextjs.org/docs/deployment
 # Install dependencies only when needed
 FROM node:${NODE_TAG} AS deps
@@ -25,22 +22,11 @@ RUN \
         echo "Lockfile not found." && exit 1; \
     fi
 
-###
-# Development environment
-###
-FROM deps AS dev_env
-WORKDIR /app
-ENV NODE_ENV development
-# Disable telemetry during the build. See: https://nextjs.org/telemetry
-ENV NEXT_TELEMETRY_DISABLED 1
-# reads NEXT_PUBLIC_BACKEND_URL and NEXT_PUBLIC_BACKEND_WS from frontend/.env.development
-CMD [ "yarn", "dev" ]
 
-###
-# Builder
-###
-FROM deps AS builder
+# Rebuild the source code only when needed
+FROM node:${NODE_TAG} AS builder
 WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 # Copy source code to the image
 COPY . .
 # Disable telemetry during the build. See: https://nextjs.org/telemetry
