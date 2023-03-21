@@ -27,7 +27,6 @@ services:
       timeout: 5s
       # number of consecutive health check failures required to declare the container status as unhealthy
       retries: 5
-
     depends_on:
       - jobmon_backend
 
@@ -154,8 +153,10 @@ services:
       - ${NGINX_HTTP_PORT}:80
       - ${NGINX_HTTPS_PORT}:443
     depends_on:
-      - jobmon_frontend
-      - jobmon_backend
+      jobmon_frontend:
+        condition: service_healthy
+      jobmon_backend:
+        condition: service_started
 
 configs:
   nginxDefaultConfig:

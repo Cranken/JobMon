@@ -102,8 +102,10 @@ services:
       - ${NGINX_HTTP_PORT}:80
       - ${NGINX_HTTPS_PORT}:443
     depends_on:
-      - jobmon_frontend
-      - jobmon_backend
+      jobmon_frontend:
+        condition: service_healthy
+      jobmon_backend:
+        condition: service_started
 
 volumes:
   jobmon_backend_cache_go_build:
