@@ -30,7 +30,6 @@ services:
     depends_on:
       - jobmon_backend
 
-  # See: ./backend/Dockerfile
   jobmon_backend:
     restart: always
     build:
@@ -101,7 +100,6 @@ volumes:
   jobmon_backend_cache_go_build:
   jobmon_backend_cache_go_packages:
   jobmon_frontend_nodes_modules:
-
 
 configs:
   nginxDefaultConfig:
