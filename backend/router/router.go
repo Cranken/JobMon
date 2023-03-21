@@ -78,26 +78,6 @@ func (r *Router) Init(
 	router.POST("/api/admin/refresh_metadata/:id", authManager.Protected(r.RefreshMetadata, auth.ADMIN))
 	router.GET("/api/config/users/:user", authManager.Protected(r.GetUserConfig, auth.ADMIN))
 	router.PATCH("/api/config/users/:user", authManager.Protected(r.SetUserConfig, auth.ADMIN))
-	router.GlobalOPTIONS =
-		http.HandlerFunc(
-			func(w http.ResponseWriter,
-				r *http.Request) {
-				if r.Header.Get("Access-Control-Request-Method") != "" {
-					// Set Cross-Origin Resource Sharing (CORS) headers
-					header := w.Header()
-					if m := header.Get("Allow"); m != "" {
-						header.Set("Access-Control-Allow-Methods", m)
-					}
-					if o := config.FrontendURL; o != "" {
-						header.Set("Access-Control-Allow-Origin", o)
-					}
-					header.Set("Access-Control-Allow-Credentials", "true")
-					header.Set("Access-Control-Expose-Headers", "Set-Cookie")
-				}
-
-				// Adjust status code to 204
-				w.WriteHeader(http.StatusNoContent)
-			})
 
 	server := &http.Server{
 		Addr:    r.config.ListenAddress,
@@ -114,7 +94,6 @@ func (r *Router) JobStart(
 	req *http.Request,
 	params httprouter.Params,
 	_ auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 
 	// Read body
 	body, err := ioutil.ReadAll(req.Body)
@@ -153,7 +132,6 @@ func (r *Router) JobStop(
 	req *http.Request,
 	params httprouter.Params,
 	_ auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 
 	// Parse job information
 	body, err := ioutil.ReadAll(req.Body)
@@ -215,7 +193,6 @@ func (r *Router) GetJobs(
 	req *http.Request,
 	_ httprouter.Params,
 	user auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 	filter := r.parseGetJobParams(req.URL.Query())
 
 	// Check user authorization
@@ -270,7 +247,6 @@ func (r *Router) GetJob(
 	params httprouter.Params,
 	user auth.UserInfo) {
 
-	utils.AllowCors(req, w.Header())
 	start := time.Now()
 
 	node := req.URL.Query().Get("node")
@@ -358,8 +334,6 @@ func (r *Router) GetMetric(
 	req *http.Request,
 	params httprouter.Params,
 	user auth.UserInfo) {
-
-	utils.AllowCors(req, w.Header())
 
 	strId := params.ByName("id")
 	metric := req.URL.Query().Get("metric")
@@ -453,7 +427,6 @@ func (r *Router) Search(
 	params httprouter.Params,
 	user auth.UserInfo) {
 
-	utils.AllowCors(req, w.Header())
 	searchTerm := params.ByName("term")
 
 	id, err := strconv.Atoi(searchTerm)
@@ -475,7 +448,6 @@ func (r *Router) Login(
 	req *http.Request,
 	params httprouter.Params) {
 
-	utils.AllowCors(req, w.Header())
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		logging.Error("Router: Login(): Could not read http request body")
@@ -620,7 +592,6 @@ func (r *Router) Logout(
 	req *http.Request,
 	params httprouter.Params,
 	_ auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 
 	// Read body
 	body, err := ioutil.ReadAll(req.Body)
@@ -661,7 +632,6 @@ func (r *Router) GenerateAPIKey(
 	req *http.Request,
 	params httprouter.Params,
 	_ auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 	jwt, err :=
 		r.authManager.GenerateJWT(
 			auth.UserInfo{
@@ -807,7 +777,6 @@ func (r *Router) GetConfig(
 	req *http.Request,
 	params httprouter.Params,
 	user auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 
 	// Restrict available configuration parameters for now
 	conf := conf.Configuration{}
@@ -830,7 +799,6 @@ func (r *Router) UpdateConfig(
 	req *http.Request,
 	params httprouter.Params,
 	user auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		logging.Error("Router: UpdateConfig(): Could not read update config request body: ", err)
@@ -920,7 +888,6 @@ func (r *Router) RefreshMetadata(
 	req *http.Request,
 	params httprouter.Params,
 	user auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 	strId := params.ByName("id")
 
 	id, err := strconv.Atoi(strId)
@@ -967,7 +934,6 @@ func (r *Router) GetUserConfig(
 	req *http.Request,
 	params httprouter.Params,
 	_ auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 	userStr := params.ByName("user")
 	if userStr == "" {
 		logging.Error("Router: GetUserConfig(): Could not get user string from request params")
@@ -998,7 +964,6 @@ func (r *Router) SetUserConfig(
 	req *http.Request,
 	params httprouter.Params,
 	_ auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 	userStr := params.ByName("user")
 	if userStr == "" {
 		logging.Error("Router: SetUserConfig(): Could not get user string from request params")
@@ -1037,7 +1002,6 @@ func (r *Router) parseTag(
 	job job.JobMetadata,
 	tag job.JobTag,
 	ok bool) {
-	utils.AllowCors(req, w.Header())
 
 	jobStr := req.URL.Query().Get("job")
 

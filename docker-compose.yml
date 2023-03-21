@@ -1,13 +1,14 @@
 services:
 
-  # See: ./frontend/Dockerfile
   jobmon_frontend:
     restart: always
     build:
       context: ./frontend
+      dockerfile: Dockerfile
       args:
         # Image based on node:16-alpine
-        NODE_TAG: 16-alpine
+        NODE_RELEASE: "16"
+        DEBIAN_RELEASE: bullseye
         # Public URL to access the the backend from the clients webbrowser
         # e.g. https://my-monitor-db.example.org
         NEXT_PUBLIC_BACKEND_URL: ${BACKEND_URL}
@@ -18,14 +19,22 @@ services:
     environment:
       NEXT_PUBLIC_BACKEND_URL: ${BACKEND_URL}
       NEXT_PUBLIC_BACKEND_WS: ${BACKEND_WS}
+    healthcheck:
+      test: "curl --fail http://jobmon_frontend:3000"
+      # time between the health checks
+      interval: 10s
+      # time that the health check waits for a response
+      timeout: 5s
+      # number of consecutive health check failures required to declare the container status as unhealthy
+      retries: 5
     depends_on:
       - jobmon_backend
 
-  # See: ./backend/Dockerfile
   jobmon_backend:
     restart: always
     build:
       context: ./backend
+      dockerfile: Dockerfile
       args:
         # Image based on golang:1.20-bullseye
         GOLANG_RELEASE: "1.20"
@@ -144,8 +153,10 @@ services:
       - ${NGINX_HTTP_PORT}:80
       - ${NGINX_HTTPS_PORT}:443
     depends_on:
-      - jobmon_frontend
-      - jobmon_backend
+      jobmon_frontend:
+        condition: service_healthy
+      jobmon_backend:
+        condition: service_started
 
 configs:
   nginxDefaultConfig:
