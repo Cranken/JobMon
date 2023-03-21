@@ -13,5 +13,10 @@ ENV NODE_ENV development
 # Disable telemetry during the build. See: https://nextjs.org/telemetry
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# reads NEXT_PUBLIC_BACKEND_URL and NEXT_PUBLIC_BACKEND_WS from frontend/.env.development
+ARG NEXT_PUBLIC_BACKEND_URL
+ENV NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
+
+ARG NEXT_PUBLIC_BACKEND_WS
+ENV NEXT_PUBLIC_BACKEND_WS=${NEXT_PUBLIC_BACKEND_WS}
+
 CMD [ "sh", "-c", "yarn --frozen-lockfile && exec yarn dev" ]
