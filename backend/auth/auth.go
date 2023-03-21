@@ -93,7 +93,6 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 		// Check if r contains an authorization Cookie, get the full JWT token.
 		token, err := r.Cookie("Authorization")
 		if err != nil {
-			utils.AllowCors(r, w.Header())
 			http.SetCookie(
 				w,
 				&http.Cookie{
@@ -110,7 +109,6 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 		// Check if the returned token contains a Bearer schema.
 		parts := strings.Split(token.Value, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			utils.AllowCors(r, w.Header())
 			http.SetCookie(
 				w,
 				&http.Cookie{
@@ -128,7 +126,6 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 		// Get the user from the authorization header.
 		user, err := authManager.validate(parts[1])
 		if err != nil {
-			utils.AllowCors(r, w.Header())
 			http.SetCookie(
 				w,
 				&http.Cookie{
@@ -158,7 +155,6 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 				utils.Contains(user.Roles, ADMIN)) {
 			h(w, r, ps, user)
 		} else {
-			utils.AllowCors(r, w.Header())
 			http.SetCookie(
 				w,
 				&http.Cookie{

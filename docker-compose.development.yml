@@ -1,6 +1,5 @@
 services:
 
-  # See: ./frontend/Dockerfile
   jobmon_frontend:
     restart: always
     build:
