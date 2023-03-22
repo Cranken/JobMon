@@ -36,6 +36,10 @@ services:
       - type: volume
         source: jobmon_frontend_nodes_modules
         target: /app/node_modules
+      # Cache for next.js folder
+      - type: volume
+        source: jobmon_frontend_nextjs
+        target: /app/.next
     depends_on:
       - jobmon_backend
 
@@ -110,6 +114,7 @@ services:
 volumes:
   jobmon_backend_cache_go_build:
   jobmon_backend_cache_go_packages:
+  jobmon_frontend_nextjs:
   jobmon_frontend_nodes_modules:
 
 configs:

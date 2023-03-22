@@ -3,9 +3,10 @@
 function clear_dev_env() {
     sudo docker system prune --all --volumes
     sudo docker volume rm \
-        jobmon_frontend_nodes_modules \
         jobmon_backend_cache_go_build \
-        jobmon_backend_cache_go_packages
+        jobmon_backend_cache_go_packages \
+        jobmon_frontend_nextjs \
+        jobmon_frontend_nodes_modules
     echo "Docker images:"
     sudo docker images ls
     echo "Docker containers:"
