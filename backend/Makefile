@@ -1,5 +1,7 @@
 APP := docker-jobmon-backend
 
+default: build
+
 # Examine Go source code and reports suspicious constructs
 .PHONY: vet
 vet:
@@ -26,6 +28,10 @@ module_download:
 .PHONY: build
 build: module_download
 	go build -o $(APP)
+
+.PHONY: clean
+clean:
+	rm -f  $(APP)
 
 .PHONY: run
 .ONESHELL:
