@@ -10,7 +10,6 @@ import (
 	"jobmon/job"
 	"jobmon/logging"
 	cache "jobmon/lru_cache"
-	"jobmon/store"
 	jobstore "jobmon/store"
 	"jobmon/utils"
 	"net/http"
@@ -496,7 +495,7 @@ func (r *Router) LoginOAuth(
 	// Generate session ID
 	sessionID, err := r.authManager.GenerateSession()
 	if err != nil {
-		logging.Error("Could not generate session: %v", err)
+		logging.Error("Router: LoginOAuth: Could not generate session: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -524,7 +523,7 @@ func (r *Router) LoginOAuthCallback(
 	// Check if session ID and state match
 	state := req.FormValue("state")
 	if state != sessionID.Value {
-		logging.Error("OAuth returned non matching state id")
+		logging.Error("Router: LoginOAuthCallback(): OAuth returned non matching state id")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -532,7 +531,7 @@ func (r *Router) LoginOAuthCallback(
 	// Get session from auth manager
 	session, ok := r.authManager.GetSession(state)
 	if !session.IsValid || !ok {
-		logging.Error("OAuth returned invalid state id")
+		logging.Error("Router: LoginOAuthCallback(): OAuth returned invalid state id")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -540,7 +539,7 @@ func (r *Router) LoginOAuthCallback(
 	// Read OAuth code
 	code := req.FormValue("code")
 	if code == "" {
-		logging.Error("OAuth returned no code")
+		logging.Error("Router: LoginOAuthCallback(): OAuth returned no code")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -548,12 +547,12 @@ func (r *Router) LoginOAuthCallback(
 	// Exchange OAuth token
 	token, err := r.authManager.ExchangeOAuthToken(code)
 	if err != nil {
-		logging.Error("Could not exchange token: ", err)
+		logging.Error("Router: LoginOAuthCallback(): Could not exchange token: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if !token.Valid() {
-		logging.Error("Token is invalid")
+		logging.Error("Router: LoginOAuthCallback(): Token is invalid")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -579,7 +578,7 @@ func (r *Router) LoginOAuthCallback(
 	// Generate Java web token
 	err = r.authManager.AppendJWT(user, true, w)
 	if err != nil {
-		logging.Error("Could not generate JWT: ", err)
+		logging.Error("Router: LoginOAuthCallback(): Could not generate JWT: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -978,7 +977,7 @@ func (r *Router) SetUserConfig(
 	}
 
 	// Test if it is json user struct
-	user := store.UserRoles{}
+	user := jobstore.UserRoles{}
 	err = json.Unmarshal(body, &user)
 	if err != nil {
 		logging.Error("Router: SetUserConfig(): Could not unmarshal newly set user config for user ", userStr, ": ", err)
