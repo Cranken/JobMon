@@ -13,6 +13,9 @@ FROM golang:${GOLANG_TAG}
 
 WORKDIR /app
 
+# Install [The advanced Go linter](https://github.com/dominikh/go-tools)
+RUN go install honnef.co/go/tools/cmd/staticcheck@latest
+
 # Install CA certificates to verify certificate of OpenID providers
 RUN apt-get update \
     && apt-get install -y ca-certificates \

@@ -13,9 +13,13 @@ FROM golang:${GOLANG_TAG} AS builder
 
 WORKDIR /app
 
+# Install [The advanced Go linter](https://github.com/dominikh/go-tools)
+RUN go install honnef.co/go/tools/cmd/staticcheck@latest
+
 # Download required go modules
 COPY go.mod go.sum ./
-RUN go mod download && go mod verify
+RUN go mod download && \
+    go mod verify
 
 # Add source code to the image
 ADD analysis ./analysis
