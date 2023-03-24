@@ -1,3 +1,8 @@
+# Requirements to execute this CI Pipeline
+# * Register gitlab-runner with shell executor
+# * Install docker with docker compose plugin on gitlab-runner's host
+# * Grant permissions to gitlab-runner to execute docker
+
 stages:
   - build
 
