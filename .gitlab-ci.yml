@@ -1,0 +1,20 @@
+# Requirements to execute this CI Pipeline
+# * Register gitlab-runner with shell executor
+# * Install docker with docker compose plugin on gitlab-runner's host
+# * Grant permissions to gitlab-runner to execute docker
+
+stages:
+  - build
+
+before_script:
+  - docker version
+
+build-frontend:
+  stage: build
+  script:
+    - docker compose build jobmon_frontend --pull
+
+build-backend:
+  stage: build
+  script:
+    - docker compose build jobmon_backend --pull
