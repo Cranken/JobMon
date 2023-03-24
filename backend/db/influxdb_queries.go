@@ -65,6 +65,8 @@ func createSimpleMeasurementQuery(
 }
 
 // createSimpleAggMeasurementQuery creates a simple flux aggregation query
+//
+//lint:ignore U1000 Ignore unused function temporarily
 func createSimpleAggMeasurementQuery(
 	bucket string,
 	StartTime int, StopTime int,

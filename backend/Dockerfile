@@ -31,13 +31,25 @@ ADD job ./job
 ADD lru_cache ./lru_cache
 ADD logging ./logging
 ADD store ./store
+ADD test ./test
 ADD utils ./utils
 ADD router ./router
 COPY jobmon.go ./
 
+ARG DO_VET=true \
+    DO_STATICCHECK=true
+
 # Build backend
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    go build -o docker-jobmon-backend
+[ "/bin/bash", "-c", \
+"if [[ ${DO_VET} == true ]]; then \
+     go vet ./... ; \
+ fi && \
+ if [[ ${DO_STATICCHECK} == true ]]; then \
+     /go/bin/staticcheck ./... ; \
+ fi && \
+ go build -o docker-jobmon-backend" \
+]
 
 ###
 # Create minimal Debian backend image
@@ -62,4 +74,10 @@ COPY --from=builder /app/docker-jobmon-backend ./docker-jobmon-backend
 ENV CONFIG="/app/config.json" \
     LOGLEVEL=3 \
     LISTEN_ADDR=":8080"
-CMD [ "/bin/bash", "-c", "exec /app/docker-jobmon-backend --config=\"${CONFIG}\" --log=\"${LOGLEVEL}\" --listen-addr=\"${LISTEN_ADDR}\"" ]
+CMD [ \
+"/bin/bash", "-c", \
+"exec /app/docker-jobmon-backend \
+    --config=\"${CONFIG}\" \
+    --log=\"${LOGLEVEL}\" \
+    --listen-addr=\"${LISTEN_ADDR}\"" \
+]

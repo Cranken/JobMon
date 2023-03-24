@@ -23,8 +23,24 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Default environment settigs
-ENV CONFIG="/app/config.json" \
+ENV DO_VET=true \
+    DO_STATICCHECK=true \
+    CONFIG="/app/config.json" \
     LOGLEVEL=3 \
     LISTEN_ADDR=":8080"
 
-CMD [ "/bin/bash", "-c", "go mod download && go mod verify && exec go run . --config=\"${CONFIG}\" --log=\"${LOGLEVEL}\" --listen-addr=\"${LISTEN_ADDR}\"" ]
+CMD [ \
+"/bin/bash", "-c", \
+"go mod download && \
+ go mod verify && \
+ if [[ ${DO_VET} == true ]]; then \
+    go vet ./... ; \
+ fi && \
+ if [[ ${DO_STATICCHECK} == true ]]; then \
+    /go/bin/staticcheck ./... ; \
+ fi && \
+ exec go run . \
+     --config=\"${CONFIG}\" \
+     --log=\"${LOGLEVEL}\" \
+     --listen-addr=\"${LISTEN_ADDR}\"" \
+]
