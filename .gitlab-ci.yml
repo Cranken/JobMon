@@ -1,7 +1,13 @@
 image: docker:latest
 
+services:
+  - docker:dind
+
 stages:
   - build
+
+before_script:
+  - docker version
 
 build-frontend:
   stage: build
