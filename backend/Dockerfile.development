@@ -25,13 +25,19 @@ RUN apt-get update \
 # Default environment settigs
 ENV DO_VET=true \
     DO_STATICCHECK=true \
+    DO_PKG_UPDATE=false \
     CONFIG="/app/config.json" \
     LOGLEVEL=3 \
     LISTEN_ADDR=":8080"
 
 CMD [ \
 "/bin/bash", "-c", \
-"go mod download && \
+"if [[ ${DO_PKG_UPDATE} == true ]]; then \
+     go get -u && \
+     go mod tidy; \
+ else \
+     go mod download; \
+ fi && \
  go mod verify && \
  if [[ ${DO_VET} == true ]]; then \
     go vet ./... ; \

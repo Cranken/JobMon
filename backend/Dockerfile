@@ -36,6 +36,7 @@ ADD utils ./utils
 ADD router ./router
 COPY jobmon.go ./
 
+# Default build environment settigs
 ARG DO_VET=true \
     DO_STATICCHECK=true
 
