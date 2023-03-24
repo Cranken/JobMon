@@ -7,9 +7,9 @@ before_script:
 build-frontend:
   stage: build
   script:
-    - docker compose build jobmon_frontend --pull
+    - docker-compose build jobmon_frontend --pull
 
 build-backend:
   stage: build
   script:
-    - docker compose build jobmon_backend --pull
+    - docker-compose build jobmon_backend --pull
