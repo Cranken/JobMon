@@ -67,18 +67,17 @@ type UserSession struct {
 // AuthManager is the main object that stores all the necessary information for
 // localUsers, OAuthUsers, sessions etc.
 type AuthManager struct {
-	hmacSampleSecret []byte // JWT secret
-	store            *store.Store
-	localUsers       map[string]config.LocalUser
-	oauthAvailable   bool
-	oauthConfig      oauth2.Config
-	oauthUserInfoURL string
-	sessions         map[string]UserSession
-	sessionsLock     sync.Mutex
+	hmacSampleSecret     []byte // JWT secret
+	JSONWebTokenLifeTime time.Duration
+	APITokenLifeTime     time.Duration
+	store                *store.Store
+	localUsers           map[string]config.LocalUser
+	oauthAvailable       bool
+	oauthConfig          oauth2.Config
+	oauthUserInfoURL     string
+	sessions             map[string]UserSession
+	sessionsLock         sync.Mutex
 }
-
-// default session time
-const EXPIRATIONTIME = 60 * 60 * 24 * 7
 
 // default JWT issuer
 const ISSUER = "monitoring-backend"
@@ -181,6 +180,9 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 
 // Init initializes auth with c and store.
 func (auth *AuthManager) Init(c config.Configuration, store *store.Store) {
+
+	auth.JSONWebTokenLifeTime = c.JSONWebTokenLifeTime
+	auth.APITokenLifeTime = c.APITokenLifeTime
 
 	if c.JWTSecret == "" {
 		logging.Fatal("auth: Init(): No jwt secret set")
@@ -287,23 +289,19 @@ func (auth *AuthManager) validate(tokenStr string) (
 }
 
 // GenerateJWT, generates a JSON Web Token for the given user.
-// remember specifies if JWT should be valid for a year.
-func (auth *AuthManager) GenerateJWT(user UserInfo, remember bool) (string, error) {
+func (auth *AuthManager) GenerateJWT(user UserInfo) (string, error) {
 
-	expirationTime := EXPIRATIONTIME * time.Second
-	if remember {
-		expirationTime = time.Hour * 24 * 365
-	}
-
+	// Set expiration time
+	lifeTime := auth.JSONWebTokenLifeTime
 	if utils.Contains(user.Roles, JOBCONTROL) {
-		expirationTime *= 10 // Slurm API should "never" expire
+		lifeTime = auth.APITokenLifeTime
 	}
 
 	claims :=
 		UserClaims{
 			user,
 			jwt.StandardClaims{
-				ExpiresAt: time.Now().Add(expirationTime).Unix(),
+				ExpiresAt: time.Now().Add(lifeTime).Unix(),
 				Issuer:    ISSUER,
 			},
 		}
@@ -318,23 +316,20 @@ func (auth *AuthManager) GenerateJWT(user UserInfo, remember bool) (string, erro
 }
 
 // AppendJWT appends a JWT cookie to the http response for user UserInfo to the writer w.
-func (auth *AuthManager) AppendJWT(user UserInfo, remember bool, w http.ResponseWriter) (err error) {
-	token, err := auth.GenerateJWT(user, remember)
+func (auth *AuthManager) AppendJWT(user UserInfo, w http.ResponseWriter) (err error) {
+	token, err := auth.GenerateJWT(user)
 	if err != nil {
 		return
 	}
 
-	expirationTime := EXPIRATIONTIME * time.Second
-	if remember {
-		expirationTime = time.Hour * 24 * 365
-	}
+	lifeTime := auth.JSONWebTokenLifeTime
 
 	http.SetCookie(
 		w,
 		&http.Cookie{
 			Name:    "Authorization",
 			Value:   "Bearer " + token,
-			Expires: time.Now().Add(expirationTime),
+			Expires: time.Now().Add(lifeTime),
 			Path:    "/",
 		},
 	)
