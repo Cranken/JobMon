@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
@@ -38,14 +38,16 @@ type AuthPayload struct {
 
 // UserInfo stores the roles and the username of a user.
 type UserInfo struct {
-	Roles    []string
-	Username string
+	Roles    []string `json:"Roles"`
+	Username string   `json:"Username"`
 }
 
-// UserClaims stores UserInfo and jwt standard claims which include ExpiresAt and Issuer.
+// UserClaims stores UserInfo and
+// jwt registered claims which include ExpiresAt, IssuedAt and Issuer
+// (See: https://datatracker.ietf.org/doc/html/rfc7519#section-4.1)
 type UserClaims struct {
 	UserInfo
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 // OAuthUserInfo stores OAuthentication data for a given user.
@@ -135,7 +137,7 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 				},
 			)
 			w.WriteHeader(http.StatusUnauthorized)
-			logging.Error("AuthManager: Protected(): validate", user, err)
+			logging.Error("AuthManager: Protected(): failed validate: ", err)
 			return
 		}
 
@@ -247,67 +249,83 @@ func (auth *AuthManager) createOAuthConfig(c config.Configuration) error {
 		}
 	auth.oauthUserInfoURL = c.OAuth.UserInfoURL
 	auth.oauthAvailable = true
+
+	logging.Info("auth: createOAuthConfig(): Created OAuth config")
 	return nil
 }
 
 // validate checks if tokenStr is validated from auth, if that's the case
 // it returns the user information.
-func (auth *AuthManager) validate(tokenStr string) (
-	user UserInfo,
-	err error) {
+func (auth *AuthManager) validate(tokenStr string) (UserInfo, error) {
 
-	token, err := jwt.ParseWithClaims(
-		tokenStr,
-		&UserClaims{},
-		func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			}
+	// Parse, validate and verify token
+	token, err :=
+		jwt.ParseWithClaims(
+			tokenStr,
+			&UserClaims{},
+			// Return key / secret for validating
+			func(token *jwt.Token) (interface{}, error) {
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+				}
 
-			return auth.hmacSampleSecret, nil
-		})
+				return auth.hmacSampleSecret, nil
+			})
 	if err != nil {
-		return
+		return UserInfo{}, err
 	}
-	claims, ok := token.Claims.(*UserClaims)
-	user = claims.UserInfo
-	if ok && token.Valid {
-		if claims.VerifyExpiresAt(jwt.TimeFunc().Unix(), true) &&
-			claims.VerifyIssuer(ISSUER, true) {
-			if storeToken, ok := (*auth.store).GetUserSessionToken(claims.Username); ok && storeToken == tokenStr {
-				return claims.UserInfo, nil
-			} else {
-				err = fmt.Errorf("session was revoked")
-			}
-		} else {
-			err = fmt.Errorf("token expired or issuer does not match")
-		}
-	} else {
-		err = fmt.Errorf("invalid token")
+
+	claims := token.Claims.(*UserClaims)
+	if !token.Valid {
+		return UserInfo{}, fmt.Errorf("invalid token")
 	}
-	return
+
+	// Check expiration time
+	if !claims.VerifyExpiresAt(time.Now(), true) {
+		return UserInfo{}, fmt.Errorf("token expired")
+	}
+
+	// Check issuer
+	if !claims.VerifyIssuer(ISSUER, true) {
+		return UserInfo{}, fmt.Errorf("issuer does not match")
+	}
+
+	// Get token from store
+	tokenFromStore, ok := (*auth.store).GetUserSessionToken(claims.Username)
+	if !ok || tokenFromStore != tokenStr {
+		return UserInfo{}, fmt.Errorf("session was revoked")
+	}
+
+	logging.Info("auth: validate(): Validated token for ", claims.UserInfo.Username)
+	return claims.UserInfo, nil
 }
 
 // GenerateJWT, generates a JSON Web Token for the given user.
 func (auth *AuthManager) GenerateJWT(user UserInfo) (string, error) {
 
-	// Set expiration time
+	// Set JSON web token life time
 	lifeTime := auth.JSONWebTokenLifeTime
 	if utils.Contains(user.Roles, JOBCONTROL) {
 		lifeTime = auth.APITokenLifeTime
 	}
 
+	// Set JSON web token claims
+	now := time.Now()
 	claims :=
 		UserClaims{
 			user,
-			jwt.StandardClaims{
-				ExpiresAt: time.Now().Add(lifeTime).Unix(),
+			jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(now.Add(lifeTime)),
+				IssuedAt:  jwt.NewNumericDate(now),
 				Issuer:    ISSUER,
 			},
 		}
 
+	// Create JSON web token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	ret, err := token.SignedString(auth.hmacSampleSecret)
+
+	// Store JSON web token in database
 	if err == nil {
 		(*auth.store).SetUserSessionToken(user.Username, ret)
 	}

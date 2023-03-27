@@ -231,7 +231,7 @@ func (c *Configuration) Init() {
 
 	// Default config values
 	c.JSONWebTokenLifeTimeString = "24h"
-	c.APITokenLifeTimeString = "50000h" // API token should "never" expire
+	c.APITokenLifeTimeString = fmt.Sprint(10*365*24, "h") // API token should "never" expire
 
 	// Decode JSON
 	d := json.NewDecoder(bytes.NewReader(data))
