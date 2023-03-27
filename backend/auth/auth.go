@@ -259,33 +259,26 @@ func (auth *AuthManager) createOAuthConfig(c config.Configuration) error {
 func (auth *AuthManager) validate(tokenStr string) (UserInfo, error) {
 
 	// Parse, validate and verify token
+	// This per default also checks if time based claims ExpiresAt, IssuedAt, NotBefore are valid
 	token, err :=
-		jwt.ParseWithClaims(
+		jwt.NewParser(
+			jwt.WithValidMethods(
+				[]string{jwt.SigningMethodHS256.Alg()},
+			),
+		).ParseWithClaims(
 			tokenStr,
 			&UserClaims{},
 			// Return key / secret for validating
 			func(token *jwt.Token) (interface{}, error) {
-				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-				}
-
 				return auth.hmacSampleSecret, nil
-			})
+			},
+		)
 	if err != nil {
 		return UserInfo{}, err
 	}
 
-	claims := token.Claims.(*UserClaims)
-	if !token.Valid {
-		return UserInfo{}, fmt.Errorf("invalid token")
-	}
-
-	// Check expiration time
-	if !claims.VerifyExpiresAt(time.Now(), true) {
-		return UserInfo{}, fmt.Errorf("token expired")
-	}
-
 	// Check issuer
+	claims := token.Claims.(*UserClaims)
 	if !claims.VerifyIssuer(ISSUER, true) {
 		return UserInfo{}, fmt.Errorf("issuer does not match")
 	}
