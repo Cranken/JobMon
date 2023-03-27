@@ -45,24 +45,57 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 		logging.Fatal("store: Init(): Could not connect to PostgreSQL store: ", err)
 	}
 	s.db.RegisterModel((*job.JobToTags)(nil))
-	s.db.NewCreateTable().
-		Model((*job.JobToTags)(nil)).
-		Exec(context.Background())
-	s.db.NewCreateTable().
-		Model((*job.JobTag)(nil)).
-		Exec(context.Background())
-	s.db.NewCreateTable().
-		Model((*job.JobMetadata)(nil)).
-		Exec(context.Background())
-	s.db.NewCreateTable().
-		Model((*UserSession)(nil)).
-		Exec(context.Background())
-	s.db.NewCreateTable().
-		Model((*UserRoles)(nil)).
-		Exec(context.Background())
-	go func() {
-		s.finishOvertimeJobs()
-	}()
+	// Table job_to_tags
+	_, err =
+		s.db.NewCreateTable().
+			Model((*job.JobToTags)(nil)).
+			IfNotExists().
+			Exec(context.Background())
+	if err != nil {
+		logging.Error("store: Init(): Failed to create table job_to_tags: ", err)
+	}
+
+	// Table job_tags
+	_, err =
+		s.db.NewCreateTable().
+			Model((*job.JobTag)(nil)).
+			IfNotExists().
+			Exec(context.Background())
+	if err != nil {
+		logging.Error("store: Init(): Failed to create table job_tags: ", err)
+	}
+
+	// Table job_metadata
+	_, err =
+		s.db.NewCreateTable().
+			Model((*job.JobMetadata)(nil)).
+			IfNotExists().
+			Exec(context.Background())
+	if err != nil {
+		logging.Error("store: Init(): Failed to create table job_metadata: ", err)
+	}
+
+	// Table user_sessions
+	_, err =
+		s.db.NewCreateTable().
+			Model((*UserSession)(nil)).
+			IfNotExists().
+			Exec(context.Background())
+	if err != nil {
+		logging.Error("store: Init(): Failed to create table user_sessions: ", err)
+	}
+
+	// Table user_roles
+	_, err =
+		s.db.NewCreateTable().
+			Model((*UserRoles)(nil)).
+			IfNotExists().
+			Exec(context.Background())
+	if err != nil {
+		logging.Error("store: Init(): Failed to create table user_roles: ", err)
+	}
+
+	go s.finishOvertimeJobs()
 	go s.startCleanJobsTimer()
 }
 
@@ -75,7 +108,10 @@ func (s *PostgresStore) Migrate(source *Store) {
 		return
 	}
 	jobs, _ := (*source).GetAllJobs()
-	res, err := s.db.NewInsert().Model(&jobs).Exec(context.Background())
+	res, err :=
+		s.db.NewInsert().
+			Model(&jobs).
+			Exec(context.Background())
 	if err != nil {
 		logging.Error("store: Migration(): Err inserting: ", err)
 		return
@@ -94,9 +130,12 @@ func (s *PostgresStore) PutJob(job job.JobMetadata) error {
 		s.db.NewInsert().
 			Model(&job).
 			Exec(context.Background())
+	if err != nil {
+		return err
+	}
 
 	logging.Info("store: PutJob (job ID = ", job.Id, ") took ", time.Since(start))
-	return err
+	return nil
 }
 
 // GetJob implements GetJob method of store interface.
@@ -192,7 +231,10 @@ func (s *PostgresStore) GetUserSessionToken(username string) (string, bool) {
 	start := time.Now()
 
 	user := UserSession{Username: username}
-	err := s.db.NewSelect().Model(&user).WherePK().Scan(context.Background())
+	err := s.db.NewSelect().
+		Model(&user).
+		WherePK().
+		Scan(context.Background())
 	if err != nil {
 		return "", false
 	}
@@ -210,10 +252,14 @@ func (s *PostgresStore) SetUserSessionToken(username string, token string) {
 			Username: username,
 			Token:    token,
 		}
-	s.db.NewInsert().
+	_, err := s.db.NewInsert().
 		Model(&user).
 		On("CONFLICT (username) DO UPDATE").
 		Exec(context.Background())
+	if err != nil {
+		logging.Error("store: SetUserSessionToken(): NewInsert() failed: ", err)
+		return
+	}
 
 	logging.Info("store: SetUserSessionToken took ", time.Since(start))
 }
@@ -258,17 +304,25 @@ func (s *PostgresStore) SetUserRoles(username string, roles []string) {
 			Username: username,
 			Roles:    roles,
 		}
-	s.db.NewInsert().
-		Model(&user).
-		On("CONFLICT (username) DO UPDATE").
-		Exec(context.Background())
+	_, err :=
+		s.db.NewInsert().
+			Model(&user).
+			On("CONFLICT (username) DO UPDATE").
+			Exec(context.Background())
+	if err != nil {
+		logging.Error("store: SetUserRoles(): Failed to set roles, ", roles, " for user ", username, ":", err)
+		return
+	}
 
 	logging.Info("store: SetUserRoles took ", time.Since(start))
 }
 
 // Flush implements Flush method of store interface.
 func (s *PostgresStore) Flush() {
-	s.db.Close()
+	err := s.db.Close()
+	if err != nil {
+		logging.Error("store: Flush(): failed to close database")
+	}
 }
 
 // UpdateJob implements UpdateJob method of store interface.
@@ -280,9 +334,12 @@ func (s *PostgresStore) UpdateJob(job job.JobMetadata) error {
 			Model(&job).
 			WherePK().
 			Exec(context.Background())
+	if err != nil {
+		return err
+	}
 
 	logging.Info("store: UpdateJob took ", time.Since(start))
-	return err
+	return nil
 }
 
 // AddTag implements AddTag method of store interface.
@@ -296,6 +353,7 @@ func (s *PostgresStore) AddTag(id int, tag *job.JobTag) error {
 	if err != nil {
 		return err
 	}
+
 	j2t :=
 		job.JobToTags{
 			JobId: id,
@@ -305,9 +363,12 @@ func (s *PostgresStore) AddTag(id int, tag *job.JobTag) error {
 		s.db.NewInsert().
 			Model(&j2t).
 			Exec(context.Background())
+	if err != nil {
+		return err
+	}
 
 	logging.Info("store: AddTag took ", time.Since(start))
-	return err
+	return nil
 }
 
 // RemoveTag implements RemoveTag method of store interface.
@@ -324,9 +385,12 @@ func (s *PostgresStore) RemoveTag(id int, tag *job.JobTag) error {
 			Model(&j2t).
 			WherePK().
 			Exec(context.Background())
+	if err != nil {
+		return err
+	}
 
 	logging.Info("store: RemoveTag took ", time.Since(start))
-	return err
+	return nil
 }
 
 // finishOvertimeJobs changes running jobs that have exceeded MaxTime to finished jobs.

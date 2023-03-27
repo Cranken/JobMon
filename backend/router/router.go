@@ -115,14 +115,14 @@ func (r *Router) JobStart(
 		return
 	}
 
-	logging.Info("Router: JobStart -> Read job start metadata for Job: ", j.Id)
+	logging.Info("Router: JobStart(): Read job start metadata for Job: ", j.Id)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte{})
 
 	// Store job metadata
 	err = r.store.PutJob(j)
 	if err != nil {
-		logging.Error(err)
+		logging.Error("Router: JobStart(): Store job metadata failed: ", err)
 	}
 }
 
