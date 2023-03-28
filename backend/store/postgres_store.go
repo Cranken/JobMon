@@ -14,6 +14,7 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
+	"github.com/uptrace/bun/extra/bundebug"
 )
 
 type PostgresStore struct {
@@ -44,6 +45,12 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 	if err != nil {
 		logging.Fatal("store: Init(): Could not connect to PostgreSQL store: ", err)
 	}
+
+	s.db.AddQueryHook(bundebug.NewQueryHook(
+		bundebug.WithVerbose(true),
+		bundebug.FromEnv("BUNDEBUG"),
+	))
+
 	s.db.RegisterModel((*job.JobToTags)(nil))
 
 	// Table job_to_tags
