@@ -10,7 +10,6 @@ import (
 	"jobmon/job"
 	"jobmon/logging"
 	cache "jobmon/lru_cache"
-	"jobmon/store"
 	jobstore "jobmon/store"
 	"jobmon/utils"
 	"net/http"
@@ -78,26 +77,6 @@ func (r *Router) Init(
 	router.POST("/api/admin/refresh_metadata/:id", authManager.Protected(r.RefreshMetadata, auth.ADMIN))
 	router.GET("/api/config/users/:user", authManager.Protected(r.GetUserConfig, auth.ADMIN))
 	router.PATCH("/api/config/users/:user", authManager.Protected(r.SetUserConfig, auth.ADMIN))
-	router.GlobalOPTIONS =
-		http.HandlerFunc(
-			func(w http.ResponseWriter,
-				r *http.Request) {
-				if r.Header.Get("Access-Control-Request-Method") != "" {
-					// Set Cross-Origin Resource Sharing (CORS) headers
-					header := w.Header()
-					if m := header.Get("Allow"); m != "" {
-						header.Set("Access-Control-Allow-Methods", m)
-					}
-					if o := config.FrontendURL; o != "" {
-						header.Set("Access-Control-Allow-Origin", o)
-					}
-					header.Set("Access-Control-Allow-Credentials", "true")
-					header.Set("Access-Control-Expose-Headers", "Set-Cookie")
-				}
-
-				// Adjust status code to 204
-				w.WriteHeader(http.StatusNoContent)
-			})
 
 	server := &http.Server{
 		Addr:    r.config.ListenAddress,
@@ -114,7 +93,6 @@ func (r *Router) JobStart(
 	req *http.Request,
 	params httprouter.Params,
 	_ auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 
 	// Read body
 	body, err := ioutil.ReadAll(req.Body)
@@ -137,14 +115,14 @@ func (r *Router) JobStart(
 		return
 	}
 
-	logging.Info("Router: JobStart -> Read job start metadata for Job: ", j.Id)
+	logging.Info("Router: JobStart(): Read job start metadata for Job: ", j.Id)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte{})
 
 	// Store job metadata
 	err = r.store.PutJob(j)
 	if err != nil {
-		logging.Error(err)
+		logging.Error("Router: JobStart(): Store job metadata failed: ", err)
 	}
 }
 
@@ -153,7 +131,6 @@ func (r *Router) JobStop(
 	req *http.Request,
 	params httprouter.Params,
 	_ auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 
 	// Parse job information
 	body, err := ioutil.ReadAll(req.Body)
@@ -215,7 +192,6 @@ func (r *Router) GetJobs(
 	req *http.Request,
 	_ httprouter.Params,
 	user auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 	filter := r.parseGetJobParams(req.URL.Query())
 
 	// Check user authorization
@@ -270,7 +246,6 @@ func (r *Router) GetJob(
 	params httprouter.Params,
 	user auth.UserInfo) {
 
-	utils.AllowCors(req, w.Header())
 	start := time.Now()
 
 	node := req.URL.Query().Get("node")
@@ -358,8 +333,6 @@ func (r *Router) GetMetric(
 	req *http.Request,
 	params httprouter.Params,
 	user auth.UserInfo) {
-
-	utils.AllowCors(req, w.Header())
 
 	strId := params.ByName("id")
 	metric := req.URL.Query().Get("metric")
@@ -453,7 +426,6 @@ func (r *Router) Search(
 	params httprouter.Params,
 	user auth.UserInfo) {
 
-	utils.AllowCors(req, w.Header())
 	searchTerm := params.ByName("term")
 
 	id, err := strconv.Atoi(searchTerm)
@@ -475,7 +447,6 @@ func (r *Router) Login(
 	req *http.Request,
 	params httprouter.Params) {
 
-	utils.AllowCors(req, w.Header())
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		logging.Error("Router: Login(): Could not read http request body")
@@ -498,7 +469,7 @@ func (r *Router) Login(
 		return
 	}
 
-	err = r.authManager.AppendJWT(user, dat.Remember, w)
+	err = r.authManager.AppendJWT(user, w)
 	if err != nil {
 		logging.Error("Router: Login(): Could not generate JWT for user '", dat.Username, "': ", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -524,7 +495,7 @@ func (r *Router) LoginOAuth(
 	// Generate session ID
 	sessionID, err := r.authManager.GenerateSession()
 	if err != nil {
-		logging.Error("Could not generate session: %v", err)
+		logging.Error("Router: LoginOAuth: Could not generate session: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -552,7 +523,7 @@ func (r *Router) LoginOAuthCallback(
 	// Check if session ID and state match
 	state := req.FormValue("state")
 	if state != sessionID.Value {
-		logging.Error("OAuth returned non matching state id")
+		logging.Error("Router: LoginOAuthCallback(): OAuth returned non matching state id")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -560,7 +531,7 @@ func (r *Router) LoginOAuthCallback(
 	// Get session from auth manager
 	session, ok := r.authManager.GetSession(state)
 	if !session.IsValid || !ok {
-		logging.Error("OAuth returned invalid state id")
+		logging.Error("Router: LoginOAuthCallback(): OAuth returned invalid state id")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -568,7 +539,7 @@ func (r *Router) LoginOAuthCallback(
 	// Read OAuth code
 	code := req.FormValue("code")
 	if code == "" {
-		logging.Error("OAuth returned no code")
+		logging.Error("Router: LoginOAuthCallback(): OAuth returned no code")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -576,12 +547,12 @@ func (r *Router) LoginOAuthCallback(
 	// Exchange OAuth token
 	token, err := r.authManager.ExchangeOAuthToken(code)
 	if err != nil {
-		logging.Error("Could not exchange token: ", err)
+		logging.Error("Router: LoginOAuthCallback(): Could not exchange token: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if !token.Valid() {
-		logging.Error("Token is invalid")
+		logging.Error("Router: LoginOAuthCallback(): Token is invalid")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -605,9 +576,9 @@ func (r *Router) LoginOAuthCallback(
 	logging.Info("Router: LoginOAuthCallback(): User: ", user.Username, ", Roles: ", user.Roles)
 
 	// Generate Java web token
-	err = r.authManager.AppendJWT(user, true, w)
+	err = r.authManager.AppendJWT(user, w)
 	if err != nil {
-		logging.Error("Could not generate JWT: ", err)
+		logging.Error("Router: LoginOAuthCallback(): Could not generate JWT: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -620,7 +591,6 @@ func (r *Router) Logout(
 	req *http.Request,
 	params httprouter.Params,
 	_ auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 
 	// Read body
 	body, err := ioutil.ReadAll(req.Body)
@@ -661,13 +631,13 @@ func (r *Router) GenerateAPIKey(
 	req *http.Request,
 	params httprouter.Params,
 	_ auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 	jwt, err :=
 		r.authManager.GenerateJWT(
 			auth.UserInfo{
 				Roles:    []string{auth.JOBCONTROL},
-				Username: "api"},
-			true)
+				Username: "api",
+			},
+		)
 	if err != nil {
 		logging.Error("Router: GenerateAPIKey(): Could not generate JWT: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -807,7 +777,6 @@ func (r *Router) GetConfig(
 	req *http.Request,
 	params httprouter.Params,
 	user auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 
 	// Restrict available configuration parameters for now
 	conf := conf.Configuration{}
@@ -830,7 +799,6 @@ func (r *Router) UpdateConfig(
 	req *http.Request,
 	params httprouter.Params,
 	user auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		logging.Error("Router: UpdateConfig(): Could not read update config request body: ", err)
@@ -920,7 +888,6 @@ func (r *Router) RefreshMetadata(
 	req *http.Request,
 	params httprouter.Params,
 	user auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 	strId := params.ByName("id")
 
 	id, err := strconv.Atoi(strId)
@@ -967,7 +934,6 @@ func (r *Router) GetUserConfig(
 	req *http.Request,
 	params httprouter.Params,
 	_ auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 	userStr := params.ByName("user")
 	if userStr == "" {
 		logging.Error("Router: GetUserConfig(): Could not get user string from request params")
@@ -998,7 +964,6 @@ func (r *Router) SetUserConfig(
 	req *http.Request,
 	params httprouter.Params,
 	_ auth.UserInfo) {
-	utils.AllowCors(req, w.Header())
 	userStr := params.ByName("user")
 	if userStr == "" {
 		logging.Error("Router: SetUserConfig(): Could not get user string from request params")
@@ -1013,7 +978,7 @@ func (r *Router) SetUserConfig(
 	}
 
 	// Test if it is json user struct
-	user := store.UserRoles{}
+	user := jobstore.UserRoles{}
 	err = json.Unmarshal(body, &user)
 	if err != nil {
 		logging.Error("Router: SetUserConfig(): Could not unmarshal newly set user config for user ", userStr, ": ", err)
@@ -1037,7 +1002,6 @@ func (r *Router) parseTag(
 	job job.JobMetadata,
 	tag job.JobTag,
 	ok bool) {
-	utils.AllowCors(req, w.Header())
 
 	jobStr := req.URL.Query().Get("job")
 

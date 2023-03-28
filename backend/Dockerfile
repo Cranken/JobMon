@@ -4,16 +4,22 @@
 # * [GitHub Repository](https://github.com/docker-library/golang/)
 # * [Release History](https://go.dev/doc/devel/release)
 ###
-ARG DEBIAN_RELEASE=bullseye \
-    GOLANG_RELEASE=1.20
+ARG GOLANG_RELEASE=1.20 \
+    DEBIAN_RELEASE=bullseye \
+    GOLANG_TAG=${GOLANG_RELEASE}-${DEBIAN_RELEASE} \
+    DEBIAN_TAG=${DEBIAN_RELEASE}
 
-FROM golang:${GOLANG_RELEASE}-${DEBIAN_RELEASE} AS builder
+FROM golang:${GOLANG_TAG} AS builder
 
 WORKDIR /app
 
+# Install [The advanced Go linter](https://github.com/dominikh/go-tools)
+RUN go install honnef.co/go/tools/cmd/staticcheck@latest
+
 # Download required go modules
 COPY go.mod go.sum ./
-RUN go mod download && go mod verify
+RUN go mod download && \
+    go mod verify
 
 # Add source code to the image
 ADD analysis ./analysis
@@ -25,13 +31,26 @@ ADD job ./job
 ADD lru_cache ./lru_cache
 ADD logging ./logging
 ADD store ./store
+ADD test ./test
 ADD utils ./utils
 ADD router ./router
 COPY jobmon.go ./
 
+# Default build environment settigs
+ARG DO_VET=true \
+    DO_STATICCHECK=true
+
 # Build backend
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    go build -o docker-jobmon-backend
+[ "/bin/bash", "-c", \
+"if [[ ${DO_VET} == true ]]; then \
+     go vet ./... ; \
+ fi && \
+ if [[ ${DO_STATICCHECK} == true ]]; then \
+     /go/bin/staticcheck ./... ; \
+ fi && \
+ go build -o docker-jobmon-backend" \
+]
 
 ###
 # Create minimal Debian backend image
@@ -39,7 +58,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # * [GitHub Repository](https://github.com/docker-library/docs/tree/master/debian)
 # * [Debian Releases](https://wiki.debian.org/DebianReleases)
 ###
-FROM debian:${DEBIAN_RELEASE} AS runner
+FROM debian:${DEBIAN_TAG} AS runner
 
 WORKDIR /app
 
@@ -56,4 +75,10 @@ COPY --from=builder /app/docker-jobmon-backend ./docker-jobmon-backend
 ENV CONFIG="/app/config.json" \
     LOGLEVEL=3 \
     LISTEN_ADDR=":8080"
-CMD [ "/bin/bash", "-c", "exec /app/docker-jobmon-backend --config=\"${CONFIG}\" --log=\"${LOGLEVEL}\" --listen-addr=\"${LISTEN_ADDR}\"" ]
+CMD [ \
+"/bin/bash", "-c", \
+"exec /app/docker-jobmon-backend \
+    --config=\"${CONFIG}\" \
+    --log=\"${LOGLEVEL}\" \
+    --listen-addr=\"${LISTEN_ADDR}\"" \
+]

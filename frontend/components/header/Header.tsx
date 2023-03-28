@@ -42,7 +42,7 @@ export const Header = () => {
             <>
               <LinkBox>
                 <LinkOverlay href="/jobs">
-                  <Button bg={buttonBg}>Home</Button>
+                  <Button bg={buttonBg}>Jobs</Button>
                 </LinkOverlay>
               </LinkBox>
               {user.Roles?.includes(UserRole.Admin) ?? false ? (
@@ -55,7 +55,7 @@ export const Header = () => {
               {user.Roles?.includes(UserRole.Admin) ?? false ? (
                 <LinkBox>
                   <LinkOverlay href="/settings">
-                    <Button bg={buttonBg}>Admin</Button>
+                    <Button bg={buttonBg}>Settings</Button>
                   </LinkOverlay>
                 </LinkBox>
               ) : null}

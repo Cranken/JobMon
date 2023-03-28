@@ -11,6 +11,7 @@ import (
 	"jobmon/utils"
 	"os"
 	"sort"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -20,6 +21,11 @@ type Configuration struct {
 
 	// Config from the command line interface
 	CLIConfig `json:"-"`
+
+	JSONWebTokenLifeTimeString string        `json:"json_web_token_life_time"`
+	JSONWebTokenLifeTime       time.Duration `json:"-"`
+	APITokenLifeTimeString     string        `json:"api_token_life_time"`
+	APITokenLifeTime           time.Duration `json:"-"`
 
 	// Configuration for performance metrics database
 	// current implementation uses InfluxDB only
@@ -223,6 +229,10 @@ func (c *Configuration) Init() {
 	}
 	logging.Info("config: Init(): Read config file '", c.ConfigFile, "'")
 
+	// Default config values
+	c.JSONWebTokenLifeTimeString = "24h"
+	c.APITokenLifeTimeString = fmt.Sprint(10*365*24, "h") // API token should "never" expire
+
 	// Decode JSON
 	d := json.NewDecoder(bytes.NewReader(data))
 	d.DisallowUnknownFields()
@@ -230,6 +240,16 @@ func (c *Configuration) Init() {
 		logging.Fatal("config: Init(): Could not decode config file: ", err)
 	}
 	logging.Info("config: Init(): Parsed config file '", c.ConfigFile, "'")
+
+	// Compute JSON web token and API token life time
+	c.JSONWebTokenLifeTime, err = time.ParseDuration(c.JSONWebTokenLifeTimeString)
+	if err != nil {
+		logging.Fatal("config: Init(): Failed to parse json_web_token_life_time `", c.JSONWebTokenLifeTimeString, "`: ", err)
+	}
+	c.APITokenLifeTime, err = time.ParseDuration(c.APITokenLifeTimeString)
+	if err != nil {
+		logging.Fatal("config: Init(): Failed to parse api_token_life_time `", c.APITokenLifeTimeString, "`: ", err)
+	}
 
 	// Add GUIDs to metrics if any are missing
 	for i := range c.Metrics {

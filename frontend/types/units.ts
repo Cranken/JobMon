@@ -1,3 +1,5 @@
+import { xml } from "d3";
+
 /**
  * PrefixType represents a list of possible prefixes that can be used for different metric units.
  * Metric - it will use the usual data unit prefixes like B, KB, MB, GB etc.
@@ -102,7 +104,7 @@ interface PrefixesType {
  */
 const Prefixes: PrefixesType = {
   kilo: {
-    Short: "K",
+    Short: "k",
     Exp: 3,
     Base: 10,
   },
@@ -191,10 +193,15 @@ export class Unit {
         return `${this.type.DisplayFormat}`;
       
       case PrefixType.Normalized:
-        // In the case of IOPS and W the prefix is always K.
-        // However, in the case of Wats the unit also appears.
-        let displayFormat = (this.type.DisplayFormat === "W") ? "W" : "";
-        return `${Prefixes["kilo"].Short}${displayFormat}`
+        const displayFormat = (this.type.DisplayFormat === "W") ? "W" : "";
+        
+        // print the prefix only for values greater than 10^3
+        if (this.value < 1000 ) {
+          return `${displayFormat}`  
+        }
+        else {
+          return `${Prefixes["kilo"].Short}${displayFormat}`
+        }
       default:
         let best = this.bestPrefix();
         best = (typeof prefix !== 'undefined') ? prefix : best;
@@ -216,11 +223,15 @@ export class Unit {
       case PrefixType.Exponential:
         return this.value.toExponential(2);
       case PrefixType.Normalized:
-        // All IOPS units are normalized by default to the 'kilo' prefix.
-        const defaultPrefix = Prefixes["kilo"];
-        const exp = Math.pow(defaultPrefix.Base, defaultPrefix.Exp);
-        const value = this.value / exp;
-        return `${value.toFixed(2)}`;
+        // Normalize the value only if greater than 10^3.
+        if (this.value < 1000) {
+          return `${this.value.toFixed(2)}`;
+        } else {
+          const defaultPrefix = Prefixes["kilo"];
+          const exp = Math.pow(defaultPrefix.Base, defaultPrefix.Exp);
+          const value = this.value / exp;
+          return `${value.toFixed(2)}`;
+        }        
       default:
         let best = this.bestPrefix();
         best = (typeof prefix !== 'undefined') ? prefix : best;
