@@ -380,7 +380,7 @@ func (auth *AuthManager) AuthLocalUser(
 
 // Logout logs out user <username> from active sessions
 func (auth *AuthManager) Logout(username string) {
-	(*auth.store).RemoveUserSessionToken(username)
+	(*auth.store).RemoveUserSession(username)
 }
 
 // OAuthAvailable checks if OAuth is available.

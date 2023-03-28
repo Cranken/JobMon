@@ -45,6 +45,7 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 		logging.Fatal("store: Init(): Could not connect to PostgreSQL store: ", err)
 	}
 	s.db.RegisterModel((*job.JobToTags)(nil))
+
 	// Table job_to_tags
 	_, err =
 		s.db.NewCreateTable().
@@ -264,17 +265,21 @@ func (s *PostgresStore) SetUserSessionToken(username string, token string) {
 	logging.Info("store: SetUserSessionToken took ", time.Since(start))
 }
 
-// RemoveUserSessionToken implements RemoveUserSessionToken method of store interface.
-func (s *PostgresStore) RemoveUserSessionToken(username string) {
+// RemoveUserSession implements RemoveUserSession method of store interface.
+func (s *PostgresStore) RemoveUserSession(username string) {
 	start := time.Now()
 
-	user := UserSession{Username: username}
-	s.db.NewDelete().
-		Model(&user).
+	SQLResult, err := s.db.NewDelete().
+		Model(&UserSession{Username: username}).
 		WherePK().
 		Exec(context.Background())
+	if err != nil {
+		logging.Error("store: RemoveUserSession(): NewDelete() for user '", username, "' failed: SQL result: '", SQLResult, "', err: ", err)
+		return
+	}
 
-	logging.Info("store: RemoveUserSessionToken took ", time.Since(start))
+	logging.Info("store: RemoveUserSession(): removed user session for user '", username, "'")
+	logging.Info("store: RemoveUserSession took ", time.Since(start))
 }
 
 // GetUserRoles implements GetUserRoles method of store interface.

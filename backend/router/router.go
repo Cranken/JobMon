@@ -613,8 +613,11 @@ func (r *Router) Logout(
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	// Logout user in authManager
 	r.authManager.Logout(dat.Username)
 
+	// Clear authorization cooky
 	http.SetCookie(w,
 		&http.Cookie{
 			Name:    "Authorization",
@@ -623,6 +626,7 @@ func (r *Router) Logout(
 			Path:    "/",
 		})
 	w.WriteHeader(http.StatusOK)
+
 	logging.Info("Router: Logout(): logged out user ", dat.Username)
 }
 

@@ -51,9 +51,8 @@ type Store interface {
 	// SetUserSessionToken sets the token for user 'username'.
 	SetUserSessionToken(username string, token string)
 
-	// RemoveUserSessionToken removes token from the active sessions for user 'username'.
-
-	RemoveUserSessionToken(username string)
+	// RemoveUserSession removes session for user 'username'.
+	RemoveUserSession(username string)
 
 	// GetUserRoles returns the roles of user 'username'.
 	GetUserRoles(username string) (UserRoles, bool)
