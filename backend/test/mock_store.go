@@ -73,7 +73,7 @@ func (s *MockStore) SetUserSessionToken(username string, token string) {
 	s.Calls += 1
 }
 
-func (s *MockStore) RemoveUserSessionToken(username string) {
+func (s *MockStore) RemoveUserSession(username string) {
 	s.Calls += 1
 }
 
