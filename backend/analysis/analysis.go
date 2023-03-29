@@ -4,8 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"jobmon/changepoint"
 	"jobmon/job"
+
+	"pgregory.net/changepoint"
 )
 
 // TODO:Add docs
@@ -26,7 +27,7 @@ func ChangePointDetection(j *job.JobData) map[string][]time.Time {
 					}
 					values = append(values, val.(float64))
 				}
-				cpts := changepoint.NonParametric(values, 1, 5)
+				cpts := changepoint.NonParametric(values, 1)
 				times := make([]time.Time, 0)
 				for _, i := range cpts {
 					times = append(times, v[i]["_time"].(time.Time))

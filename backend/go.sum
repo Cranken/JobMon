@@ -86,3 +86,6 @@ gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
 mellium.im/sasl v0.3.1 h1:wE0LW6g7U83vhvxjC1IY8DnXM+EU095yeo8XClvCdfo=
 mellium.im/sasl v0.3.1/go.mod h1:xm59PUYpZHhgQ9ZqoJ5QaCqzWMi8IeS49dhp6plPCzw=
+pgregory.net/changepoint v1.0.0 h1:WgMNl8457CUsJ9daP8+T50gJgPLIT7UrWbMd7ji/V54=
+pgregory.net/changepoint v1.0.0/go.mod h1:eEfbtzWno1aXZODHRd/3qFDj9NExe1Ni06MqzmpHhlA=
+pgregory.net/rapid v0.5.3 h1:163N50IHFqr1phZens4FQOdPgfJscR7a562mjQqeo4M=
