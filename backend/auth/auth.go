@@ -33,7 +33,6 @@ const (
 type AuthPayload struct {
 	Username string
 	Password string
-	Remember bool
 }
 
 // UserInfo stores the roles and the username of a user.
