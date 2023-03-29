@@ -151,26 +151,37 @@ func (db *InfluxDB) GetAggregatedJobData(
 
 // GetJobMetadataMetrics returns the metadata metrics data for job j.
 func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMetadataData, err error) {
+	// Skip jobs that are still running
 	if j.IsRunning {
 		return data, fmt.Errorf("job is still running")
 	}
+
+	// Skip jobs with stop time before start time
 	if j.StopTime <= j.StartTime {
 		return data, fmt.Errorf("job stop time is less or equal to start")
 	}
+
+	// Computes mean and max values for each metric
 	data, err = db.getMetadataData(j)
 	if err != nil {
 		return data, err
 	}
+
 	s, err := time.ParseDuration(db.defaultSampleInterval)
 	if err != nil {
 		return data, err
 	}
 	_, interval := j.CalculateSampleIntervals(s)
+
+	// Get aggregated metrics
 	aggData, err := db.getJobData(j, j.NodeList, interval, false, true)
+
+	// Compute change points that split measurements into
+	// "statistically homogeneous" segments
 	cps := analysis.ChangePointDetection(&aggData)
-	for i, md := range data {
-		md.ChangePoints = cps[md.Config.Measurement]
-		data[i] = md
+	for i := range data {
+		data_i := &data[i]
+		data_i.ChangePoints = cps[data_i.Config.Measurement]
 	}
 
 	return
@@ -326,13 +337,21 @@ func (db *InfluxDB) getJobData(
 	return data, err
 }
 
-// getMetadataData returns the metadata data for job j.
-func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (data []job.JobMetadataData, err error) {
+// getMetadataData computes mean and max values for each metric of a job j.
+// The results are stored as data alongside the jobs metadata
+func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (
+	data []job.JobMetadataData,
+	err error,
+) {
 	var wg sync.WaitGroup
 	for _, m := range db.getPartition(j).Metrics {
 		wg.Add(1)
+
+		// start a go function for each configured metric
 		go func(m conf.MetricConfig) {
 			defer wg.Done()
+
+			// Query metrics mean and max values
 			tempRes, err := db.queryMetadataMeasurements(m, j)
 			if err != nil {
 				logging.Error("db: getMetadataData(): Job ", j.Id, ": could not get metadata data: ", err)
@@ -346,7 +365,11 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (data []job.JobMetadataD
 			}
 
 			if res, ok := result["_result"]; ok {
+
+				// Initialize job metadata with metric config
 				md := job.JobMetadataData{Config: m}
+
+				// Add metrics mean value to job metadata
 				if len(res) >= 1 {
 					mean := res[0]["_value"]
 					switch v := mean.(type) {
@@ -355,6 +378,8 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (data []job.JobMetadataD
 					default:
 					}
 				}
+
+				// Add metrics max value to job metadata
 				if len(res) >= 2 {
 					max := res[1]["_value"]
 					switch v := max.(type) {
@@ -363,6 +388,7 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (data []job.JobMetadataD
 					default:
 					}
 				}
+
 				data = append(data, md)
 			}
 		}(db.metrics[m])
@@ -552,16 +578,33 @@ func quantileString(streamName string, q string, measurement string) string {
 		streamName, q, q, measurement)
 }
 
-// queryMetadataMeasurements returns the flux database table containing
-// the metadata measurements for metric 'metric' and job j.
-func (db *InfluxDB) queryMetadataMeasurements(metric conf.MetricConfig, j *job.JobMetadata) (result *api.QueryTableResult, err error) {
+// queryMetadataMeasurements returns the influx query result table containing
+// mean and max values for  metric 'metric' and job j.
+// The results are stored as data alongside the jobs metadata
+func (db *InfluxDB) queryMetadataMeasurements(
+	metric conf.MetricConfig,
+	j *job.JobMetadata,
+) (
+	result *api.QueryTableResult,
+	err error,
+) {
+	// measurement name for the metric
 	measurement := metric.Measurement
 	if metric.AggFn != "" {
 		measurement += "_" + metric.AggFn
 	}
-	query := fmt.Sprintf(MetadataMeasurementsQuery,
-		db.bucketName, j.StartTime, j.StopTime, measurement,
-		j.NodeList, metric.FilterFunc, metric.PostQueryOp)
+
+	// Query mean and max values for the metric
+	query :=
+		fmt.Sprintf(
+			MetadataMeasurementsQuery,
+			db.bucketName,
+			j.StartTime, j.StopTime,
+			measurement,
+			j.NodeList,
+			metric.FilterFunc,
+			metric.PostQueryOp,
+		)
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		logging.Error("db: queryMetadataMeasurements(): Error at metadata query '", query, "': ", err)
@@ -770,7 +813,7 @@ func (db *InfluxDB) updateAggregationTasks() (err error) {
 func (db *InfluxDB) updateSynthesizedMetricTask() (err error) {
 	tasks, err := db.tasksAPI.FindTasks(context.Background(), nil)
 	if err != nil {
-		logging.Error("db: addAggregatedMetrics(): Could not get tasks from influxdb: ")
+		logging.Error("db: addAggregatedMetrics(): Could not get tasks from influxdb: ", err)
 		return
 	}
 

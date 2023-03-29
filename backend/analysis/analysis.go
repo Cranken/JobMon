@@ -30,7 +30,7 @@ func ChangePointDetection(j *job.JobData) map[string][]time.Time {
 					values = append(values, val.(float64))
 				}
 
-				// Compute indexes of elements that split measurments into
+				// Compute indexes of elements that split measurements into
 				// "statistically homogeneous" segments.
 				cpts := changepoint.NonParametric(values, 1)
 
