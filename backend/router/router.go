@@ -77,6 +77,7 @@ func (r *Router) Init(
 	router.POST("/api/admin/refresh_metadata/:id", authManager.Protected(r.RefreshMetadata, auth.ADMIN))
 	router.GET("/api/config/users/:user", authManager.Protected(r.GetUserConfig, auth.ADMIN))
 	router.PATCH("/api/config/users/:user", authManager.Protected(r.SetUserConfig, auth.ADMIN))
+	router.POST("/api/notify/admin", r.NotifyAdmin)
 
 	server := &http.Server{
 		Addr:    r.config.ListenAddress,
@@ -1108,4 +1109,34 @@ func (r *Router) parseGetJobParams(params url.Values) (filter job.JobFilter) {
 		filter.Tags = &tagIds
 	}
 	return filter
+}
+
+type TestType struct {
+	User string
+	Role []string
+}
+
+// Sends a notification to the administrators
+func (r *Router) NotifyAdmin(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params) {
+
+	logging.Info("Request Notification to admins")
+
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		logging.Error("Router: NotifyAdmin(): Could not read http request body")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	var dat auth.UserInfo
+	err = json.Unmarshal(body, &dat)
+	if err != nil {
+		logging.Error("Router: NotifyAdmin(): Could not unmarshal http request body")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

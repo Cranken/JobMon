@@ -3,7 +3,7 @@ import type {AppProps} from "next/app";
 import {Center, ChakraProvider} from "@chakra-ui/react";
 import theme from "../styles/theme";
 import Header from "../components/header/Header";
-import {useGetUser, useIsAllowedRole, useIsAuthenticated} from "../utils/auth";
+import {useGetUser, useHasNoAllowedRole, useIsAuthenticated} from "../utils/auth";
 import {useRouter} from "next/router";
 import React, {useEffect} from "react";
 import dynamic from "next/dynamic";
@@ -26,7 +26,15 @@ function MyApp({ Component, pageProps }: AppProps) {
   let redirectionString;
   if (isAuthenticated &&
       router.pathname !== "/role-error" &&
-      useIsAllowedRole(user)) {
+      useHasNoAllowedRole(user)) {
+    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/notify/admin", {
+      method: "POST",
+      credentials: "include",
+      body: JSON.stringify({
+        username: user.Username,
+        roles: user.Roles
+      }),
+    });
     useEffect(() => {
       router.push("/role-error")
     });

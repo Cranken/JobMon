@@ -32,7 +32,7 @@ export const useIsAuthenticated = () => {
   return user.Roles !== undefined && user.Username !== undefined;
 };
 
-export const useIsAllowedRole = (user: AuthUser) => {
+export const useHasNoAllowedRole = (user: AuthUser) => {
   return (user.Roles.indexOf(UserRole.Admin) < 0) &&
       (user.Roles.indexOf(UserRole.User) < 0)
 }
