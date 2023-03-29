@@ -19,6 +19,8 @@ func ChangePointDetection(j *job.JobData) map[string][]time.Time {
 		go func(m job.MetricData) {
 			defer wg.Done()
 			for _, v := range m.Data {
+
+				// Store measurements in float64 slice
 				values := make([]float64, 0)
 				for _, vi := range v {
 					val := vi["_value"]
@@ -27,7 +29,11 @@ func ChangePointDetection(j *job.JobData) map[string][]time.Time {
 					}
 					values = append(values, val.(float64))
 				}
+
+				// Compute indexes of elements that split measurments into
+				// "statistically homogeneous" segments.
 				cpts := changepoint.NonParametric(values, 1)
+
 				times := make([]time.Time, 0)
 				for _, i := range cpts {
 					times = append(times, v[i]["_time"].(time.Time))
