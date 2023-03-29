@@ -13,7 +13,7 @@ import {
 } from "@chakra-ui/react";
 import { useCookies } from "react-cookie";
 import { MdLogout } from "react-icons/md";
-import { useIsAuthenticated, UserRole } from "../../utils/auth";
+import {useIsAllowedRole, useIsAuthenticated, UserRole} from "../../utils/auth";
 import { useGetUser } from "../../utils/auth";
 import React from "react";
 
@@ -24,7 +24,7 @@ export const Header = () => {
   const headerBg = useColorModeValue("gray.400", "gray.500");
   const buttonBg = useColorModeValue("gray.500", "gray.400");
   const searchInputColor = useColorModeValue("gray.800", "whiteAlpha.900");
-  const isAuthenticated = useIsAuthenticated();
+  const isAuthenticated = useIsAuthenticated() && useIsAllowedRole(useGetUser());
 
   const logout = () => {
     fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/logout", {
