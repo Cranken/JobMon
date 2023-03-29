@@ -24,7 +24,6 @@ RUN go mod download && \
 # Add source code to the image
 ADD analysis ./analysis
 ADD auth ./auth
-ADD changepoint ./changepoint
 ADD config ./config
 ADD db ./db
 ADD job ./job

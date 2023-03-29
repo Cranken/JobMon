@@ -30,6 +30,7 @@ require (
 	github.com/uptrace/bun/extra/bundebug v1.1.12
 	golang.org/x/crypto v0.7.0
 	golang.org/x/oauth2 v0.6.0
+	pgregory.net/changepoint v1.0.0
 )
 
 require (
