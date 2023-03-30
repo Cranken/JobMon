@@ -1111,11 +1111,6 @@ func (r *Router) parseGetJobParams(params url.Values) (filter job.JobFilter) {
 	return filter
 }
 
-type TestType struct {
-	User string
-	Role []string
-}
-
 // Sends a notification to the administrators
 func (r *Router) NotifyAdmin(
 	w http.ResponseWriter,
