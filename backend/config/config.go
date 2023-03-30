@@ -64,7 +64,7 @@ type Configuration struct {
 	MetricCategories []string `json:"MetricCategories"`
 	// Metrics to display in the radar chart; Will be moved to frontend config
 	RadarChartMetrics []string `json:"RadarChartMetrics"`
-
+	// Configuration for email notifications
 	Email EmailConfig `json:"EmailNotification"`
 }
 
@@ -195,9 +195,13 @@ type OAuthConfig struct {
 	AfterLoginRedirectUrl string `json:"AfterLoginRedirectUrl"`
 }
 
+// EmailConfig contains configurations for email notifications
 type EmailConfig struct {
-	SenderAddress   string `json:"SenderAddress"`
-	SenderPassword  string `json:"SenderPassword"`
+	// Address to send notifications from
+	SenderAddress string `json:"SenderAddress"`
+	// Password to use the sender address
+	SenderPassword string `json:"SenderPassword"`
+	// Address to send notifications to
 	ReceiverAddress string `json:"ReceiverAddress"`
 }
 

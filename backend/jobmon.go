@@ -47,6 +47,7 @@ func main() {
 	// setup the authentication manager
 	authManager.Init(config, &store)
 
+	// setup email notifier
 	notifier.Init(config)
 
 	// cleanup everything
