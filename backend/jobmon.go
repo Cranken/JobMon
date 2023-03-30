@@ -6,6 +6,7 @@ import (
 	database "jobmon/db"
 	"jobmon/logging"
 	cache "jobmon/lru_cache"
+	"jobmon/notify"
 	routerImport "jobmon/router"
 	jobstore "jobmon/store"
 	"jobmon/utils"
@@ -22,6 +23,7 @@ var (
 	authManager = auth.AuthManager{}
 	router      = routerImport.Router{}
 	webLogger   = utils.WebLogger{}
+	notifier    = notify.EmailNotifier{}
 )
 
 func main() {
@@ -45,11 +47,13 @@ func main() {
 	// setup the authentication manager
 	authManager.Init(config, &store)
 
+	notifier.Init(config)
+
 	// cleanup everything
 	registerCleanup()
 
 	// start the server
-	router.Init(store, &config, &db, &jobCache, &authManager, &webLogger)
+	router.Init(store, &config, &db, &jobCache, &authManager, &webLogger, &notifier)
 }
 
 // registerCleanup performs all the necessary cleanups before starting a fresh

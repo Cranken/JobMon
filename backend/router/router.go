@@ -10,6 +10,7 @@ import (
 	"jobmon/job"
 	"jobmon/logging"
 	cache "jobmon/lru_cache"
+	"jobmon/notify"
 	jobstore "jobmon/store"
 	"jobmon/utils"
 	"net/http"
@@ -34,6 +35,7 @@ type Router struct {
 	authManager *auth.AuthManager
 	upgrader    websocket.Upgrader
 	logger      *utils.WebLogger
+	notifier    *notify.EmailNotifier
 }
 
 // Init starts up the server and sets up all the necessary handlers then it start the main web server.
@@ -43,7 +45,8 @@ func (r *Router) Init(
 	db *database.DB,
 	jobCache *cache.LRUCache,
 	authManager *auth.AuthManager,
-	logger *utils.WebLogger) {
+	logger *utils.WebLogger,
+	notifier *notify.EmailNotifier) {
 
 	r.store = store
 	r.config = config
@@ -55,6 +58,7 @@ func (r *Router) Init(
 			return true
 		}}
 	r.logger = logger
+	r.notifier = notifier
 
 	router := httprouter.New()
 	router.GET("/auth/oauth/login", r.LoginOAuth)
@@ -1132,6 +1136,14 @@ func (r *Router) NotifyAdmin(
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	if dat.Username == "" {
+		logging.Error("Router: NotifyAdmin(): Could not read data from http request body")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	r.notifier.Notify("message")
 
 	w.WriteHeader(http.StatusOK)
 }
