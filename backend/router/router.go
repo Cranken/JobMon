@@ -1143,7 +1143,12 @@ func (r *Router) NotifyAdmin(
 		return
 	}
 
-	r.notifier.Notify("subject", "message")
+	subject := "Role request by " + dat.Username
+	message := "The user " + dat.Username + " tried to access the jobmon-system. " +
+		"Currently this user has no role allwoing to access the webinterface." +
+		"\n\n" + dat.Username + " requests a Role to access the webinterface."
+
+	r.notifier.Notify(subject, message)
 
 	w.WriteHeader(http.StatusOK)
 }
