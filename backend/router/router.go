@@ -1143,7 +1143,7 @@ func (r *Router) NotifyAdmin(
 		return
 	}
 
-	r.notifier.Notify("message")
+	r.notifier.Notify("subject", "message")
 
 	w.WriteHeader(http.StatusOK)
 }

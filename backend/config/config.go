@@ -203,6 +203,10 @@ type EmailConfig struct {
 	SenderPassword string `json:"SenderPassword"`
 	// Address to send notifications to
 	ReceiverAddress string `json:"ReceiverAddress"`
+	// Address of the smtp-server
+	SmtpHost string `json:"SmtpHost"`
+	// Port of the smtp-server
+	SmtpPort int `json:"SmtpPort"`
 }
 
 // Init reads the config.json file and maps the data form the json file to the
