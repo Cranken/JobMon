@@ -1,7 +1,35 @@
 import React from "react";
-import {Stack, Center, Text, Heading, useColorModeValue} from "@chakra-ui/react";
+import {Stack, Center, Text, Heading, useColorModeValue, Button, useToast} from "@chakra-ui/react";
+import {useGetUser} from "../utils/auth";
 
 const RoleError = () => {
+    const user = useGetUser();
+    const toast = useToast();
+    const requestAccess = () => {
+        fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/notify/admin", {
+            method: "POST",
+            credentials: "include",
+            body: JSON.stringify({
+                username: user.Username,
+                roles: user.Roles
+            }),
+        }).then((resp: Response) => {
+            if (resp.ok) {
+                toast({
+                    description: "The request was send successfully",
+                    status: "success",
+                    isClosable: true
+                });
+            } else {
+                toast({
+                    description: "Failed to send request",
+                    status: "error",
+                    isClosable: true
+                })
+            }
+        });
+    }
+
     const borderColor = useColorModeValue("gray.500", "whiteAlpha.500");
     return <React.Fragment>
         <Center>
@@ -16,6 +44,11 @@ const RoleError = () => {
                         To get access you need to get a role assigned by the administration team.
                         You can request access with the form below
                     </Text>
+                </Center>
+                <Center>
+                    <Button type="submit" colorScheme="green" alignSelf="end" onClick={() => requestAccess()}>
+                        Request Access
+                    </Button>
                 </Center>
             </Stack>
         </Center>

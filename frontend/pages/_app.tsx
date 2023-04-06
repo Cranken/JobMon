@@ -27,14 +27,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   if (isAuthenticated &&
       router.pathname !== "/role-error" &&
       useHasNoAllowedRole(user)) {
-    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/notify/admin", {
-      method: "POST",
-      credentials: "include",
-      body: JSON.stringify({
-        username: user.Username,
-        roles: user.Roles
-      }),
-    });
+
     useEffect(() => {
       router.push("/role-error")
     });
