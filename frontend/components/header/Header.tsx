@@ -24,7 +24,8 @@ export const Header = () => {
   const headerBg = useColorModeValue("gray.400", "gray.500");
   const buttonBg = useColorModeValue("gray.500", "gray.400");
   const searchInputColor = useColorModeValue("gray.800", "whiteAlpha.900");
-  const isAuthenticated = useIsAuthenticated() && useHasNoAllowedRole(useGetUser());
+  const isAuthenticated = useIsAuthenticated();
+  const hasRole = (user.Roles) ? !useHasNoAllowedRole(user) : false;
 
   const logout = () => {
     fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/logout", {
@@ -38,7 +39,7 @@ export const Header = () => {
     <header>
       <Flex bg={headerBg} p={2}>
         <Flex flexGrow={1} gap={2}>
-          {isAuthenticated ? (
+          {isAuthenticated && hasRole ? (
             <>
               <LinkBox>
                 <LinkOverlay href="/jobs">
@@ -70,7 +71,7 @@ export const Header = () => {
           ) : null}
         </Flex>
         <Box flexGrow={1}>
-          {isAuthenticated ? (
+          {isAuthenticated && hasRole ? (
             <Input
               placeholder="Search user/job"
               onKeyPress={(ev) => searchHandler(ev.key, ev.currentTarget.value)}

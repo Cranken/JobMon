@@ -33,6 +33,15 @@ function MyApp({ Component, pageProps }: AppProps) {
     });
     redirectionString = "Checking user-roles";
   }
+  else if (isAuthenticated &&
+      router.pathname == "/role-error" &&
+      !useHasNoAllowedRole(user)) {
+
+    useEffect(() => {
+      router.push("/jobs")
+    });
+    redirectionString = "Redirecting to jobs...";
+  }
   else {
     useEffect(() => {
       if (!isAuthenticated && router.pathname !== "/login") {
