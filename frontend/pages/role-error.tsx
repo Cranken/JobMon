@@ -42,7 +42,7 @@ const RoleError = () => {
                 <Center>
                     <Text>
                         To get access you need to get a role assigned by the administration team.
-                        You can request access with the form below
+                        You can request access with the button below.
                     </Text>
                 </Center>
                 <Center>
