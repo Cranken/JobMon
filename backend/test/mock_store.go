@@ -83,6 +83,10 @@ func (s *MockStore) SetUserSessionToken(username string, token string) {
 
 func (s *MockStore) RemoveUserSession(username string) {
 	s.Calls += 1
+	if s.JWT == nil {
+		s.JWT = make(map[string]string)
+	}
+	delete(s.JWT, username)
 }
 
 func (s *MockStore) GetUserRoles(username string) (store.UserRoles, bool) {
