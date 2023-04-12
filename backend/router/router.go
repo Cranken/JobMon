@@ -1148,7 +1148,9 @@ func (r *Router) NotifyAdmin(
 		"Currently this user has no role allwoing to access the webinterface." +
 		"\n\n" + dat.Username + " requests a Role to access the webinterface."
 
-	r.notifier.Notify(subject, message)
-
-	w.WriteHeader(http.StatusOK)
+	if r.notifier.Notify(subject, message) != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
 }

@@ -29,7 +29,7 @@ func (em *EmailNotifier) Init(c config.Configuration) {
 }
 
 // Sends a notification with the given message
-func (em *EmailNotifier) Notify(subject string, message string) {
+func (em *EmailNotifier) Notify(subject string, message string) error {
 	logging.Info("EmailNotifier: Notify(): Sending message \"", subject, "\" \"", message, "\" via email")
 
 	m := gomail.NewMessage()
@@ -46,6 +46,8 @@ func (em *EmailNotifier) Notify(subject string, message string) {
 	err := d.DialAndSend(m)
 	if err != nil {
 		logging.Error("EmailNotifier: Notify(): Failed to send Email")
-		return
+		return err
 	}
+
+	return nil
 }
