@@ -9,6 +9,7 @@ import (
 
 type MockStore struct {
 	Calls int
+	JWT   map[string]string
 }
 
 func (s *MockStore) Init(c config.Configuration, database *db.DB) {
@@ -66,11 +67,18 @@ func (s *MockStore) RemoveTag(id int, tag *job.JobTag) error {
 
 func (s *MockStore) GetUserSessionToken(username string) (string, bool) {
 	s.Calls += 1
-	return "", true
+	if s.JWT == nil {
+		s.JWT = make(map[string]string)
+	}
+	return s.JWT[username], true
 }
 
 func (s *MockStore) SetUserSessionToken(username string, token string) {
 	s.Calls += 1
+	if s.JWT == nil {
+		s.JWT = make(map[string]string)
+	}
+	s.JWT[username] = token
 }
 
 func (s *MockStore) RemoveUserSession(username string) {
