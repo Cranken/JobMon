@@ -30,7 +30,7 @@ func (em *EmailNotifier) Init(c config.Configuration) {
 
 // Sends a notification with the given message
 func (em *EmailNotifier) Notify(subject string, message string) error {
-	logging.Info("EmailNotifier: Notify(): Sending message \"", subject, "\" \"", message, "\" via email")
+	logging.Info("EmailNotifier: Notify(): Sending message \"", subject, "\" via email")
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", em.SenderAddress)

@@ -1143,6 +1143,12 @@ func (r *Router) NotifyAdmin(
 		return
 	}
 
+	if utils.Contains(dat.Roles, "user") || utils.Contains(dat.Roles, "admin") {
+		logging.Error("Router: NotifyAdmin(): User already has roles")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	subject := "Role request by " + dat.Username
 	message := "The user " + dat.Username + " tried to access the jobmon-system. " +
 		"Currently this user has no role allwoing to access the webinterface." +
