@@ -36,7 +36,9 @@ var standartLifetime, _ = time.ParseDuration("120s")
 
 // Tests if auth is working with valid tokens
 func TestValidToken(t *testing.T) {
+	// Setup test environment
 	authManager := AuthManager{}
+	// Set required global jobmon config options
 	config := config.Configuration{
 		JSONWebTokenLifeTime: standartLifetime,
 		APITokenLifeTime:     standartLifetime,
@@ -53,6 +55,7 @@ func TestValidToken(t *testing.T) {
 			Username: "userTest",
 		}
 
+	// Test with valid user
 	token, _ := authManager.GenerateJWT(user)
 	UI, err := authManager.validate(token)
 	if err != nil {
@@ -83,6 +86,7 @@ func TestExpiredToken(t *testing.T) {
 			Username: "userTest",
 		}
 
+	// Test with expired token
 	token, _ := authManager.GenerateJWT(user)
 	_, err := authManager.validate(token)
 	if err == nil {
@@ -121,7 +125,7 @@ func TestTokenFromFuture(t *testing.T) {
 			},
 		}
 
-	// Create JSON web token
+	// Create JSON web token with issued at in the future
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	ret, _ := token.SignedString(authManager.hmacSampleSecret)
 	_, err := authManager.validate(ret)
@@ -160,7 +164,7 @@ func TestTokenWrongIssuer(t *testing.T) {
 			},
 		}
 
-	// Create JSON web token
+	// Create JSON web token with wrong issuer
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	ret, _ := token.SignedString(authManager.hmacSampleSecret)
 	_, err := authManager.validate(ret)
@@ -199,7 +203,7 @@ func TestTokenUnknownUser(t *testing.T) {
 			},
 		}
 
-	// Create JSON web token
+	// Create JSON web token with unknown user
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	ret, _ := token.SignedString(authManager.hmacSampleSecret)
 	_, err := authManager.validate(ret)
@@ -228,6 +232,8 @@ func TestLogoutTokenDelete(t *testing.T) {
 		}
 
 	token, _ := authManager.GenerateJWT(user)
+
+	// Test with valid user before logout
 	UI, err := authManager.validate(token)
 	if err != nil {
 		t.Fatalf("Token not accepted before logout")
@@ -235,6 +241,8 @@ func TestLogoutTokenDelete(t *testing.T) {
 	if UI.Username != user.Username || !reflect.DeepEqual(UI.Roles, user.Roles) {
 		t.Fatalf("Wrong user returned before logout")
 	}
+
+	// Test with valid user after logout
 	authManager.Logout("userTest")
 	_, err = authManager.validate(token)
 	if err == nil {
