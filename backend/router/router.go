@@ -572,7 +572,7 @@ func (r *Router) LoginOAuthCallback(
 	}
 	userRoles, ok := r.store.GetUserRoles(userInfo.Username)
 	if !ok || len(userRoles.Roles) == 0 {
-		userRoles.Roles = []string{auth.USER}
+		userRoles.Roles = []string{}
 	}
 
 	user := auth.UserInfo{

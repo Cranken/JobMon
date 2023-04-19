@@ -140,13 +140,10 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 			return
 		}
 
-		// Check if the user has defined roles, if not give him a default USER role.
+		// Check if the user has defined roles
 		userRoles, ok := (*authManager.store).GetUserRoles(user.Username)
 		if !ok {
-			if !utils.Contains(userRoles.Roles, USER) {
-				user.Roles = append(userRoles.Roles, USER)
-			}
-			(*authManager.store).SetUserRoles(user.Username, userRoles.Roles)
+			user.Roles = []string{}
 			ok = true
 		}
 

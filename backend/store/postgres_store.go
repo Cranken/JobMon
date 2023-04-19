@@ -358,7 +358,10 @@ func (s *PostgresStore) GetUserRoles(
 			WherePK().
 			Scan(context.Background())
 	if err != nil {
-		userRoles = UserRoles{Username: username}
+		userRoles = UserRoles{
+			Username: username,
+			Roles:    []string{},
+		}
 		return
 	}
 
