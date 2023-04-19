@@ -13,7 +13,7 @@ import {
 } from "@chakra-ui/react";
 import { useCookies } from "react-cookie";
 import { MdLogout } from "react-icons/md";
-import { useIsAuthenticated, UserRole } from "../../utils/auth";
+import {useHasNoAllowedRole, useIsAuthenticated, UserRole} from "../../utils/auth";
 import { useGetUser } from "../../utils/auth";
 import React from "react";
 
@@ -25,6 +25,7 @@ export const Header = () => {
   const buttonBg = useColorModeValue("gray.500", "gray.400");
   const searchInputColor = useColorModeValue("gray.800", "whiteAlpha.900");
   const isAuthenticated = useIsAuthenticated();
+  const hasRole = (user.Roles) ? !useHasNoAllowedRole(user) : false;
 
   const logout = () => {
     fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/logout", {
@@ -38,7 +39,7 @@ export const Header = () => {
     <header>
       <Flex bg={headerBg} p={2}>
         <Flex flexGrow={1} gap={2}>
-          {isAuthenticated ? (
+          {isAuthenticated && hasRole ? (
             <>
               <LinkBox>
                 <LinkOverlay href="/jobs">
@@ -70,7 +71,7 @@ export const Header = () => {
           ) : null}
         </Flex>
         <Box flexGrow={1}>
-          {isAuthenticated ? (
+          {isAuthenticated && hasRole ? (
             <Input
               placeholder="Search user/job"
               onKeyPress={(ev) => searchHandler(ev.key, ev.currentTarget.value)}

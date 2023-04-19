@@ -32,6 +32,11 @@ export const useIsAuthenticated = () => {
   return user.Roles !== undefined && user.Username !== undefined;
 };
 
+export const useHasNoAllowedRole = (user: AuthUser) => {
+  return (user.Roles.indexOf(UserRole.Admin) < 0) &&
+      (user.Roles.indexOf(UserRole.User) < 0)
+}
+
 
 export const authFetch = (url: string, options?: RequestInit) => {
   const p = fetch(url.toString(), { credentials: "include", ...options }).then((res) => {

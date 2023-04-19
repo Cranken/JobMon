@@ -33,6 +33,7 @@ ADD store ./store
 ADD test ./test
 ADD utils ./utils
 ADD router ./router
+ADD notify ./notify
 COPY jobmon.go ./
 
 # Default build environment settigs

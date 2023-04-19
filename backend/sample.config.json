@@ -46,5 +46,12 @@
             "BCryptHash": "$2b$12$CnEzpQF5Mj9vuVmuQFgwJufnArhWZDbSvE/QjVIcRQVZ27W7YVMJu",
             "Role": "admin"
         }
+    },
+    "EmailNotification": {
+        "SenderAddress": "<sender_email>",
+        "SenderPassword": "<sender_password>",
+        "ReceiverAddress": "<receiver_email>",
+        "SmtpHost": "<smtp_host>",
+        "SmtpPort": 465
     }
 }

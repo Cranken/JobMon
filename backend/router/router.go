@@ -10,6 +10,7 @@ import (
 	"jobmon/job"
 	"jobmon/logging"
 	cache "jobmon/lru_cache"
+	"jobmon/notify"
 	jobstore "jobmon/store"
 	"jobmon/utils"
 	"net/http"
@@ -34,6 +35,7 @@ type Router struct {
 	authManager *auth.AuthManager
 	upgrader    websocket.Upgrader
 	logger      *utils.WebLogger
+	notifier    *notify.EmailNotifier
 }
 
 // Init starts up the server and sets up all the necessary handlers then it start the main web server.
@@ -43,7 +45,8 @@ func (r *Router) Init(
 	db *database.DB,
 	jobCache *cache.LRUCache,
 	authManager *auth.AuthManager,
-	logger *utils.WebLogger) {
+	logger *utils.WebLogger,
+	notifier *notify.EmailNotifier) {
 
 	r.store = store
 	r.config = config
@@ -55,6 +58,7 @@ func (r *Router) Init(
 			return true
 		}}
 	r.logger = logger
+	r.notifier = notifier
 
 	router := httprouter.New()
 	router.GET("/auth/oauth/login", r.LoginOAuth)
@@ -77,6 +81,7 @@ func (r *Router) Init(
 	router.POST("/api/admin/refresh_metadata/:id", authManager.Protected(r.RefreshMetadata, auth.ADMIN))
 	router.GET("/api/config/users/:user", authManager.Protected(r.GetUserConfig, auth.ADMIN))
 	router.PATCH("/api/config/users/:user", authManager.Protected(r.SetUserConfig, auth.ADMIN))
+	router.POST("/api/notify/admin", r.NotifyAdmin)
 	router.GET("/api/ping", r.ping)
 
 	server := &http.Server{
@@ -567,7 +572,7 @@ func (r *Router) LoginOAuthCallback(
 	}
 	userRoles, ok := r.store.GetUserRoles(userInfo.Username)
 	if !ok || len(userRoles.Roles) == 0 {
-		userRoles.Roles = []string{auth.USER}
+		userRoles.Roles = []string{}
 	}
 
 	user := auth.UserInfo{
@@ -1113,6 +1118,52 @@ func (r *Router) parseGetJobParams(params url.Values) (filter job.JobFilter) {
 		filter.Tags = &tagIds
 	}
 	return filter
+}
+
+// Sends a notification to the administrators
+func (r *Router) NotifyAdmin(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params) {
+
+	logging.Info("Request Notification to admins")
+
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		logging.Error("Router: NotifyAdmin(): Could not read http request body")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	var dat auth.UserInfo
+	err = json.Unmarshal(body, &dat)
+	if err != nil {
+		logging.Error("Router: NotifyAdmin(): Could not unmarshal http request body")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if dat.Username == "" {
+		logging.Error("Router: NotifyAdmin(): Could not read data from http request body")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if utils.Contains(dat.Roles, "user") || utils.Contains(dat.Roles, "admin") {
+		logging.Error("Router: NotifyAdmin(): User already has roles")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	subject := "Role request by " + dat.Username
+	message := "The user " + dat.Username + " tried to access the jobmon-system. " +
+		"Currently this user has no role allwoing to access the webinterface." +
+		"\n\n" + dat.Username + " requests a Role to access the webinterface."
+
+	if r.notifier.Notify(subject, message) != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
 }
 
 // Ping function sending back the current time

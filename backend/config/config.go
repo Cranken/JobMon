@@ -64,6 +64,8 @@ type Configuration struct {
 	MetricCategories []string `json:"MetricCategories"`
 	// Metrics to display in the radar chart; Will be moved to frontend config
 	RadarChartMetrics []string `json:"RadarChartMetrics"`
+	// Configuration for email notifications
+	Email EmailConfig `json:"EmailNotification"`
 }
 
 // Config from the command line interface
@@ -191,6 +193,20 @@ type OAuthConfig struct {
 	// URL to which the user will be redirected
 	// to after successful login. Set to some frontend url, e.g. "<frontend_host>/jobs"
 	AfterLoginRedirectUrl string `json:"AfterLoginRedirectUrl"`
+}
+
+// EmailConfig contains configurations for email notifications
+type EmailConfig struct {
+	// Address to send notifications from
+	SenderAddress string `json:"SenderAddress"`
+	// Password to use the sender address
+	SenderPassword string `json:"SenderPassword"`
+	// Address to send notifications to
+	ReceiverAddress string `json:"ReceiverAddress"`
+	// Address of the smtp-server
+	SmtpHost string `json:"SmtpHost"`
+	// Port of the smtp-server
+	SmtpPort int `json:"SmtpPort"`
 }
 
 // Init reads the config.json file and maps the data form the json file to the
