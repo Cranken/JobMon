@@ -33,7 +33,6 @@ const (
 type AuthPayload struct {
 	Username string
 	Password string
-	Remember bool
 }
 
 // UserInfo stores the roles and the username of a user.
@@ -380,7 +379,7 @@ func (auth *AuthManager) AuthLocalUser(
 
 // Logout logs out user <username> from active sessions
 func (auth *AuthManager) Logout(username string) {
-	(*auth.store).RemoveUserSessionToken(username)
+	(*auth.store).RemoveUserSession(username)
 }
 
 // OAuthAvailable checks if OAuth is available.

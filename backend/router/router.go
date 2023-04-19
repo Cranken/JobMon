@@ -82,6 +82,7 @@ func (r *Router) Init(
 	router.GET("/api/config/users/:user", authManager.Protected(r.GetUserConfig, auth.ADMIN))
 	router.PATCH("/api/config/users/:user", authManager.Protected(r.SetUserConfig, auth.ADMIN))
 	router.POST("/api/notify/admin", r.NotifyAdmin)
+	router.GET("/api/ping", r.ping)
 
 	server := &http.Server{
 		Addr:    r.config.ListenAddress,
@@ -618,8 +619,11 @@ func (r *Router) Logout(
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	// Logout user in authManager
 	r.authManager.Logout(dat.Username)
 
+	// Clear authorization cooky
 	http.SetCookie(w,
 		&http.Cookie{
 			Name:    "Authorization",
@@ -628,6 +632,7 @@ func (r *Router) Logout(
 			Path:    "/",
 		})
 	w.WriteHeader(http.StatusOK)
+
 	logging.Info("Router: Logout(): logged out user ", dat.Username)
 }
 
@@ -1159,4 +1164,15 @@ func (r *Router) NotifyAdmin(
 	} else {
 		w.WriteHeader(http.StatusOK)
 	}
+}
+
+// Ping function sending back the current time
+func (r *Router) ping(w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params) {
+
+	now := time.Now()
+
+	w.WriteHeader(http.StatusAccepted)
+	w.Write([]byte(now.Format("2006-01-02 15:04:05")))
 }

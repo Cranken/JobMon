@@ -37,7 +37,7 @@ type JobMetadata struct {
 // JobMetaData represents the job data.
 type JobMetadataData struct {
 	Config config.MetricConfig
-	// Average
+	// Mean
 	Data float64
 	// Max
 	Max float64
