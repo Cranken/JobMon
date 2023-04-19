@@ -570,9 +570,20 @@ func (r *Router) LoginOAuthCallback(
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	// Read users roles from store
 	userRoles, ok := r.store.GetUserRoles(userInfo.Username)
-	if !ok || len(userRoles.Roles) == 0 {
-		userRoles.Roles = []string{}
+	if !ok {
+		roles := []string{}
+		userRoles.Roles = roles
+		r.store.SetUserRoles(userInfo.Username, roles)
+	}
+
+	// Auto assign user role, if user self service is desired
+	if len(userRoles.Roles) == 0 && r.config.AutoAssignUserRole {
+		roles := []string{auth.USER}
+		userRoles.Roles = roles
+		r.store.SetUserRoles(userInfo.Username, roles)
 	}
 
 	user := auth.UserInfo{
