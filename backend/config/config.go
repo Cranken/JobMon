@@ -27,6 +27,9 @@ type Configuration struct {
 	APITokenLifeTimeString     string        `json:"api_token_life_time"`
 	APITokenLifeTime           time.Duration `json:"-"`
 
+	// Do you want to automatically assign user role to users without assigned roles?
+	AutoAssignUserRole bool `json:"auto_assign_user_role"`
+
 	// Configuration for performance metrics database
 	// current implementation uses InfluxDB only
 	DBConfig
@@ -248,6 +251,7 @@ func (c *Configuration) Init() {
 	// Default config values
 	c.JSONWebTokenLifeTimeString = "24h"
 	c.APITokenLifeTimeString = fmt.Sprint(10*365*24, "h") // API token should "never" expire
+	c.AutoAssignUserRole = false
 
 	// Decode JSON
 	d := json.NewDecoder(bytes.NewReader(data))

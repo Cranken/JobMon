@@ -358,10 +358,12 @@ func (s *PostgresStore) GetUserRoles(
 			WherePK().
 			Scan(context.Background())
 	if err != nil {
+		logging.Error("store: GetUserRoles: Failed to get user role for user '", username, "': ", err)
 		userRoles = UserRoles{
 			Username: username,
 			Roles:    []string{},
 		}
+		ok = false
 		return
 	}
 

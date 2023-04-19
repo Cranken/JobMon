@@ -140,24 +140,12 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 			return
 		}
 
-		// Check if the user has defined roles
-		userRoles, ok := (*authManager.store).GetUserRoles(user.Username)
-		if !ok {
-			user.Roles = []string{}
-			ok = true
-		}
-
 		/*
-		* userRoles.Roles contains the roles stored in the Postgres database.
 		* user.Roles contains the roles send in the authorization header.
-		*
-		* Users are allowed if one of both lists contains the needed auth-level or one of both contains the role "admin"
+		* Users are allowed if this list contains the needed auth-level or the role "admin"
 		 */
-		if ok &&
-			(utils.Contains(userRoles.Roles, authLevel) ||
-				utils.Contains(userRoles.Roles, ADMIN) ||
-				utils.Contains(user.Roles, ADMIN) ||
-				utils.Contains(user.Roles, authLevel)) {
+		if utils.Contains(user.Roles, ADMIN) ||
+			utils.Contains(user.Roles, authLevel) {
 			h(w, r, ps, user)
 		} else {
 			http.SetCookie(
