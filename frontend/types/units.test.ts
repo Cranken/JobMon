@@ -1,4 +1,4 @@
-import { getBaseUnit, getPrefix, Units, Prefixes } from "./units"
+import { getBaseUnit, getPrefix, Units, Prefixes, Unit } from "./units"
 
 
 describe("Tests getBaseUnit function", () => {
@@ -55,5 +55,96 @@ describe ("Tests getPrefix function", () => {
     })
     test("Prefix of nothing", () => {
         expect(getPrefix("", Units.None)).toBe(Prefixes.None)
+    })
+})
+
+
+describe("Tests Unit class valueToString method", () => {
+    test("1001 B ~~ 1.00 kB", () => {
+        const unit = new Unit(1001, "B");
+        expect(unit.valueToString()).toBe("1.00")
+    })
+    test("1001 kB ~~ 1.00 MB", () => {
+        const unit = new Unit(1001, "kB");
+        expect(unit.valueToString()).toBe("1.00")
+    })
+    test("999 OP/s doesn't change", () => {
+        const unit = new Unit(999, "OP/s");
+        expect(unit.valueToString()).toBe("999.00")
+    })
+    test("102846 OP/s ~~ 102.85 kOP/s", () => {
+        const unit = new Unit(102846, "OP/s");
+        expect(unit.valueToString()).toBe("102.85")
+    })
+    test("1028463 B/s ~~ 123.46 MB ", () => {
+        const unit = new Unit(123456002, "kB");
+        expect(unit.valueToString()).toBe("123.46")
+    })
+    
+})
+
+describe("Tests Unit class prefixToString method", () => {
+    test("1001 B ~~ 1.00 kB", () => {
+        const unit = new Unit(1001, "B");
+        expect(unit.prefixToString()).toBe("kB")
+    })
+    test("1001 kB ~~ 1.00 MB", () => {
+        const unit = new Unit(1001, "kB");
+        expect(unit.prefixToString()).toBe("MB")
+    })
+    test("999 OP/s doesn't change", () => {
+        const unit = new Unit(999, "OP/s");
+        expect(unit.prefixToString()).toBe("OP/s")
+    })
+    test("102846 OP/s ~~ 1028.85 kOP/s", () => {
+        const unit = new Unit(102846, "OP/s");
+        expect(unit.prefixToString()).toBe("kOP/s")
+    })
+    test("123000 GB/s ~~ 123 TB/s ", () => {
+        const unit = new Unit(12300, "GB/s");
+        expect(unit.prefixToString()).toBe("TB/s")
+    })
+})
+
+describe("Tests Unit class toString method", () => {
+    test("1001 B ~~ 1.00 kB", () => {
+        const unit = new Unit(1001, "B");
+        expect(unit.toString()).toBe("1.00 kB")
+    })
+    test("1001 kB ~~ 1.00 MB", () => {
+        const unit = new Unit(1001, "kB");
+        expect(unit.toString()).toBe("1.00 MB")
+    })
+    test("999 OP/s doesn't change", () => {
+        const unit = new Unit(999, "OP/s");
+        expect(unit.toString()).toBe("999.00 OP/s")
+    })
+    test("102846 OP/s ~~ 102.85 kOP/s", () => {
+        const unit = new Unit(102846, "OP/s");
+        expect(unit.toString()).toBe("102.85 kOP/s")
+    })
+})
+
+
+describe("Tests Unit class bestPrefix method", () => {
+    test("1001 B ~~ 1.00 kB", () => {
+        const unit = new Unit(1001, "B");
+        expect(unit.bestPrefix()).toBe("kilo")
+    })
+    test("1001 kB ~~ 1.00 MB", () => {
+        const unit = new Unit(1001, "kB");
+        expect(unit.bestPrefix()).toBe("mega")
+    })
+    test("999 OP/s doesn't change", () => {
+        const unit = new Unit(999, "OP/s");
+        expect(unit.bestPrefix()).toBe("None")
+    })
+    test("102846 OP/s ~~ 102.85 kOP/s", () => {
+        const unit = new Unit(102846, "OP/s");
+        expect(unit.bestPrefix()).toBe("kilo")
+    })
+    test("123000 GB/s ~~ 123 TB/s ", () => {
+        const unit = new Unit(12300, "GB/s");
+        expect(unit.bestPrefix()).toBe("tera")
     })
 })
