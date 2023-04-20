@@ -6,6 +6,7 @@ import (
 
 	"crypto/tls"
 
+	// Package gomail provides a simple interface to compose emails and to mail them efficiently
 	gomail "gopkg.in/mail.v2"
 )
 

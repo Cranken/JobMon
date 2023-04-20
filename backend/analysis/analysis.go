@@ -6,6 +6,7 @@ import (
 
 	"jobmon/job"
 
+	// Changepoint is a Go library for changepoint detection with support for nonparametric distributions
 	"pgregory.net/changepoint"
 )
 

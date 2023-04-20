@@ -11,6 +11,7 @@ import (
 	"jobmon/logging"
 	"time"
 
+	// SQL-first Golang ORM for PostgreSQL, MySQL, MSSQL, and SQLite
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"

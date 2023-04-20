@@ -3,7 +3,7 @@ package router
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"jobmon/auth"
 	conf "jobmon/config"
 	database "jobmon/db"
@@ -20,9 +20,13 @@ import (
 	"strings"
 	"time"
 
+	// The uuid package generates and inspects UUIDs based on RFC 4122 and DCE 1.1: Authentication and Security Services.
 	"github.com/google/uuid"
+	// Gorilla WebSocket is a Go implementation of the WebSocket protocol
 	"github.com/gorilla/websocket"
+	// HttpRouter is a lightweight high performance HTTP request router (also called multiplexer or just mux for short) for Go
 	"github.com/julienschmidt/httprouter"
+	// Package slices defines various functions useful with slices of any type
 	"golang.org/x/exp/slices"
 )
 
@@ -101,7 +105,7 @@ func (r *Router) JobStart(
 	_ auth.UserInfo) {
 
 	// Read body
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		errStr := fmt.Sprintln("JobStart: Could not read http request body")
 		logging.Error(errStr)
@@ -139,7 +143,7 @@ func (r *Router) JobStop(
 	_ auth.UserInfo) {
 
 	// Parse job information
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		errStr := fmt.Sprintln("router: JobStop(): Could not read http request body")
 		logging.Error(errStr)
@@ -453,7 +457,7 @@ func (r *Router) Login(
 	req *http.Request,
 	params httprouter.Params) {
 
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		logging.Error("Router: Login(): Could not read http request body")
 		w.WriteHeader(http.StatusBadRequest)
@@ -610,7 +614,7 @@ func (r *Router) Logout(
 	_ auth.UserInfo) {
 
 	// Read body
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		logging.Error("Router: Logout(): Could not read http request body")
 		w.WriteHeader(http.StatusBadRequest)
@@ -820,7 +824,7 @@ func (r *Router) UpdateConfig(
 	req *http.Request,
 	params httprouter.Params,
 	user auth.UserInfo) {
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		logging.Error("Router: UpdateConfig(): Could not read update config request body: ", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -991,7 +995,7 @@ func (r *Router) SetUserConfig(
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		logging.Error("Router: SetUserConfig(): Could not read request body for user ", userStr, ": ", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -1033,7 +1037,7 @@ func (r *Router) parseTag(
 		return
 	}
 
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		logging.Error("Router: parseTag(): Could not read http request body")
 		w.WriteHeader(http.StatusBadRequest)
@@ -1139,7 +1143,7 @@ func (r *Router) NotifyAdmin(
 
 	logging.Info("Request Notification to admins")
 
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		logging.Error("Router: NotifyAdmin(): Could not read http request body")
 		w.WriteHeader(http.StatusBadRequest)
