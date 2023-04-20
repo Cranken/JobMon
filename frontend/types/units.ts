@@ -31,7 +31,7 @@ interface UnitsType {
 /**
  * Units is just an instance of UnitsType.
  */
-const Units: UnitsType = {
+export const Units: UnitsType = {
   Flops: {
     DisplayFormat: "FLOP/s",
     Prefix: PrefixType.Metric,
@@ -62,7 +62,7 @@ const Units: UnitsType = {
   },
   Watts: {
     DisplayFormat: "W",
-    Prefix: PrefixType.Normalized,
+    Prefix: PrefixType.Metric,
   },
   IOps: {
     DisplayFormat: "IOps",
@@ -72,9 +72,9 @@ const Units: UnitsType = {
     DisplayFormat: "MetaOps",
     Prefix: PrefixType.Normalized
   },
-  Opss: {
-    DisplayFormat: "OPs/s",
-    Prefix: PrefixType.Exponential,
+  OPs: {
+    DisplayFormat: "OP/s",
+    Prefix: PrefixType.Metric,
   },
   None: {
     DisplayFormat: "",
@@ -102,7 +102,7 @@ interface PrefixesType {
 /**
  * Prefixes is just an instance of PrefixType, where all the data prefixes are given
  */
-const Prefixes: PrefixesType = {
+export const Prefixes: PrefixesType = {
   kilo: {
     Short: "k",
     Exp: 3,
@@ -270,7 +270,7 @@ export class Unit {
  * @param str - unit given as a string
  * @returns a UnitType which has the same DisplayFormat. 
  */
-const getBaseUnit = (str: string) => {
+export const getBaseUnit = (str: string) => {
   const key = Object.keys(Units).find((val) =>
     str.includes(Units[val].DisplayFormat )
     
@@ -284,7 +284,7 @@ const getBaseUnit = (str: string) => {
  * @param type - UnitType where the search will be performed.
  * @returns the corresponding prefix, or a default one which is none.
  */
-const getPrefix = (str: string, type: UnitType) => {
+export const getPrefix = (str: string, type: UnitType) => {
   switch (type.Prefix) {
     case PrefixType.Metric:
       const prefix = Object.keys(Prefixes).find((key) =>
