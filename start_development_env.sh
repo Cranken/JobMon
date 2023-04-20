@@ -12,7 +12,7 @@ function clear_dev_env() {
     echo "Docker containers:"
     sudo docker container ls
     echo "Docker volumes:"
-    docker volume ls
+    sudo docker volume ls
 }
 
 # Rebuild development environment containers
