@@ -5,6 +5,7 @@
 
 stages:
   - build
+  - test
 
 before_script:
   - docker version
@@ -18,3 +19,16 @@ build-backend:
   stage: build
   script:
     - docker compose build jobmon_backend --pull
+
+test-backend:
+  stage: test
+  script:
+    - docker compose --file docker-compose.test.yml build --pull jobmon_backend_tests
+    - docker-compose -f docker-compose.test.yml run --rm jobmon_backend_tests
+
+test-frontend:
+  stage: test
+  script:
+    - docker compose --file docker-compose.test.yml build --pull jobmon_frontend_tests
+    - docker-compose -f docker-compose.test.yml run --rm jobmon_frontend_tests
+   
