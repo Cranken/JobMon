@@ -26,6 +26,7 @@ RUN apt-get update \
 ENV DO_VET=true \
     DO_STATICCHECK=true \
     DO_PKG_UPDATE=false \
+    DO_TESTS=false \
     CONFIG="/app/config.json" \
     LOGLEVEL=3 \
     LISTEN_ADDR=":8080"
@@ -44,6 +45,9 @@ CMD [ \
  fi && \
  if [[ ${DO_STATICCHECK} == true ]]; then \
     /go/bin/staticcheck ./... ; \
+ fi && \
+ if [[ ${DO_TESTS} ]]; then \
+   go test -v ./... ; \
  fi && \
  exec go run . \
      --config=\"${CONFIG}\" \

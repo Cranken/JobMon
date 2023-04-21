@@ -19,4 +19,9 @@ function clear_dev_env() {
 sudo docker compose --file docker-compose.development.yml build --pull
 
 # Start develepment environmemnt services
-sudo docker compose --file docker-compose.development.yml up
+sudo \
+  DO_VET=true \
+  DO_STATICCHECK=true \
+  DO_PKG_UPDATE=false \
+  DO_TESTS=false \
+  docker compose --file docker-compose.development.yml up
