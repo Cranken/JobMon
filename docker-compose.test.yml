@@ -1,5 +1,8 @@
+# Docker configuration for containers used in testing process.
+# Those services are mainly used in CI/CD pipeline.
+# It is the purpose of both containers to run the corresponding unit-tests for the back- and frontend
 services:
-  # docker-compose -f docker-compose.test.yml run --rm jobmon_frontend_tests
+
   jobmon_frontend_tests:
     restart: no
     build:

@@ -1,3 +1,5 @@
+# This dockerfile runs the yest tests for the frontend.
+
 # Node.js Docker Image
 # * [DockerHub Page](https://hub.docker.com/_/node)
 ARG NODE_RELEASE=16 \
