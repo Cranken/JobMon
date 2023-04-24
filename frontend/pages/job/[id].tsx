@@ -149,6 +149,16 @@ const Job: NextPage = () => {
   const metricGroups = categories.map((c) => filteredMetricData.filter((v) => v.Config.Categories.includes(c)));
   const quantileGroups = categories.map((c) => filteredQuantileData.filter((v) => v.Config.Categories.includes(c)));
 
+  const cps: ChangePoint[] = data.Metadata.Data.filter((x) => {
+    return x.ChangePoints.length != 0
+  }).map((x) => {
+    const cp: ChangePoint = {
+      guid: x.Config.GUID,
+      date: x.ChangePoints.map((d) => new Date(d))
+    }
+    return cp
+  })
+
   return (
     <Box m={5}>
       <Grid
@@ -202,6 +212,8 @@ const Job: NextPage = () => {
                   }
                   isLoading={isLoading}
                   autoScale={autoScale}
+                  showCP={true}
+                  changepoints={cps}
                 />
               </TabPanel>
             ) :
@@ -225,6 +237,8 @@ const Job: NextPage = () => {
                     copy.set(m, fn);
                     return copy;
                   })}
+                  showCP={true}
+                  changepoints={cps}
                 />
               </TabPanel>
             )
@@ -235,6 +249,11 @@ const Job: NextPage = () => {
   );
 };
 export default Job;
+
+export interface ChangePoint {
+  guid: string;
+  date: Date[];
+}
 
 interface JobCache {
   Metadata: Omit<JobData, "MetricData"> | undefined;

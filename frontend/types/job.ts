@@ -162,6 +162,7 @@ export interface JobMetadataData {
   Config: MetricConfig;
   Data: number;
   Max: number;
+  ChangePoints: string[];
 }
 
 /**

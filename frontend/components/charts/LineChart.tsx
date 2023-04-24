@@ -185,7 +185,6 @@ export function LineChart<T>({
         return (typeof xDomain == 'undefined') || (xDomain[0] <= x && x <= xDomain[1])
       })
       filteredCP.forEach((x: Date, i: number) =>{
-        console.log(x)
         svg
           .append("g")
           .append("line")

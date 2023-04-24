@@ -5,6 +5,7 @@ import { Unit } from "../../types/units";
 import { LineChart } from "../charts/LineChart";
 import { SettingsIcon } from "@chakra-ui/icons";
 import React from "react";
+import {ChangePoint} from "../../pages/job/[id]";
 
 interface MetricDataChartsProps {
   metrics: MetricData[] | undefined;
@@ -17,6 +18,8 @@ interface MetricDataChartsProps {
   isRunning: boolean;
   aggFnSelection?: Map<string, AggFn>;
   setAggFnSelection: (m: string, v: AggFn) => void;
+  showCP: boolean;
+  changepoints?: ChangePoint[];
 }
 
 export const MetricDataCharts = ({
@@ -28,7 +31,9 @@ export const MetricDataCharts = ({
   isLoading,
   autoScale,
   aggFnSelection,
-  setAggFnSelection
+  setAggFnSelection,
+  showCP,
+  changepoints = []
 }: MetricDataChartsProps) => {
   if (!metrics) {
     return <div>No metric data available</div>;
@@ -52,6 +57,15 @@ export const MetricDataCharts = ({
   for (const metric of sortedMetrics) {
     if (metric.Data === null) {
       continue;
+    }
+    let changepointDates: Date[] = [];
+    if (showCP) {
+      const guid = metric.Config.GUID;
+      changepoints.filter((x: ChangePoint) => {
+        return x.guid === guid
+      }).forEach((x: ChangePoint) => {
+        changepointDates = changepointDates.concat(x.date);
+      })
     }
     const [metricData, z, title] = prepareMetricData(metric, nodeSelection);
     let yDomain: [number, number] | undefined = undefined;
@@ -84,6 +98,8 @@ export const MetricDataCharts = ({
           chartTitle={metric.Config.DisplayName}
           yDomain={yDomain}
           showTooltipSum={metric.Config.AggFn === "sum"}
+          showCP={showCP}
+          cp={changepointDates}
         />
       </ChartContainer>
     );
