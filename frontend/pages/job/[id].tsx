@@ -52,6 +52,7 @@ const Job: NextPage = () => {
     startTime?.getTime(),
   );
   const [showQuantiles, setShowQuantiles] = useState(false);
+  const [showChangepoints, setShowChangepoints] = useState(false);
   const [autoScale, setAutoscale] = useState(true);
   const setTimeRange = (start: Date, end: Date) => {
     setStartTime(start);
@@ -191,6 +192,8 @@ const Job: NextPage = () => {
           setSampleInterval={setSampleInterval}
           selectedMetrics={selectedMetrics}
           setSelectedMetrics={setSelectedMetrics}
+          showChangepoints={showChangepoints}
+          setShowChangepoints={setShowChangepoints}
         />
       </Grid>
       <Tabs isLazy>
@@ -212,7 +215,7 @@ const Job: NextPage = () => {
                   }
                   isLoading={isLoading}
                   autoScale={autoScale}
-                  showCP={true}
+                  showCP={showChangepoints}
                   changepoints={cps}
                 />
               </TabPanel>
@@ -237,7 +240,7 @@ const Job: NextPage = () => {
                     copy.set(m, fn);
                     return copy;
                   })}
-                  showCP={true}
+                  showCP={showChangepoints}
                   changepoints={cps}
                 />
               </TabPanel>

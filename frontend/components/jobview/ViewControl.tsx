@@ -22,6 +22,8 @@ interface ControlProps {
   setSampleInterval: (v: number) => void;
   selectedMetrics: string[];
   setSelectedMetrics: (val: string[]) => void;
+  showChangepoints: boolean
+  setShowChangepoints: (b:boolean) => void;
 }
 
 export const ViewControl = ({
@@ -40,6 +42,8 @@ export const ViewControl = ({
   setSampleInterval,
   selectedMetrics,
   setSelectedMetrics,
+  showChangepoints,
+  setShowChangepoints
 }: ControlProps) => {
   const [, , removeCookie] = useCookies(["Authorization"]);
   return (
@@ -57,6 +61,9 @@ export const ViewControl = ({
         )}
       </Stack>
       <Stack direction="row" gap={2}>
+        <Button fontSize="sm" onClick={() => setShowChangepoints(!showChangepoints)}>
+          Toggle Changepoints
+        </Button>
         {setShowQuantiles ? (
           <Button
             fontSize="sm"
