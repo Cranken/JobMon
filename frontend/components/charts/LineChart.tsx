@@ -38,6 +38,8 @@ export interface LineChartProps<T> {
   fillBoundKeys?: [string, string]; // Fill the area between [lower, upper]
   showTooltipMean?: boolean;
   showTooltipSum?: boolean;
+  showCP?: boolean; // Determines wheter to show changepoints in the chart
+  cp?: Date[] // changepoints
 }
 
 // Typescript version based on chart released under:
@@ -86,6 +88,8 @@ export function LineChart<T>({
   fillBoundKeys,
   showTooltipMean = true,
   showTooltipSum = false,
+  showCP = false,
+  cp = []
 }: LineChartProps<T>) {
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -174,6 +178,26 @@ export function LineChart<T>({
       .join("path")
       .attr("stroke", (_, I) => colorFn(I))
       .attr("d", ([, I]) => line(I));
+
+    
+    if (showCP) {
+      const filteredCP = cp.filter((x: Date) => {
+        return (typeof xDomain == 'undefined') || (xDomain[0] <= x && x <= xDomain[1])
+      })
+      filteredCP.forEach((x: Date, i: number) =>{
+        console.log(x)
+        svg
+          .append("g")
+          .append("line")
+          .attr("x1", xScale(x))
+          .attr("x2", xScale(x))
+          .attr("y1", height - marginBottom)
+          .attr("y2", marginTop)
+          .attr("stroke", "currentColor")
+          .attr("stroke-dasharray", 4);
+      })
+
+    }
 
     const getNearestPointIdx = (pos: number) =>
       d3.least(d3.range(linePointCount), (i) => Math.hypot(xScale(X[i]) - pos));
