@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import JobFilter from "../components/joblist/job-filter/JobFilter";
 import JobList from "../components/joblist/JobList";
-import { dateToUnix, useGetJobs, useStorageState } from "../utils/utils";
+import {dateToUnix, useGetJobs, useSessionStorageState, useStorageState} from "../utils/utils";
 import { JobSearchParams, JobMetadata } from "../types/job";
 import { useRouter } from "next/router";
 import { Box, Center, Divider, Spinner, Stack } from "@chakra-ui/react";
@@ -11,9 +11,9 @@ import { JobListDisplaySettings } from "../components/joblist/JobListDisplaySett
 export const Jobs = () => {
   const router = useRouter();
   const [joblistLimit, setJoblistLimit] = useStorageState("joblistLimit", 25);
-  const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useStorageState("sortyBy", "StartTime");
   const [sortByDescending, setSortByDescending] = useState(true);
+  const [page, setPageStorage, _, pageIsLoading] = useSessionStorageState("jobsPage", 1)
 
   const [params, setParams, , isLoadingParams] =
     useStorageState<JobSearchParams>("joblistParams", {
@@ -50,16 +50,12 @@ export const Jobs = () => {
   }, [router]);
 
   useEffect(() => {
-    setPage(1);
-  }, [joblistLimit, mutableJobs?.length]);
-
-  useEffect(() => {
     if (joblistRef.current) {
       joblistRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [page]);
 
-  if (!jobListData) {
+  if (!jobListData || pageIsLoading) {
     return (
       <Center>
         <Spinner />
@@ -122,24 +118,36 @@ export const Jobs = () => {
     mutableJobs = [...finished, ...running];
   }
 
+
+
+  const pages = mutableJobs.length / joblistLimit;
+  elements.push(
+    <JoblistPageSelection
+        key="pageselection"
+        currentPage={page}
+        pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
+        setPage={setPageStorage}
+        margiBottomEnable={true}
+    ></JoblistPageSelection>
+  );
   elements.push(
     <Box key="joblist" ref={joblistRef}>
       <JobList
-        jobs={mutableJobs}
-        radarChartMetrics={jobListData.Config.RadarChartMetrics}
-        limit={joblistLimit}
-        page={page}
+          jobs={mutableJobs}
+          radarChartMetrics={jobListData.Config.RadarChartMetrics}
+          limit={joblistLimit}
+          page={page}
       />
     </Box>
   );
-
-  const pages = mutableJobs.length / joblistLimit;
   elements.push(
     <JoblistPageSelection
       key="pageselection"
       currentPage={page}
       pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
-      setPage={setPage}
+      setPage={setPageStorage}
+      marginTopEnable={true}
+      margiBottomEnable={true}
     ></JoblistPageSelection>
   );
 
