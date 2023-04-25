@@ -179,12 +179,13 @@ export function LineChart<T>({
       .attr("stroke", (_, I) => colorFn(I))
       .attr("d", ([, I]) => line(I));
 
-    
+    // Calculate lines for changepoints
     if (showCP) {
       const filteredCP = cp.filter((x: Date) => {
-        return (typeof xDomain == 'undefined') || (xDomain[0] <= x && x <= xDomain[1])
-      })
-      filteredCP.forEach((x: Date, i: number) =>{
+        return (typeof xDomain == 'undefined') || (xDomain[0] <= x && x <= xDomain[1]);
+      });
+
+      filteredCP.forEach((x: Date) =>{
         svg
           .append("g")
           .append("line")

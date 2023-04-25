@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useState } from "react";
 import {
   AggFn,
-  JobData,
+  JobData, JobMetadataData,
   MetricData,
   WSLoadMetricsResponse,
   WSMsg,
@@ -151,14 +151,14 @@ const Job: NextPage = () => {
   const quantileGroups = categories.map((c) => filteredQuantileData.filter((v) => v.Config.Categories.includes(c)));
 
   const cps: ChangePoint[] = data.Metadata.Data.filter((x) => {
-    return x.ChangePoints.length != 0
-  }).map((x) => {
+    return x.ChangePoints.length != 0;
+  }).map((x: JobMetadataData) => {
     const cp: ChangePoint = {
       guid: x.Config.GUID,
-      date: x.ChangePoints.map((d) => new Date(d))
-    }
-    return cp
-  })
+      date: x.ChangePoints.map((d: string) => new Date(d))
+    };
+    return cp;
+  });
 
   return (
     <Box m={5}>
