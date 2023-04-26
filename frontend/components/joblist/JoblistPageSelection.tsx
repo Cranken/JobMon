@@ -6,15 +6,19 @@ interface JoblistPageSelectionProps {
   currentPage: number;
   pages: number;
   setPage: (p: number) => void;
+  marginTopEnable?: boolean
+  margiBottomEnable?: boolean
 }
 
 export const JoblistPageSelection = ({
   currentPage,
   pages,
   setPage,
+  marginTopEnable = false,
+  margiBottomEnable = false,
 }: JoblistPageSelectionProps) => {
   return (
-    <Center mt={5}>
+    <Center mt={(marginTopEnable) ? 5 : 0} mb={(margiBottomEnable) ? 5 : 0} >
       <Stack direction="row">
         <IconButton
           disabled={currentPage <= 1}
