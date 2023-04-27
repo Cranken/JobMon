@@ -31,4 +31,4 @@ test-frontend:
   script:
     - docker compose --file docker-compose.test.yml build --pull jobmon_frontend_tests
     - docker compose --file docker-compose.test.yml run --rm jobmon_frontend_tests
-   
+
