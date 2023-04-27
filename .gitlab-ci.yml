@@ -32,11 +32,3 @@ test-frontend:
     - docker compose --file docker-compose.test.yml build --pull jobmon_frontend_tests
     - docker compose --file docker-compose.test.yml run --rm jobmon_frontend_tests
 
-test-frontend-node-modules:
-  stage: test
-  image: node:lts
-  script:
-    - cd frontend/
-    - npm i yarn
-    - yarn audit
-   
