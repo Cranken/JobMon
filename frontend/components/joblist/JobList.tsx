@@ -43,20 +43,20 @@ export const JobList = ({
           <Box>
             <Alert
                 status="info"
-                flexDirection='column'
-                alignItems='center'
-                justifyContent='center'
-                textAlign='center'
-                marginLeft='15px'
-                marginRight='15px'
-                width='calc(100% - 30px)'>
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
+                textAlign="center"
+                marginLeft="15px"
+                marginRight="15px"
+                width="calc(100% - 30px)">
               <AlertIcon />
               <AlertTitle mt={4} mb={1}>
                 No jobs can be shown here.
               </AlertTitle>
               <AlertDescription>
                 There are multiple possible reasons, why you can not see any jobs.
-                Either you have not ran any jobs with the account you're currently logged in with or all your jobs were executed too long ago
+                Either you have not ran any jobs with the account you are currently logged in with or all your jobs were executed too long ago
               </AlertDescription>
             </Alert>
           </Box>
