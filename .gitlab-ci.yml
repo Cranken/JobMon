@@ -37,5 +37,6 @@ test-frontend-node-modules:
   image: node:lts
   script:
     - cd frontend/
+    - npm i yarn
     - yarn audit
    
