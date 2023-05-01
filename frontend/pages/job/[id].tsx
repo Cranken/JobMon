@@ -44,7 +44,7 @@ const Job: NextPage = () => {
   const [startTime, setStartTime] = useState<Date>();
   const [stopTime, setStopTime] = useState<Date>();
   const [aggFnSelection, setAggFnSelection] = useState<Map<string, AggFn>>();
-  const [data, isLoading] = useGetJobData(
+  const [data, isLoading, containsMetricData] = useGetJobData(
     parseInt(jobId as string),
     node,
     sampleInterval,
@@ -273,7 +273,7 @@ export const useGetJobData: (
   sampleInterval?: number,
   aggFnSelection?: Map<string, AggFn>,
   timeStart?: number
-) => [JobData | undefined, boolean] = (
+) => [JobData | undefined, boolean, boolean] = (
   id: number | undefined,
   node?: string,
   sampleInterval?: number,
@@ -288,7 +288,15 @@ export const useGetJobData: (
     const [ws, setWs] = useState<WebSocket>();
     const [lastMessage, setLastMessage] = useState<WSMsg>({} as WSMsg);
     const [aggFnCache, setAggFnCache] = useState<AggCache>({});
+    const [containsMetricData, setContainsMetricData] = useState(false);
 
+    /**
+     * Stores jobdata in jobcache and populates aggFnCache.
+     * If the jobache already contains metadata they will not be changed.
+     * The metricdata in data will always be placed in the jobcache.
+     *
+     * @param data The data that should be stored
+     */
     const populateJobCache = (data: JobData) => {
       setJobCache((prevState) => {
         const newState = prevState;
@@ -318,7 +326,7 @@ export const useGetJobData: (
       });
     };
 
-    // General data based on sampleInterval
+    // Fetch general data based on sampleInterval from the backend or the jobcache
     useEffect(() => {
       if (!id) {
         return;
@@ -326,6 +334,10 @@ export const useGetJobData: (
       const url = new URL(
         process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}`
       );
+
+      // If the sampleInterval is known, jobCache is checked for existing data.
+      // Otherwise data is directly fetched from the backend.
+      // SampleInterval is eighter set by the user or the recently fetched data for this job
       if (sampleInterval) {
         if (!(sampleInterval in jobCache)) {
           url.searchParams.append("sampleInterval", sampleInterval.toString());
@@ -344,7 +356,8 @@ export const useGetJobData: (
       }
     }, [id, node, jobCache, sampleInterval]);
 
-    // AggFn Metrics
+    // Fetch aggregated data if aggregation-functions are selected.
+    // In case no aggregation-function is selected 
     useEffect(() => {
       if (!jobData) {
         return;
@@ -378,7 +391,8 @@ export const useGetJobData: (
       }
     }, [aggFnSelection, aggFnCache]);
 
-    // Node data
+    // Loads data for specific node
+    // This effect only works if the sampleinterval is already known
     useEffect(() => {
       if (node && node !== "") {
         if (!sampleInterval) {
@@ -484,7 +498,7 @@ export const useGetJobData: (
       }
     }, [ws, timeStart, curLiveWindowStart]);
 
-    return [jobData, isLoading];
+    return [jobData, isLoading, containsMetricData];
   };
 
 interface PartitionMetricSelection {
