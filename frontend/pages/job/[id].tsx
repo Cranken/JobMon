@@ -298,32 +298,40 @@ export const useGetJobData: (
      * @param data The data that should be stored
      */
     const populateJobCache = (data: JobData) => {
-      setJobCache((prevState) => {
+      setJobCache((prevState: JobCache) => {
         const newState = prevState;
         if (!newState.Metadata) {
           newState.Metadata = data;
         }
-        newState[data.SampleInterval] = data.MetricData;
-        setAggFnCache((aggState) => {
-          data.MetricData.forEach((m) => {
-            if (!(data.SampleInterval in aggState)) {
-              aggState[data.SampleInterval] = {};
-            }
-            const intervalData = aggState[data.SampleInterval];
-            if (!(m.Config.GUID in intervalData)) {
-              intervalData[m.Config.GUID] = {};
-            }
-            if (!(m.Config.AggFn in intervalData[m.Config.GUID])) {
-              intervalData[m.Config.GUID] = { [m.Config.AggFn]: m };
-            }
-            aggState[data.SampleInterval] = intervalData;
+        if (data.MetricData != null) {
+          newState[data.SampleInterval] = data.MetricData;
+          setAggFnCache((aggState) => {
+            data.MetricData.forEach((m) => {
+              if (!(data.SampleInterval in aggState)) {
+                aggState[data.SampleInterval] = {};
+              }
+              const intervalData = aggState[data.SampleInterval];
+              if (!(m.Config.GUID in intervalData)) {
+                intervalData[m.Config.GUID] = {};
+              }
+              if (!(m.Config.AggFn in intervalData[m.Config.GUID])) {
+                intervalData[m.Config.GUID] = { [m.Config.AggFn]: m };
+              }
+              aggState[data.SampleInterval] = intervalData;
+            });
+            return aggState;
           });
-          return aggState;
-        });
+          setContainsMetricData(true);
+        }
+        else {
+          setContainsMetricData(false);
+        }
         setIsLoading(false);
         setJobData(data);
+        
         return newState;
       });
+      
     };
 
     // Fetch general data based on sampleInterval from the backend or the jobcache
@@ -354,12 +362,13 @@ export const useGetJobData: (
         setIsLoading(true);
         authFetch(url.toString()).then(populateJobCache);
       }
-    }, [id, node, jobCache, sampleInterval]);
+
+    }, [id, node, jobCache, sampleInterval, containsMetricData]);
 
     // Fetch aggregated data if aggregation-functions are selected.
     // In case no aggregation-function is selected 
     useEffect(() => {
-      if (!jobData) {
+      if (!jobData || !containsMetricData) {
         return;
       }
       const newData = { ...jobData };
@@ -389,7 +398,7 @@ export const useGetJobData: (
         newData.MetricData = newMetricData;
         setJobData(newData);
       }
-    }, [aggFnSelection, aggFnCache]);
+    }, [aggFnSelection, aggFnCache, containsMetricData]);
 
     // Loads data for specific node
     // This effect only works if the sampleinterval is already known
@@ -426,6 +435,8 @@ export const useGetJobData: (
       }
     }, [node, nodeCache, sampleInterval]);
 
+    // Register websocket in case the job is still running and metric-data are available.
+    // The webhook is used to update the displayed data
     useEffect(() => {
       if (jobData?.Metadata.IsRunning && jobData.MetricData) {
         const url = new URL(
@@ -447,8 +458,9 @@ export const useGetJobData: (
       }
     }, [jobData?.Metadata.IsRunning, id]);
 
+    // Filters data from websocket for the configured measurements
     useEffect(() => {
-      if (jobData) {
+      if (jobData && containsMetricData) {
         const newJobData = { ...jobData };
         const data = lastMessage;
         if (
@@ -478,12 +490,14 @@ export const useGetJobData: (
       }
     }, [lastMessage]);
 
+    // Sets the live time from the job's starttime
     useEffect(() => {
       if (curLiveWindowStart === Infinity && timeStart) {
         setCurLiveWindowStart(timeStart);
       }
     }, [timeStart, curLiveWindowStart]);
 
+    // In case we are using a websocket to update our data. Ask for new data
     useEffect(() => {
       if (ws && ws.readyState === ws.OPEN) {
         if (timeStart && timeStart < curLiveWindowStart) {
