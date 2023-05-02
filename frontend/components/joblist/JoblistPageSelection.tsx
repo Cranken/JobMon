@@ -21,7 +21,7 @@ export const JoblistPageSelection = ({
     <Center mt={(marginTopEnable) ? 5 : 0} mb={(margiBottomEnable) ? 5 : 0} >
       <Stack direction="row">
         <IconButton
-          disabled={currentPage <= 1}
+          isDisabled={currentPage <= 1}
           aria-label="backward"
           icon={<ChevronLeftIcon />}
           onClick={() => setPage(currentPage - 1)}
@@ -44,7 +44,7 @@ export const JoblistPageSelection = ({
           </Button>
         ) : null}
         <IconButton
-          disabled={currentPage >= pages}
+          isDisabled={currentPage >= pages}
           aria-label="forward"
           icon={<ChevronRightIcon />}
           onClick={() => setPage(currentPage + 1)}
