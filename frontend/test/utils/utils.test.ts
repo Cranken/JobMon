@@ -1,4 +1,5 @@
-import { checkBetween, clamp, groupBy } from "./utils"
+import { checkBetween, clamp, groupBy } from "@/utils/utils";
+
 
 describe("Tests clamp function", () => {
     test("value smaller than interval", () => {

@@ -62,14 +62,6 @@ export const Units: UnitsType = {
     DisplayFormat: "W",
     Prefix: PrefixType.Metric,
   },
-  IOps: {
-    DisplayFormat: "IOps",
-    Prefix: PrefixType.Metric
-  },
-  MetaOPS: {
-    DisplayFormat: "MetaOps",
-    Prefix: PrefixType.Metric
-  },
   OPs: {
     DisplayFormat: "OP/s",
     Prefix: PrefixType.Metric,
@@ -189,15 +181,6 @@ export class Unit {
     switch (this.type.Prefix) {
       case PrefixType.Exponential:
         return `${this.type.DisplayFormat}`;
-      
-      // case PrefixType.Normalized:
-      //   // print the prefix only for values greater than 10^3
-      //   if (this.value < 1000 ) {
-      //     return `${this.type.DisplayFormat}`  
-      //   }
-      //   else {
-      //     return `${Prefixes["kilo"].Short}${this.type.DisplayFormat}`
-      //   }
       default:
         let best = this.bestPrefix();
         best = (typeof prefix !== 'undefined') ? prefix : best;
@@ -218,16 +201,6 @@ export class Unit {
     switch (this.type.Prefix) {
       case PrefixType.Exponential:
         return this.value.toExponential(2);
-      // case PrefixType.Normalized:
-      //   // Normalize the value only if greater than 10^3.
-      //   if (this.value < 1000) {
-      //     return `${this.value.toFixed(2)}`;
-      //   } else {
-      //     const defaultPrefix = Prefixes["kilo"];
-      //     const exp = Math.pow(defaultPrefix.Base, defaultPrefix.Exp);
-      //     const value = this.value / exp;
-      //     return `${value.toFixed(2)}`;
-      //   }        
       default:
         let best = this.bestPrefix();
         best = (typeof prefix !== 'undefined') ? prefix : best;

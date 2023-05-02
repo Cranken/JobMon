@@ -16,7 +16,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/router";
 
 /**
- * Login is a React component shown up during the login phase.
+ * Login is a React component rendered during the login phase.
  * @returns 
  */
 export const Login = () => {

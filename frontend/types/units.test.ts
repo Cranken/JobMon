@@ -1,6 +1,5 @@
 import { getBaseUnit, getPrefix, Units, Prefixes, Unit } from "./units"
 
-
 describe("Tests getBaseUnit function", () => {
     test("Base unit of kB", () => {
         expect(getBaseUnit("kB")).toBe(Units.Byte)

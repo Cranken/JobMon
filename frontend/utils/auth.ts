@@ -8,7 +8,7 @@ export enum UserRole {
   JobControl = "job-control",
 }
 
-interface AuthUser {
+export interface AuthUser {
   Username: string;
   Roles: UserRole[];
 }

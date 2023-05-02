@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useEffect } from "react";
 import { useCookies } from "react-cookie";
-import { DataMap, JobListData, JobTag } from "../types/job";
-import { JobSearchParams } from "../types/job";
+import { DataMap, JobListData, JobTag, JobSearchParams } from "@/types/job";
+
 
 export const clamp = (val: number, min: number, max: number) =>
   Math.min(Math.max(val, min), max);
