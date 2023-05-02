@@ -15,6 +15,10 @@ import { useRouter } from "next/router";
 import QuantileDataCharts from "../../components/jobview/QuantileDataCharts";
 import Control from "../../components/jobview/ViewControl";
 import {
+  Alert,
+  AlertDescription,
+  AlertIcon,
+  AlertTitle,
   Box,
   Center,
   Grid,
@@ -148,6 +152,46 @@ const Job: NextPage = () => {
   const categories = Array.from(new Set(filteredMetricData.flatMap((m) => m.Config.Categories))).sort((a, b) => a < b ? -1 : 1);
   const metricGroups = categories.map((c) => filteredMetricData.filter((v) => v.Config.Categories.includes(c)));
   const quantileGroups = categories.map((c) => filteredQuantileData.filter((v) => v.Config.Categories.includes(c)));
+
+  if (!containsMetricData) {
+    return (
+      <Box m={5}>
+      <Grid
+        mb={3}
+        p={2}
+        border="1px"
+        borderRadius="10px"
+        templateColumns="repeat(2, 1fr)"
+      >
+        <JobInfo
+          metadata={data.Metadata}
+          setChecked={setChecked}
+          nodes={selection ?? {}}
+        />
+      </Grid>
+      <Box>
+        <Alert
+            status="info"
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            textAlign="center"
+            marginLeft="15px"
+            marginRight="15px"
+            width="calc(100% - 30px)">
+          <AlertIcon />
+          <AlertTitle mt={4} mb={1}>
+            No data can be shown here.
+          </AlertTitle>
+          <AlertDescription>
+            No data is monitored for this job, hence no data is shown here
+          </AlertDescription>
+        </Alert>
+      </Box>
+
+    </Box >
+    );
+  }
 
   return (
     <Box m={5}>
