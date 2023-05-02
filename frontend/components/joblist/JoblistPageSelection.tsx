@@ -10,6 +10,15 @@ interface JoblistPageSelectionProps {
   margiBottomEnable?: boolean
 }
 
+/**
+ * Returns a react-fragment to select pages.
+ * Pages need to have a number in [1, pages]
+ * @param currentPage The currently selected page
+ * @param pages The number of available pages
+ * @param setPage The callback-function to set a selected page.
+ * @param marginTopEnable Enabling a margin at the top.
+ * @param margiBottomEnable Enabling a margin at the bottom
+ */
 export const JoblistPageSelection = ({
   currentPage,
   pages,
