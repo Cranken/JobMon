@@ -24,12 +24,14 @@ test-backend:
   needs:
     - build-backend
   stage: test
-  script:
+  before_script:
     - docker rm jobmon_backend_test || true
+  after_script:
+    - docker rm jobmon_backend_test
+  script:
     - docker compose --file docker-compose.test.yml build --pull jobmon_backend_tests
     - docker compose --file docker-compose.test.yml run --name jobmon_backend_test jobmon_backend_tests
     - docker cp jobmon_backend_test:/app/report_backend.xml ./
-    - docker rm jobmon_backend_test
   artifacts:
     when: always
     reports:
@@ -41,8 +43,11 @@ test-frontend:
   needs:
     - build-frontend
   stage: test
-  script:
+  before_script:
     - docker rm jobmon_frontend_test || true
+  after_script:
+    - docker rm jobmon_frontend_test
+  script:
     - docker compose --file docker-compose.test.yml build --pull jobmon_frontend_tests
     - docker compose --file docker-compose.test.yml run --name jobmon_frontend_test jobmon_frontend_tests
     - docker cp jobmon_frontend_test:/app/report_frontend.xml ./
