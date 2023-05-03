@@ -10,6 +10,10 @@ stages:
 before_script:
   - docker version
 
+###############################################################################
+#### Build stage ##############################################################
+###############################################################################
+
 build-backend:
   stage: build
   script:
@@ -19,6 +23,10 @@ build-frontend:
   stage: build
   script:
     - docker compose build jobmon_frontend --pull
+
+###############################################################################
+#### Test stage ###############################################################
+###############################################################################
 
 test-backend:
   needs:
@@ -33,11 +41,11 @@ test-backend:
     - docker compose --file docker-compose.test.yml run --name jobmon_backend_test jobmon_backend_tests
     - docker cp jobmon_backend_test:/app/report_backend.xml ./
   artifacts:
+    # Artifact to safe the test results and visualize them in gitlab
     when: always
     reports:
       junit:
         - report_backend.xml
-
 
 test-frontend:
   needs:
@@ -53,6 +61,7 @@ test-frontend:
     - docker cp jobmon_frontend_test:/app/report_frontend.xml ./
     - docker rm jobmon_frontend_test
   artifacts:
+    # Artifact to safe the test results and visualize them in gitlab
     when: always
     reports:
       junit:
