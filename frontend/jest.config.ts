@@ -12,7 +12,8 @@ const customJestConfig = {
     '^@/components/(.*)$': '<rootDir>/components/$1',
     '^@/pages/(.*)$': '<rootDir>/pages/$1',
     '^@/utils/(.*)$': '<rootDir>/utils/$1',
-    '@/types/(.*)$': '<rootDir>/types/$1',
+    '^@/types/(.*)$': '<rootDir>/types/$1',
+    '^@/mocks/(.*)$': '<rootDir>/mocks/$1',
   },
   // Add more setup options before each test is run
   // setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],

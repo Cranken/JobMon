@@ -14,7 +14,6 @@ import {
 } from "@chakra-ui/react";
 import React, { useState } from "react";
 import { useRouter } from "next/router";
-// import 'whatwg-fetch';
 /**
  * Login is a React component rendered during the login phase.
  * @returns 
@@ -35,9 +34,9 @@ export const Login = () => {
         credentials: "include",
       }).then((resp) => {
         if (resp.ok) {
-          window.location.href = "/jobs";
+          router.push("/jobs");
         } else {
-          window.location.href = "/login?login_failed";
+          router.push("/login?login_failed");
         }
       });
     }
