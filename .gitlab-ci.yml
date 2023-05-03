@@ -29,7 +29,7 @@ test-backend:
 test-frontend:
   stage: test
   script:
-    - docker container rm jobmon_frontend_tests || true
+    - docker rm jobmon_frontend_tests || true
     - docker compose --file docker-compose.test.yml build --pull jobmon_frontend_tests
     - docker compose --file docker-compose.test.yml run --name jobmon_frontend_test jobmon_frontend_tests
     - docker cp jobmon_frontend_test:/app/junit.xml ./
