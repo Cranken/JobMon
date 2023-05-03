@@ -26,11 +26,11 @@ services:
         target: /app
       # Cache for node modules
       - type: volume
-        source: jobmon_frontend_nodes_modules
+        source: jobmon_frontend_nodes_modules_test
         target: /app/node_modules
       # Cache for next.js folder
       - type: volume
-        source: jobmon_frontend_nextjs
+        source: jobmon_frontend_nextjs_test
         target: /app/.next
 
   jobmon_backend_tests:
@@ -50,19 +50,19 @@ services:
         target: /app
       # Cache for go builds
       - type: volume
-        source: jobmon_backend_cache_go_build
+        source: jobmon_backend_cache_go_build_test
         target: /root/.cache/go-build
       # Cache for go packages
       - type: volume
-        source: jobmon_backend_cache_go_packages
+        source: jobmon_backend_cache_go_packages_test
         target: /go
 
 volumes:
-  jobmon_backend_cache_go_build:
-    name: jobmon_backend_cache_go_build
-  jobmon_backend_cache_go_packages:
-    name: jobmon_backend_cache_go_packages
-  jobmon_frontend_nextjs:
-    name: jobmon_frontend_nextjs
-  jobmon_frontend_nodes_modules:
-    name: jobmon_frontend_nodes_modules
+  jobmon_backend_cache_go_build_test:
+    name: jobmon_backend_cache_go_build_test
+  jobmon_backend_cache_go_packages_test:
+    name: jobmon_backend_cache_go_packages_test
+  jobmon_frontend_nextjs_test:
+    name: jobmon_frontend_nextjs_test
+  jobmon_frontend_nodes_modules_test:
+    name: jobmon_frontend_nodes_modules_test

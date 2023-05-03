@@ -9,6 +9,9 @@
     "test": "jest",
     "test_artifacts" : "jest --ci --reporters=default --reporters=jest-junit"
   },
+  "jest-junit": {
+    "outputName": "report_frontend.xml"
+  },
   "dependencies": {
     "@chakra-ui/icons": "^1.1.1",
     "@chakra-ui/react": "^2.4.9",
