@@ -4,7 +4,7 @@ import base64url from 'base64url';
 
 import { rest } from 'msw';
 import { setupServer } from 'msw/node';
-import { handlers } from './mocks/handlers';
+import { handlers } from '@/mocks/handlers';
 
 
 import { useGetUser, UserRole, AuthUser } from "@/utils/auth";

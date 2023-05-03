@@ -1,17 +1,23 @@
 import { rest } from 'msw';
 import { AuthUser, UserRole } from '@/utils/auth';
 
-const loginUrl = process.env.NEXT_PUBLIC_BACKEND_URL + "/api/login";
-
-
 export const handlers = [
     // Handles a POST /login request.
-    rest.post(loginUrl, (req, res, ctx) => {
-        sessionStorage.setItem('is-authenticated', true.toString())
-        return res(
-            ctx.status(200),
-        )
-    }),
+    // rest.post(loginUrl, (req, res, ctx) => {
+    //     sessionStorage.setItem('is-authenticated', true.toString())
+    //     return res(
+    //         ctx.status(200),
+    //     )
+    // }),
+    rest.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/login`, async (req, res, ctx) => {
+    
+      const { username, password, _ } = await req.json();
+      if (username === "testuser" && password === "testpassword") {
+        return res(ctx.status(200));
+      } else {
+        return res(ctx.status(401), ctx.json({ message: "Unauthorized" }));
+      }
+    })
 
     // Handles a GET /user request.
     // rest.get(loginUrl, (req, res, ctx) => {
@@ -35,16 +41,16 @@ export const handlers = [
     //         }),
     //     )
     // }),
-    rest.get(loginUrl, (req, res, ctx) => {
-        const user: AuthUser = {
-          Username: 'JohnDoe',
-          Roles: [UserRole.User],
-        };
-        return res(
-          ctx.status(200),
-          ctx.json(user),
-        );
-      })
+    // rest.get(loginUrl, (req, res, ctx) => {
+    //     const user: AuthUser = {
+    //       Username: 'JohnDoe',
+    //       Roles: [UserRole.User],
+    //     };
+    //     return res(
+    //       ctx.status(200),
+    //       ctx.json(user),
+    //     );
+    //   })
     
       // rest.get('/admin', (req, res, ctx) => {
       //   const user: AuthUser = {
