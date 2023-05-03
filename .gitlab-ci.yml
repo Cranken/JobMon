@@ -30,5 +30,11 @@ test-frontend:
   stage: test
   script:
     - docker compose --file docker-compose.test.yml build --pull jobmon_frontend_tests
-    - docker compose --file docker-compose.test.yml run --rm jobmon_frontend_tests
-
+    - docker compose --file docker-compose.test.yml run --name jobmon_frontend_test jobmon_frontend_tests
+    - docker cp jobmon_frontend_test:/app/junit.xml ./
+    - docker compose rm jobmon_frontend_test
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - junit.xml
