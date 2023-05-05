@@ -1,4 +1,4 @@
-import { getBaseUnit, getPrefix, Units, Prefixes, Unit } from "./units"
+import { getBaseUnit, getPrefix, Units, Prefixes, Unit } from "@/types/units"
 
 describe("Tests getBaseUnit function", () => {
     test("Base unit of kB", () => {

@@ -5,7 +5,6 @@ import { UserRole, AuthUser, useGetUser } from "./user";
 
 export const useIsAuthenticated = () => {
   const user = useGetUser();
-  console.log(user);
   return user.Roles !== undefined && user.Username !== undefined;
 };
 

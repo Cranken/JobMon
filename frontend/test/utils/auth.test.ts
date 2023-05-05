@@ -1,7 +1,7 @@
 import { rest } from 'msw';
 import { useHasNoAllowedRole, useIsAuthenticated, authFetch } from '@/utils/auth';
 import { useGetUser, AuthUser, UserRole } from '@/utils/user';
-import { renderHook } from '@testing-library/react-hooks';
+import { renderHook } from '@testing-library/react-hooks/native';
 import { server } from '@/mocks/server';
 
 

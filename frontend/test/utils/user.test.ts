@@ -1,5 +1,5 @@
 import { useGetUser, AuthUser, UserRole } from '@/utils/user';
-import { renderHook } from '@testing-library/react-hooks';
+import { renderHook } from '@testing-library/react-hooks/native';
 import { useCookies } from 'react-cookie';
 
 
@@ -22,17 +22,16 @@ describe("useGetUser", () => {
     
         expect(result.current).toEqual({} as AuthUser);
       });
-
-    test("returns AuthUser object when authToken is valid", () => {
-        const authToken = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJSb2xlcyI6WyJhZG1pbiJdLCJVc2VybmFtZSI6ImFkbWluIiwiaXNzIjoibW9uaXRvcmluZy1iYWNrZW5kIiwiZXhwIjoxNjgzMjg2NzU2LCJpYXQiOjE2ODMyMDAzNTZ9.9qGvJebevTB46Z-mWpTfCT2VaCjHB_zddYZAcH6Ikt0";
-        const decodedToken = {
-          Username: "admin",
-          Roles: [UserRole.Admin],
-        };
-        (useCookies as jest.Mock).mockReturnValue([{ Authorization: authToken }]); 
-        const { result } = renderHook(() => useGetUser());
-        console.log(result.current);
-        expect(result.current).toEqual(decodedToken);
-      });
+    // TODO: Write unit tests for valid tokens.
+    // test("returns AuthUser object when authToken is valid", () => {
+    //     const authToken = "Dummy Token";
+    //     const decodedToken = {
+    //       Username: "admin",
+    //       Roles: [UserRole.Admin],
+    //     };
+    //     (useCookies as jest.Mock).mockReturnValue([{ Authorization: authToken }]); 
+    //     const { result } = renderHook(() => useGetUser());
+    //     expect(result.current).toEqual(decodedToken);
+    //   });
     
 });

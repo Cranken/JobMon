@@ -19,14 +19,15 @@ describe("Login component", () => {
         expect(loginButton).toBeInTheDocument();
     });
     
-
     test("Tests form submission with correct credentials.", async () => {
         const router = createMockRouter({});
+        
         render(
             <RouterContext.Provider value={router}>
                 <Login />
             </RouterContext.Provider>
         );
+
         const usernameInput = screen.getByLabelText('Username');
         const passwordInput = screen.getByLabelText('Password');
         const loginButton = screen.getByRole("button", { name: 'Login' });

@@ -15,9 +15,7 @@ export interface AuthUser {
 
 export const useGetUser = () => {
     const [cookies] = useCookies(["Authorization"]);
-    
     const authToken = cookies.Authorization as string;
-    
     if (!authToken) {
       return {} as AuthUser;
     }

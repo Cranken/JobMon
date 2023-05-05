@@ -9,4 +9,12 @@ export const handlers = [
       return res(ctx.status(401), ctx.json({ message: "Login failed" }));
     }
   }),
+  rest.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notify/admin`, async (req, res, ctx) => {
+    const { username, roles } = await req.json();
+    if (username && roles) {
+      return res(ctx.status(200));
+    } else {
+      return res(ctx.status(400));
+    }
+  })
 ]

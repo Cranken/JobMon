@@ -38,7 +38,7 @@ export const Login = () => {
         if (resp.ok) {
             router.push('/jobs');
         } else {
-            router.push('/login?login_failed');
+          router.push('/login?login_failed');
         }
       });
     }
