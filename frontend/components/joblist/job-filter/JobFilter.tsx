@@ -15,14 +15,14 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 import { CUIAutoComplete, Item } from "chakra-ui-autocomplete";
-import { JobSearchParams } from "../../../types/job";
-import { dateToUnix } from "../../../utils/utils";
+import { JobSearchParams } from "@/types/job";
+import { dateToUnix } from "@/utils/utils";
 
 import style from "./JobFilter.module.css";
 import { Stepper } from "./Stepper";
 import React, { useEffect, useState, useRef } from "react";
-import { JobTag } from "../../../types/job";
-import { useGetUser, UserRole } from "../../../utils/user";
+import { JobTag } from "@/types/job";
+import { useGetUser, UserRole } from "@/utils/user";
 
 interface JobFilterProps {
   params: JobSearchParams;

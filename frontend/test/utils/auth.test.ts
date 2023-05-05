@@ -1,9 +1,9 @@
 import { rest } from 'msw';
-import { setupServer } from 'msw/node';
 import { useHasNoAllowedRole, useIsAuthenticated, authFetch } from '@/utils/auth';
 import { useGetUser, AuthUser, UserRole } from '@/utils/user';
 import { renderHook } from '@testing-library/react-hooks';
-import Cookies from 'js-cookie';
+import { server } from '@/mocks/server';
+
 
 
 // mocks useGetUser
@@ -71,4 +71,47 @@ describe("useIsAuthenticated", () => {
     });
   });
 
- 
+  
+describe("authFetch", () => {
+  test("sends credentials with fetch request", async () => {
+    const url = "/api/test";
+    const options = { method: "GET" };
+  
+    server.use(
+      rest.get(url, (req, res, ctx) => {
+        expect(req.credentials).toBe("include");
+        return res(ctx.json({ success: true }));
+      })
+    );
+  
+    await authFetch(url, options);
+  });
+  
+  test("returns response if request is successful", async () => {
+    const url = "/api/test";
+    const options = { method: "GET" };
+    const responseData = { success: true };
+  
+    server.use(
+      rest.get(url, (req, res, ctx) => {
+        return res(ctx.json(responseData));
+      })
+    );
+  
+    const response = await authFetch(url, options);
+    expect(response).toEqual(responseData);
+  });
+  
+  test("throws an error if request is unauthorized", async () => {
+    const url = "/api/test";
+    const options = { method: "GET" };
+  
+    server.use(
+      rest.get(url, (req, res, ctx) => {
+        return res(ctx.status(401));
+      })
+    );
+  
+    await expect(authFetch(url, options)).rejects.toEqual("Unauthorized");
+    });
+});

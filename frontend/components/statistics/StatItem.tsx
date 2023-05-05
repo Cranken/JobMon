@@ -1,6 +1,6 @@
-import { JobListData } from "../../types/job";
-import { groupBy } from "../../utils/utils";
-import { JobMetadata } from "../../types/job";
+import { JobListData } from "@/types/job";
+import { groupBy } from "@/utils/utils";
+import { JobMetadata } from "@/types/job";
 import {
   Box,
   Center,

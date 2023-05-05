@@ -1,5 +1,3 @@
-import { rest } from 'msw';
-import { setupServer } from 'msw/node';
 import { useGetUser, AuthUser, UserRole } from '@/utils/user';
 import { renderHook } from '@testing-library/react-hooks';
 import { useCookies } from 'react-cookie';

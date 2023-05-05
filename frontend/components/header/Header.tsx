@@ -13,8 +13,8 @@ import {
 } from "@chakra-ui/react";
 import { useCookies } from "react-cookie";
 import { MdLogout } from "react-icons/md";
-import {useHasNoAllowedRole, useIsAuthenticated } from "../../utils/auth";
-import { useGetUser, UserRole } from "../../utils/user";
+import {useHasNoAllowedRole, useIsAuthenticated } from "@/utils/auth";
+import { useGetUser, UserRole } from "@/utils/user";
 import React from "react";
 
 export const Header = () => {

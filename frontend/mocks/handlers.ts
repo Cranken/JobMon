@@ -9,16 +9,4 @@ export const handlers = [
       return res(ctx.status(401), ctx.json({ message: "Login failed" }));
     }
   }),
-
-  rest.get('https://example.com', (req, res, ctx) => {
-    return res(ctx.json({ data: 'example' }), ctx.status(200));
-  }),
-
-  rest.get('https://example.com/unauthorized', (req, res, ctx) => {
-    return res(ctx.status(401));
-  }),
-
-  rest.get('https://example.com/forbidden', (req, res, ctx) => {
-    return res(ctx.status(403));
-  })
 ]
