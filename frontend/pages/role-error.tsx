@@ -15,12 +15,14 @@ const RoleError = () => {
             }),
         }).then((resp: Response) => {
             if (resp.ok) {
+                console.log("Request success");
                 toast({
                     description: "The request was send successfully",
                     status: "success",
                     isClosable: true
                 });
             } else {
+                console.log("Request success");
                 toast({
                     description: "Failed to send request",
                     status: "error",

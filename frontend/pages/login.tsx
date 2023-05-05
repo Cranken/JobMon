@@ -12,7 +12,7 @@ import {
   Stack,
   useColorModeValue,
 } from "@chakra-ui/react";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/router";
 
 /**
@@ -36,9 +36,9 @@ export const Login = () => {
         credentials: "include",
       }).then((resp) => {
         if (resp.ok) {
-          router.push('/jobs');
+          router.push("/jobs");
         } else {
-          router.push('/login?login_failed');
+          router.push("/login?login_failed");
         }
       });
     }
