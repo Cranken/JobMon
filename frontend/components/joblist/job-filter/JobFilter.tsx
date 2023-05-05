@@ -22,7 +22,7 @@ import style from "./JobFilter.module.css";
 import { Stepper } from "./Stepper";
 import React, { useEffect, useState, useRef } from "react";
 import { JobTag } from "../../../types/job";
-import { useGetUser, UserRole } from "../../../utils/auth";
+import { useGetUser, UserRole } from "../../../utils/user";
 
 interface JobFilterProps {
   params: JobSearchParams;

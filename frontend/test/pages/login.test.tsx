@@ -72,7 +72,7 @@ describe("Login component", () => {
         const loginButton = screen.getByRole("button", { name: 'Login with OIDC' });
         fireEvent.click(loginButton);
         await waitFor(() => {
-            // Oath login button redirects to the oauth login URL.
+            // Oath login button redirects to the oauth URL.
             expect(router.push).toHaveBeenCalledWith(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/oauth/login`);
         
         });

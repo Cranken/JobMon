@@ -15,7 +15,8 @@ import MetricsView from "../components/settings/MetricsView";
 import PartitionsView from "../components/settings/PartitionsView";
 import UsersView from "../components/settings/UsersView";
 import { Configuration } from "../types/config";
-import {authFetch, useGetUser, UserRole} from "../utils/auth";
+import { authFetch } from "../utils/auth";
+import { useGetUser, UserRole } from "../utils/user";
 import AccessDenied from "./accessDenied";
 
 enum SettingsView {

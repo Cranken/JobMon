@@ -1,6 +1,6 @@
 import React from "react";
 import {Stack, Center, Text, Heading, useColorModeValue, Button, useToast} from "@chakra-ui/react";
-import {useGetUser} from "../utils/auth";
+import {useGetUser} from "../utils/user";
 
 const RoleError = () => {
     const user = useGetUser();

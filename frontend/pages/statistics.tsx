@@ -13,7 +13,7 @@ import { JobSearchParams } from "../types/job";
 import { useGetJobs, useStorageState } from "../utils/utils";
 import { StatItem } from "../components/statistics/StatItem";
 import React from "react";
-import {useGetUser, UserRole} from "../utils/auth";
+import {useGetUser, UserRole} from "../utils/user";
 import AccessDenied from "./accessDenied";
 
 export const Statistics = () => {

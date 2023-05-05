@@ -1,5 +1,5 @@
 import { rest } from 'msw';
-import { AuthUser, UserRole } from '@/utils/auth';
+import { AuthUser, UserRole } from '@/utils/user';
 
 export const handlers = [
     
