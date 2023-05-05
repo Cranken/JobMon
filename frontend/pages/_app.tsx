@@ -29,10 +29,10 @@ function MyApp({ Component, pageProps }: AppProps) {
       router.pathname !== "/role-error" &&
       useHasNoAllowedRole(user)) {
 
-    useEffect(() => {
-      router.push("/role-error")
-    });
-    redirectionString = "Checking user-roles";
+      useEffect(() => {
+        router.push("/role-error")
+      });
+      redirectionString = "Checking user-roles";
   }
   else if (isAuthenticated &&
       router.pathname == "/role-error" &&
@@ -41,6 +41,7 @@ function MyApp({ Component, pageProps }: AppProps) {
     useEffect(() => {
       router.push("/jobs")
     });
+        
     redirectionString = "Redirecting to jobs...";
   }
   else {
