@@ -16,4 +16,4 @@ ENV NODE_ENV development
 # Disable telemetry during the build. See: https://nextjs.org/telemetry
 ENV NEXT_TELEMETRY_DISABLED 1
 
-CMD [ "sh", "-c", "yarn --frozen-lockfile && yarn test && yarn audit" ]
+CMD [ "sh", "-c", "yarn --frozen-lockfile && yarn test_artifacts && yarn audit" ]

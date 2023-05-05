@@ -21,4 +21,6 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-CMD ["sh", "-c", "go get && go test -v ./..."]
+RUN go install gotest.tools/gotestsum@latest
+
+CMD ["/bin/bash", "-c", "go get && ls -la /go/bin && /go/bin/gotestsum --junitfile report_backend.xml --format testname"]
