@@ -7,7 +7,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
-    "test_artifacts" : "jest --ci --reporters=default --reporters=jest-junit"
+    "test_artifacts": "jest --ci --reporters=default --reporters=jest-junit"
   },
   "jest-junit": {
     "outputName": "report_frontend.xml"
@@ -27,6 +27,7 @@
     "formik": "^2.2.9",
     "framer-motion": "^6.5.1",
     "humanize-duration": "^3.27.1",
+    "jest-unit": "^0.0.2",
     "jszip": "^3.10.1",
     "next": "^12.1.0",
     "rc-slider": "^9.7.5",
@@ -56,6 +57,7 @@
     "eslint-plugin-react": "^7.32.1",
     "jest": "^29.5.0",
     "jest-environment-jsdom": "^29.5.0",
+    "jest-junit": "^16.0.0",
     "msw": "^1.2.1",
     "react-hooks": "^1.0.1",
     "react-test-renderer": "^18.2.0",
