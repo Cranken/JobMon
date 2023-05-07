@@ -121,9 +121,13 @@ services:
 
 volumes:
   jobmon_backend_cache_go_build:
+    name: jobmon_backend_cache_go_build
   jobmon_backend_cache_go_packages:
+    name: jobmon_backend_cache_go_packages
   jobmon_frontend_nextjs:
+    name: jobmon_frontend_nextjs
   jobmon_frontend_nodes_modules:
+    name: jobmon_frontend_nodes_modules
 
 configs:
   nginxDefaultConfig:

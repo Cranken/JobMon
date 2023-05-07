@@ -1,0 +1,26 @@
+# This dockerfile runs the unit-tests for the backend
+
+###
+# Create golang build image
+# * [DockerHub Page](https://hub.docker.com/_/golang)
+# * [GitHub Repository](https://github.com/docker-library/golang/)
+# * [Release History](https://go.dev/doc/devel/release)
+###
+ARG GOLANG_RELEASE=1.20 \
+    DEBIAN_RELEASE=bullseye \
+    GOLANG_TAG=${GOLANG_RELEASE}-${DEBIAN_RELEASE} \
+    DEBIAN_TAG=${DEBIAN_RELEASE}
+
+FROM golang:${GOLANG_TAG}
+
+WORKDIR /app
+
+# Install CA certificates to verify certificate of OpenID providers
+RUN apt-get update \
+    && apt-get install -y ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN go install gotest.tools/gotestsum@latest
+
+CMD ["/bin/bash", "-c", "go get && ls -la /go/bin && /go/bin/gotestsum --junitfile report_backend.xml --format testname"]

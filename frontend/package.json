@@ -7,7 +7,10 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
-    "coverage": "jest --coverage"
+    "test_artifacts" : "jest --ci --reporters=default --reporters=jest-junit"
+  },
+  "jest-junit": {
+    "outputName": "report_frontend.xml"
   },
   "dependencies": {
     "@chakra-ui/icons": "^1.1.1",

@@ -38,7 +38,8 @@ COPY jobmon.go ./
 
 # Default build environment settigs
 ARG DO_VET=true \
-    DO_STATICCHECK=true
+    DO_STATICCHECK=true \
+    DO_TESTS=true
 
 # Build backend
 RUN --mount=type=cache,target=/root/.cache/go-build \
@@ -48,6 +49,9 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
  fi && \
  if [[ ${DO_STATICCHECK} == true ]]; then \
      /go/bin/staticcheck ./... ; \
+ fi && \
+ if [[ ${DO_TESTS} == true ]]; then \
+   go test -v ./... ; \
  fi && \
  go build -o docker-jobmon-backend" \
 ]
@@ -64,7 +68,7 @@ WORKDIR /app
 
 # Install CA certificates to verify certificate of OpenID providers
 RUN apt-get update \
-    && apt-get install -y ca-certificates \
+    && apt-get install -y ca-certificates curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

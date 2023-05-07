@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"jobmon/config"
 	"jobmon/logging"
 	"jobmon/store"
@@ -17,8 +17,11 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	// HttpRouter is a lightweight high performance HTTP request router (also called multiplexer or just mux for short) for Go
 	"github.com/julienschmidt/httprouter"
+	// Package bcrypt implements Provos and Mazières's bcrypt adaptive hashing algorithm. See http://www.usenix.org/event/usenix99/provos/provos.pdf
 	"golang.org/x/crypto/bcrypt"
+	// oauth2 package contains a client implementation for OAuth 2.0 spec
 	"golang.org/x/oauth2"
 )
 
@@ -433,7 +436,7 @@ func (auth *AuthManager) GetOAuthUserInfo(token *oauth2.Token) (*OAuthUserInfo, 
 		return nil, err
 	}
 
-	dat, err := ioutil.ReadAll(resp.Body)
+	dat, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

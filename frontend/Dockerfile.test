@@ -1,0 +1,19 @@
+# This dockerfile runs the yest tests for the frontend.
+
+# Node.js Docker Image
+# * [DockerHub Page](https://hub.docker.com/_/node)
+ARG NODE_RELEASE=16 \
+    DEBIAN_RELEASE=bullseye \
+    NODE_TAG=${NODE_RELEASE}-${DEBIAN_RELEASE}
+
+# Taken from https://nextjs.org/docs/deployment
+# Install dependencies only when needed
+FROM node:${NODE_TAG} AS deps
+
+WORKDIR /app
+
+ENV NODE_ENV development
+# Disable telemetry during the build. See: https://nextjs.org/telemetry
+ENV NEXT_TELEMETRY_DISABLED 1
+
+CMD [ "sh", "-c", "yarn --frozen-lockfile && yarn test_artifacts && yarn audit" ]

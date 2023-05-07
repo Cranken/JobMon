@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	// Reference Go client for InfluxDB 2
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/influxdata/influxdb-client-go/v2/domain"
