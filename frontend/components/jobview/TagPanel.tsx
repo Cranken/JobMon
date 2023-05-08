@@ -18,9 +18,9 @@ import {
   Wrap,
 } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
-import { addJobTag } from "../../utils/utils";
-import { JobMetadata, JobTag } from "../../types/job";
-import { removeJobTag } from "../../utils/utils";
+import { addJobTag } from "@/utils/utils";
+import { JobMetadata, JobTag } from "@/types/job";
+import { removeJobTag } from "@/utils/utils";
 
 interface TagPanelProps {
   job: JobMetadata;

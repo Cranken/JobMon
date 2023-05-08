@@ -4,12 +4,10 @@ import { xml } from "d3";
  * PrefixType represents a list of possible prefixes that can be used for different metric units.
  * Metric - it will use the usual data unit prefixes like B, KB, MB, GB etc.
  * Exponential - it will use the 'e' notation prefix for showing large numbers.
- * Normalized - it will use K as a prefix for values greater than 10^3 otherwise it will show the actual value.
  */
 enum PrefixType {
   None,
   Metric,
-  Normalized,
   Exponential,
 }
 
@@ -31,7 +29,7 @@ interface UnitsType {
 /**
  * Units is just an instance of UnitsType.
  */
-const Units: UnitsType = {
+export const Units: UnitsType = {
   Flops: {
     DisplayFormat: "FLOP/s",
     Prefix: PrefixType.Metric,
@@ -62,19 +60,11 @@ const Units: UnitsType = {
   },
   Watts: {
     DisplayFormat: "W",
-    Prefix: PrefixType.Normalized,
+    Prefix: PrefixType.Metric,
   },
-  IOps: {
-    DisplayFormat: "IOps",
-    Prefix: PrefixType.Normalized
-  },
-  MetaOPS: {
-    DisplayFormat: "MetaOps",
-    Prefix: PrefixType.Normalized
-  },
-  Opss: {
-    DisplayFormat: "OPs/s",
-    Prefix: PrefixType.Exponential,
+  OPs: {
+    DisplayFormat: "OP/s",
+    Prefix: PrefixType.Metric,
   },
   None: {
     DisplayFormat: "",
@@ -102,7 +92,7 @@ interface PrefixesType {
 /**
  * Prefixes is just an instance of PrefixType, where all the data prefixes are given
  */
-const Prefixes: PrefixesType = {
+export const Prefixes: PrefixesType = {
   kilo: {
     Short: "k",
     Exp: 3,
@@ -191,17 +181,6 @@ export class Unit {
     switch (this.type.Prefix) {
       case PrefixType.Exponential:
         return `${this.type.DisplayFormat}`;
-      
-      case PrefixType.Normalized:
-        const displayFormat = (this.type.DisplayFormat === "W") ? "W" : "";
-        
-        // print the prefix only for values greater than 10^3
-        if (this.value < 1000 ) {
-          return `${displayFormat}`  
-        }
-        else {
-          return `${Prefixes["kilo"].Short}${displayFormat}`
-        }
       default:
         let best = this.bestPrefix();
         best = (typeof prefix !== 'undefined') ? prefix : best;
@@ -222,16 +201,6 @@ export class Unit {
     switch (this.type.Prefix) {
       case PrefixType.Exponential:
         return this.value.toExponential(2);
-      case PrefixType.Normalized:
-        // Normalize the value only if greater than 10^3.
-        if (this.value < 1000) {
-          return `${this.value.toFixed(2)}`;
-        } else {
-          const defaultPrefix = Prefixes["kilo"];
-          const exp = Math.pow(defaultPrefix.Base, defaultPrefix.Exp);
-          const value = this.value / exp;
-          return `${value.toFixed(2)}`;
-        }        
       default:
         let best = this.bestPrefix();
         best = (typeof prefix !== 'undefined') ? prefix : best;
@@ -251,16 +220,22 @@ export class Unit {
    * @returns the best possible data prefix for the unit.
    */
   bestPrefix() {
-    switch (this.type.Prefix) {
-      case PrefixType.Metric:
-        return Object.keys(Prefixes).find((key) => {
-          const exp = Math.pow(Prefixes[key].Base, Prefixes[key].Exp);
-          const value = this.value / exp;
-          return 1 <= value && value < 1000;
-        });
-      default:
-        return "None";
-      
+    if ( 1 <= this.value && this.value < 1000 ) {
+      return "None";
+    } else {
+      // Prefix exists only if value is greater than 10**3
+      switch (this.type.Prefix) {
+        case PrefixType.Metric:
+          return Object.keys(Prefixes).find((key) => {
+             
+            const exp = Math.pow(Prefixes[key].Base, Prefixes[key].Exp);
+            const value = this.value / exp;
+            return 1 <= value && value < 1000;
+          });
+        default:
+          return "None";
+        
+      }
     }
   }
 }
@@ -270,10 +245,9 @@ export class Unit {
  * @param str - unit given as a string
  * @returns a UnitType which has the same DisplayFormat. 
  */
-const getBaseUnit = (str: string) => {
+export const getBaseUnit = (str: string) => {
   const key = Object.keys(Units).find((val) =>
     str.includes(Units[val].DisplayFormat )
-    
   );
   return key ? Units[key] : Units.None;
 };
@@ -284,7 +258,7 @@ const getBaseUnit = (str: string) => {
  * @param type - UnitType where the search will be performed.
  * @returns the corresponding prefix, or a default one which is none.
  */
-const getPrefix = (str: string, type: UnitType) => {
+export const getPrefix = (str: string, type: UnitType) => {
   switch (type.Prefix) {
     case PrefixType.Metric:
       const prefix = Object.keys(Prefixes).find((key) =>

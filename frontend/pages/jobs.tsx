@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-import JobFilter from "../components/joblist/job-filter/JobFilter";
-import JobList from "../components/joblist/JobList";
-import {dateToUnix, useGetJobs, useSessionStorageState, useStorageState} from "../utils/utils";
+import JobFilter from "@/components/joblist/job-filter/JobFilter";
+import JobList from "@/components/joblist/JobList";
+import { dateToUnix, useGetJobs, useStorageState, useSessionStorageState } from "@/utils/utils";
 import { JobSearchParams, JobMetadata } from "../types/job";
 import { useRouter } from "next/router";
 import { Box, Center, Divider, Spinner, Stack } from "@chakra-ui/react";
-import JoblistPageSelection from "../components/joblist/JoblistPageSelection";
-import { JobListDisplaySettings } from "../components/joblist/JobListDisplaySettings";
+import JoblistPageSelection from "@/components/joblist/JoblistPageSelection";
+import { JobListDisplaySettings } from "@/components/joblist/JobListDisplaySettings";
 
 export const Jobs = () => {
   const router = useRouter();

@@ -7,13 +7,13 @@ import {
   Tab,
   TabPanel,
 } from "@chakra-ui/react";
-import JobFilter from "../components/joblist/job-filter/JobFilter";
-import { Panel, PanelManager } from "../components/panelmanager/PanelManager";
+import JobFilter from "@/components/joblist/job-filter/JobFilter";
+import { Panel, PanelManager } from "@/components/panelmanager/PanelManager";
 import { JobSearchParams } from "../types/job";
-import { useGetJobs, useStorageState } from "../utils/utils";
-import { StatItem } from "../components/statistics/StatItem";
+import { useGetJobs, useStorageState } from "@/utils/utils";
+import { StatItem } from "@/components/statistics/StatItem";
 import React from "react";
-import {useGetUser, UserRole} from "../utils/auth";
+import {useGetUser, UserRole} from "@/utils/user";
 import AccessDenied from "./accessDenied";
 
 export const Statistics = () => {

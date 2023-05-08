@@ -1,8 +1,8 @@
 import { Stack, useToast, Input, FormLabel, Button, Box, Wrap } from "@chakra-ui/react";
 import { Field, Form, Formik } from "formik";
 import React, { useEffect, useState } from "react";
-import { AvailableUserRoles, UserRoles } from "../../types/config";
-import { authFetch } from "../../utils/auth";
+import { AvailableUserRoles, UserRoles } from "@/types/config";
+import { authFetch } from "@/utils/auth";
 
 const UsersView = () => {
     const [username, setUsername] = useState<string>();
