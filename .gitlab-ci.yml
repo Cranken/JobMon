@@ -33,7 +33,7 @@ test-backend:
     - build-backend
   stage: test
   script:
-    - docker buildx -t jobmon-backend_reporter --target reporter --pull backend
+    - docker build -t jobmon-backend_reporter --target reporter --pull backend
     - docker run --name jobmon-backend_reporter jobmon-backend_reporter
     - docker cp jobmon-backend_reporter:/app/report_backend.xml ./
   artifacts:
