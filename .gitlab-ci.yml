@@ -33,9 +33,9 @@ test-backend:
     - build-backend
   stage: test
   before_script:
-    - docker rm jobmon-backend_report || true
+    - docker rm jobmon-backend_reporter || true
   after_script:
-    - docker rm jobmon-backend_report
+    - docker rm jobmon-backend_reporter
   script:
     - docker build -t jobmon-backend_reporter --target reporter --pull backend
     - docker run --name jobmon-backend_reporter jobmon-backend_reporter
@@ -52,9 +52,9 @@ test-frontend:
     - build-frontend
   stage: test
   before_script:
-    - docker rm jobmon-frontend_report || true
+    - docker rm jobmon-frontend_reporter || true
   after_script:
-    - docker rm jobmon-frontend_report
+    - docker rm jobmon-frontend_reporter
   script:
     - docker build -t jobmon-frontend_reporter --target reporter --pull frontend
     - docker run --name jobmon-frontend_reporter jobmon-frontend_reporter
