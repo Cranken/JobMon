@@ -12,7 +12,7 @@ import {
   Stack,
   useColorModeValue,
 } from "@chakra-ui/react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 
 /**
@@ -37,12 +37,18 @@ export const Login = () => {
       }).then((resp) => {
         if (resp.ok) {
           router.push("/jobs");
+          router.reload();
         } else {
           router.push("/login?login_failed");
+          router.reload();
         }
       });
     }
   };
+
+  useEffect(() => {
+    router.prefetch('/jobs');
+  }, [router]);
 
   return (
     <Center h="500px">
