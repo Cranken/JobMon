@@ -12,6 +12,9 @@ FROM node:${NODE_TAG} AS deps
 
 WORKDIR /app
 
+# Copy source code into wokring directory
+COPY ./ ./
+
 ENV NODE_ENV development
 # Disable telemetry during the build. See: https://nextjs.org/telemetry
 ENV NEXT_TELEMETRY_DISABLED 1

@@ -20,10 +20,6 @@ services:
         NEXT_PUBLIC_BACKEND_WS: ${BACKEND_WS}
     container_name: jobmon_frontend_test_env
     volumes:
-      # Frontend source code
-      - type: bind
-        source: ./frontend
-        target: /app
       # Cache for node modules
       - type: volume
         source: jobmon_frontend_nodes_modules_test
@@ -44,10 +40,6 @@ services:
         DEBIAN_RELEASE: bullseye
     container_name: jobmon_backend_test_env
     volumes:
-      # Backend source code
-      - type: bind
-        source: ./backend
-        target: /app
       # Cache for go builds
       - type: volume
         source: jobmon_backend_cache_go_build_test

@@ -15,6 +15,9 @@ FROM golang:${GOLANG_TAG}
 
 WORKDIR /app
 
+# Copy source code into wokring directory
+COPY ./ ./
+
 # Install CA certificates to verify certificate of OpenID providers
 RUN apt-get update \
     && apt-get install -y ca-certificates \
