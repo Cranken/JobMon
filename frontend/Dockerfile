@@ -42,6 +42,20 @@ ENV NEXT_PUBLIC_BACKEND_WS=${NEXT_PUBLIC_BACKEND_WS}
 
 RUN ["yarn", "build"]
 
+###
+# Create image from builder to create testreports
+###
+FROM builder AS reporter
+
+ENV NODE_ENV development
+# Disable telemetry during the build. See: https://nextjs.org/telemetry
+ENV NEXT_TELEMETRY_DISABLED 1
+
+CMD [ \
+"sh", "-c", \
+"yarn --frozen-lockfile && yarn test_artifacts && yarn audit" \
+]
+
 # Production image, copy all the files and run next
 FROM node:${NODE_TAG} AS runner
 WORKDIR /app
