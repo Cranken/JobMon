@@ -10,10 +10,10 @@ import {
   WSMsg,
   WSMsgType,
 } from "../../types/job";
-import MetricDataCharts from "../../components/jobview/MetricDataCharts";
+import MetricDataCharts from "@/components/jobview/MetricDataCharts";
 import { useRouter } from "next/router";
-import QuantileDataCharts from "../../components/jobview/QuantileDataCharts";
-import Control from "../../components/jobview/ViewControl";
+import QuantileDataCharts from "@/components/jobview/QuantileDataCharts";
+import Control from "@/components/jobview/ViewControl";
 import {
   Box,
   Center,
@@ -25,11 +25,11 @@ import {
   TabPanels,
   Tabs,
 } from "@chakra-ui/react";
-import { JobInfo } from "../../components/jobview/JobInfo";
-import { SelectionMap } from "../../types/helpers";
-import { useStorageState } from "../../utils/utils";
-import { WSLoadMetricsMsg } from "../../types/job";
-import { authFetch } from "../../utils/auth";
+import { JobInfo } from "@/components/jobview/JobInfo";
+import { SelectionMap } from "@/types/helpers";
+import { useStorageState } from "@/utils/utils";
+import { WSLoadMetricsMsg } from "@/types/job";
+import { authFetch } from "@/utils/auth";
 
 const Job: NextPage = () => {
   const router = useRouter();

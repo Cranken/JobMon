@@ -14,7 +14,8 @@ WORKDIR /app
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
 RUN \
     if [ -f yarn.lock ]; then \
-        yarn --frozen-lockfile; \
+        # Based on https://stackoverflow.com/questions/58482655/what-is-the-closest-to-npm-ci-in-yarn
+        rm -rf node_modules && yarn install --frozen-lockfile --force --no-optional ; \
     elif [ -f package-lock.json ]; then \
         npm ci; \
     elif [ -f pnpm-lock.yaml ]; then \

@@ -12,11 +12,11 @@ import {
   Stack,
   useColorModeValue,
 } from "@chakra-ui/react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 
 /**
- * Login is a React component shown up during the login phase.
+ * Login is a React component rendered during the login phase.
  * @returns 
  */
 export const Login = () => {
@@ -27,6 +27,7 @@ export const Login = () => {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
 
+  
   const submit = (e?: React.KeyboardEvent) => {
     if (!e || e.key == "Enter") {
       fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/login", {
@@ -35,13 +36,19 @@ export const Login = () => {
         credentials: "include",
       }).then((resp) => {
         if (resp.ok) {
-          window.location.href = "/jobs";
+          router.push("/jobs");
+          router.reload();
         } else {
-          window.location.href = "/login?login_failed";
+          router.push("/login?login_failed");
+          router.reload();
         }
       });
     }
   };
+
+  useEffect(() => {
+    router.prefetch('/jobs');
+  }, [router]);
 
   return (
     <Center h="500px">
