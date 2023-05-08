@@ -38,7 +38,6 @@
     "ts-node": "^10.9.1"
   },
   "devDependencies": {
-    "@swc/jest": "^0.2.26",
     "@testing-library/react": "^14.0.0",
     "@testing-library/react-hooks": "^8.0.1",
     "@types/jest": "^29.5.0",
