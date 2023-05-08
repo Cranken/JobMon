@@ -57,6 +57,18 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 ]
 
 ###
+# Create image from builder to create testreports
+###
+FROM builder AS reporter
+
+RUN go install gotest.tools/gotestsum@latest
+
+CMD [ \
+"/bin/bash", "-c", \
+"go get && gotestsum --junitfile report_backend.xml --format testname" \
+]
+
+###
 # Create minimal Debian backend image
 # * [DockerHub Page](https://hub.docker.com/_/debian)
 # * [GitHub Repository](https://github.com/docker-library/docs/tree/master/debian)

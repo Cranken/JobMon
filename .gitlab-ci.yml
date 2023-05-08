@@ -32,14 +32,10 @@ test-backend:
   needs:
     - build-backend
   stage: test
-  before_script:
-    - docker rm jobmon_backend_test || true
-  after_script:
-    - docker rm jobmon_backend_test
   script:
-    - docker compose --file docker-compose.test.yml build --pull jobmon_backend_tests
-    - docker compose --file docker-compose.test.yml run --name jobmon_backend_test jobmon_backend_tests
-    - docker cp jobmon_backend_test:/app/report_backend.xml ./
+    - docker buildx -t jobmon-backend_reporter --target reporter --pull backend
+    - docker run --name jobmon-backend_reporter jobmon-backend_reporter
+    - docker cp jobmon-backend_reporter:/app/report_backend.xml ./
   artifacts:
     # Artifact to safe the test results and visualize them in gitlab
     when: always
@@ -59,7 +55,6 @@ test-frontend:
     - docker compose --file docker-compose.test.yml build --pull jobmon_frontend_tests
     - docker compose --file docker-compose.test.yml run --name jobmon_frontend_test jobmon_frontend_tests
     - docker cp jobmon_frontend_test:/app/report_frontend.xml ./
-    - docker rm jobmon_frontend_test
   artifacts:
     # Artifact to safe the test results and visualize them in gitlab
     when: always
