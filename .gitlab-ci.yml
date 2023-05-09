@@ -74,7 +74,7 @@ testreport-frontend:
   script:
     - docker build -t jobmon-frontend_reporter --target reporter --pull frontend
     - echo -n > report_frontend.xml
-    - docker run --volume ${PWD}/report_frontend.xml:/app/report_frontend.xml --name jobmon-frontend_reporter -rm jobmon-frontend_reporter
+    - docker run --volume ${PWD}/report_frontend.xml:/app/report_frontend.xml --name jobmon-frontend_reporter --rm jobmon-frontend_reporter
   artifacts:
     # Artifact to safe the test results and visualize them in gitlab
     when: always
