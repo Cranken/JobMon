@@ -13,9 +13,6 @@ FROM golang:${GOLANG_TAG} AS builder
 
 WORKDIR /app
 
-# Install [The advanced Go linter](https://github.com/dominikh/go-tools)
-RUN go install honnef.co/go/tools/cmd/staticcheck@latest
-
 # Download required go modules
 COPY go.mod go.sum ./
 RUN go mod download && \
@@ -36,37 +33,57 @@ ADD router ./router
 ADD notify ./notify
 COPY jobmon.go ./
 
-# Default build environment settigs
-ARG DO_VET=true \
-    DO_STATICCHECK=true \
-    DO_TESTS=true
-
 # Build backend
 RUN --mount=type=cache,target=/root/.cache/go-build \
 [ "/bin/bash", "-c", \
-"if [[ ${DO_VET} == true ]]; then \
-     go vet ./... ; \
- fi && \
- if [[ ${DO_STATICCHECK} == true ]]; then \
-     /go/bin/staticcheck ./... ; \
- fi && \
- if [[ ${DO_TESTS} == true ]]; then \
-   go test -v ./... ; \
- fi && \
- go build -o docker-jobmon-backend" \
+"go build -o docker-jobmon-backend" \
 ]
+
+###
+# Create image from builder for vetting
+#
+# Vet examines Go source code and reports suspicious constructs
+# See: go doc cmd/vet
+# See: https://pkg.go.dev/cmd/vet
+###
+FROM builder AS vetting
+
+CMD [ "go", "vet", "-v", "./..." ]
+
+###
+# Create image from builder for static checking
+#
+# Staticcheck is a state of the art linter for the Go programming language.
+# Using static analysis, it finds bugs and performance issues, offers simplifications, and enforces style rules.
+# See: https://github.com/dominikh/go-tools
+###
+FROM builder AS staticchecking
+
+# Install [The advanced Go linter](https://github.com/dominikh/go-tools)
+RUN go install honnef.co/go/tools/cmd/staticcheck@latest
+
+CMD [ "/go/bin/staticcheck", "-f", "stylish", "./..." ]
+
+###
+# Create image from builder for testing
+###
+FROM builder AS testing
+
+CMD [ "go", "test", "-v", "./..." ]
 
 ###
 # Create image from builder to create testreports
+#
+# gotestsum runs tests using go test -json, prints formatted test output,
+# and a summary of the test run.
+# It is designed to work well for both local development, and for automation like CI.
 ###
 FROM builder AS reporter
 
+# Install [gotestsum](https://github.com/gotestyourself/gotestsum)
 RUN go install gotest.tools/gotestsum@latest
 
-CMD [ \
-"/bin/bash", "-c", \
-"go get && gotestsum --junitfile report_backend.xml --format testname" \
-]
+CMD [ "/go/bin/gotestsum", "--junitfile", "report_backend.xml", "--format", "testname" ]
 
 ###
 # Create minimal Debian backend image
