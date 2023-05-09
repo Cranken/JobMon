@@ -37,23 +37,32 @@ ADD notify ./notify
 COPY jobmon.go ./
 
 # Default build environment settigs
-ARG DO_VET=true \
-    DO_STATICCHECK=true \
+ARG DO_STATICCHECK=true \
     DO_TESTS=true
 
 # Build backend
 RUN --mount=type=cache,target=/root/.cache/go-build \
 [ "/bin/bash", "-c", \
-"if [[ ${DO_VET} == true ]]; then \
-     go vet ./... ; \
- fi && \
- if [[ ${DO_STATICCHECK} == true ]]; then \
+"if [[ ${DO_STATICCHECK} == true ]]; then \
      /go/bin/staticcheck ./... ; \
  fi && \
  if [[ ${DO_TESTS} == true ]]; then \
    go test -v ./... ; \
  fi && \
  go build -o docker-jobmon-backend" \
+]
+
+###
+# Create image from builder for vetting
+# Vet examines Go source code and reports suspicious constructs
+# See: go doc cmd/vet
+# See: https://pkg.go.dev/cmd/vet
+###
+FROM builder AS vetting
+
+CMD [ \
+"/bin/bash", "-c", \
+"exec go vet ./..." \
 ]
 
 ###
