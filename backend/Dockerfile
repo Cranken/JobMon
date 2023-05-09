@@ -33,16 +33,10 @@ ADD router ./router
 ADD notify ./notify
 COPY jobmon.go ./
 
-# Default build environment settigs
-ARG DO_TESTS=true
-
 # Build backend
 RUN --mount=type=cache,target=/root/.cache/go-build \
 [ "/bin/bash", "-c", \
-"if [[ ${DO_TESTS} == true ]]; then \
-   go test -v ./... ; \
- fi && \
- go build -o docker-jobmon-backend" \
+"go build -o docker-jobmon-backend" \
 ]
 
 ###
@@ -75,6 +69,16 @@ CMD [ \
 "/bin/bash", "-c", \
 "/go/bin/staticcheck -version; \
 exec /go/bin/staticcheck ./... ;" \
+]
+
+###
+# Create image from builder for testing
+###
+FROM builder AS testing
+
+CMD [ \
+"/bin/bash", "-c", \
+"exec go test -v ./..." \
 ]
 
 ###

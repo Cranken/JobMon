@@ -44,18 +44,26 @@ staticchecking-backend:
     - docker build -t jobmon-backend_staticchecking --target staticchecking --pull backend
     - docker run --name jobmon-backend_staticchecking --rm jobmon-backend_staticchecking
 
-test-backend:
+testing-backend:
+  needs:
+    - build-backend
+  stage: test
+  script:
+    - docker build -t jobmon-backend_testing --target testing --pull backend
+    - docker run --name jobmon-backend_testing --rm jobmon-backend_testing
+
+testreport-backend:
   needs:
     - build-backend
   stage: test
   before_script:
-    - docker rm jobmon-backend_reporter || true
+    - docker rm jobmon-backend_testreport || true
   after_script:
-    - docker rm jobmon-backend_reporter
+    - docker rm jobmon-backend_testreport
   script:
-    - docker build -t jobmon-backend_reporter --target reporter --pull backend
-    - docker run --name jobmon-backend_reporter jobmon-backend_reporter
-    - docker cp jobmon-backend_reporter:/app/report_backend.xml ./
+    - docker build -t jobmon-backend_testreport --target reporter --pull backend
+    - docker run --name jobmon-backend_testreport jobmon-backend_testreport
+    - docker cp jobmon-backend_testreport:/app/report_backend.xml ./
   artifacts:
     # Artifact to safe the test results and visualize them in gitlab
     when: always
