@@ -56,14 +56,10 @@ testreport-backend:
   needs:
     - build-backend
   stage: test
-  before_script:
-    - docker rm jobmon-backend_testreport || true
-  after_script:
-    - docker rm jobmon-backend_testreport
   script:
     - docker build -t jobmon-backend_testreport --target reporter --pull backend
-    - docker run --name jobmon-backend_testreport jobmon-backend_testreport
-    - docker cp jobmon-backend_testreport:/app/report_backend.xml ./
+    - echo -n > report_backend.xml
+    - docker run --volume ${PWD}/report_backend.xml:/app/report_backend.xml --name jobmon-backend_testreport --rm jobmon-backend_testreport
   artifacts:
     # Artifact to safe the test results and visualize them in gitlab
     when: always
