@@ -67,18 +67,14 @@ testreport-backend:
       junit:
         - report_backend.xml
 
-test-frontend:
+testreport-frontend:
   needs:
     - build-frontend
   stage: test
-  before_script:
-    - docker rm jobmon-frontend_reporter || true
-  after_script:
-    - docker rm jobmon-frontend_reporter
   script:
     - docker build -t jobmon-frontend_reporter --target reporter --pull frontend
-    - docker run --name jobmon-frontend_reporter jobmon-frontend_reporter
-    - docker cp jobmon-frontend_reporter:/app/report_frontend.xml ./
+    - echo -n > report_frontend.xml
+    - docker run --volume ${PWD}/report_frontend.xml:/app/report_frontend.xml --name jobmon-frontend_reporter -rm jobmon-frontend_reporter
   artifacts:
     # Artifact to safe the test results and visualize them in gitlab
     when: always
