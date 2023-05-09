@@ -36,6 +36,14 @@ vetting-backend:
     - docker build -t jobmon-backend_vetting --target vetting --pull backend
     - docker run --name jobmon-backend_vetting --rm jobmon-backend_vetting
 
+staticchecking-backend:
+  needs:
+    - build-backend
+  stage: test
+  script:
+    - docker build -t jobmon-backend_staticchecking --target staticchecking --pull backend
+    - docker run --name jobmon-backend_staticchecking --rm jobmon-backend_staticchecking
+
 test-backend:
   needs:
     - build-backend

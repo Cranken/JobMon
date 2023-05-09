@@ -13,9 +13,6 @@ FROM golang:${GOLANG_TAG} AS builder
 
 WORKDIR /app
 
-# Install [The advanced Go linter](https://github.com/dominikh/go-tools)
-RUN go install honnef.co/go/tools/cmd/staticcheck@latest
-
 # Download required go modules
 COPY go.mod go.sum ./
 RUN go mod download && \
@@ -37,16 +34,12 @@ ADD notify ./notify
 COPY jobmon.go ./
 
 # Default build environment settigs
-ARG DO_STATICCHECK=true \
-    DO_TESTS=true
+ARG DO_TESTS=true
 
 # Build backend
 RUN --mount=type=cache,target=/root/.cache/go-build \
 [ "/bin/bash", "-c", \
-"if [[ ${DO_STATICCHECK} == true ]]; then \
-     /go/bin/staticcheck ./... ; \
- fi && \
- if [[ ${DO_TESTS} == true ]]; then \
+"if [[ ${DO_TESTS} == true ]]; then \
    go test -v ./... ; \
  fi && \
  go build -o docker-jobmon-backend" \
@@ -54,6 +47,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 ###
 # Create image from builder for vetting
+#
 # Vet examines Go source code and reports suspicious constructs
 # See: go doc cmd/vet
 # See: https://pkg.go.dev/cmd/vet
@@ -62,14 +56,37 @@ FROM builder AS vetting
 
 CMD [ \
 "/bin/bash", "-c", \
-"exec go vet ./..." \
+"exec go vet -v ./..." \
+]
+
+###
+# Create image from builder for static checking
+#
+# Staticcheck is a state of the art linter for the Go programming language.
+# Using static analysis, it finds bugs and performance issues, offers simplifications, and enforces style rules.
+# See: https://github.com/dominikh/go-tools
+###
+FROM builder AS staticchecking
+
+# Install [The advanced Go linter](https://github.com/dominikh/go-tools)
+RUN go install honnef.co/go/tools/cmd/staticcheck@latest
+
+CMD [ \
+"/bin/bash", "-c", \
+"/go/bin/staticcheck -version; \
+exec /go/bin/staticcheck ./... ;" \
 ]
 
 ###
 # Create image from builder to create testreports
+#
+# gotestsum runs tests using go test -json, prints formatted test output,
+# and a summary of the test run.
+# It is designed to work well for both local development, and for automation like CI.
 ###
 FROM builder AS reporter
 
+# Install [gotestsum](https://github.com/gotestyourself/gotestsum)
 RUN go install gotest.tools/gotestsum@latest
 
 CMD [ \
