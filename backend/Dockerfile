@@ -48,10 +48,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 ###
 FROM builder AS vetting
 
-CMD [ \
-"/bin/bash", "-c", \
-"exec go vet -v ./..." \
-]
+CMD [ "go" "vet" "-v" "./..." ]
 
 ###
 # Create image from builder for static checking
@@ -65,21 +62,14 @@ FROM builder AS staticchecking
 # Install [The advanced Go linter](https://github.com/dominikh/go-tools)
 RUN go install honnef.co/go/tools/cmd/staticcheck@latest
 
-CMD [ \
-"/bin/bash", "-c", \
-"/go/bin/staticcheck -version; \
-exec /go/bin/staticcheck ./... ;" \
-]
+CMD [ "/go/bin/staticcheck" "-f" "stylish" "./..." ]
 
 ###
 # Create image from builder for testing
 ###
 FROM builder AS testing
 
-CMD [ \
-"/bin/bash", "-c", \
-"exec go test -v ./..." \
-]
+CMD [ "go" "test" "-v" "./..." ]
 
 ###
 # Create image from builder to create testreports
@@ -93,10 +83,7 @@ FROM builder AS reporter
 # Install [gotestsum](https://github.com/gotestyourself/gotestsum)
 RUN go install gotest.tools/gotestsum@latest
 
-CMD [ \
-"/bin/bash", "-c", \
-"go get && gotestsum --junitfile report_backend.xml --format testname" \
-]
+CMD [ "/go/bin/gotestsum" "--junitfile" "report_backend.xml" "--format" "testname" ]
 
 ###
 # Create minimal Debian backend image
