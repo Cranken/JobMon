@@ -14,8 +14,7 @@ WORKDIR /app
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
 RUN \
     if [ -f yarn.lock ]; then \
-        # Based on https://stackoverflow.com/questions/58482655/what-is-the-closest-to-npm-ci-in-yarn
-        rm -rf node_modules && yarn install --frozen-lockfile; \
+        yarn install --frozen-lockfile; \
     elif [ -f package-lock.json ]; then \
         npm ci; \
     elif [ -f pnpm-lock.yaml ]; then \
@@ -39,7 +38,7 @@ ENV NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
 
 ARG NEXT_PUBLIC_BACKEND_WS
 ENV NEXT_PUBLIC_BACKEND_WS=${NEXT_PUBLIC_BACKEND_WS}
-    
+
 # Build frontend
 RUN ["yarn", "build"]
 
