@@ -47,7 +47,7 @@ export const Login = () => {
   };
 
   useEffect(() => {
-    router.prefetch('/jobs');
+    router.prefetch("/jobs");
   }, [router]);
 
   return (
