@@ -43,8 +43,8 @@ export const Settings = () => {
   }
   return (
     <Center h="100%" mt={4}>
-      <Grid w="50%" templateColumns="repeat(4, 1fr)" h="100%" gap={2}>
-        <GridItem colSpan={1} borderRight="1px">
+      <Grid w={["95%", "80%", "65%", "50%"]} templateColumns="repeat(4, 1fr)" h="100%" gap={2}>
+        <GridItem colSpan={1} borderRight="1px" pr={1}>
           <Stack alignItems="start">
             {Object.values(SettingsView).map((v) => (
               <Button
