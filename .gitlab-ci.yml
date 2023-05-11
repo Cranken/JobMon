@@ -67,6 +67,24 @@ testreport-backend:
       junit:
         - report_backend.xml
 
+staticchecking-frontend:
+  needs:
+    - build-frontend
+  stage: test
+  script: 
+    - docker build -t jobmon-frontend_staticchecking --target staticchecking --pull frontend
+    - docker run --name jobmon-frontend_staticchecking --rm jobmon-frontend_staticchecking
+
+
+testing-frontend:
+  needs:
+    - build-frontend
+  stage: test
+  script: 
+    - docker build -t jobmon-frontend_testing --target testing --pull frontend
+    - docker run --name jobmon-frontend_testing --rm jobmon-frontend_testing
+
+
 testreport-frontend:
   needs:
     - build-frontend
