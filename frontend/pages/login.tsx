@@ -53,7 +53,7 @@ export const Login = () => {
   return (
     <Center h="500px">
       <Stack
-        w="25%"
+        w={["95%", "70%", "50%", "30%"]}
         borderWidth="1px"
         borderRadius="lg"
         borderColor={borderColor}
