@@ -2,7 +2,11 @@ import { Box, Button, Heading, Input, Stack, StackDivider } from "@chakra-ui/rea
 import React, { useState } from "react";
 import { JobMetadata } from "../../types/job";
 
-const GeneralView = () => {
+interface IGeneralViewProps {
+    isWideDevice?: boolean;
+}
+
+const GeneralView = ({isWideDevice = true}: IGeneralViewProps) => {
     const [id, setId] = useState("");
     return <>
         <Stack

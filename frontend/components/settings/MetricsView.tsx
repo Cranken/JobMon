@@ -37,6 +37,7 @@ import { CheckCircleIcon, AddIcon, CheckIcon, DeleteIcon } from "@chakra-ui/icon
 interface IMetricsViewProps {
   config: Configuration;
   setConfig: (c: Configuration) => void;
+  isWideDevice?: boolean;
 }
 
 
@@ -70,9 +71,10 @@ interface IMetricsFormProps {
  * the new configuration manually.
  * @param config - current configuration
  * @param setConfig - function for updating the configuration passed as a prop.
+ * @param isWide - defines if the used device has a wide screen
  * @returns the MetricsWiew component
  */
-const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
+const MetricsView = ({ config, setConfig, isWideDevice = true }: IMetricsViewProps) => {
   // State for storing the local configuration.
   const [lConfig, setLConfig] = useState(config);
 
@@ -106,7 +108,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
   const toast = useToast();
   
   return (
-    <Stack gap={2}>
+    <Stack gap={2} w={isWideDevice ? "" : "97%"}>
       {/* <StackDivider/> */}
       <Accordion allowMultiple>
         {

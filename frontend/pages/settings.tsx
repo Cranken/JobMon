@@ -1,8 +1,13 @@
 import {
   Button,
   Center,
+  Divider,
   Grid,
   GridItem,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
   Spinner,
   Stack,
   useToast,
@@ -18,6 +23,8 @@ import { Configuration } from "@/types/config";
 import { authFetch } from "@/utils/auth";
 import { useGetUser, UserRole } from "@/utils/user";
 import AccessDenied from "./accessDenied";
+import { useIsWideDevice } from "@/utils/utils";
+import { ChevronDownIcon } from "@chakra-ui/icons";
 
 enum SettingsView {
   General = "General Settings",
@@ -30,10 +37,12 @@ enum SettingsView {
 
 export const Settings = () => {
   if (!(useGetUser().Roles?.includes(UserRole.Admin) ?? false)) {
-    return <AccessDenied/>;
+    return <AccessDenied />;
   }
   const [settingsView, setSettingsView] = useState(SettingsView.General);
   const [config, setConfig] = useGetConfig();
+  const isWide = useIsWideDevice();
+
   if (!config) {
     return (
       <Center>
@@ -41,6 +50,30 @@ export const Settings = () => {
       </Center>
     );
   }
+
+  // Small device version
+  if (!isWide) {
+    return (
+      <Center h="100%" mt={4} flexDirection={"column"}>
+        <Menu>
+          <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
+            {settingsView}
+          </MenuButton>
+          <MenuList>
+            {Object.values(SettingsView).map((v) => (
+              <MenuItem onClick={() => setSettingsView(v)}>{v}</MenuItem>
+            ))}
+          </MenuList>
+        </Menu>
+        <Divider mt={2} mb={2}/>
+        <Center w={"97%"}>
+          {renderSettingsView(settingsView, config, setConfig, isWide)}
+        </Center>
+      </Center>
+    );
+  }
+
+  // Wide device version
   return (
     <Center h="100%" mt={4}>
       <Grid w={["95%", "80%", "65%", "50%"]} templateColumns="repeat(4, 1fr)" h="100%" gap={2}>
@@ -60,31 +93,40 @@ export const Settings = () => {
           </Stack>
         </GridItem>
         <GridItem colSpan={3}>
-          {renderSettingsView(settingsView, config, setConfig)}
+          {renderSettingsView(settingsView, config, setConfig, isWide)}
         </GridItem>
       </Grid>
     </Center>
   );
 };
 
+/**
+ * Selects the setting to show based on the users selection.
+ * @param view Specifies the setting to show.
+ * @param config The currently set configuration.
+ * @param setConfig A function to set a new configuration.
+ * @param isWide Defines if the used device is wide
+ * @returns The setting as react component.
+ */
 const renderSettingsView = (
   view: SettingsView,
   config: Configuration,
-  setConfig: (c: Configuration) => void
+  setConfig: (c: Configuration) => void,
+  isWide: boolean
 ) => {
   switch (view) {
     case SettingsView.General:
-      return <GeneralView />;
+      return <GeneralView isWideDevice={isWide}/>;
     case SettingsView.API:
-      return <APIView />;
+      return <APIView isWideDevice={isWide}/>;
     case SettingsView.Metrics:
-      return <MetricsView config={config} setConfig={setConfig} />;
+      return <MetricsView config={config} setConfig={setConfig} isWideDevice={isWide}/>;
     case SettingsView.Partitions:
-      return <PartitionsView config={config} setConfig={setConfig} />;
+      return <PartitionsView config={config} setConfig={setConfig} isWideDevice={isWide}/>;
     case SettingsView.Logs:
-      return <LogView />;
+      return <LogView isWideDevice={isWide}/>;
     case SettingsView.Users:
-      return <UsersView />;
+      return <UsersView isWideDevice={isWide}/>;
   }
   return null;
 };

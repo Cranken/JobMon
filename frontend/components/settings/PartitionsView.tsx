@@ -8,6 +8,7 @@ import { NumberField, TextField } from "./FormComponents";
 interface IPartitionsViewProps {
     config: Configuration;
     setConfig: (c: Configuration) => void;
+    isWideDevice?: boolean;
 }
 
 
@@ -24,7 +25,7 @@ interface ExtendedVirtualPartitionConfig extends ExtendedConfig, VirtualPartitio
 
 type PartitionConfig = ExtendedPartitionConfig | ExtendedVirtualPartitionConfig;
 
-const PartitionsView = ({ config, setConfig }: IPartitionsViewProps) => {
+const PartitionsView = ({ config, setConfig, isWideDevice = true }: IPartitionsViewProps) => {
     const [lConfig, setLConfig] = useState(config);
     const [accIndex, setAccIndex] = useState<number | undefined>(undefined);
     if (!lConfig) {
@@ -116,7 +117,7 @@ const PartitionsView = ({ config, setConfig }: IPartitionsViewProps) => {
         );
     };
     return (
-        <Stack gap={2}>
+        <Stack gap={2} w={isWideDevice ? "" : "97%"}>
             <Accordion allowToggle index={accIndex} onChange={(i) => {
                 setAccIndex(i as number);
             }}>

@@ -4,7 +4,11 @@ import React, { useEffect, useState } from "react";
 import { AvailableUserRoles, UserRoles } from "@/types/config";
 import { authFetch } from "@/utils/auth";
 
-const UsersView = () => {
+interface IUsersViewProps {
+    isWideDevice?: boolean;
+}
+
+const UsersView = ({isWideDevice = true}: IUsersViewProps) => {
     const [username, setUsername] = useState<string>();
     const [user, updateUser] = useGetUser(username);
     return (
