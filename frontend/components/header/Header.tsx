@@ -23,6 +23,7 @@ import { MdLogout } from "react-icons/md";
 import {useHasNoAllowedRole, useIsAuthenticated } from "@/utils/auth";
 import { useGetUser, UserRole } from "@/utils/user";
 import React, { useEffect, useState } from "react";
+import { useIsWideDevice } from "@/utils/utils";
 
 /**
  * On devices with a lower width than defined here, the header will switch to the one defined as the small device header
@@ -56,23 +57,8 @@ export const Header = ({pathname} : HeaderProps) => {
   const searchInputColor = useColorModeValue("gray.800", "whiteAlpha.900");
   const isAuthenticated = useIsAuthenticated();
   const hasRole = (user.Roles) ? !useHasNoAllowedRole(user) : false;
-  const { isOpen, onOpen, onClose } = useDisclosure()
-  const [isWide, setIsWide] = useState(true);
-  const smallDeviceHeaderOpenButtonRef = React.useRef()
-
-  const updateWide = () => {
-    setIsWide( window.innerWidth > SMALL_DEVICE_WIDTH_BOUNDARY );
-  }
-
-  useEffect(() => {
-    // Gets executed on component mount
-    updateWide();
-    window.addEventListener("resize", updateWide)
-    return () => {
-      // gets executed on component unmount
-      window.removeEventListener("resize", updateWide)
-    }
-  })
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const isWide = useIsWideDevice();
 
   const logout = () => {
     fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/logout", {

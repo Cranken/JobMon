@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { useEffect } from "react";
+import {
+  useState,
+  useEffect
+} from "react";
 import { useCookies } from "react-cookie";
 import { DataMap, JobListData, JobTag, JobSearchParams } from "@/types/job";
 
@@ -177,3 +179,32 @@ const setJobTag = (url: string, tag: JobTag) => {
 export const dateToUnix = (d: Date) => {
   return parseInt((d.getTime() / 1000).toFixed(0));
 };
+
+/**
+ * On devices with a lower width than defined here, the header will switch to the one defined as the small device header
+ */
+const SMALL_DEVICE_WIDTH_BOUNDARY = 700;
+
+/**
+ * Adds a resize listener to the window prop.
+ * @param sizeBoundary The boundary to decide, whether a device is classified as wide
+ * @returns A state to declare a device as wide or not
+ */
+export const useIsWideDevice = (sizeBoundary: number = SMALL_DEVICE_WIDTH_BOUNDARY) => {
+    const [isWide, setIsWide] = useState(true);
+    const updateWide = () => {
+        setIsWide(window.innerWidth > SMALL_DEVICE_WIDTH_BOUNDARY);
+    }
+
+    useEffect(() => {
+        // Gets executed on component mount
+        updateWide();
+        window.addEventListener("resize", updateWide)
+        return () => {
+            // gets executed on component unmount
+            window.removeEventListener("resize", updateWide)
+        }
+    })
+
+    return isWide
+}
