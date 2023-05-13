@@ -1,4 +1,4 @@
-import { Box, Button, Heading, Input, Stack, StackDivider } from "@chakra-ui/react";
+import { Box, Button, Heading, Input, Stack } from "@chakra-ui/react";
 import React, { useState } from "react";
 import { JobMetadata } from "../../types/job";
 
