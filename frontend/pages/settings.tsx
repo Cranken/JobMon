@@ -56,7 +56,7 @@ export const Settings = () => {
     return (
       <Center h="100%" mt={4} flexDirection={"column"}>
         <Menu>
-          <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
+          <MenuButton as={Button} rightIcon={<ChevronDownIcon />} w={"97%"}>
             {settingsView}
           </MenuButton>
           <MenuList>
