@@ -32,6 +32,7 @@ interface JobFilterProps {
   tabTitles?: JSX.Element[];
   tabPanels?: JSX.Element[];
   mustApply?: boolean;
+  isWideDevice?: boolean;
 }
 
 export const JobFilter = ({
@@ -42,6 +43,7 @@ export const JobFilter = ({
   tabTitles,
   tabPanels,
   mustApply = false,
+  isWideDevice = true,
 }: JobFilterProps) => {
   const [tagPickerItems,] = useState(
     tags?.map((tag) => {
@@ -108,7 +110,7 @@ export const JobFilter = ({
         <TabPanels>
           <TabPanel>
             <Stack>
-              <Flex gap={3}>
+              <Flex gap={3} direction={isWideDevice ? "row" : "column"}>
                 {user.Roles.includes(UserRole.Admin) ? (
                   <Input
                     value={filterParams.UserName}
@@ -152,7 +154,7 @@ export const JobFilter = ({
                   <option value="undefined">Show All Jobs</option>
                 </Select>
               </Flex>
-              <Stack direction="row" gap={6}>
+              <Stack direction={isWideDevice ? "row" : "column"} gap={6}>
                 <Stepper
                   title="Number of Nodes"
                   minimum={1}
@@ -213,7 +215,7 @@ export const JobFilter = ({
           </TabPanel>
           <TabPanel>
             <Stack>
-              <Flex justify="center" align="center" h={10} w="fit-content">
+              <Flex justify="center" align="center" h={ isWideDevice ? 10 : "auto"} w={ isWideDevice ? "fit-content" : "97%" } direction={ isWideDevice ? "row" : "column"}>
                 <Text mr={2}>Filter start time between:</Text>
                 <input
                   className={style["time-input"]}
@@ -230,8 +232,9 @@ export const JobFilter = ({
                     })
                   }
                 />
-                <Spacer mx={1} />
-                <Text mr={2}>and:</Text>
+                <Spacer mx={ isWideDevice ? 1 : 0 } />
+                <Text>and:</Text>
+                <Spacer mx={ isWideDevice ? 1 : 0 } />
                 <input
                   className={style["time-input"]}
                   type="datetime-local"
@@ -247,9 +250,10 @@ export const JobFilter = ({
                     })
                   }
                 />
-                <Spacer mx={1} />
+                <Spacer mx={ isWideDevice ? 1 : 0 } />
                 <Button
                   size="sm"
+                  mt={isWideDevice ? 0 : 1}
                   onClick={() =>
                     setFilterParams({
                       ...filterParams,

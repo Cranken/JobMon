@@ -6,15 +6,17 @@ interface JobListDisplaySettingsProps {
   joblistLimit: [number, (l: number) => void];
   sortBy: [string, (by: string) => void];
   sortByDescending: [boolean, (val: boolean) => void];
+  isWideDevice?: boolean;
 }
 
 export const JobListDisplaySettings = ({
   joblistLimit,
   sortBy,
   sortByDescending,
+  isWideDevice = true,
 }: JobListDisplaySettingsProps) => {
   return (
-    <Stack direction="row" justify="space-between">
+    <Stack direction={ isWideDevice ? "row" : "column"} justify="space-between">
       <Stack flexGrow={1} direction="row" align="center">
         <Text>Set limit of visible jobs per page:</Text>
         <Select

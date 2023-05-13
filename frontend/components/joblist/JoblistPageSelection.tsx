@@ -8,6 +8,7 @@ interface JoblistPageSelectionProps {
   setPage: (p: number) => void;
   marginTopEnable?: boolean
   margiBottomEnable?: boolean
+  isWideDevice?: boolean
 }
 
 /**
@@ -25,6 +26,7 @@ export const JoblistPageSelection = ({
   setPage,
   marginTopEnable = false,
   margiBottomEnable = false,
+  isWideDevice = true,
 }: JoblistPageSelectionProps) => {
   return (
     <Center mt={(marginTopEnable) ? 5 : 0} mb={(margiBottomEnable) ? 5 : 0} >
@@ -42,17 +44,17 @@ export const JoblistPageSelection = ({
           onClick={() => setPage(currentPage - 1)}
         ></IconButton>
 
-        {currentPage - 2 >= 1 ? (
+        {(isWideDevice && currentPage - 2 >= 1) ? (
           <Button colorScheme="gray" onClick={() => setPage(currentPage - 2)}>{currentPage - 2}</Button>
         ) : null}
-        {currentPage - 1 >= 1 ? (
+        {(isWideDevice && currentPage - 1 >= 1) ? (
           <Button colorScheme="gray" onClick={() => setPage(currentPage - 1)}>{currentPage - 1}</Button>
         ) : null}
         <Button colorScheme="teal">{currentPage} of {pages}</Button>
-        {currentPage + 1 <= pages ? (
+        {(isWideDevice && currentPage + 1 <= pages) ? (
             <Button colorScheme="gray" onClick={() => setPage(currentPage + 1)}>{currentPage + 1}</Button>
         ) : null}
-        {currentPage + 2 <= pages ? (
+        {(isWideDevice && currentPage + 2 <= pages) ? (
             <Button colorScheme="gray" onClick={() => setPage(currentPage + 2)}>{currentPage + 2}</Button>
         ) : null}
 
