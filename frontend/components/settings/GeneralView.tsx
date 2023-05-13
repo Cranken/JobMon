@@ -10,21 +10,19 @@ const GeneralView = ({isWideDevice = true}: IGeneralViewProps) => {
     const [id, setId] = useState("");
     return <>
         <Stack
-            divider={<StackDivider />}
-        >
-            <Stack>
-                <Heading size="md">Refresh Metadata</Heading>
-                <Stack gap={2} direction="row">
-                    <Input maxW="15ch" placeholder="Job Id" value={id} onChange={(ev) => {
-                        const val = ev.target.value;
-                        if (!isNaN(+val)) {
-                            setId(val);
-                        }
-                    }} />
-                    <Box>
-                        <Button onClick={() => refreshJobMetadata(id)}>Refresh</Button>
-                    </Box>
-                </Stack>
+            w={isWideDevice ? "" : "97%"}
+            direction={"column"}>^
+            <Heading size="md">Refresh Metadata</Heading>
+            <Stack gap={2} direction={ isWideDevice ? "row" : "column" }>
+                <Input maxW={ isWideDevice ? "15ch" : "" } w={isWideDevice ? "" : "97%"} placeholder="Job Id" value={id} onChange={(ev) => {
+                    const val = ev.target.value;
+                    if (!isNaN(+val)) {
+                        setId(val);
+                    }
+                }} />
+                <Box>
+                    <Button onClick={() => refreshJobMetadata(id)} w={isWideDevice ? "" : "97%"}>Refresh</Button>
+                </Box>
             </Stack>
         </Stack>
     </>;
