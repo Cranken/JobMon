@@ -141,6 +141,7 @@ export const Jobs = () => {
           radarChartMetrics={jobListData.Config.RadarChartMetrics}
           limit={joblistLimit}
           page={page}
+          isWideDevice={isWideDevice}
       />
     </Box>
   );

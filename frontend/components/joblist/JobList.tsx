@@ -25,6 +25,7 @@ interface JobListProps {
   sortBy?: string;
   limit: number;
   page: number;
+  isWideDevice?: boolean;
 }
 
 export const JobList = ({
@@ -32,6 +33,7 @@ export const JobList = ({
   radarChartMetrics,
   limit,
   page,
+  isWideDevice = true,
 }: JobListProps) => {
   const slice =
     limit !== 0
@@ -71,6 +73,7 @@ export const JobList = ({
             key={job.Id}
             job={job}
             radarChartMetrics={radarChartMetrics}
+            isWideDevice={isWideDevice}
           />
         ))}
       </Stack>
@@ -81,9 +84,14 @@ export const JobList = ({
 interface JobListItemProps {
   job: JobMetadata;
   radarChartMetrics: string[];
+  isWideDevice?: boolean;
 }
 
-export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
+export const JobListItem = ({
+  job,
+  radarChartMetrics,
+  isWideDevice = true,
+}: JobListItemProps) => {
   const borderColor = useColorModeValue("gray.300", "whiteAlpha.400");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let radarChartData: any[] = [];
@@ -124,7 +132,7 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
     <LinkBox>
       <LinkOverlay href={`/job/${job.Id}`}>
         <Stack
-          direction="row"
+          direction={ isWideDevice ? "row" : "column" }
           divider={
             <StackDivider marginY="3% !important" borderColor={borderColor} />
           }
@@ -173,7 +181,7 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
               <Divider orientation="vertical" borderColor={borderColor} />
             </Center>
           </Stack>
-          <Box pr={5}>
+          <Box pr={ isWideDevice ? 5 : 0} pb={ isWideDevice ? 0 : 5}>
             {!dataAvailable ? (
               <Center h="100%">
                 <Box>
