@@ -22,6 +22,7 @@ interface ControlProps {
   setSampleInterval: (v: number) => void;
   selectedMetrics: string[];
   setSelectedMetrics: (val: string[]) => void;
+  isWideDevice?: boolean;
 }
 
 export const ViewControl = ({
@@ -40,23 +41,24 @@ export const ViewControl = ({
   setSampleInterval,
   selectedMetrics,
   setSelectedMetrics,
+  isWideDevice = true,
 }: ControlProps) => {
   const [, , removeCookie] = useCookies(["Authorization"]);
   return (
-    <Stack px={3}>
-      <Stack direction="row" justify="space-between">
+    <Stack px={ isWideDevice ? 3 : 0}>
+      <Stack direction={ isWideDevice ? "row" : "column" } justify="space-between">
         <MetricSelection
           metrics={jobdata.MetricData?.map((val) => val.Config) ?? []}
           selectedMetrics={selectedMetrics}
           setSelectedMetrics={setSelectedMetrics}
-        ></MetricSelection>
+        />
         {jobdata.Metadata.IsRunning ? null : (
           <Button onClick={() => exportData(jobdata.Metadata.Id, removeCookie)}>
             Export as CSV
           </Button>
         )}
       </Stack>
-      <Stack direction="row" gap={2}>
+      <Stack direction={ isWideDevice ? "row" : "column" } gap={2}>
         {setShowQuantiles ? (
           <Button
             fontSize="sm"
@@ -92,6 +94,7 @@ export const ViewControl = ({
           stopTime={stopTime}
           setStartTime={setStartTime}
           setStopTime={setStopTime}
+          isWideDevice={isWideDevice}
         />
       ) : null}
     </Stack>

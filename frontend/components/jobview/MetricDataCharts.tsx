@@ -17,6 +17,7 @@ interface MetricDataChartsProps {
   isRunning: boolean;
   aggFnSelection?: Map<string, AggFn>;
   setAggFnSelection: (m: string, v: AggFn) => void;
+  numColumns?: number;
 }
 
 export const MetricDataCharts = ({
@@ -28,7 +29,8 @@ export const MetricDataCharts = ({
   isLoading,
   autoScale,
   aggFnSelection,
-  setAggFnSelection
+  setAggFnSelection,
+  numColumns = 2,
 }: MetricDataChartsProps) => {
   if (!metrics) {
     return <div>No metric data available</div>;
@@ -88,7 +90,7 @@ export const MetricDataCharts = ({
       </ChartContainer>
     );
   }
-  return <Grid templateColumns={"repeat(2, 1fr)"}>{chartElements}</Grid>;
+  return <Grid templateColumns={"repeat(" + numColumns + ", 1fr)"}>{chartElements}</Grid>;
 };
 
 const prepareMetricData: (metric: MetricData, nodeSelection: string[]) =>

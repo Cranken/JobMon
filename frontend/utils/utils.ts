@@ -183,7 +183,7 @@ export const dateToUnix = (d: Date) => {
 /**
  * On devices with a lower width than defined here, the header will switch to the one defined as the small device header
  */
-const SMALL_DEVICE_WIDTH_BOUNDARY = 700;
+const SMALL_DEVICE_WIDTH_BOUNDARY = 900;
 
 /**
  * Adds a resize listener to the window prop.

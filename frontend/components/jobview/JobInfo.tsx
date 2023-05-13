@@ -9,13 +9,19 @@ interface JobInfoProps {
   metadata: JobMetadata;
   setChecked: (val: SelectionMap) => void;
   nodes: { [key: string]: boolean; };
+  isWideDevice?: boolean;
 }
 
-export const JobInfo = ({ metadata, setChecked, nodes }: JobInfoProps) => {
+export const JobInfo = ({
+  metadata,
+  setChecked,
+  nodes,
+  isWideDevice = true,
+}: JobInfoProps) => {
   const prefixMatch = metadata.NodeList.split("|")[0].match(/([a-zA-Z]+)(\d*)/);
   const prefix = prefixMatch ? prefixMatch[1] : metadata.ClusterId;
   return (
-    <Grid templateColumns="repeat(2, 1fr)" w="100%">
+    <Grid templateColumns={ isWideDevice ? "repeat(2, 1fr)" : "repeat(1, 1fr)" } w="100%">
       <Stack>
         <Text>Id: {metadata.Id}</Text>
         <Text>

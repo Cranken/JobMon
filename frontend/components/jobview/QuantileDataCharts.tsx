@@ -13,6 +13,7 @@ interface QuantileDataChartsProps {
   setTimeRange?: (start: Date, end: Date) => void;
   isLoading: boolean;
   autoScale: boolean;
+  numColumns?: number;
 }
 
 export const QuantileDataCharts = ({
@@ -22,6 +23,7 @@ export const QuantileDataCharts = ({
   setTimeRange,
   isLoading,
   autoScale,
+  numColumns = 2,
 }: QuantileDataChartsProps) => {
   if (!quantiles) {
     return <div>No quantiles</div>;
@@ -90,7 +92,7 @@ export const QuantileDataCharts = ({
       </Flex>
     );
   }
-  return <Grid templateColumns={"repeat(2, 1fr)"}>{chartElements}</Grid>;
+  return <Grid templateColumns={"repeat(" + numColumns + ", 1fr)"}>{chartElements}</Grid>;
 };
 
 export default QuantileDataCharts;

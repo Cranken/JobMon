@@ -16,6 +16,7 @@ interface TimeControlProps {
   stopTime?: Date;
   setStartTime: (t: Date) => void;
   setStopTime: (t: Date) => void;
+  isWideDevice?: boolean;
 }
 
 const TimeControl = ({
@@ -24,6 +25,7 @@ const TimeControl = ({
   stopTime,
   setStartTime,
   setStopTime,
+  isWideDevice = true,
 }: TimeControlProps) => {
   const defaultTime = [metadata.StartTime * 1000, metadata.StopTime * 1000];
   const [showTooltip, setShowTooltip] = useState(false);
@@ -48,8 +50,8 @@ const TimeControl = ({
   }
 
   return (
-    <Flex maxH={10} align="center" w="100%">
-      <Box mr={5} w="100%">
+    <Flex maxH={ isWideDevice ? 10 : "auto"} align="center" w="100%" direction={ isWideDevice ? "row" : "column-reverse"} pb={ isWideDevice ? 0 : 50}>
+      <Box mr={5} ml={ isWideDevice ? 0 : 5} w={ isWideDevice ? "100%" : "80%"}>
         <Range
           min={defaultTime[0]}
           max={defaultTime[1]}
