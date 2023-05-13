@@ -22,13 +22,8 @@ import { useCookies } from "react-cookie";
 import { MdLogout } from "react-icons/md";
 import {useHasNoAllowedRole, useIsAuthenticated } from "@/utils/auth";
 import { useGetUser, UserRole } from "@/utils/user";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useIsWideDevice } from "@/utils/utils";
-
-/**
- * On devices with a lower width than defined here, the header will switch to the one defined as the small device header
- */
-const SMALL_DEVICE_WIDTH_BOUNDARY = 700;
 
 /**
  * Props for the header component

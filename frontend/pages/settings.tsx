@@ -61,7 +61,11 @@ export const Settings = () => {
           </MenuButton>
           <MenuList>
             {Object.values(SettingsView).map((v) => (
-              <MenuItem onClick={() => setSettingsView(v)}>{v}</MenuItem>
+              <MenuItem
+                onClick={() => setSettingsView(v)}
+                key={v}>
+                  {v}
+                </MenuItem>
             ))}
           </MenuList>
         </Menu>
@@ -124,7 +128,7 @@ const renderSettingsView = (
     case SettingsView.Partitions:
       return <PartitionsView config={config} setConfig={setConfig} isWideDevice={isWide}/>;
     case SettingsView.Logs:
-      return <LogView isWideDevice={isWide}/>;
+      return <LogView />;
     case SettingsView.Users:
       return <UsersView isWideDevice={isWide}/>;
   }

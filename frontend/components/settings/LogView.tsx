@@ -1,11 +1,7 @@
 import { Textarea } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 
-interface ILogViewProps {
-    isWideDevice?: boolean;
-}
-
-const LogView = ({isWideDevice = true}: ILogViewProps) => {
+const LogView = () => {
     const [, setWs] = useState<WebSocket>();
     const [lastMessage, setLastMessage] = useState();
     const [messages, setMessages] = useState<string[]>([]);
