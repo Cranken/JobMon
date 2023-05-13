@@ -1,4 +1,4 @@
-import { Stack, useToast, Input, FormLabel, Button, Box, Wrap } from "@chakra-ui/react";
+import { Stack, useToast, Input, FormLabel, Button, Box, Wrap, useColorModeValue, Code } from "@chakra-ui/react";
 import { Field, Form, Formik } from "formik";
 import React, { useEffect, useState } from "react";
 import { AvailableUserRoles, UserRoles } from "@/types/config";
@@ -11,22 +11,24 @@ interface IUsersViewProps {
 const UsersView = ({isWideDevice = true}: IUsersViewProps) => {
     const [username, setUsername] = useState<string>();
     const [user, updateUser] = useGetUser(username);
+    
+    // Wide and small device version
     return (
         <Stack>
             <Formik initialValues={{ username: "" }} onSubmit={(values) => setUsername(values.username)}>
                 <Form>
-                    <Stack direction="row">
+                    <Stack direction={ isWideDevice ? "row" : "column" }>
                         <Box>
                             <FormLabel pt={1}>Enter Username (Requires user to have logged in before)</FormLabel>
                             <Field id="username" name="username" placeholder="" as={Input} />
                         </Box>
-                        <Button type="submit" colorScheme="green" alignSelf="end">
+                        <Button type="submit" colorScheme="green" alignSelf={ isWideDevice ? "end" : "center" } w={isWideDevice ? "" : "97%"}>
                             Load
                         </Button>
                     </Stack>
                 </Form>
             </Formik>
-            <UserConfigItem user={user} updateUser={updateUser} />
+            <UserConfigItem user={user} updateUser={updateUser} isWideDevice={isWideDevice}/>
         </Stack>
     );
 };
@@ -34,36 +36,50 @@ const UsersView = ({isWideDevice = true}: IUsersViewProps) => {
 interface IUserConfigItemProps {
     user?: UserRoles;
     updateUser: (user: UserRoles) => void;
+    isWideDevice?: boolean;
 }
 
-const UserConfigItem = ({ user, updateUser }: IUserConfigItemProps) => {
+const UserConfigItem = ({ user, updateUser, isWideDevice = true }: IUserConfigItemProps) => {
     if (!user) {
         return null;
     }
+
+    const borderColor = useColorModeValue("gray.300", "whiteAlpha.400");
     return (
-        <Formik
-            enableReinitialize={true}
-            initialValues={{ Roles: user.Roles }}
-            onSubmit={(values) => updateUser({ ...user, Roles: values.Roles })}>
-            <Form>
-                <Stack direction="row">
-                    <Box>
-                        <FormLabel pt={1}>Select User Roles</FormLabel>
-                        <Wrap gap={5}>
-                            {Object.values(AvailableUserRoles).map((val) =>
-                                <FormLabel key={val}>
-                                    <Field type="checkbox" name="Roles" value={val} />
-                                    {val}
-                                </FormLabel>
-                            )}
-                        </Wrap>
-                    </Box>
-                    <Button type="submit" colorScheme="green" alignSelf="end">
-                        Save
-                    </Button>
-                </Stack>
-            </Form>
-        </Formik>
+        <Box
+            border="1px"
+            borderColor={borderColor}
+            borderRadius={5}
+            p={2}>
+            <Formik
+                enableReinitialize={true}
+                initialValues={{ Roles: user.Roles }}
+                onSubmit={(values) => updateUser({ ...user, Roles: values.Roles })}>
+                <Form>
+                    <Stack direction={ isWideDevice ? "row" : "column" }>
+                        <Box>
+                            <FormLabel pt={1}>
+                                Select User Roles for
+                                <Code ml={1}>
+                                    {user.Username}
+                                </Code>
+                            </FormLabel>
+                            <Wrap gap={5}>
+                                {Object.values(AvailableUserRoles).map((val) =>
+                                    <FormLabel key={val}>
+                                        <Field type="checkbox" name="Roles" value={val} />
+                                        {val}
+                                    </FormLabel>
+                                )}
+                            </Wrap>
+                        </Box>
+                        <Button type="submit" colorScheme="green" alignSelf={ isWideDevice ? "end" : "center" } w={isWideDevice ? "" : "90%"}>
+                            Save
+                        </Button>
+                    </Stack>
+                </Form>
+            </Formik>
+        </Box>
     );
 };
 
