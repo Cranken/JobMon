@@ -2,8 +2,9 @@ import "../styles/globals.css";
 import type {AppProps} from "next/app";
 import {Center, ChakraProvider} from "@chakra-ui/react";
 import theme from "../styles/theme";
-import Header from "../components/header/Header";
-import {useGetUser, useHasNoAllowedRole, useIsAuthenticated} from "../utils/auth";
+import Header from "@/components/header/Header";
+import { useHasNoAllowedRole, useIsAuthenticated} from "@/utils/auth";
+import { useGetUser } from "@/utils/user";
 import {useRouter} from "next/router";
 import React, {useEffect} from "react";
 import dynamic from "next/dynamic";
@@ -28,10 +29,10 @@ function MyApp({ Component, pageProps }: AppProps) {
       router.pathname !== "/role-error" &&
       useHasNoAllowedRole(user)) {
 
-    useEffect(() => {
-      router.push("/role-error")
-    });
-    redirectionString = "Checking user-roles";
+      useEffect(() => {
+        router.push("/role-error")
+      });
+      redirectionString = "Checking user-roles";
   }
   else if (isAuthenticated &&
       router.pathname == "/role-error" &&
@@ -40,6 +41,7 @@ function MyApp({ Component, pageProps }: AppProps) {
     useEffect(() => {
       router.push("/jobs")
     });
+        
     redirectionString = "Redirecting to jobs...";
   }
   else {

@@ -1,6 +1,6 @@
 import React from "react";
 import {Stack, Center, Text, Heading, useColorModeValue, Button, useToast} from "@chakra-ui/react";
-import {useGetUser} from "../utils/auth";
+import {useGetUser} from "@/utils/user";
 
 const RoleError = () => {
     const user = useGetUser();
@@ -15,12 +15,14 @@ const RoleError = () => {
             }),
         }).then((resp: Response) => {
             if (resp.ok) {
+                console.log("Request success");
                 toast({
                     description: "The request was send successfully",
                     status: "success",
                     isClosable: true
                 });
             } else {
+                console.log("Request success");
                 toast({
                     description: "Failed to send request",
                     status: "error",

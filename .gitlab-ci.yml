@@ -10,25 +10,92 @@ stages:
 before_script:
   - docker version
 
-build-frontend:
-  stage: build
-  script:
-    - docker compose build jobmon_frontend --pull
+###############################################################################
+#### Build stage ##############################################################
+###############################################################################
 
 build-backend:
   stage: build
   script:
     - docker compose build jobmon_backend --pull
 
-test-backend:
+build-frontend:
+  stage: build
+  script:
+    - docker compose build jobmon_frontend --pull
+
+###############################################################################
+#### Test stage ###############################################################
+###############################################################################
+
+vetting-backend:
+  needs:
+    - build-backend
   stage: test
   script:
-    - docker compose --file docker-compose.test.yml build --pull jobmon_backend_tests
-    - docker compose --file docker-compose.test.yml run --rm jobmon_backend_tests
+    - docker build -t jobmon-backend_vetting --target vetting --pull backend
+    - docker run --name jobmon-backend_vetting --rm jobmon-backend_vetting
 
-test-frontend:
+staticchecking-backend:
+  needs:
+    - build-backend
   stage: test
   script:
-    - docker compose --file docker-compose.test.yml build --pull jobmon_frontend_tests
-    - docker compose --file docker-compose.test.yml run --rm jobmon_frontend_tests
+    - docker build -t jobmon-backend_staticchecking --target staticchecking --pull backend
+    - docker run --name jobmon-backend_staticchecking --rm jobmon-backend_staticchecking
 
+testing-backend:
+  needs:
+    - build-backend
+  stage: test
+  script:
+    - docker build -t jobmon-backend_testing --target testing --pull backend
+    - docker run --name jobmon-backend_testing --rm jobmon-backend_testing
+
+testreport-backend:
+  needs:
+    - build-backend
+  stage: test
+  script:
+    - docker build -t jobmon-backend_testreport --target reporter --pull backend
+    - echo -n > report_backend.xml
+    - docker run --volume ${PWD}/report_backend.xml:/app/report_backend.xml --name jobmon-backend_testreport --rm jobmon-backend_testreport
+  artifacts:
+    # Artifact to safe the test results and visualize them in gitlab
+    when: always
+    reports:
+      junit:
+        - report_backend.xml
+
+staticchecking-frontend:
+  needs:
+    - build-frontend
+  stage: test
+  script: 
+    - docker build -t jobmon-frontend_staticchecking --target staticchecking --pull frontend
+    - docker run --name jobmon-frontend_staticchecking --rm jobmon-frontend_staticchecking
+
+
+testing-frontend:
+  needs:
+    - build-frontend
+  stage: test
+  script: 
+    - docker build -t jobmon-frontend_testing --target testing --pull frontend
+    - docker run --name jobmon-frontend_testing --rm jobmon-frontend_testing
+
+
+testreport-frontend:
+  needs:
+    - build-frontend
+  stage: test
+  script:
+    - docker build -t jobmon-frontend_reporter --target reporter --pull frontend
+    - echo -n > report_frontend.xml
+    - docker run --volume ${PWD}/report_frontend.xml:/app/report_frontend.xml --name jobmon-frontend_reporter --rm jobmon-frontend_reporter
+  artifacts:
+    # Artifact to safe the test results and visualize them in gitlab
+    when: always
+    reports:
+      junit:
+        - report_frontend.xml
