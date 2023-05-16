@@ -25,6 +25,27 @@ interface ControlProps {
   isWideDevice?: boolean;
 }
 
+/**
+ * ViewControl is a react component to let the user modify how a job is shown.
+ * 
+ * @param jobdata The data of the job to show .
+ * @param showTimeControl Determines whether the user is given the opportunity to select a specific time-range.
+ * @param startTime The starttime. All charts will start at this point in time.
+ * @param stopTime The stoptime. All charts will end at this point in time.
+ * @param setStartTime A callback-function to set startTime.
+ * @param setStopTime A callback-function to set stopTime.
+ * @param showQuantiles Determines whether the user is shown quantiles or metric data.
+ * @param setShowQuantiles A callback-function to set showQuantiles.
+ * @param autoScale Determines whether the y-axis of the charts will automatically scale with the given values.
+ * @param setAutoScale A callback-function to set autoScale.
+ * @param sampleInterval The currently selected sample-interval.
+ * @param sampleIntervals All available sample-intervals, the user can chose from.
+ * @param setSampleInterval A callback-function to set sampleInterval.
+ * @param selectedMetrics The metrics selected to be shown.
+ * @param setSelectedMetrics A callback-function to modify selectedMetrics
+ * @param isWideDevice Determines if the current device is classified as wide.
+ * @returns The component
+ */
 export const ViewControl = ({
   jobdata,
   showTimeControl = true,
@@ -103,6 +124,14 @@ export const ViewControl = ({
 
 export default ViewControl;
 
+/**
+ * This function requests raw data for a specific job from the backend and provides them to the user.
+ * The data is packed into a csv-file for each metric. All csv- files are packed into one zip-file.
+ * The zip-file is provided for download.
+ * 
+ * @param id The id of the job to export the data for.
+ * @param removeCookie A callback-function to remove the authorization-cookie. This function is used in case the user tries to export a job without the rights to view it.
+ */
 const exportData = (
   id: number,
   removeCookie: (name: "Authorization") => void

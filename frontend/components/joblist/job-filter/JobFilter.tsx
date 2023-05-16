@@ -35,6 +35,19 @@ interface JobFilterProps {
   isWideDevice?: boolean;
 }
 
+/**
+ * JobFilter is a react component allowing the user to filter jobs.
+ * 
+ * @param params The currently enabled filtered parameters.
+ * @param setParams A callback-function to set the filter parameters.
+ * @param partition The available partitions.
+ * @param tags The available tags.
+ * @param tagTitles A title for the tabs.
+ * @param tabPanels 
+ * @param mustApply Defines if the user must hit the apply button to update the params or if the should update when changing them in the controls.
+ * @param isWideDevice Determines if the current device is classified as wide.
+ * @returns The component.
+ */
 export const JobFilter = ({
   params,
   setParams,

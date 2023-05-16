@@ -28,6 +28,17 @@ interface JobListProps {
   isWideDevice?: boolean;
 }
 
+/**
+ * JobList is a react component displaying given jobs in a list.
+ * This component is used as an overview over the available jobs.
+ * 
+ * @param jobs The jobs.
+ * @param radarChartMetrics The metrics to show in the radar-chart.
+ * @param limit The limit of jobs to show on one page. To display all jobs on one page set this value to 0.
+ * @param page The currently selected page.
+ * @param isWideDevice Determines if the current device is classified as wide.
+ * @returns The component.
+ */
 export const JobList = ({
   jobs,
   radarChartMetrics,
@@ -87,6 +98,16 @@ interface JobListItemProps {
   isWideDevice?: boolean;
 }
 
+/**
+ * JobListItem is a react component visualizing one job in the {@link JobList}.
+ * This component gives an overview over one job.
+ * By clicking on this component the user is referred to the a detailed page about the corresponding job.
+ * 
+ * @param job The job to display.
+ * @param radarChartMetrics The metrics that might be contained in the radar-chart.
+ * @param isWideDevice Determines if the current device is classified as wide.
+ * @returns The component.
+ */
 export const JobListItem = ({
   job,
   radarChartMetrics,

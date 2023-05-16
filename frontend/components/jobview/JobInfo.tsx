@@ -12,6 +12,15 @@ interface JobInfoProps {
   isWideDevice?: boolean;
 }
 
+/**
+ * JobInfo is a react component displaying information about one job.
+ * 
+ * @param metadata Metadata for the job. 
+ * @param setChecked Function to modify nodes.
+ * @param nodes A Map describing the selected nodes.
+ * @param isWideDevice Determines if the current device is classified as wide.
+ * @returns The component
+ */
 export const JobInfo = ({
   metadata,
   setChecked,

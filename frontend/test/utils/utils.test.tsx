@@ -43,9 +43,18 @@ describe("Tests groupBy function", () => {
 })
 
 describe("Tests useIsWideDevice effect", () => {
+    /**
+     * Properties of TestC
+     */
     interface ITestCProps {
         setWideState: (v: boolean) => void;
     }
+    
+    /**
+     * React component needed to test useIsWideDevice.
+     * This component uses useIsWideDevice with a width-boundary of 500.
+     * @param setWideState is used to transfer the width state to the outside.
+     */
     const TestC = ({setWideState}: ITestCProps) => {
         const isWide = useIsWideDevice(500);
         useEffect(() => {

@@ -19,6 +19,18 @@ interface TimeControlProps {
   isWideDevice?: boolean;
 }
 
+/**
+ * TimeControl is a react component giving the user the opportunity to select a time-range.
+ * This component is used to select a time-range corresponding to a specific job to modify the data shown in charts.
+ * 
+ * @param metadata The data of the job.
+ * @param startTime The starttime. The charts will start at this point in time.
+ * @param stopTime The stoptime. The charts will end at this point in time.
+ * @param setStartTime A callback-function to set startTime.
+ * @param setStopTime A callback-function to set stopTime.
+ * @param isWideDevice Determines if the current device is classified as wide.
+ * @returns The component
+ */
 const TimeControl = ({
   metadata,
   startTime,
@@ -33,9 +45,12 @@ const TimeControl = ({
     defaultTime[0],
     defaultTime[1],
   ]);
+
   useEffect(() => {
+    // Setting the text for the tooltip dynamically.
     setTooltipValues([startTime?.getTime() ?? 0, stopTime?.getTime() ?? 1]);
   }, [startTime, stopTime]);
+
   const marks: Record<number, ReactNode> = {};
   let t = metadata.StartTime * 1000;
   const inc = ((metadata.StopTime - metadata.StartTime) / 4) * 1000;

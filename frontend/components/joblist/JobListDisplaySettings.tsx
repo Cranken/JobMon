@@ -9,6 +9,15 @@ interface JobListDisplaySettingsProps {
   isWideDevice?: boolean;
 }
 
+/**
+ * JobListDisplaySettings is a react component allowing the user to change settings for the displayed jobs in the {@link JobList}.
+ * 
+ * @param joblistLimit The currently set limit of jobs per page and a callback-function to change this limit.
+ * @param sortBy The currently set parameter to sort jobs by and a callback-function to change this parameter.
+ * @param sortByDescending The currently set direction for the sorted values and a callback-function to change this parameter.
+ * @param isWideDevice Determines if the current device is classified as wide.
+ * @returns The component.
+ */
 export const JobListDisplaySettings = ({
   joblistLimit,
   sortBy,

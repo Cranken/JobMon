@@ -26,11 +26,11 @@ import React from "react";
 import { useIsWideDevice } from "@/utils/utils";
 
 /**
- * Props for the header component
+ * Props for the header component.
  */
 interface HeaderProps {
   /**
-   * The pathname on which the website currently renders
+   * The pathname on which the website currently renders.
    */
   pathname: string
 }
@@ -40,7 +40,8 @@ interface HeaderProps {
  * This header automatically switches the shown content based on the currently authenticated user.
  * Depending on the width of the device this page automatically switches between two options.
  * 
- * @param param0 Properties
+ * @param pathname is the path relative to the base of the webapp.
+ * This path determines whether one of the links in the header shall be highlighted as the currently active page.
  * @returns The component
  */
 export const Header = ({pathname} : HeaderProps) => {
@@ -55,6 +56,10 @@ export const Header = ({pathname} : HeaderProps) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const isWide = useIsWideDevice();
 
+  /**
+   * Logout is a function called to to logout a user.
+   * It removes the authorization cookie locally and revokes the session via the API.
+   */
   const logout = () => {
     fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/logout", {
       method: "POST",
@@ -219,6 +224,11 @@ export const Header = ({pathname} : HeaderProps) => {
   );
 };
 
+/**
+ * This handler is called for changes in the search input-field.
+ * @param key The key that caused the handler to get called.
+ * @param term The term currently written in the input-field.
+ */
 const searchHandler = (key: string, term: string) => {
   if (key === "Enter") {
     fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/${term}`, {
