@@ -218,7 +218,12 @@ func (c *Configuration) Init() {
 
 	// Read command line options
 	var help bool
-	flag.StringVar(&c.ConfigFile, "config", "config.json", "config file")
+
+	// If ConfigFile has already been defined, don't modify it.
+	if c.ConfigFile == "" {
+		flag.StringVar(&c.ConfigFile, "config", "config.json", "config file")
+	}
+
 	flag.IntVar(&c.LogLevel, "log", logging.WarningLogLevel,
 		fmt.Sprint("log level:",
 			" off=", logging.OffLogLevel,
@@ -304,6 +309,7 @@ func (c *Configuration) Init() {
 		"min":  true,
 		"sum":  true,
 	}
+
 	for _, metricConfig := range c.Metrics {
 		if !aggFnAvailable[metricConfig.AggFn] {
 			logging.Fatal("config: Init(): Metric ", metricConfig.GUID, " uses unknown AggFn = ", metricConfig.AggFn)

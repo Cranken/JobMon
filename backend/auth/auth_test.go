@@ -11,7 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-// Configurations and values used in mulitple tests
+// Configurations and values used in multiple tests
 
 var OauthTestConfig = config.OAuthConfig{
 	ClientID:              "<oauth_client_id>",

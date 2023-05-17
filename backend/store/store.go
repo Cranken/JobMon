@@ -14,7 +14,7 @@ type Store interface {
 	// c and InfluxDB database.
 	Init(c config.Configuration, database *db.DB)
 
-	// Close shuts down the connection to the Postgres database.
+	// Shuts down the connection to the Postgres database.
 	Flush()
 
 	// PutJob adds job metadata to store
