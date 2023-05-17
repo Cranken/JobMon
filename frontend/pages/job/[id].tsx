@@ -150,8 +150,10 @@ const Job: NextPage = () => {
   const metricGroups = categories.map((c) => filteredMetricData.filter((v) => v.Config.Categories.includes(c)));
   const quantileGroups = categories.map((c) => filteredQuantileData.filter((v) => v.Config.Categories.includes(c)));
 
+  // Filter changepoints from metadata
   const cps: ChangePoint[] = data.Metadata.Data.filter((x) => {
-    return x.ChangePoints.length != 0;
+    // Check if changepoints exist in the data
+    return x.ChangePoints;
   }).map((x: JobMetadataData) => {
     const cp: ChangePoint = {
       guid: x.Config.GUID,
