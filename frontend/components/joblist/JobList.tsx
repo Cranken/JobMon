@@ -1,7 +1,7 @@
 import { JobMetadata } from "../../types/job";
 import {
-  Alert,
-  AlertIcon,
+  Alert, AlertDescription,
+  AlertIcon, AlertTitle,
   Box,
   Center,
   Divider,
@@ -37,6 +37,32 @@ export const JobList = ({
     limit !== 0
       ? jobs.slice(limit * (page - 1), limit * (page - 1) + limit)
       : jobs;
+  if (slice.length == 0) {
+    return (
+        <Center id="nojobinfo">
+          <Box>
+            <Alert
+                status="info"
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
+                textAlign="center"
+                marginLeft="15px"
+                marginRight="15px"
+                width="calc(100% - 30px)">
+              <AlertIcon />
+              <AlertTitle mt={4} mb={1}>
+                No jobs can be shown here.
+              </AlertTitle>
+              <AlertDescription>
+                There are multiple possible reasons, why you can not see any jobs.
+                Either you have not ran any jobs with the account you are currently logged in with or all your jobs were executed too long ago
+              </AlertDescription>
+            </Alert>
+          </Box>
+        </Center>
+    );
+  }
   return (
     <Center id="joblist">
       <Stack>

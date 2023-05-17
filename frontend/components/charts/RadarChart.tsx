@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import React, { useRef, useEffect } from "react";
-import { clamp } from "../../utils/utils";
+import { clamp } from "@/utils/utils";
 
 interface RadarChartProps<T> {
   data: T[];

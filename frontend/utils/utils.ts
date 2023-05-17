@@ -1,14 +1,58 @@
 import { useState } from "react";
 import { useEffect } from "react";
 import { useCookies } from "react-cookie";
-import { DataMap, JobListData, JobTag } from "../types/job";
-import { JobSearchParams } from "../types/job";
+import { DataMap, JobListData, JobTag, JobSearchParams } from "@/types/job";
+
 
 export const clamp = (val: number, min: number, max: number) =>
   Math.min(Math.max(val, min), max);
 
 export function checkBetween<T>(d1: T, d2: T, point: T) {
   return d1 <= point && point <= d2;
+}
+
+/**
+ * Constructs an element in the session-storage
+ * @param key The key to store the element under
+ * @param value The initial value
+ * @returns Functions to read and modify the element in the session-storage
+ */
+export function useSessionStorageState<T>(
+    key: string,
+    value: T
+): [T, (value: T) => void, () => void, boolean] {
+  const [state, setState] = useState(value);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const setStorageState = (value: T) => {
+    if (typeof window !== "undefined") {
+      const string = JSON.stringify(value);
+      sessionStorage.setItem(key, string);
+      setState(value);
+    }
+  };
+
+  const clearState = () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem(key);
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem(key);
+      if (saved) {
+        const value = JSON.parse(saved) as T;
+        setState(value);
+      }
+      else {
+        setStorageState(value);
+      }
+      setIsLoading(false);
+    }
+  }, [key]);
+
+  return [state, setStorageState, clearState, isLoading];
 }
 
 export function useStorageState<T>(

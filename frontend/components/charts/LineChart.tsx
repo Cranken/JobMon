@@ -2,7 +2,7 @@ import * as d3 from "d3";
 import React, { useEffect } from "react";
 import { useRef } from "react";
 import { Unit } from "../../types/units";
-import { checkBetween, clamp } from "../../utils/utils";
+import { checkBetween, clamp } from "@/utils/utils";
 
 export interface LineChartProps<T> {
   data: T[];

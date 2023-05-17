@@ -14,7 +14,8 @@ WORKDIR /app
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
 RUN \
     if [ -f yarn.lock ]; then \
-        yarn --frozen-lockfile; \
+        # Based on https://stackoverflow.com/questions/58482655/what-is-the-closest-to-npm-ci-in-yarn
+        rm -rf node_modules && yarn install --frozen-lockfile; \
     elif [ -f package-lock.json ]; then \
         npm ci; \
     elif [ -f pnpm-lock.yaml ]; then \
@@ -38,8 +39,44 @@ ENV NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
 
 ARG NEXT_PUBLIC_BACKEND_WS
 ENV NEXT_PUBLIC_BACKEND_WS=${NEXT_PUBLIC_BACKEND_WS}
-
+    
+# Build frontend
 RUN ["yarn", "build"]
+
+###
+# Create image from builder for linting
+#
+# ESLint statically analyzes your code to quickly find problems. 
+# See: https://eslint.org/
+###
+
+FROM builder AS staticchecking
+
+CMD [ "yarn", "lint" ]
+
+
+
+###
+# Create image from builder for testing
+###
+FROM builder AS testing
+
+CMD [ "yarn", "test" ]
+
+
+###
+# Create image from builder to create testreports
+###
+FROM builder AS reporter
+
+ENV NODE_ENV development
+# Disable telemetry during the build. See: https://nextjs.org/telemetry
+ENV NEXT_TELEMETRY_DISABLED 1
+
+CMD [ \
+"sh", "-c", \
+"yarn --frozen-lockfile && yarn test_artifacts && yarn audit" \
+]
 
 # Production image, copy all the files and run next
 FROM node:${NODE_TAG} AS runner

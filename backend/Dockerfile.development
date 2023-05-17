@@ -23,9 +23,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Default environment settigs
-ENV DO_VET=true \
+ENV DO_PKG_UPDATE=false \
+    DO_VET=true \
     DO_STATICCHECK=true \
-    DO_PKG_UPDATE=false \
     DO_TESTS=false \
     CONFIG="/app/config.json" \
     LOGLEVEL=3 \
@@ -46,7 +46,7 @@ CMD [ \
  if [[ ${DO_STATICCHECK} == true ]]; then \
     /go/bin/staticcheck ./... ; \
  fi && \
- if [[ ${DO_TESTS} ]]; then \
+ if [[ ${DO_TESTS} == true ]]; then \
    go test -v ./... ; \
  fi && \
  exec go run . \
