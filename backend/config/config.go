@@ -212,6 +212,8 @@ type EmailConfig struct {
 	SmtpPort int `json:"SmtpPort"`
 }
 
+var testingMode = false
+
 // Init reads the config.json file and maps the data form the json file to the
 // configuration struct c.
 func (c *Configuration) Init() {
@@ -219,21 +221,21 @@ func (c *Configuration) Init() {
 	// Read command line options
 	var help bool
 
-	// If ConfigFile has already been defined, don't modify it.
-	if c.ConfigFile == "" {
+	// In testing mode, flags are setup multiple times, hence the following
+	// lines would fail the unit tests.
+	if !testingMode {
 		flag.StringVar(&c.ConfigFile, "config", "config.json", "config file")
+		flag.IntVar(&c.LogLevel, "log", logging.WarningLogLevel,
+			fmt.Sprint("log level:",
+				" off=", logging.OffLogLevel,
+				" error=", logging.ErrorLogLevel,
+				" warning=", logging.WarningLogLevel,
+				" info=", logging.InfoLogLevel,
+				" debug=", logging.DebugLogLevel))
+		flag.StringVar(&c.ListenAddress, "listen-addr", ":8080", "TCP address for the server to listen on")
+		flag.BoolVar(&help, "help", false, "print this help message")
+		flag.Parse()
 	}
-
-	flag.IntVar(&c.LogLevel, "log", logging.WarningLogLevel,
-		fmt.Sprint("log level:",
-			" off=", logging.OffLogLevel,
-			" error=", logging.ErrorLogLevel,
-			" warning=", logging.WarningLogLevel,
-			" info=", logging.InfoLogLevel,
-			" debug=", logging.DebugLogLevel))
-	flag.StringVar(&c.ListenAddress, "listen-addr", ":8080", "TCP address for the server to listen on")
-	flag.BoolVar(&help, "help", false, "print this help message")
-	flag.Parse()
 
 	// print help message
 	if help {
