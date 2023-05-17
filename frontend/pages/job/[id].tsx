@@ -195,7 +195,9 @@ const Job: NextPage = () => {
           selectedMetrics={selectedMetrics}
           setSelectedMetrics={setSelectedMetrics}
           showChangepoints={showChangepoints}
-          setShowChangepoints={setShowChangepoints}
+          setShowChangepoints={
+            cps.length != 0 ? setShowChangepoints : undefined
+          }
         />
       </Grid>
       <Tabs isLazy>
