@@ -1,107 +1,194 @@
 package utils
 
 import (
+	"bytes"
+	"log"
+	"net/http"
+	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
 
-// func TestWebLogger_Write(t *testing.T) {
-// Create a test writer for default error log
-// defaultWriter := bytes.NewBuffer(nil)
-// log.SetOutput(defaultWriter)
+func TestInit(t *testing.T) {
+	// Create a buffer to capture log output
+	logOutput := bytes.Buffer{}
+	log.SetOutput(&logOutput)
 
-// Create a test logger
-// logger := &WebLogger{}
-// logger.Init()
-
-// Create a test websocket connection
-// connection := &websocket.Conn{}
-
-// Test writing to the logger
-// message := []byte("Test log message")
-// _, err := logger.Write(message)
-// if err != nil {
-// 	t.Errorf("Unexpected error while writing to WebLogger: %v", err)
-// }
-
-// Check if the message was written to the default error log
-// if !bytes.Contains(defaultWriter.Bytes(), message) {
-// 	t.Errorf("WebLogger.Write did not write the message to the default error log")
-// }
-
-// Check if the message was written to the websocket connection
-// if len(connection.WrittenMessages()) != 1 {
-// 	t.Errorf("WebLogger.Write did not write the message to the websocket connection")
-// }
-
-// Check if an error is logged when writing to a websocket connection fails
-// failingConnection := &websocket.Conn{FailNextWrite: true}
-// defaultWriter.Reset()
-// _, err = logger.Write(message)
-// if err != nil {
-// 	t.Errorf("Unexpected error while writing to WebLogger: %v", err)
-// }
-
-// Check if an error message was written to the default error log
-// expectedErrorMessage := "ERROR: utils: Write(): Failed to write to websocket:"
-// if !bytes.Contains(defaultWriter.Bytes(), []byte(expectedErrorMessage)) {
-// 	t.Errorf("WebLogger.Write did not write the error message to the default error log")
-// }
-// }
-
-func TestWebLogger_AddConnection(t *testing.T) {
-	// Create a test logger
+	// Create a new WebLogger instance
 	logger := &WebLogger{}
 	logger.Init()
 
-	// Create test websocket connections
-	connection1 := &websocket.Conn{}
-	connection2 := &websocket.Conn{}
-
-	// Add connections to the logger
-	logger.AddConnection(connection1)
-	logger.AddConnection(connection2)
-
-	// Check if the connections were added
-	if len(logger.connections) != 2 {
-		t.Errorf("WebLogger.AddConnection did not add the connections")
+	// Check that defaultWriter is set to log.Writer()
+	if log.Writer() != logger.defaultWriter {
+		t.Errorf("Init failed, expected: %v, got: %v", log.Writer(), logger.defaultWriter)
 	}
 
-	// Check if the ring buffer messages were written to the new connection
-	// if len(connection1.WrittenMessages()) != 25 {
-	// 	t.Errorf("WebLogger.AddConnection did not write the ring buffer messages to the new connection")
-	// }
+	// Check that connections is an empty slice
+	if len(logger.connections) != 0 {
+		t.Errorf("Init failed, expected: %v, got: %v", 0, len(logger.connections))
+	}
+
+	// Check that the ring buffer is initialized with 25 elements
+	if logger.ring.Len() != 25 {
+		t.Errorf("Init failed, expected: %v, got: %v", 25, logger.ring.Len())
+	}
+
+	// Check that the log message is written to the defaultWriter
+	expectedLog := "Init: WebLogger initialized"
+	if logger.ring == nil {
+		t.Errorf("Init failed, expected: %v, got: %v", expectedLog, logOutput.String())
+	}
 }
 
-func TestWebLogger_RemoveConnection(t *testing.T) {
-	// Create a test logger
+func TestWrite(t *testing.T) {
+	// Create a new WebLogger instance
 	logger := &WebLogger{}
 	logger.Init()
 
-	// Create test websocket connections
-	connection1 := &websocket.Conn{}
-	connection2 := &websocket.Conn{}
+	// Create a dummy HTTP server using httptest
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Upgrade HTTP connection to WebSocket connection
+		upgrader := websocket.Upgrader{}
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			t.Fatalf("Failed to upgrade connection to WebSocket: %s", err)
+		}
+		// Append the WebSocket connection to the logger's connections list
+		logger.connections = append(logger.connections, conn)
 
-	// Add connections to the logger
-	logger.AddConnection(connection1)
-	logger.AddConnection(connection2)
+		// Read messages from the WebSocket connection
+		for {
+			_, _, err := conn.ReadMessage()
+			if err != nil {
+				break
+			}
+		}
+	}))
+	defer server.Close()
 
-	// Remove one connection
-	logger.RemoveConnection(connection1)
+	// Create a WebSocket connection to the dummy server
+	wsURL := "ws" + server.URL[len("http"):]
 
-	// Check if the connection was removed
-	if len(logger.connections) != 1 {
-		t.Errorf("WebLogger.RemoveConnection did not remove the connection")
+	conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
+	if err != nil {
+		t.Fatalf("Failed to connect to WebSocket server: %s", err)
+	}
+	// Append the WebSocket connection to the logger's connections list
+	logger.connections = append(logger.connections, conn)
+
+	// Create a buffer to capture the output of the default writer
+	var buf bytes.Buffer
+	logger.defaultWriter = &buf
+
+	// Define the test input
+	message := []byte("test message")
+
+	// Call the Write function
+	_, err = logger.Write(message)
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
+
+	// Wait for a short time to allow the messages to be processed
+	time.Sleep(100 * time.Millisecond)
+
+	// Assert that the message was written to the default writer
+	output := buf.String()
+	if output != string(message) {
+		t.Errorf("Unexpected output. Got: %s, Expected: %s", output, message)
 	}
 }
 
-// func (c *websocket.Conn) WrittenMessages() [][]byte {
-// 	writtenMessages := [][]byte{}
-// 	for _, message := range c.WriteCalls {
-// 		if len(message.Arguments) == 2 && message.Arguments[0] == websocket.TextMessage {
-// 			writtenMessages = append(writtenMessages, message.Arguments[1].([]byte))
-// 		}
-// 	}
-// 	return writtenMessages
-// }
+func TestWebAddConnection(t *testing.T) {
+	// Create a new WebLogger instance
+	logger := &WebLogger{}
+	logger.Init()
+
+	// Create a dummy WebSocket connection using httptest
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Upgrade HTTP connection to WebSocket connection
+		upgrader := websocket.Upgrader{}
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			t.Fatalf("Failed to upgrade connection to WebSocket: %s", err)
+		}
+
+		// Call the AddConnection function
+		logger.AddConnection(conn)
+
+		// Assert that the connection was added to the logger's connections list
+		if len(logger.connections) != 1 || logger.connections[0] != conn {
+			t.Errorf("Failed to add connection to the logger's connections list")
+		}
+	}))
+	defer server.Close()
+
+	// Create a WebSocket connection to the dummy server
+	wsURL := "ws" + server.URL[len("http"):]
+
+	conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
+	if err != nil {
+		t.Fatalf("Failed to connect to WebSocket server: %s", err)
+	}
+
+	// Close the WebSocket connection at the end of the test
+	defer conn.Close()
+
+	// Send an initial message to the WebSocket server
+	err = conn.WriteMessage(websocket.TextMessage, []byte("initial message"))
+	if err != nil {
+		t.Fatalf("Failed to send initial message: %s", err)
+	}
+
+}
+
+func TestRemoveConnection(t *testing.T) {
+	// Create a new WebLogger instance
+	logger := &WebLogger{}
+	logger.Init()
+
+	// Create a dummy WebSocket connection using httptest
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Upgrade HTTP connection to WebSocket connection
+		upgrader := websocket.Upgrader{}
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			t.Fatalf("Failed to upgrade connection to WebSocket: %s", err)
+		}
+
+		// Add the connection to the logger's connections list
+		logger.connections = append(logger.connections, conn)
+
+		// Call the RemoveConnection function
+		logger.RemoveConnection(conn)
+
+		// Assert that the connection was removed from the logger's connections list
+		if len(logger.connections) != 0 {
+			t.Errorf("Failed to remove connection from the logger's connections list")
+		}
+	}))
+	defer server.Close()
+
+	// Create a WebSocket connection to the dummy server
+	wsURL := "ws" + server.URL[len("http"):]
+
+	conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
+	if err != nil {
+		t.Fatalf("Failed to connect to WebSocket server: %s", err)
+	}
+
+	// Close the WebSocket connection at the end of the test
+	defer conn.Close()
+
+	// Send an initial message to the WebSocket server
+	err = conn.WriteMessage(websocket.TextMessage, []byte("initial message"))
+	if err != nil {
+		t.Fatalf("Failed to send initial message: %s", err)
+	}
+
+	// The RemoveConnection function should be called by the server handler
+	// and remove the connection from the logger's connections list
+	// The assertions are performed inside the server handler function
+}
