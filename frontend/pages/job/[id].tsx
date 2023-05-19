@@ -151,7 +151,8 @@ const Job: NextPage = () => {
   const quantileGroups = categories.map((c) => filteredQuantileData.filter((v) => v.Config.Categories.includes(c)));
 
   // Filter changepoints from metadata
-  const cps: ChangePoint[] = data.Metadata.Data.filter((x) => {
+
+  const cps: ChangePoint[] = (data.Metadata && data.Metadata.Data) ? data.Metadata.Data.filter((x) => {
     // Check if changepoints exist in the data
     return x.ChangePoints;
   }).map((x: JobMetadataData) => {
@@ -160,7 +161,7 @@ const Job: NextPage = () => {
       date: x.ChangePoints.map((d: string) => new Date(d))
     };
     return cp;
-  });
+  }) : [];
 
   return (
     <Box m={5}>
