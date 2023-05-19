@@ -83,6 +83,22 @@ You can access the containers with the `docker` command.
       influx auth list
   ```
 
+* View the retention period for all buckets. The retention service automatically deletes “expired” data and optimizes disk usage without any user intervention.
+
+  ```bash
+  sudo docker exec jobmon_influxdb \
+    influx bucket list
+  ```
+
+* Update retention period for a bucket.
+
+  ```bash
+  # -> Set bucket ID
+  BUCKET_ID="..."
+  sudo docker exec jobmon_influxdb \
+    influx bucket update --id $BUCKET_ID} --retention 3360h
+  ```
+
 * Query the InfluxDB
 
   ```bash
