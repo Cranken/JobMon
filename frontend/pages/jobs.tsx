@@ -67,7 +67,7 @@ export const Jobs = () => {
   const elements = [];
   elements.push(
     <Center key="list-control">
-      <Stack borderWidth="1px" borderRadius="lg" p={5} margin={4} w={ isWideDevice ? "50%" : "97%" }>
+      <Stack borderWidth="1px" borderRadius="lg" p={5} margin={4} w={{base: "97%", md: "60%", lg: "55%"}}>
         <JobFilter
           key="jobfilter"
           params={params}
@@ -128,8 +128,8 @@ export const Jobs = () => {
         currentPage={page}
         pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
         setPage={setPageStorage}
-        margiBottomEnable={true}
-        isWideDevice={isWideDevice}
+        marginBottomEnable={true}
+        displayExtendedSelection={isWideDevice}
     ></JoblistPageSelection>
   );
   elements.push(
@@ -149,8 +149,8 @@ export const Jobs = () => {
       pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
       setPage={setPageStorage}
       marginTopEnable={true}
-      margiBottomEnable={true}
-      isWideDevice={isWideDevice}
+      marginBottomEnable={true}
+      displayExtendedSelection={isWideDevice}
     ></JoblistPageSelection>
   );
 
