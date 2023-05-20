@@ -15,6 +15,10 @@ import { useRouter } from "next/router";
 import QuantileDataCharts from "@/components/jobview/QuantileDataCharts";
 import Control from "@/components/jobview/ViewControl";
 import {
+  Alert,
+  AlertDescription,
+  AlertIcon,
+  AlertTitle,
   Box,
   Center,
   Grid,
@@ -44,7 +48,7 @@ const Job: NextPage = () => {
   const [startTime, setStartTime] = useState<Date>();
   const [stopTime, setStopTime] = useState<Date>();
   const [aggFnSelection, setAggFnSelection] = useState<Map<string, AggFn>>();
-  const [data, isLoading] = useGetJobData(
+  const [data, isLoading, containsMetricData] = useGetJobData(
     parseInt(jobId as string),
     node,
     sampleInterval,
@@ -151,7 +155,6 @@ const Job: NextPage = () => {
   const quantileGroups = categories.map((c) => filteredQuantileData.filter((v) => v.Config.Categories.includes(c)));
 
   // Filter changepoints from metadata
-
   const cps: ChangePoint[] = (data.Metadata && data.Metadata.Data) ? data.Metadata.Data.filter((x) => {
     // Check if changepoints exist in the data
     return x.ChangePoints;
@@ -162,6 +165,46 @@ const Job: NextPage = () => {
     };
     return cp;
   }) : [];
+
+  if (!containsMetricData) {
+    return (
+      <Box m={5}>
+      <Grid
+        mb={3}
+        p={2}
+        border="1px"
+        borderRadius="10px"
+        templateColumns="repeat(2, 1fr)"
+      >
+        <JobInfo
+          metadata={data.Metadata}
+          setChecked={setChecked}
+          nodes={selection ?? {}}
+        />
+      </Grid>
+      <Box>
+        <Alert
+            status="info"
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            textAlign="center"
+            marginLeft="15px"
+            marginRight="15px"
+            width="calc(100% - 30px)">
+          <AlertIcon />
+          <AlertTitle mt={4} mb={1}>
+            No data can be shown here.
+          </AlertTitle>
+          <AlertDescription>
+            No data is monitored for this job, hence no data is shown here
+          </AlertDescription>
+        </Alert>
+      </Box>
+
+    </Box >
+    );
+  }
 
   return (
     <Box m={5}>
@@ -300,7 +343,7 @@ export const useGetJobData: (
   sampleInterval?: number,
   aggFnSelection?: Map<string, AggFn>,
   timeStart?: number
-) => [JobData | undefined, boolean] = (
+) => [JobData | undefined, boolean, boolean] = (
   id: number | undefined,
   node?: string,
   sampleInterval?: number,
@@ -315,37 +358,53 @@ export const useGetJobData: (
     const [ws, setWs] = useState<WebSocket>();
     const [lastMessage, setLastMessage] = useState<WSMsg>({} as WSMsg);
     const [aggFnCache, setAggFnCache] = useState<AggCache>({});
+    const [containsMetricData, setContainsMetricData] = useState(false);
 
+    /**
+     * Stores jobdata in jobcache and populates aggFnCache.
+     * If the jobcache already contains metadata they will not be changed.
+     * The metricdata in data will always be placed in the jobcache.
+     *
+     * @param data The data that should be stored
+     */
     const populateJobCache = (data: JobData) => {
-      setJobCache((prevState) => {
+      setJobCache((prevState: JobCache) => {
         const newState = prevState;
         if (!newState.Metadata) {
           newState.Metadata = data;
         }
-        newState[data.SampleInterval] = data.MetricData;
-        setAggFnCache((aggState) => {
-          data.MetricData.forEach((m) => {
-            if (!(data.SampleInterval in aggState)) {
-              aggState[data.SampleInterval] = {};
-            }
-            const intervalData = aggState[data.SampleInterval];
-            if (!(m.Config.GUID in intervalData)) {
-              intervalData[m.Config.GUID] = {};
-            }
-            if (!(m.Config.AggFn in intervalData[m.Config.GUID])) {
-              intervalData[m.Config.GUID] = { [m.Config.AggFn]: m };
-            }
-            aggState[data.SampleInterval] = intervalData;
+        if (data.MetricData != null) {
+          newState[data.SampleInterval] = data.MetricData;
+          setAggFnCache((aggState) => {
+            data.MetricData.forEach((m) => {
+              if (!(data.SampleInterval in aggState)) {
+                aggState[data.SampleInterval] = {};
+              }
+              const intervalData = aggState[data.SampleInterval];
+              if (!(m.Config.GUID in intervalData)) {
+                intervalData[m.Config.GUID] = {};
+              }
+              if (!(m.Config.AggFn in intervalData[m.Config.GUID])) {
+                intervalData[m.Config.GUID] = { [m.Config.AggFn]: m };
+              }
+              aggState[data.SampleInterval] = intervalData;
+            });
+            return aggState;
           });
-          return aggState;
-        });
+          setContainsMetricData(true);
+        }
+        else {
+          setContainsMetricData(false);
+        }
         setIsLoading(false);
         setJobData(data);
+        
         return newState;
       });
+      
     };
 
-    // General data based on sampleInterval
+    // Fetch general data based on sampleInterval from the backend or the jobcache
     useEffect(() => {
       if (!id) {
         return;
@@ -353,6 +412,10 @@ export const useGetJobData: (
       const url = new URL(
         process.env.NEXT_PUBLIC_BACKEND_URL + `/api/job/${id}`
       );
+
+      // If the sampleInterval is known, jobCache is checked for existing data.
+      // Otherwise data is directly fetched from the backend.
+      // SampleInterval is either set by the user or the recently fetched data for this job
       if (sampleInterval) {
         if (!(sampleInterval in jobCache)) {
           url.searchParams.append("sampleInterval", sampleInterval.toString());
@@ -369,11 +432,13 @@ export const useGetJobData: (
         setIsLoading(true);
         authFetch(url.toString()).then(populateJobCache);
       }
-    }, [id, node, jobCache, sampleInterval]);
 
-    // AggFn Metrics
+    }, [id, node, jobCache, sampleInterval, containsMetricData]);
+
+    // Fetch aggregated data if aggregation-functions are selected.
+    // In case no aggregation-function is selected 
     useEffect(() => {
-      if (!jobData) {
+      if (!jobData || !containsMetricData) {
         return;
       }
       const newData = { ...jobData };
@@ -403,9 +468,10 @@ export const useGetJobData: (
         newData.MetricData = newMetricData;
         setJobData(newData);
       }
-    }, [aggFnSelection, aggFnCache]);
+    }, [aggFnSelection, aggFnCache, containsMetricData]);
 
-    // Node data
+    // Loads data for specific node
+    // This effect only works if the sampleinterval is already known
     useEffect(() => {
       if (node && node !== "") {
         if (!sampleInterval) {
@@ -439,6 +505,8 @@ export const useGetJobData: (
       }
     }, [node, nodeCache, sampleInterval]);
 
+    // Register websocket in case the job is still running and metric-data are available.
+    // The webhook is used to update the displayed data
     useEffect(() => {
       if (jobData?.Metadata.IsRunning && jobData.MetricData) {
         const url = new URL(
@@ -460,8 +528,9 @@ export const useGetJobData: (
       }
     }, [jobData?.Metadata.IsRunning, id]);
 
+    // Filters data from websocket for the configured measurements
     useEffect(() => {
-      if (jobData) {
+      if (jobData && containsMetricData) {
         const newJobData = { ...jobData };
         const data = lastMessage;
         if (
@@ -491,12 +560,14 @@ export const useGetJobData: (
       }
     }, [lastMessage]);
 
+    // Sets the live time from the job's starttime
     useEffect(() => {
       if (curLiveWindowStart === Infinity && timeStart) {
         setCurLiveWindowStart(timeStart);
       }
     }, [timeStart, curLiveWindowStart]);
 
+    // In case we are using a websocket to update our data. Ask for new data
     useEffect(() => {
       if (ws && ws.readyState === ws.OPEN) {
         if (timeStart && timeStart < curLiveWindowStart) {
@@ -511,7 +582,7 @@ export const useGetJobData: (
       }
     }, [ws, timeStart, curLiveWindowStart]);
 
-    return [jobData, isLoading];
+    return [jobData, isLoading, containsMetricData];
   };
 
 interface PartitionMetricSelection {
