@@ -38,8 +38,9 @@ export interface LineChartProps<T> {
   fillBoundKeys?: [string, string]; // Fill the area between [lower, upper]
   showTooltipMean?: boolean;
   showTooltipSum?: boolean;
-  showCP?: boolean; // Determines wheter to show changepoints in the chart
+  showCP?: boolean; // Determines whether to show changepoints in the chart
   cp?: Date[] // changepoints
+  showTooltipCP?:boolean; // Determines whether to show changepoints in the tooltip
 }
 
 // Typescript version based on chart released under:
@@ -89,7 +90,8 @@ export function LineChart<T>({
   showTooltipMean = true,
   showTooltipSum = false,
   showCP = false,
-  cp = []
+  cp = [],
+  showTooltipCP = true,
 }: LineChartProps<T>) {
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -194,7 +196,7 @@ export function LineChart<T>({
           .attr("y1", height - marginBottom)
           .attr("y2", marginTop)
           .attr("stroke", "currentColor")
-          .attr("stroke-dasharray", 4);
+          .attr("stroke-dasharray", 10);
       })
 
     }
@@ -359,6 +361,10 @@ export function LineChart<T>({
       }
       values.sort((a, b) => (y(a) < y(b) ? -1 : 1));
 
+      /**
+       * Adds a line to the tooltip.
+       * @param str The text of the line.
+       */
       const addLine = (str: string) => {
         const text = tooltip
           .append("text")
@@ -367,6 +373,19 @@ export function LineChart<T>({
         lastY -= text.node()?.getBBox().height ?? 0;
       };
 
+      if (showTooltipCP) {
+        console.log(i);
+        const pointerOnChangePoint = cp.filter((e) => {
+          console.log(xScale(e));
+          return i == getNearestPointIdx(xScale(e));
+        }).length != 0
+        if (pointerOnChangePoint) {
+          addLine(
+            ` -- Changepoint here -- `
+          );
+        }
+      }
+ 
       if (showTooltipMean || showTooltipSum) {
         const pointValues = values.map((a) => y(a));
         if (showTooltipMean) {
