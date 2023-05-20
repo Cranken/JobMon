@@ -8,6 +8,14 @@ import '@testing-library/jest-dom/extend-expect';
 
 import { server } from './mocks/server'
 
+global.matchMedia = global.matchMedia || function () {
+  return {
+    matches: false,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+  };
+};
+
 beforeAll(() => server.listen())
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
