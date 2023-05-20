@@ -74,7 +74,6 @@ export const Jobs = () => {
           setParams={setParams}
           partitions={Object.keys(jobListData.Config.Partitions)}
           tags={jobListData.Config.Tags}
-          isWideDevice={isWideDevice}
           mustApply
         />
         <Divider></Divider>
@@ -83,7 +82,6 @@ export const Jobs = () => {
           joblistLimit={[joblistLimit, setJoblistLimit]}
           sortBy={[sortBy, setSortBy]}
           sortByDescending={[sortByDescending, setSortByDescending]}
-          isWideDevice={isWideDevice}
         ></JobListDisplaySettings>
       </Stack>
     </Center>
@@ -141,7 +139,6 @@ export const Jobs = () => {
           radarChartMetrics={jobListData.Config.RadarChartMetrics}
           limit={joblistLimit}
           page={page}
-          isWideDevice={isWideDevice}
       />
     </Box>
   );

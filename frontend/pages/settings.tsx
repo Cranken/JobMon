@@ -41,7 +41,7 @@ export const Settings = () => {
   }
   const [settingsView, setSettingsView] = useState(SettingsView.General);
   const [config, setConfig] = useGetConfig();
-  const isWide = useIsWideDevice();
+  const isWideDevice = useIsWideDevice();
 
   if (!config) {
     return (
@@ -52,7 +52,7 @@ export const Settings = () => {
   }
 
   // Small device version
-  if (!isWide) {
+  if (!isWideDevice) {
     return (
       <Center h="100%" mt={4} flexDirection={"column"}>
         <Menu>
@@ -71,7 +71,7 @@ export const Settings = () => {
         </Menu>
         <Divider mt={2} mb={2}/>
         <Center w={"97%"}>
-          {renderSettingsView(settingsView, config, setConfig, isWide)}
+          {renderSettingsView(settingsView, config, setConfig)}
         </Center>
       </Center>
     );
@@ -97,7 +97,7 @@ export const Settings = () => {
           </Stack>
         </GridItem>
         <GridItem colSpan={3}>
-          {renderSettingsView(settingsView, config, setConfig, isWide)}
+          {renderSettingsView(settingsView, config, setConfig)}
         </GridItem>
       </Grid>
     </Center>
@@ -109,28 +109,26 @@ export const Settings = () => {
  * @param view Specifies the setting to show.
  * @param config The currently set configuration.
  * @param setConfig A function to set a new configuration.
- * @param isWide Defines if the used device is wide
  * @returns The setting as react component.
  */
 const renderSettingsView = (
   view: SettingsView,
   config: Configuration,
   setConfig: (c: Configuration) => void,
-  isWide: boolean
 ) => {
   switch (view) {
     case SettingsView.General:
-      return <GeneralView isWideDevice={isWide}/>;
+      return <GeneralView />;
     case SettingsView.API:
-      return <APIView isWideDevice={isWide}/>;
+      return <APIView/>;
     case SettingsView.Metrics:
-      return <MetricsView config={config} setConfig={setConfig} isWideDevice={isWide}/>;
+      return <MetricsView config={config} setConfig={setConfig} />;
     case SettingsView.Partitions:
-      return <PartitionsView config={config} setConfig={setConfig} isWideDevice={isWide}/>;
+      return <PartitionsView config={config} setConfig={setConfig} />;
     case SettingsView.Logs:
       return <LogView />;
     case SettingsView.Users:
-      return <UsersView isWideDevice={isWide}/>;
+      return <UsersView />;
   }
   return null;
 };

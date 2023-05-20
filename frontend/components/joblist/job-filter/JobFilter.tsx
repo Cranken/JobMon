@@ -32,7 +32,6 @@ interface JobFilterProps {
   tabTitles?: JSX.Element[];
   tabPanels?: JSX.Element[];
   mustApply?: boolean;
-  isWideDevice?: boolean;
 }
 
 /**
@@ -45,7 +44,6 @@ interface JobFilterProps {
  * @param tagTitles A title for the tabs.
  * @param tabPanels 
  * @param mustApply Defines if the user must hit the apply button to update the params or if the should update when changing them in the controls.
- * @param isWideDevice Determines if the current device is classified as wide.
  * @returns The component.
  */
 export const JobFilter = ({
@@ -56,7 +54,6 @@ export const JobFilter = ({
   tabTitles,
   tabPanels,
   mustApply = false,
-  isWideDevice = true,
 }: JobFilterProps) => {
   const [tagPickerItems,] = useState(
     tags?.map((tag) => {
@@ -123,7 +120,7 @@ export const JobFilter = ({
         <TabPanels>
           <TabPanel>
             <Stack>
-              <Flex gap={3} direction={isWideDevice ? "row" : "column"}>
+              <Flex gap={3} direction={{base : "column", lg: "row"}}>
                 {user.Roles.includes(UserRole.Admin) ? (
                   <Input
                     value={filterParams.UserName}
@@ -167,7 +164,7 @@ export const JobFilter = ({
                   <option value="undefined">Show All Jobs</option>
                 </Select>
               </Flex>
-              <Stack direction={isWideDevice ? "row" : "column"} gap={6}>
+              <Stack direction={{base : "column", lg: "row"}} gap={6}>
                 <Stepper
                   title="Number of Nodes"
                   minimum={1}
@@ -228,7 +225,7 @@ export const JobFilter = ({
           </TabPanel>
           <TabPanel>
             <Stack>
-              <Flex justify="center" align="center" h={ isWideDevice ? 10 : "auto"} w={ isWideDevice ? "fit-content" : "97%" } direction={ isWideDevice ? "row" : "column"}>
+              <Flex justify="center" align="center" h={{base: "auto", lg: 10}} w={{base: "97%", lg: "fit-content"}} direction={{base : "column", lg: "row"}}>
                 <Text mr={2}>Filter start time between:</Text>
                 <input
                   className={style["time-input"]}
@@ -245,9 +242,9 @@ export const JobFilter = ({
                     })
                   }
                 />
-                <Spacer mx={ isWideDevice ? 1 : 0 } />
+                <Spacer mx={{base: 0, lg: 1}} />
                 <Text>and:</Text>
-                <Spacer mx={ isWideDevice ? 1 : 0 } />
+                <Spacer mx={{base: 0, lg: 1}} />
                 <input
                   className={style["time-input"]}
                   type="datetime-local"
@@ -263,10 +260,10 @@ export const JobFilter = ({
                     })
                   }
                 />
-                <Spacer mx={ isWideDevice ? 1 : 0 } />
+                <Spacer mx={{base: 0, lg: 1}} />
                 <Button
                   size="sm"
-                  mt={isWideDevice ? 0 : 1}
+                  mt={{base: 0, lg: 1}}
                   onClick={() =>
                     setFilterParams({
                       ...filterParams,

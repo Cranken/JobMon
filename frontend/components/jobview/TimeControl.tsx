@@ -16,7 +16,6 @@ interface TimeControlProps {
   stopTime?: Date;
   setStartTime: (t: Date) => void;
   setStopTime: (t: Date) => void;
-  isWideDevice?: boolean;
 }
 
 /**
@@ -28,7 +27,6 @@ interface TimeControlProps {
  * @param stopTime The stoptime. The charts will end at this point in time.
  * @param setStartTime A callback-function to set startTime.
  * @param setStopTime A callback-function to set stopTime.
- * @param isWideDevice Determines if the current device is classified as wide.
  * @returns The component
  */
 const TimeControl = ({
@@ -37,7 +35,6 @@ const TimeControl = ({
   stopTime,
   setStartTime,
   setStopTime,
-  isWideDevice = true,
 }: TimeControlProps) => {
   const defaultTime = [metadata.StartTime * 1000, metadata.StopTime * 1000];
   const [showTooltip, setShowTooltip] = useState(false);
@@ -65,8 +62,14 @@ const TimeControl = ({
   }
 
   return (
-    <Flex maxH={ isWideDevice ? 10 : "auto"} align="center" w="100%" direction={ isWideDevice ? "row" : "column-reverse"} pb={ isWideDevice ? 0 : 50}>
-      <Box mr={5} ml={ isWideDevice ? 0 : 5} w={ isWideDevice ? "100%" : "80%"}>
+    <Flex
+      maxH={{base: "auto", lg: 10}}
+      align="center"
+      w="100%"
+      direction={{base: "column-reverse", lg: "row"}}
+      pb={{base: 50, lg: 0}}>
+
+      <Box mr={5} ml={{base: 5, lg: 0}} w={{base: "80%", lg: "100%"}}>
         <Range
           min={defaultTime[0]}
           max={defaultTime[1]}

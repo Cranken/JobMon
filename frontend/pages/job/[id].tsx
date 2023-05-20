@@ -157,13 +157,12 @@ const Job: NextPage = () => {
         p={2}
         border="1px"
         borderRadius="10px"
-        templateColumns={ isWideDevice ? "repeat(2, 1fr)" : "repeat(1, 1fr)" }
+        templateColumns={{base: "repeat(1, 1fr)", lg: "repeat(2, 1fr"}}
       >
         <JobInfo
           metadata={data.Metadata}
           setChecked={setChecked}
           nodes={selection ?? {}}
-          isWideDevice={isWideDevice}
         />
         <Control
           jobdata={data}
@@ -183,7 +182,6 @@ const Job: NextPage = () => {
           setSampleInterval={setSampleInterval}
           selectedMetrics={selectedMetrics}
           setSelectedMetrics={setSelectedMetrics}
-          isWideDevice={isWideDevice}
         />
       </Grid>
       <Tabs isLazy>
@@ -205,7 +203,7 @@ const Job: NextPage = () => {
                   }
                   isLoading={isLoading}
                   autoScale={autoScale}
-                  numColumns={ isWideDevice ? 2 : 1}
+                  numColumns={ isWideDevice ? 2 : 1 }
                 />
               </TabPanel>
             ) :
@@ -229,7 +227,7 @@ const Job: NextPage = () => {
                     copy.set(m, fn);
                     return copy;
                   })}
-                  numColumns={ isWideDevice ? 2 : 1}
+                  numColumns={ isWideDevice ? 2 : 1 }
                 />
               </TabPanel>
             )

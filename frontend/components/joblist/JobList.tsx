@@ -25,7 +25,6 @@ interface JobListProps {
   sortBy?: string;
   limit: number;
   page: number;
-  isWideDevice?: boolean;
 }
 
 /**
@@ -36,7 +35,6 @@ interface JobListProps {
  * @param radarChartMetrics The metrics to show in the radar-chart.
  * @param limit The limit of jobs to show on one page. To display all jobs on one page set this value to 0.
  * @param page The currently selected page.
- * @param isWideDevice Determines if the current device is classified as wide.
  * @returns The component.
  */
 export const JobList = ({
@@ -44,7 +42,6 @@ export const JobList = ({
   radarChartMetrics,
   limit,
   page,
-  isWideDevice = true,
 }: JobListProps) => {
   const slice =
     limit !== 0
@@ -84,7 +81,6 @@ export const JobList = ({
             key={job.Id}
             job={job}
             radarChartMetrics={radarChartMetrics}
-            isWideDevice={isWideDevice}
           />
         ))}
       </Stack>
@@ -95,7 +91,6 @@ export const JobList = ({
 interface JobListItemProps {
   job: JobMetadata;
   radarChartMetrics: string[];
-  isWideDevice?: boolean;
 }
 
 /**
@@ -105,13 +100,11 @@ interface JobListItemProps {
  * 
  * @param job The job to display.
  * @param radarChartMetrics The metrics that might be contained in the radar-chart.
- * @param isWideDevice Determines if the current device is classified as wide.
  * @returns The component.
  */
 export const JobListItem = ({
   job,
   radarChartMetrics,
-  isWideDevice = true,
 }: JobListItemProps) => {
   const borderColor = useColorModeValue("gray.300", "whiteAlpha.400");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -153,7 +146,7 @@ export const JobListItem = ({
     <LinkBox>
       <LinkOverlay href={`/job/${job.Id}`}>
         <Stack
-          direction={ isWideDevice ? "row" : "column" }
+          direction={{base : "column", lg: "row"}}
           divider={
             <StackDivider marginY="3% !important" borderColor={borderColor} />
           }
@@ -202,7 +195,7 @@ export const JobListItem = ({
               <Divider orientation="vertical" borderColor={borderColor} />
             </Center>
           </Stack>
-          <Box pr={ isWideDevice ? 5 : 0} pb={ isWideDevice ? 0 : 5}>
+          <Box pr={{base: 0, lg: 5}} pb={{base: 5, lg: 0}}>
             {!dataAvailable ? (
               <Center h="100%">
                 <Box>

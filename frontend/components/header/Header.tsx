@@ -54,7 +54,7 @@ export const Header = ({pathname} : HeaderProps) => {
   const isAuthenticated = useIsAuthenticated();
   const hasRole = (user.Roles) ? !useHasNoAllowedRole(user) : false;
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const isWide = useIsWideDevice();
+  const isWideDevice = useIsWideDevice();
 
   /**
    * Logout is a function called to to logout a user.
@@ -69,7 +69,7 @@ export const Header = ({pathname} : HeaderProps) => {
   };
 
   // Small device header
-  if (!isWide) {
+  if (!isWideDevice) {
     return (
       <header>
         <Flex bg={headerBg} p={2}>

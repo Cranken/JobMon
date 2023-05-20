@@ -4,6 +4,7 @@ import {
 } from "react";
 import { useCookies } from "react-cookie";
 import { DataMap, JobListData, JobTag, JobSearchParams } from "@/types/job";
+import { useBreakpointValue } from "@chakra-ui/react";
 
 
 export const clamp = (val: number, min: number, max: number) =>
@@ -181,30 +182,20 @@ export const dateToUnix = (d: Date) => {
 };
 
 /**
- * On devices with a lower width than defined here, the header will switch to the one defined as the small device header
- */
-const SMALL_DEVICE_WIDTH_BOUNDARY = 900;
-
-/**
- * Adds a resize listener to the window prop.
- * @param sizeBoundary The boundary to decide, whether a device is classified as wide
+ * Adds a resize listener to the window prop.#
+ * In case the size-breakpoint can not be read, this hook classifies the device as wide per default.
  * @returns A state to declare a device as wide or not
  */
-export const useIsWideDevice = (sizeBoundary: number = SMALL_DEVICE_WIDTH_BOUNDARY) => {
-    const [isWide, setIsWide] = useState(true);
-    const updateWide = () => {
-        setIsWide(window.innerWidth > SMALL_DEVICE_WIDTH_BOUNDARY);
-    }
+export const useIsWideDevice = () => {
+  const isWideDevice = useBreakpointValue(
+    {
+      base: false,
+      lg: true,
+    },
+    {
+      fallback: 'lg',
+    },
+  )
 
-    useEffect(() => {
-        // Gets executed on component mount
-        updateWide();
-        window.addEventListener("resize", updateWide)
-        return () => {
-            // gets executed on component unmount
-            window.removeEventListener("resize", updateWide)
-        }
-    })
-
-    return isWide
+    return (isWideDevice != undefined) ? isWideDevice : true;
 }

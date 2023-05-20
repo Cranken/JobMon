@@ -34,10 +34,12 @@ import { AggFn, MetricConfig } from "../../types/job";
 import { NumberField, TextField} from "./FormComponents";
 import { CheckCircleIcon, AddIcon, CheckIcon, DeleteIcon } from "@chakra-ui/icons";
 
+/**
+ * Properties for the {@link MetricsView} component
+ */
 interface IMetricsViewProps {
   config: Configuration;
   setConfig: (c: Configuration) => void;
-  isWideDevice?: boolean;
 }
 
 
@@ -71,10 +73,9 @@ interface IMetricsFormProps {
  * the new configuration manually.
  * @param config - current configuration
  * @param setConfig - function for updating the configuration passed as a prop.
- * @param isWide - defines if the used device has a wide screen
  * @returns the MetricsWiew component
  */
-const MetricsView = ({ config, setConfig, isWideDevice = true }: IMetricsViewProps) => {
+const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
   // State for storing the local configuration.
   const [lConfig, setLConfig] = useState(config);
 
@@ -108,7 +109,7 @@ const MetricsView = ({ config, setConfig, isWideDevice = true }: IMetricsViewPro
   const toast = useToast();
   
   return (
-    <Stack gap={2} w={isWideDevice ? "" : "97%"}>
+    <Stack gap={2} w={{base: "97%", lg: ""}}>
       {/* <StackDivider/> */}
       <Accordion allowMultiple>
         {

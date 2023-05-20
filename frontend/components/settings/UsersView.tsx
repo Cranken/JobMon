@@ -4,11 +4,7 @@ import React, { useEffect, useState } from "react";
 import { AvailableUserRoles, UserRoles } from "@/types/config";
 import { authFetch } from "@/utils/auth";
 
-interface IUsersViewProps {
-    isWideDevice?: boolean;
-}
-
-const UsersView = ({isWideDevice = true}: IUsersViewProps) => {
+const UsersView = () => {
     const [username, setUsername] = useState<string>();
     const [user, updateUser] = useGetUser(username);
     
@@ -17,18 +13,18 @@ const UsersView = ({isWideDevice = true}: IUsersViewProps) => {
         <Stack>
             <Formik initialValues={{ username: "" }} onSubmit={(values) => setUsername(values.username)}>
                 <Form>
-                    <Stack direction={ isWideDevice ? "row" : "column" }>
+                    <Stack direction={{base: "column", lg: "row"}}>
                         <Box>
                             <FormLabel pt={1}>Enter Username (Requires user to have logged in before)</FormLabel>
                             <Field id="username" name="username" placeholder="" as={Input} />
                         </Box>
-                        <Button type="submit" colorScheme="green" alignSelf={ isWideDevice ? "end" : "center" } w={isWideDevice ? "" : "97%"}>
+                        <Button type="submit" colorScheme="green" alignSelf={{base: "center", lg: "end"}} w={{base: "97%", lg: ""}}>
                             Load
                         </Button>
                     </Stack>
                 </Form>
             </Formik>
-            <UserConfigItem user={user} updateUser={updateUser} isWideDevice={isWideDevice}/>
+            <UserConfigItem user={user} updateUser={updateUser}/>
         </Stack>
     );
 };
@@ -36,10 +32,9 @@ const UsersView = ({isWideDevice = true}: IUsersViewProps) => {
 interface IUserConfigItemProps {
     user?: UserRoles;
     updateUser: (user: UserRoles) => void;
-    isWideDevice?: boolean;
 }
 
-const UserConfigItem = ({ user, updateUser, isWideDevice = true }: IUserConfigItemProps) => {
+const UserConfigItem = ({ user, updateUser}: IUserConfigItemProps) => {
     if (!user) {
         return null;
     }
@@ -56,7 +51,7 @@ const UserConfigItem = ({ user, updateUser, isWideDevice = true }: IUserConfigIt
                 initialValues={{ Roles: user.Roles }}
                 onSubmit={(values) => updateUser({ ...user, Roles: values.Roles })}>
                 <Form>
-                    <Stack direction={ isWideDevice ? "row" : "column" }>
+                    <Stack direction={{base: "column", lg: "row"}}>
                         <Box>
                             <FormLabel pt={1}>
                                 Select User Roles for
@@ -73,7 +68,7 @@ const UserConfigItem = ({ user, updateUser, isWideDevice = true }: IUserConfigIt
                                 )}
                             </Wrap>
                         </Box>
-                        <Button type="submit" colorScheme="green" alignSelf={ isWideDevice ? "end" : "center" } w={isWideDevice ? "" : "90%"}>
+                        <Button type="submit" colorScheme="green" alignSelf={{base: "center", lg: "end"}} w={{base: "90%", lg: ""}}>
                             Save
                         </Button>
                     </Stack>
@@ -83,6 +78,14 @@ const UserConfigItem = ({ user, updateUser, isWideDevice = true }: IUserConfigIt
     );
 };
 
+/**
+ * useGetUser is a function to get information to a given user from the backend.
+ * 
+ * @param username The username to identify the user
+ * @returns
+ * - The user with information about it's roles
+ * - A callback function to modify the user's properties
+ */
 const useGetUser: (username?: string) => [UserRoles | undefined, (user: UserRoles) => void] = (username?: string) => {
     const [user, setUser] = useState<UserRoles>();
     const toast = useToast();

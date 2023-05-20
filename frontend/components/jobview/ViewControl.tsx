@@ -22,7 +22,6 @@ interface ControlProps {
   setSampleInterval: (v: number) => void;
   selectedMetrics: string[];
   setSelectedMetrics: (val: string[]) => void;
-  isWideDevice?: boolean;
 }
 
 /**
@@ -43,7 +42,6 @@ interface ControlProps {
  * @param setSampleInterval A callback-function to set sampleInterval.
  * @param selectedMetrics The metrics selected to be shown.
  * @param setSelectedMetrics A callback-function to modify selectedMetrics
- * @param isWideDevice Determines if the current device is classified as wide.
  * @returns The component
  */
 export const ViewControl = ({
@@ -62,12 +60,11 @@ export const ViewControl = ({
   setSampleInterval,
   selectedMetrics,
   setSelectedMetrics,
-  isWideDevice = true,
 }: ControlProps) => {
   const [, , removeCookie] = useCookies(["Authorization"]);
   return (
-    <Stack px={ isWideDevice ? 3 : 0}>
-      <Stack direction={ isWideDevice ? "row" : "column" } justify="space-between">
+    <Stack px={{base: 0, lg: 3}}>
+      <Stack direction={{base: "column", lg: "row"}} justify="space-between">
         <MetricSelection
           metrics={jobdata.MetricData?.map((val) => val.Config) ?? []}
           selectedMetrics={selectedMetrics}
@@ -79,7 +76,7 @@ export const ViewControl = ({
           </Button>
         )}
       </Stack>
-      <Stack direction={ isWideDevice ? "row" : "column" } gap={2}>
+      <Stack direction={{base: "column", lg: "row"}} gap={2}>
         {setShowQuantiles ? (
           <Button
             fontSize="sm"
@@ -115,7 +112,6 @@ export const ViewControl = ({
           stopTime={stopTime}
           setStartTime={setStartTime}
           setStopTime={setStopTime}
-          isWideDevice={isWideDevice}
         />
       ) : null}
     </Stack>

@@ -9,7 +9,6 @@ interface JobInfoProps {
   metadata: JobMetadata;
   setChecked: (val: SelectionMap) => void;
   nodes: { [key: string]: boolean; };
-  isWideDevice?: boolean;
 }
 
 /**
@@ -18,19 +17,17 @@ interface JobInfoProps {
  * @param metadata Metadata for the job. 
  * @param setChecked Function to modify nodes.
  * @param nodes A Map describing the selected nodes.
- * @param isWideDevice Determines if the current device is classified as wide.
  * @returns The component
  */
 export const JobInfo = ({
   metadata,
   setChecked,
   nodes,
-  isWideDevice = true,
 }: JobInfoProps) => {
   const prefixMatch = metadata.NodeList.split("|")[0].match(/([a-zA-Z]+)(\d*)/);
   const prefix = prefixMatch ? prefixMatch[1] : metadata.ClusterId;
   return (
-    <Grid templateColumns={ isWideDevice ? "repeat(2, 1fr)" : "repeat(1, 1fr)" } w="100%">
+    <Grid templateColumns={{base: "repeat(1, 1fr)", lg: "repeat(2, 1fr)"}} w="100%">
       <Stack>
         <Text>Id: {metadata.Id}</Text>
         <Text>
