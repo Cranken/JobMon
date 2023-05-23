@@ -67,7 +67,7 @@ export const Jobs = () => {
   const elements = [];
   elements.push(
     <Center key="list-control">
-      <Stack borderWidth="1px" borderRadius="lg" p={5} margin={4} w={{base: "97%", md: "60%", lg: "55%"}}>
+      <Stack borderWidth="1px" borderRadius="lg" p={5} margin={4} w={{base: "97%", md: "70%", lg: "70%", xl: "50%"}}>
         <JobFilter
           key="jobfilter"
           params={params}

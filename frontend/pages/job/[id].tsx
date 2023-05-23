@@ -157,7 +157,8 @@ const Job: NextPage = () => {
         p={2}
         border="1px"
         borderRadius="10px"
-        templateColumns={{base: "repeat(1, 1fr)", lg: "repeat(2, 1fr"}}
+        templateColumns={{base: "repeat(1, 1fr)", xl: "repeat(2, 1fr)"}}
+        gap={{base: 1, xl: 0}}
       >
         <JobInfo
           metadata={data.Metadata}
