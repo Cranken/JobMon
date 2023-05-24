@@ -17,7 +17,11 @@ import {
 } from "@chakra-ui/react";
 import React, { useState } from "react";
 
-const APIView = () => {
+interface IAPIViewProps {
+  isWideDevice?: boolean;
+}
+
+const APIView = ({isWideDevice = true}: IAPIViewProps) => {
   const [apiKey, setApiKey] = useState("");
   const { isOpen, onOpen, onClose } = useDisclosure();
   const generateApiKey = () => {
@@ -37,7 +41,7 @@ const APIView = () => {
     );
   };
   return (
-    <Stack gap={2}>
+    <Stack gap={2} w={isWideDevice ? "" : "97%"}>
       <Box>
         <Button onClick={onOpen}>Generate API Key</Button>
       </Box>

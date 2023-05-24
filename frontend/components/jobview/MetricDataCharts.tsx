@@ -20,8 +20,24 @@ interface MetricDataChartsProps {
   setAggFnSelection: (m: string, v: AggFn) => void;
   showCP: boolean;
   changepoints?: ChangePoint[];
+  numColumns?: number;
 }
 
+/**
+ * MetricDataCharts is a react component displaying metric-data for one job. The data is displayed using charts.
+ * 
+ * @param metrics The data to display.
+ * @param nodeSelection The selected nodes.
+ * @param startTime The starttime. All charts will start at this point in time.
+ * @param stopTime The stoptime. All charts will end at this point in time.
+ * @param setTimeRange This is a callback-function to set the start- and stoptime.
+ * @param isLoading This boolean describes whether data is already available or still loading from the API. When set true, a spinner is displayed instead of the data.
+ * @param autoScale autoScale decides whether or not the charts should scale automatically.
+ * @param aggFnSelection A Map storing the selected aggregation-function for each metric. If no aggregation-function is given for a metric in metrics, it will not get displayed.
+ * @param setAggFnSelection A callback-function to set the aggregation function for a specific metric.
+ * @param showCP Determines whether to show changepoints in the charts.
+ * @returns The component
+ */
 export const MetricDataCharts = ({
   metrics,
   nodeSelection,
@@ -33,9 +49,11 @@ export const MetricDataCharts = ({
   aggFnSelection,
   setAggFnSelection,
   showCP,
-  changepoints = []
+  changepoints = [],
+  numColumns = 2,
 }: MetricDataChartsProps) => {
   if (!metrics) {
+    // Displaying a info message in case no metric data is available.
     return <div>No metric data available</div>;
   }
   if (isLoading) {
@@ -104,9 +122,20 @@ export const MetricDataCharts = ({
       </ChartContainer>
     );
   }
-  return <Grid templateColumns={"repeat(2, 1fr)"}>{chartElements}</Grid>;
+  return <Grid templateColumns={"repeat(" + numColumns + ", 1fr)"}>{chartElements}</Grid>;
 };
 
+/**
+ * This function prepares metric data to display it in line charts.
+ * 
+ * 
+ * @param metric The metric data.
+ * @param nodeSelection the selected nodes. The data will get filtered by those nodes.
+ * @returns
+ * - An array of points to show in the chart.
+ * - A function to differentiate the data-points into multiple lines in the chart
+ * - The title of the chart
+ */
 const prepareMetricData: (metric: MetricData, nodeSelection: string[]) =>
   [MetricPoint[], ((d: MetricPoint) => string) | undefined, ((d: MetricPoint) => string) | undefined] =
   (metric: MetricData, nodeSelection: string[]) => {
@@ -188,6 +217,16 @@ const prepareMetricData: (metric: MetricData, nodeSelection: string[]) =>
     return [metricData, z, title];
   };
 
+/**
+ * ChartContainer is a react container to wrap a linechart inside of a box.
+ * This container gives the user the opportunity to select an aggregation-function for the corresponding metric.
+ * 
+ * @param children The chart that should be contained
+ * @param metric The metric
+ * @param aggFn The currently selected aggregation-function
+ * @param setAggFn A callback-function to modify aggFn
+ * @returns The component
+ */
 const ChartContainer = ({ children, metric, aggFn, setAggFn }: React.PropsWithChildren<{ metric: MetricConfig, aggFn?: AggFn, setAggFn: (fn: AggFn) => void; }>) => {
   return (
     <Flex

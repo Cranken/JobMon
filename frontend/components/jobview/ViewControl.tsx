@@ -26,6 +26,26 @@ interface ControlProps {
   setShowChangepoints?: (b:boolean) => void;
 }
 
+/**
+ * ViewControl is a react component to let the user modify how a job is shown.
+ * 
+ * @param jobdata The data of the job to show .
+ * @param showTimeControl Determines whether the user is given the opportunity to select a specific time-range.
+ * @param startTime The starttime. All charts will start at this point in time.
+ * @param stopTime The stoptime. All charts will end at this point in time.
+ * @param setStartTime A callback-function to set startTime.
+ * @param setStopTime A callback-function to set stopTime.
+ * @param showQuantiles Determines whether the user is shown quantiles or metric data.
+ * @param setShowQuantiles A callback-function to set showQuantiles.
+ * @param autoScale Determines whether the y-axis of the charts will automatically scale with the given values.
+ * @param setAutoScale A callback-function to set autoScale.
+ * @param sampleInterval The currently selected sample-interval.
+ * @param sampleIntervals All available sample-intervals, the user can chose from.
+ * @param setSampleInterval A callback-function to set sampleInterval.
+ * @param selectedMetrics The metrics selected to be shown.
+ * @param setSelectedMetrics A callback-function to modify selectedMetrics
+ * @returns The component
+ */
 export const ViewControl = ({
   jobdata,
   showTimeControl = true,
@@ -47,20 +67,20 @@ export const ViewControl = ({
 }: ControlProps) => {
   const [, , removeCookie] = useCookies(["Authorization"]);
   return (
-    <Stack px={3}>
-      <Stack direction="row" justify="space-between">
+    <Stack px={{base: 0, lg: 3}}>
+      <Stack direction={{base: "column", lg: "row"}} justify="space-between">
         <MetricSelection
           metrics={jobdata.MetricData?.map((val) => val.Config) ?? []}
           selectedMetrics={selectedMetrics}
           setSelectedMetrics={setSelectedMetrics}
-        ></MetricSelection>
+        />
         {jobdata.Metadata.IsRunning ? null : (
           <Button onClick={() => exportData(jobdata.Metadata.Id, removeCookie)}>
             Export as CSV
           </Button>
         )}
       </Stack>
-      <Stack direction="row" gap={2}>
+      <Stack direction={{base: "column", lg: "row"}} gap={2}>
         {setShowChangepoints ? (
           <Tooltip label={"Changepoints indicate changes in your codes behavior"}>
             <Button fontSize="sm" onClick={() => setShowChangepoints(!showChangepoints)}>
@@ -111,6 +131,14 @@ export const ViewControl = ({
 
 export default ViewControl;
 
+/**
+ * This function requests raw data for a specific job from the backend and provides them to the user.
+ * The data is packed into a csv-file for each metric. All csv- files are packed into one zip-file.
+ * The zip-file is provided for download.
+ * 
+ * @param id The id of the job to export the data for.
+ * @param removeCookie A callback-function to remove the authorization-cookie. This function is used in case the user tries to export a job without the rights to view it.
+ */
 const exportData = (
   id: number,
   removeCookie: (name: "Authorization") => void

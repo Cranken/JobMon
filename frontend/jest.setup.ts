@@ -8,6 +8,15 @@ import '@testing-library/jest-dom/extend-expect';
 
 import { server } from './mocks/server'
 
+// Resolves issue with hooks from Chakra-UI library in tests.
+global.matchMedia = global.matchMedia || function () {
+  return {
+    matches: false,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+  };
+};
+
 beforeAll(() => server.listen())
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())

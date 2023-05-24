@@ -14,10 +14,24 @@ interface QuantileDataChartsProps {
   setTimeRange?: (start: Date, end: Date) => void;
   isLoading: boolean;
   autoScale: boolean;
+  numColumns?: number;
   showCP: boolean;
   changepoints?: ChangePoint[];
 }
 
+/**
+ * QuantileDataCharts is a react component displaying quantile-data for one job. The data is displayed using charts.
+ * 
+ * @param quantiles The data to display
+ * @param startTime The starttime. All charts will start at this point in time.
+ * @param stopTime The stoptime. All charts will end at this point in time.
+ * @param setTimeRange This is a callback-function to set the start- and stoptime.
+ * @param isLoading This boolean describes whether data is already available or still loading from the API. When set true, a spinner is displayed instead of the data.
+ * @param autoScale autoScale decides whether or not the charts should scale automatically.
+ * @param numColumns The number of columns the charts get displayed in.
+ * @returns The component
+ * @returns 
+ */
 export const QuantileDataCharts = ({
   quantiles,
   startTime,
@@ -25,6 +39,7 @@ export const QuantileDataCharts = ({
   setTimeRange,
   isLoading,
   autoScale,
+  numColumns = 2,
   showCP,
   changepoints = []
 }: QuantileDataChartsProps) => {
@@ -106,7 +121,7 @@ export const QuantileDataCharts = ({
       </Flex>
     );
   }
-  return <Grid templateColumns={"repeat(2, 1fr)"}>{chartElements}</Grid>;
+  return <Grid templateColumns={"repeat(" + numColumns + ", 1fr)"}>{chartElements}</Grid>;
 };
 
 export default QuantileDataCharts;

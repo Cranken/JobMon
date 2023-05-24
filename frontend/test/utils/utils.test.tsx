@@ -1,4 +1,6 @@
-import { checkBetween, clamp, groupBy } from "@/utils/utils";
+import { checkBetween, clamp, groupBy, useIsWideDevice } from "@/utils/utils";
+import { render } from "@testing-library/react";
+import React, { useEffect } from "react";
 
 
 describe("Tests clamp function", () => {

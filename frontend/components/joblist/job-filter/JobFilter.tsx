@@ -34,6 +34,18 @@ interface JobFilterProps {
   mustApply?: boolean;
 }
 
+/**
+ * JobFilter is a react component allowing the user to filter jobs.
+ * 
+ * @param params The currently enabled filtered parameters.
+ * @param setParams A callback-function to set the filter parameters.
+ * @param partition The available partitions.
+ * @param tags The available tags.
+ * @param tagTitles A title for the tabs.
+ * @param tabPanels 
+ * @param mustApply Defines if the user must hit the apply button to update the params or if the should update when changing them in the controls.
+ * @returns The component.
+ */
 export const JobFilter = ({
   params,
   setParams,
@@ -108,7 +120,7 @@ export const JobFilter = ({
         <TabPanels>
           <TabPanel>
             <Stack>
-              <Flex gap={3}>
+              <Flex gap={3} direction={{base : "column", lg: "row"}}>
                 {user.Roles.includes(UserRole.Admin) ? (
                   <Input
                     value={filterParams.UserName}
@@ -152,7 +164,7 @@ export const JobFilter = ({
                   <option value="undefined">Show All Jobs</option>
                 </Select>
               </Flex>
-              <Stack direction="row" gap={6}>
+              <Stack direction={{base : "column", lg: "row"}} gap={6}>
                 <Stepper
                   title="Number of Nodes"
                   minimum={1}
@@ -213,7 +225,7 @@ export const JobFilter = ({
           </TabPanel>
           <TabPanel>
             <Stack>
-              <Flex justify="center" align="center" h={10} w="fit-content">
+              <Flex justify="center" align="center" h={{base: "auto", lg: 10}} w={{base: "97%", lg: "fit-content"}} direction={{base : "column", lg: "row"}}>
                 <Text mr={2}>Filter start time between:</Text>
                 <input
                   className={style["time-input"]}
@@ -230,8 +242,9 @@ export const JobFilter = ({
                     })
                   }
                 />
-                <Spacer mx={1} />
-                <Text mr={2}>and:</Text>
+                <Spacer mx={{base: 0, lg: 1}} />
+                <Text>and:</Text>
+                <Spacer mx={{base: 0, lg: 1}} />
                 <input
                   className={style["time-input"]}
                   type="datetime-local"
@@ -247,9 +260,10 @@ export const JobFilter = ({
                     })
                   }
                 />
-                <Spacer mx={1} />
+                <Spacer mx={{base: 0, lg: 1}} />
                 <Button
                   size="sm"
+                  mt={{base: 0, lg: 1}}
                   onClick={() =>
                     setFilterParams({
                       ...filterParams,

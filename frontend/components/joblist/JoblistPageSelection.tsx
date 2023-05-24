@@ -7,27 +7,30 @@ interface JoblistPageSelectionProps {
   pages: number;
   setPage: (p: number) => void;
   marginTopEnable?: boolean
-  margiBottomEnable?: boolean
+  marginBottomEnable?: boolean
+  displayExtendedSelection?: boolean
 }
 
 /**
  * Returns a react-fragment to select pages.
- * Pages need to have a number in [1, pages]
- * @param currentPage The currently selected page
- * @param pages The number of available pages
+ * Pages need to have a number in [1, pages].
+ * @param currentPage The currently selected page.
+ * @param pages The number of available pages.
  * @param setPage The callback-function to set a selected page.
  * @param marginTopEnable Enabling a margin at the top.
- * @param margiBottomEnable Enabling a margin at the bottom
+ * @param marginBottomEnable Enabling a margin at the bottom.
+ * @param displayExtendedSelection Enables a wider version of the page selector 
  */
 export const JoblistPageSelection = ({
   currentPage,
   pages,
   setPage,
   marginTopEnable = false,
-  margiBottomEnable = false,
+  marginBottomEnable = false,
+  displayExtendedSelection = true,
 }: JoblistPageSelectionProps) => {
   return (
-    <Center mt={(marginTopEnable) ? 5 : 0} mb={(margiBottomEnable) ? 5 : 0} >
+    <Center mt={(marginTopEnable) ? 5 : 0} mb={(marginBottomEnable) ? 5 : 0} >
       <Stack direction="row">
         <IconButton
           isDisabled={currentPage <= 1}
@@ -42,17 +45,17 @@ export const JoblistPageSelection = ({
           onClick={() => setPage(currentPage - 1)}
         ></IconButton>
 
-        {currentPage - 2 >= 1 ? (
+        {(displayExtendedSelection && currentPage - 2 >= 1) ? (
           <Button colorScheme="gray" onClick={() => setPage(currentPage - 2)}>{currentPage - 2}</Button>
         ) : null}
-        {currentPage - 1 >= 1 ? (
+        {(displayExtendedSelection && currentPage - 1 >= 1) ? (
           <Button colorScheme="gray" onClick={() => setPage(currentPage - 1)}>{currentPage - 1}</Button>
         ) : null}
         <Button colorScheme="teal">{currentPage} of {pages}</Button>
-        {currentPage + 1 <= pages ? (
+        {(displayExtendedSelection && currentPage + 1 <= pages) ? (
             <Button colorScheme="gray" onClick={() => setPage(currentPage + 1)}>{currentPage + 1}</Button>
         ) : null}
-        {currentPage + 2 <= pages ? (
+        {(displayExtendedSelection && currentPage + 2 <= pages) ? (
             <Button colorScheme="gray" onClick={() => setPage(currentPage + 2)}>{currentPage + 2}</Button>
         ) : null}
 
