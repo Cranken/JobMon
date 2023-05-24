@@ -5,6 +5,7 @@ import { QuantilePoint } from "../../types/job";
 import { Center, Flex, Grid, Spinner } from "@chakra-ui/react";
 import { Unit } from "../../types/units";
 import React from "react";
+import {ChangePoint} from "../../pages/job/[id]";
 
 interface QuantileDataChartsProps {
   quantiles: QuantileData[] | undefined;
@@ -14,6 +15,8 @@ interface QuantileDataChartsProps {
   isLoading: boolean;
   autoScale: boolean;
   numColumns?: number;
+  showCP: boolean;
+  changepoints?: ChangePoint[];
 }
 
 /**
@@ -37,6 +40,8 @@ export const QuantileDataCharts = ({
   isLoading,
   autoScale,
   numColumns = 2,
+  showCP,
+  changepoints = []
 }: QuantileDataChartsProps) => {
   if (!quantiles) {
     return <div>No quantiles</div>;
@@ -60,6 +65,15 @@ export const QuantileDataCharts = ({
     let metricData: QuantilePoint[] = [];
     if (metric.Data === null) {
       continue;
+    }
+    let changepointDates: Date[] = [];
+    if (showCP) {
+      const guid = metric.Config.GUID;
+      changepoints.filter((x: ChangePoint) => {
+        return x.guid === guid
+      }).forEach((x: ChangePoint) => {
+        changepointDates = changepointDates.concat(x.date);
+      })
     }
     for (const quantile of Object.keys(metric.Data)) {
       metricData = metricData.concat(metric.Data[quantile]);
@@ -101,6 +115,8 @@ export const QuantileDataCharts = ({
           showTooltipSum={false}
           showTooltipMean={false}
           yDomain={yDomain}
+          showCP={showCP}
+          cp={changepointDates}
         />
       </Flex>
     );

@@ -1,4 +1,4 @@
-import { Button, Select, Stack, Text } from "@chakra-ui/react";
+import { Button, Select, Stack, Text, Tooltip } from "@chakra-ui/react";
 import JSZip from "jszip";
 import React from "react";
 import { useCookies } from "react-cookie";
@@ -22,6 +22,8 @@ interface ControlProps {
   setSampleInterval: (v: number) => void;
   selectedMetrics: string[];
   setSelectedMetrics: (val: string[]) => void;
+  showChangepoints: boolean
+  setShowChangepoints?: (b:boolean) => void;
 }
 
 /**
@@ -60,6 +62,8 @@ export const ViewControl = ({
   setSampleInterval,
   selectedMetrics,
   setSelectedMetrics,
+  showChangepoints,
+  setShowChangepoints
 }: ControlProps) => {
   const [, , removeCookie] = useCookies(["Authorization"]);
   return (
@@ -77,6 +81,13 @@ export const ViewControl = ({
         )}
       </Stack>
       <Stack direction={{base: "column", lg: "row"}} gap={2}>
+        {setShowChangepoints ? (
+          <Tooltip label={"Changepoints indicate changes in your codes behavior"}>
+            <Button fontSize="sm" onClick={() => setShowChangepoints(!showChangepoints)}>
+              Toggle Changepoints
+            </Button>
+          </Tooltip>
+        ) : null}
         {setShowQuantiles ? (
           <Button
             fontSize="sm"

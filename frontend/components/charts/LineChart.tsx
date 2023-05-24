@@ -38,6 +38,9 @@ export interface LineChartProps<T> {
   fillBoundKeys?: [string, string]; // Fill the area between [lower, upper]
   showTooltipMean?: boolean;
   showTooltipSum?: boolean;
+  showCP?: boolean; // Determines whether to show changepoints in the chart
+  cp?: Date[] // changepoints
+  showTooltipCP?:boolean; // Determines whether to show changepoints in the tooltip
 }
 
 // Typescript version based on chart released under:
@@ -86,6 +89,9 @@ export function LineChart<T>({
   fillBoundKeys,
   showTooltipMean = true,
   showTooltipSum = false,
+  showCP = false,
+  cp = [],
+  showTooltipCP = true,
 }: LineChartProps<T>) {
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -174,6 +180,26 @@ export function LineChart<T>({
       .join("path")
       .attr("stroke", (_, I) => colorFn(I))
       .attr("d", ([, I]) => line(I));
+
+    // Calculate lines for changepoints
+    if (showCP) {
+      const filteredCP = cp.filter((x: Date) => {
+        return (typeof xDomain == 'undefined') || (xDomain[0] <= x && x <= xDomain[1]);
+      });
+
+      filteredCP.forEach((x: Date) =>{
+        svg
+          .append("g")
+          .append("line")
+          .attr("x1", xScale(x))
+          .attr("x2", xScale(x))
+          .attr("y1", height - marginBottom)
+          .attr("y2", marginTop)
+          .attr("stroke", "currentColor")
+          .attr("stroke-dasharray", 10);
+      })
+
+    }
 
     const getNearestPointIdx = (pos: number) =>
       d3.least(d3.range(linePointCount), (i) => Math.hypot(xScale(X[i]) - pos));
@@ -335,6 +361,10 @@ export function LineChart<T>({
       }
       values.sort((a, b) => (y(a) < y(b) ? -1 : 1));
 
+      /**
+       * Adds a line to the tooltip.
+       * @param str The text of the line.
+       */
       const addLine = (str: string) => {
         const text = tooltip
           .append("text")
@@ -343,6 +373,19 @@ export function LineChart<T>({
         lastY -= text.node()?.getBBox().height ?? 0;
       };
 
+      if (showTooltipCP) {
+        console.log(i);
+        const pointerOnChangePoint = cp.filter((e) => {
+          console.log(xScale(e));
+          return i == getNearestPointIdx(xScale(e));
+        }).length != 0
+        if (pointerOnChangePoint) {
+          addLine(
+            ` -- Changepoint here -- `
+          );
+        }
+      }
+ 
       if (showTooltipMean || showTooltipSum) {
         const pointValues = values.map((a) => y(a));
         if (showTooltipMean) {

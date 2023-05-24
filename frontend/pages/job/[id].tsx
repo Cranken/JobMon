@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useState } from "react";
 import {
   AggFn,
-  JobData,
+  JobData, JobMetadataData,
   MetricData,
   WSLoadMetricsResponse,
   WSMsg,
@@ -56,6 +56,7 @@ const Job: NextPage = () => {
     startTime?.getTime(),
   );
   const [showQuantiles, setShowQuantiles] = useState(false);
+  const [showChangepoints, setShowChangepoints] = useState(false);
   const [autoScale, setAutoscale] = useState(true);
   const setTimeRange = (start: Date, end: Date) => {
     setStartTime(start);
@@ -154,6 +155,18 @@ const Job: NextPage = () => {
   const metricGroups = categories.map((c) => filteredMetricData.filter((v) => v.Config.Categories.includes(c)));
   const quantileGroups = categories.map((c) => filteredQuantileData.filter((v) => v.Config.Categories.includes(c)));
 
+  // Filter changepoints from metadata
+  const cps: ChangePoint[] = (data.Metadata && data.Metadata.Data) ? data.Metadata.Data.filter((x) => {
+    // Check if changepoints exist in the data
+    return x.ChangePoints;
+  }).map((x: JobMetadataData) => {
+    const cp: ChangePoint = {
+      guid: x.Config.GUID,
+      date: x.ChangePoints.map((d: string) => new Date(d))
+    };
+    return cp;
+  }) : [];
+
   if (!containsMetricData) {
     return (
       <Box m={5}>
@@ -227,6 +240,10 @@ const Job: NextPage = () => {
           setSampleInterval={setSampleInterval}
           selectedMetrics={selectedMetrics}
           setSelectedMetrics={setSelectedMetrics}
+          showChangepoints={showChangepoints}
+          setShowChangepoints={
+            cps.length != 0 ? setShowChangepoints : undefined
+          }
         />
       </Grid>
       <Tabs isLazy>
@@ -249,6 +266,8 @@ const Job: NextPage = () => {
                   isLoading={isLoading}
                   autoScale={autoScale}
                   numColumns={ isWideDevice ? 2 : 1 }
+                  showCP={showChangepoints}
+                  changepoints={cps}
                 />
               </TabPanel>
             ) :
@@ -273,6 +292,8 @@ const Job: NextPage = () => {
                     return copy;
                   })}
                   numColumns={ isWideDevice ? 2 : 1 }
+                  showCP={showChangepoints}
+                  changepoints={cps}
                 />
               </TabPanel>
             )
@@ -283,6 +304,11 @@ const Job: NextPage = () => {
   );
 };
 export default Job;
+
+export interface ChangePoint {
+  guid: string;
+  date: Date[];
+}
 
 interface JobCache {
   Metadata: Omit<JobData, "MetricData"> | undefined;
@@ -340,7 +366,7 @@ export const useGetJobData: (
 
     /**
      * Stores jobdata in jobcache and populates aggFnCache.
-     * If the jobache already contains metadata they will not be changed.
+     * If the jobcache already contains metadata they will not be changed.
      * The metricdata in data will always be placed in the jobcache.
      *
      * @param data The data that should be stored
@@ -393,7 +419,7 @@ export const useGetJobData: (
 
       // If the sampleInterval is known, jobCache is checked for existing data.
       // Otherwise data is directly fetched from the backend.
-      // SampleInterval is eighter set by the user or the recently fetched data for this job
+      // SampleInterval is either set by the user or the recently fetched data for this job
       if (sampleInterval) {
         if (!(sampleInterval in jobCache)) {
           url.searchParams.append("sampleInterval", sampleInterval.toString());

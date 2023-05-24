@@ -5,6 +5,7 @@ import { Unit } from "../../types/units";
 import { LineChart } from "../charts/LineChart";
 import { SettingsIcon } from "@chakra-ui/icons";
 import React from "react";
+import {ChangePoint} from "../../pages/job/[id]";
 
 interface MetricDataChartsProps {
   metrics: MetricData[] | undefined;
@@ -17,6 +18,8 @@ interface MetricDataChartsProps {
   isRunning: boolean;
   aggFnSelection?: Map<string, AggFn>;
   setAggFnSelection: (m: string, v: AggFn) => void;
+  showCP: boolean;
+  changepoints?: ChangePoint[];
   numColumns?: number;
 }
 
@@ -32,7 +35,7 @@ interface MetricDataChartsProps {
  * @param autoScale autoScale decides whether or not the charts should scale automatically.
  * @param aggFnSelection A Map storing the selected aggregation-function for each metric. If no aggregation-function is given for a metric in metrics, it will not get displayed.
  * @param setAggFnSelection A callback-function to set the aggregation function for a specific metric.
- * @param numColumns The number of columns the charts get displayed in.
+ * @param showCP Determines whether to show changepoints in the charts.
  * @returns The component
  */
 export const MetricDataCharts = ({
@@ -45,6 +48,8 @@ export const MetricDataCharts = ({
   autoScale,
   aggFnSelection,
   setAggFnSelection,
+  showCP,
+  changepoints = [],
   numColumns = 2,
 }: MetricDataChartsProps) => {
   if (!metrics) {
@@ -70,6 +75,15 @@ export const MetricDataCharts = ({
   for (const metric of sortedMetrics) {
     if (metric.Data === null) {
       continue;
+    }
+    let changepointDates: Date[] = [];
+    if (showCP) {
+      const guid = metric.Config.GUID;
+      changepoints.filter((x: ChangePoint) => {
+        return x.guid === guid
+      }).forEach((x: ChangePoint) => {
+        changepointDates = changepointDates.concat(x.date);
+      })
     }
     const [metricData, z, title] = prepareMetricData(metric, nodeSelection);
     let yDomain: [number, number] | undefined = undefined;
@@ -102,6 +116,8 @@ export const MetricDataCharts = ({
           chartTitle={metric.Config.DisplayName}
           yDomain={yDomain}
           showTooltipSum={metric.Config.AggFn === "sum"}
+          showCP={showCP}
+          cp={changepointDates}
         />
       </ChartContainer>
     );
