@@ -34,6 +34,9 @@ import { AggFn, MetricConfig } from "../../types/job";
 import { NumberField, TextField} from "./FormComponents";
 import { CheckCircleIcon, AddIcon, CheckIcon, DeleteIcon } from "@chakra-ui/icons";
 
+/**
+ * Properties for the {@link MetricsView} component
+ */
 interface IMetricsViewProps {
   config: Configuration;
   setConfig: (c: Configuration) => void;
@@ -106,7 +109,7 @@ const MetricsView = ({ config, setConfig }: IMetricsViewProps) => {
   const toast = useToast();
   
   return (
-    <Stack gap={2}>
+    <Stack gap={2} w={{base: "97%", lg: ""}}>
       {/* <StackDivider/> */}
       <Accordion allowMultiple>
         {

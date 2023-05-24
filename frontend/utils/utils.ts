@@ -1,7 +1,10 @@
-import { useState } from "react";
-import { useEffect } from "react";
+import {
+  useState,
+  useEffect
+} from "react";
 import { useCookies } from "react-cookie";
 import { DataMap, JobListData, JobTag, JobSearchParams } from "@/types/job";
+import { useBreakpointValue } from "@chakra-ui/react";
 
 
 export const clamp = (val: number, min: number, max: number) =>
@@ -177,3 +180,22 @@ const setJobTag = (url: string, tag: JobTag) => {
 export const dateToUnix = (d: Date) => {
   return parseInt((d.getTime() / 1000).toFixed(0));
 };
+
+/**
+ * Adds a resize listener to the window prop.#
+ * In case the size-breakpoint can not be read, this hook classifies the device as wide per default.
+ * @returns A state to declare a device as wide or not
+ */
+export const useIsWideDevice = () => {
+  const isWideDevice = useBreakpointValue(
+    {
+      base: false,
+      lg: true,
+    },
+    {
+      fallback: 'lg',
+    },
+  )
+
+    return (isWideDevice != undefined) ? isWideDevice : true;
+}

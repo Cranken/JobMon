@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import JobFilter from "@/components/joblist/job-filter/JobFilter";
 import JobList from "@/components/joblist/JobList";
-import { dateToUnix, useGetJobs, useStorageState, useSessionStorageState } from "@/utils/utils";
+import { dateToUnix, useGetJobs, useStorageState, useSessionStorageState, useIsWideDevice } from "@/utils/utils";
 import { JobSearchParams, JobMetadata } from "../types/job";
 import { useRouter } from "next/router";
 import { Box, Center, Divider, Spinner, Stack } from "@chakra-ui/react";
@@ -14,6 +14,7 @@ export const Jobs = () => {
   const [sortBy, setSortBy] = useStorageState("sortyBy", "StartTime");
   const [sortByDescending, setSortByDescending] = useState(true);
   const [page, setPageStorage, _, pageIsLoading] = useSessionStorageState("jobsPage", 1)
+  const isWideDevice = useIsWideDevice();
 
   const [params, setParams, , isLoadingParams] =
     useStorageState<JobSearchParams>("joblistParams", {
@@ -66,7 +67,7 @@ export const Jobs = () => {
   const elements = [];
   elements.push(
     <Center key="list-control">
-      <Stack borderWidth="1px" borderRadius="lg" p={5} margin={4} w="50%">
+      <Stack borderWidth="1px" borderRadius="lg" p={5} margin={4} w={{base: "97%", md: "70%", lg: "70%", xl: "50%"}}>
         <JobFilter
           key="jobfilter"
           params={params}
@@ -127,7 +128,8 @@ export const Jobs = () => {
         currentPage={page}
         pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
         setPage={setPageStorage}
-        margiBottomEnable={true}
+        marginBottomEnable={true}
+        displayExtendedSelection={isWideDevice}
     ></JoblistPageSelection>
   );
   elements.push(
@@ -147,7 +149,8 @@ export const Jobs = () => {
       pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
       setPage={setPageStorage}
       marginTopEnable={true}
-      margiBottomEnable={true}
+      marginBottomEnable={true}
+      displayExtendedSelection={isWideDevice}
     ></JoblistPageSelection>
   );
 

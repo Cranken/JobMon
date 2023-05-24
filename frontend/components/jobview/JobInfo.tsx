@@ -11,11 +11,23 @@ interface JobInfoProps {
   nodes: { [key: string]: boolean; };
 }
 
-export const JobInfo = ({ metadata, setChecked, nodes }: JobInfoProps) => {
+/**
+ * JobInfo is a react component displaying information about one job.
+ * 
+ * @param metadata Metadata for the job. 
+ * @param setChecked Function to modify nodes.
+ * @param nodes A Map describing the selected nodes.
+ * @returns The component
+ */
+export const JobInfo = ({
+  metadata,
+  setChecked,
+  nodes,
+}: JobInfoProps) => {
   const prefixMatch = metadata.NodeList.split("|")[0].match(/([a-zA-Z]+)(\d*)/);
   const prefix = prefixMatch ? prefixMatch[1] : metadata.ClusterId;
   return (
-    <Grid templateColumns="repeat(2, 1fr)" w="100%">
+    <Grid templateColumns={{base: "repeat(1, 1fr)", lg: "repeat(2, 1fr)"}} w="100%">
       <Stack>
         <Text>Id: {metadata.Id}</Text>
         <Text>

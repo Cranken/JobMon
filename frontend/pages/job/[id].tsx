@@ -31,7 +31,7 @@ import {
 } from "@chakra-ui/react";
 import { JobInfo } from "@/components/jobview/JobInfo";
 import { SelectionMap } from "@/types/helpers";
-import { useStorageState } from "@/utils/utils";
+import { useIsWideDevice, useStorageState } from "@/utils/utils";
 import { WSLoadMetricsMsg } from "@/types/job";
 import { authFetch } from "@/utils/auth";
 
@@ -62,6 +62,7 @@ const Job: NextPage = () => {
     setStopTime(end);
   };
   const [selectedMetrics, setSelectedMetrics] = useMetricSelection(data);
+  const isWideDevice = useIsWideDevice();
 
   useEffect(() => {
     if (data?.Metadata.NodeList !== undefined) {
@@ -200,7 +201,8 @@ const Job: NextPage = () => {
         p={2}
         border="1px"
         borderRadius="10px"
-        templateColumns="repeat(2, 1fr)"
+        templateColumns={{base: "repeat(1, 1fr)", xl: "repeat(2, 1fr)"}}
+        gap={{base: 1, xl: 0}}
       >
         <JobInfo
           metadata={data.Metadata}
@@ -246,6 +248,7 @@ const Job: NextPage = () => {
                   }
                   isLoading={isLoading}
                   autoScale={autoScale}
+                  numColumns={ isWideDevice ? 2 : 1 }
                 />
               </TabPanel>
             ) :
@@ -269,6 +272,7 @@ const Job: NextPage = () => {
                     copy.set(m, fn);
                     return copy;
                   })}
+                  numColumns={ isWideDevice ? 2 : 1 }
                 />
               </TabPanel>
             )

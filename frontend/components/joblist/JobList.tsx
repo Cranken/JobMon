@@ -27,6 +27,16 @@ interface JobListProps {
   page: number;
 }
 
+/**
+ * JobList is a react component displaying given jobs in a list.
+ * This component is used as an overview over the available jobs.
+ * 
+ * @param jobs The jobs.
+ * @param radarChartMetrics The metrics to show in the radar-chart.
+ * @param limit The limit of jobs to show on one page. To display all jobs on one page set this value to 0.
+ * @param page The currently selected page.
+ * @returns The component.
+ */
 export const JobList = ({
   jobs,
   radarChartMetrics,
@@ -83,7 +93,19 @@ interface JobListItemProps {
   radarChartMetrics: string[];
 }
 
-export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
+/**
+ * JobListItem is a react component visualizing one job in the {@link JobList}.
+ * This component gives an overview over one job.
+ * By clicking on this component the user is referred to the a detailed page about the corresponding job.
+ * 
+ * @param job The job to display.
+ * @param radarChartMetrics The metrics that might be contained in the radar-chart.
+ * @returns The component.
+ */
+export const JobListItem = ({
+  job,
+  radarChartMetrics,
+}: JobListItemProps) => {
   const borderColor = useColorModeValue("gray.300", "whiteAlpha.400");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let radarChartData: any[] = [];
@@ -124,7 +146,7 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
     <LinkBox>
       <LinkOverlay href={`/job/${job.Id}`}>
         <Stack
-          direction="row"
+          direction={{base : "column", lg: "row"}}
           divider={
             <StackDivider marginY="3% !important" borderColor={borderColor} />
           }
@@ -173,7 +195,7 @@ export const JobListItem = ({ job, radarChartMetrics }: JobListItemProps) => {
               <Divider orientation="vertical" borderColor={borderColor} />
             </Center>
           </Stack>
-          <Box pr={5}>
+          <Box pr={{base: 0, lg: 5}} pb={{base: 5, lg: 0}}>
             {!dataAvailable ? (
               <Center h="100%">
                 <Box>

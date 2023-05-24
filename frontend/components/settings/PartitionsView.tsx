@@ -24,7 +24,7 @@ interface ExtendedVirtualPartitionConfig extends ExtendedConfig, VirtualPartitio
 
 type PartitionConfig = ExtendedPartitionConfig | ExtendedVirtualPartitionConfig;
 
-const PartitionsView = ({ config, setConfig }: IPartitionsViewProps) => {
+const PartitionsView = ({ config, setConfig}: IPartitionsViewProps) => {
     const [lConfig, setLConfig] = useState(config);
     const [accIndex, setAccIndex] = useState<number | undefined>(undefined);
     if (!lConfig) {
@@ -116,7 +116,7 @@ const PartitionsView = ({ config, setConfig }: IPartitionsViewProps) => {
         );
     };
     return (
-        <Stack gap={2}>
+        <Stack gap={2} w={{base: "97%", lg: ""}}>
             <Accordion allowToggle index={accIndex} onChange={(i) => {
                 setAccIndex(i as number);
             }}>

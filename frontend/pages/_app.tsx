@@ -70,7 +70,7 @@ function MyApp({ Component, pageProps }: AppProps) {
 
   return (
     <ChakraProvider theme={theme}>
-      <Header />
+      <Header pathname={router.pathname}/>
       {content}
     </ChakraProvider>
   );

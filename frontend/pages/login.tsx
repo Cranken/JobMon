@@ -27,7 +27,6 @@ export const Login = () => {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
 
-  
   const submit = (e?: React.KeyboardEvent) => {
     if (!e || e.key == "Enter") {
       fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/login", {
@@ -53,7 +52,7 @@ export const Login = () => {
   return (
     <Center h="500px">
       <Stack
-        w="25%"
+        w={["95%", "70%", "50%", "30%"]}
         borderWidth="1px"
         borderRadius="lg"
         borderColor={borderColor}
