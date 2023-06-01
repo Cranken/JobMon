@@ -11,6 +11,7 @@ import (
 )
 
 // TODO:Add docs
+// TODO: Add unit tests
 func ChangePointDetection(j *job.JobData) map[string][]time.Time {
 	var wg sync.WaitGroup
 	var lock sync.Mutex
