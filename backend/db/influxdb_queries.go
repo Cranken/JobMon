@@ -210,15 +210,5 @@ from(bucket: "%v")
 	|> map(fn: (r) => ({r with _value: %v}))
 	|> drop(columns: [%v])
 	|> set(key: "_measurement", value: "%v")
-	|> set(key: "_field", value: "value")
-	|> group(
-		columns: [
-			"hostname", 
-			"_measurement", 
-			"_field",
-			 "cluster",
-			  "filesystem",
-			  "type"
-		], mode: "by")
 	|> to(bucket: "%v", org: "%v")
 `
