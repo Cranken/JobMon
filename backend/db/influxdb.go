@@ -735,8 +735,8 @@ func (db *InfluxDB) createSynthesizedMetricTask(metric conf.MetricConfig, subMea
 		}, metric.SubMeasurements), " + ")
 
 	query := fmt.Sprintf(SynthesizedMetricsCreationQuery,
-		db.bucketName, subMeasurementsRegex, metric.Type, metric.FilterFunc,
-		metric.PostQueryOp, addedSubMeasurements, quotedSubMeasurements,
+		db.bucketName, subMeasurementsRegex, metric.Type,
+		addedSubMeasurements, quotedSubMeasurements,
 		metric.Measurement, db.bucketName, db.organizationName)
 	return db.createTask(taskName, query, orgId)
 }

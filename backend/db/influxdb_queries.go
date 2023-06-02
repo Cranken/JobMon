@@ -204,8 +204,6 @@ from(bucket: "%v")
 	|> range(start: -task.every)
 	|> filter(fn: (r) => r["_measurement"] =~ /%v/)
 	|> filter(fn: (r) => r["type"] == "%v")
-	%v
-	%v
 	|> pivot(rowKey: ["_time"], columnKey: ["_measurement"], valueColumn: "_value")
 	|> map(fn: (r) => ({r with _value: %v}))
 	|> drop(columns: [%v])
