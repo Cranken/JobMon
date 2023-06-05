@@ -814,7 +814,7 @@ func (db *InfluxDB) updateAggregationTasks() (err error) {
 func (db *InfluxDB) updateSynthesizedMetricTask() (err error) {
 	tasks, err := db.tasksAPI.FindTasks(context.Background(), nil)
 	if err != nil {
-		logging.Error("db: addAggregatedMetrics(): Could not get tasks from influxdb: ", err)
+		logging.Error("db: updateSynthesizedMetricTask(): Could not get tasks from influxdb: ", err)
 		return
 	}
 
@@ -826,9 +826,12 @@ func (db *InfluxDB) updateSynthesizedMetricTask() (err error) {
 			joinedSubMeasurements := strings.Join(metric.SubMeasurements, "_")
 			name := strings.Join([]string{db.bucketName, metric.Measurement, joinedSubMeasurements}, "_")
 			found := false
+			// Check if the tasks already exists
 			for _, task := range tasks {
 				if task.Name == name {
-					db.tasks = append(db.tasks, task)
+					// If it exists then update it.
+					updatedTask, _ := db.tasksAPI.UpdateTask(context.Background(), &task)
+					db.tasks = append(db.tasks, *updatedTask)
 					found = true
 					break
 				}
