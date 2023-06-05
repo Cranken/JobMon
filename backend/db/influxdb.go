@@ -825,26 +825,20 @@ func (db *InfluxDB) updateSynthesizedMetricTask() (err error) {
 
 			joinedSubMeasurements := strings.Join(metric.SubMeasurements, "_")
 			name := strings.Join([]string{db.bucketName, metric.Measurement, joinedSubMeasurements}, "_")
-			found := false
 			// Check if the tasks already exists
 			for _, task := range tasks {
 				if task.Name == name {
-					// If it exists then update it.
-					updatedTask, _ := db.tasksAPI.UpdateTask(context.Background(), &task)
-					db.tasks = append(db.tasks, *updatedTask)
-					found = true
-					break
+					// Remove already existing tasks.
+					err = db.tasksAPI.DeleteTask(context.Background(), &task)
+
+					missingMetricTasks =
+						append(missingMetricTasks,
+							utils.Tuple[conf.MetricConfig, string]{
+								First:  metric,
+								Second: joinedSubMeasurements,
+							})
 				}
 			}
-			if !found {
-				missingMetricTasks =
-					append(missingMetricTasks,
-						utils.Tuple[conf.MetricConfig, string]{
-							First:  metric,
-							Second: joinedSubMeasurements,
-						})
-			}
-
 		}
 	}
 	org, err := db.organizationsAPI.FindOrganizationByName(context.Background(), db.organizationName)
