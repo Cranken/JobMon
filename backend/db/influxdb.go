@@ -826,21 +826,22 @@ func (db *InfluxDB) updateSynthesizedMetricTask() (err error) {
 			joinedSubMeasurements := strings.Join(metric.SubMeasurements, "_")
 			name := strings.Join([]string{db.bucketName, metric.Measurement, joinedSubMeasurements}, "_")
 			// Check if the tasks already exists
+			found := false
 			for _, task := range tasks {
 				if task.Name == name {
-					// Remove already existing tasks.
-					err = db.tasksAPI.DeleteTask(context.Background(), &task)
-					if err != nil {
-						logging.Error("db: updateSynthesizedMetricTask(): Could not remove the task from influxdb: ", err)
-						return
-					}
-					missingMetricTasks =
-						append(missingMetricTasks,
-							utils.Tuple[conf.MetricConfig, string]{
-								First:  metric,
-								Second: joinedSubMeasurements,
-							})
+					db.tasks = append(db.tasks, task)
+					found = true
+					break
 				}
+			}
+			// If task is missing, add it to to the list of missing aggregation tasks
+			if !found {
+				missingMetricTasks =
+					append(missingMetricTasks,
+						utils.Tuple[conf.MetricConfig, string]{
+							First:  metric,
+							Second: joinedSubMeasurements,
+						})
 			}
 		}
 	}
