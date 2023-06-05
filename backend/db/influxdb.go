@@ -830,7 +830,10 @@ func (db *InfluxDB) updateSynthesizedMetricTask() (err error) {
 				if task.Name == name {
 					// Remove already existing tasks.
 					err = db.tasksAPI.DeleteTask(context.Background(), &task)
-
+					if err != nil {
+						logging.Error("db: updateSynthesizedMetricTask(): Could not remove the task from influxdb: ", err)
+						return
+					}
 					missingMetricTasks =
 						append(missingMetricTasks,
 							utils.Tuple[conf.MetricConfig, string]{
