@@ -13,7 +13,7 @@ export const Jobs = () => {
   const [joblistLimit, setJoblistLimit] = useStorageState("joblistLimit", 25);
   const [sortBy, setSortBy] = useStorageState("sortyBy", "StartTime");
   const [sortByDescending, setSortByDescending] = useState(true);
-  const [page, setPageStorage, _, pageIsLoading] = useSessionStorageState("jobsPage", 1)
+  const [page, setPageStorage, , pageIsLoading] = useSessionStorageState("jobsPage", 1)
   const isWideDevice = useIsWideDevice();
 
   const [params, setParams, , isLoadingParams] =
