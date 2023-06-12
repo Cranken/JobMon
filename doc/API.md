@@ -215,3 +215,23 @@ Authentication level: admin
 Body request data: store.UserRoles
 
 Body return data: store.UserRoles
+
+## [POST] /api/notify/admin
+
+Sends a notification the the admins to request a role.
+
+Authentication level: none
+
+Body request data: auth.UserInfo
+
+Body return data: none
+
+## [GET] /api/ping
+
+API-function to ping the backend. This function is used to check the liveness of the backend.
+
+Authentication level: none
+
+Body request data: none
+
+Body return data: The current timestamp.
