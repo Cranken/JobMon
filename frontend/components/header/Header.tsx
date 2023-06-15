@@ -66,6 +66,9 @@ export const Header = ({ pathname, setHeaderHeight}: HeaderProps) => {
   const [searchValue, setSearchValue] = React.useState('');
   const headerRef = useRef<HTMLElement>(null);
 
+  /**
+   * Stores the current hight of the header.
+   */
   useEffect(() => {
     if (headerRef !== null && headerRef.current !== null) {
       setHeaderHeight(headerRef.current.clientHeight);
