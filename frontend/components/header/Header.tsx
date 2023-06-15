@@ -24,7 +24,7 @@ import { useCookies } from "react-cookie";
 import { MdLogout } from "react-icons/md";
 import { useHasNoAllowedRole, useIsAuthenticated } from "@/utils/auth";
 import { useGetUser, UserRole } from "@/utils/user";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useIsWideDevice } from "@/utils/utils";
 
 /**
@@ -34,7 +34,13 @@ interface HeaderProps {
   /**
    * The pathname on which the website currently renders.
    */
-  pathname: string
+  pathname: string;
+
+  /**
+   * Callback function to set the height of the header
+   * @param n The height
+   */
+  setHeaderHeight: (n: number) => void;
 }
 
 /**
@@ -46,7 +52,7 @@ interface HeaderProps {
  * This path determines whether one of the links in the header shall be highlighted as the currently active page.
  * @returns The component
  */
-export const Header = ({ pathname }: HeaderProps) => {
+export const Header = ({ pathname, setHeaderHeight}: HeaderProps) => {
   const user = useGetUser();
   const { colorMode, toggleColorMode } = useColorMode();
   const [, , removeCookie] = useCookies(["Authorization"]);
@@ -57,7 +63,14 @@ export const Header = ({ pathname }: HeaderProps) => {
   const hasRole = (user.Roles) ? !useHasNoAllowedRole(user) : false;
   const { isOpen, onOpen, onClose } = useDisclosure();
   const isWideDevice = useIsWideDevice();
-  const [searchValue, setSearchValue] = React.useState('')
+  const [searchValue, setSearchValue] = React.useState('');
+  const headerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (headerRef !== null && headerRef.current !== null) {
+      setHeaderHeight(headerRef.current.clientHeight);
+    }
+  });
 
   /**
    * Logout is a function called to to logout a user.
@@ -74,7 +87,7 @@ export const Header = ({ pathname }: HeaderProps) => {
   // Small device header
   if (!isWideDevice) {
     return (
-      <header>
+      <header ref={headerRef}>
         <Flex bg={headerBg} p={2}>
           {isAuthenticated && hasRole ? (
             <>
@@ -176,7 +189,7 @@ export const Header = ({ pathname }: HeaderProps) => {
 
   // Wide device header
   return (
-    <header>
+    <header ref={headerRef}>
       <Flex bg={headerBg} p={2}>
         <Flex flexGrow={1} gap={2}>
           {isAuthenticated && hasRole ? (
