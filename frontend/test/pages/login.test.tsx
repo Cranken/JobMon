@@ -3,12 +3,16 @@ import Login from "@/pages/login";
 import { createMockRouter } from "@/mocks/mockRouter";
 import { RouterContext } from "next/dist/shared/lib/router-context";
 import 'whatwg-fetch'
+import theme from "../../styles/theme";
+import { ChakraProvider } from "@chakra-ui/react";
 
 describe("Login component", () => {
     test("Tests rendering.", () => {
         render(
             <RouterContext.Provider value={createMockRouter({})}>
-                <Login />
+                <ChakraProvider theme={theme}>
+                    <Login />
+                </ChakraProvider>
             </RouterContext.Provider>
         );
         const usernameInput = screen.getByLabelText(/username/i);
@@ -24,7 +28,9 @@ describe("Login component", () => {
         
         render(
             <RouterContext.Provider value={router}>
-                <Login />
+                <ChakraProvider theme={theme}>
+                    <Login />
+                </ChakraProvider>
             </RouterContext.Provider>
         );
 
@@ -47,7 +53,9 @@ describe("Login component", () => {
         const router = createMockRouter({query:{'login_failed':"true"}});
         render(
             <RouterContext.Provider value={router}>
-                <Login />
+                <ChakraProvider theme={theme}>
+                    <Login />
+                </ChakraProvider>
             </RouterContext.Provider>
         );
         const usernameInput = screen.getByLabelText('Username');
@@ -66,9 +74,13 @@ describe("Login component", () => {
     });
     test("Tests oauth login.", async () => {
         const router = createMockRouter({});
-        render(<RouterContext.Provider value={router}>
-            <Login />
-        </RouterContext.Provider>);
+        render(
+            <RouterContext.Provider value={router}>
+                <ChakraProvider theme={theme}>
+                    <Login />
+                </ChakraProvider>
+            </RouterContext.Provider>
+        );
 
         const loginButton = screen.getByRole("button", { name: 'Login with OIDC' });
         fireEvent.click(loginButton);
