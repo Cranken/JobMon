@@ -374,9 +374,7 @@ export function LineChart<T>({
       };
 
       if (showTooltipCP) {
-        console.log(i);
         const pointerOnChangePoint = cp.filter((e) => {
-          console.log(xScale(e));
           return i == getNearestPointIdx(xScale(e));
         }).length != 0
         if (pointerOnChangePoint) {

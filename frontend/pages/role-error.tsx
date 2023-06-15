@@ -22,7 +22,7 @@ const RoleError = () => {
                     isClosable: true
                 });
             } else {
-                console.log("Request success");
+                console.log("Request failed");
                 toast({
                     description: "Failed to send request",
                     status: "error",
