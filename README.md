@@ -145,23 +145,23 @@ You can access the containers with the `docker` command.
 * Access the PostgreSQL interactive terminal
 
   ```bash
-  sudo docker exec --interactive --tty jobmon_postgres \
-      psql --username=postgres --password --dbname=jobmon --host jobmon_postgres --port 5432
+  sudo docker exec --interactive --tty --user postgres jobmon_postgres \
+      psql --dbname=jobmon
   ```
 
 * Dump the jobmon PostgreSQL database for backup purpose
 
   ```bash
-  sudo docker exec --env PGPASSWORD="<PSQL_PASSWORD>" jobmon_postgres \
-      pg_dump --username=postgres --dbname=jobmon --host jobmon_postgres --port 5432 | \
+  sudo docker exec --user postgres jobmon_postgres \
+      pg_dump --dbname=jobmon | \
           zstd - -o jobmon_postgres.dump.zstd
   ```
 
 * Dump all PostgreSQL database for backup purpose
 
   ```bash
-  sudo docker exec --env PGPASSWORD="<PSQL_PASSWORD>" jobmon_postgres \
-      pg_dumpall --username=postgres --host jobmon_postgres --port 5432 | \
+  sudo docker exec --user postgres jobmon_postgres \
+      pg_dumpall | \
           zstd - -o postgres.dumpall.zstd
   ```
 
@@ -169,8 +169,8 @@ You can access the containers with the `docker` command.
 
   ```bash
   zstdcat jobmon_postgres.dump.zstd |
-      sudo docker exec --interactive --env PGPASSWORD="<PSQL_PASSWORD>" jobmon_postgres \
-          psql --username=postgres --dbname=jobmon --host jobmon_postgres --port 5432
+      sudo docker exec --interactive --user postgres jobmon_postgres \
+          psql --dbname=jobmon
   ```
 
 ### Maintenance Tasks for Frontend and Backend
