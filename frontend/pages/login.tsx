@@ -57,9 +57,9 @@ export const Login = () => {
   return (
     <JobMonAppContext.Consumer>
       {(value: { headerHeight: number; setHeaderHeight: (n: number) => void; }) => (
-        <Container bgGradient={'linear(to-r, #005aa0, #00a88f)'} p={0} maxWidth={"100vw"} w={'100%'} minHeight={'calc(100vh - ' + value.headerHeight + 'px)'}>
-          <Center paddingTop={{ base: 5, lg: 100 }} paddingBottom={5} w={'100%'}>
-            <Stack w={["95%", "70%", "50%", "30%"]}>
+        <Container bgGradient={'linear(to-r, horeka.100, horeka.900)'} p={0} maxWidth={"100vw"} w={'100%'} minHeight={'calc(100vh - ' + value.headerHeight + 'px)'}>
+          <Center paddingTop={{ base: 5, md: 15, lg: 50 }} paddingBottom={5} w={'100%'}>
+            <Stack w={["95%", "70%", "60%", "40%", "35%"]}>
               <Stack
                 w={'100%'}
                 borderWidth="1px"
