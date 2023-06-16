@@ -1,6 +1,7 @@
 package main
 
 import (
+	"jobmon/analyzer"
 	"jobmon/auth"
 	conf "jobmon/config"
 	database "jobmon/db"
@@ -16,14 +17,15 @@ import (
 )
 
 var (
-	store       jobstore.Store
-	config      = conf.Configuration{}
-	db          database.DB
-	jobCache    = cache.LRUCache{}
-	authManager = auth.AuthManager{}
-	router      = routerImport.Router{}
-	webLogger   = utils.WebLogger{}
-	notifier    = notify.EmailNotifier{}
+	store           jobstore.Store
+	config          = conf.Configuration{}
+	db              database.DB
+	jobCache        = cache.LRUCache{}
+	authManager     = auth.AuthManager{}
+	router          = routerImport.Router{}
+	webLogger       = utils.WebLogger{}
+	notifier        = notify.EmailNotifier{}
+	analyzerManager = analyzer.NewManager()
 )
 
 func main() {
@@ -50,6 +52,16 @@ func main() {
 	// setup email notifier
 	notifier.Init(config)
 
+	// Setup analyzer manager and analyzers
+	// analyzer config will be provided by config file in final implementation
+	config.Analyzer = []byte(
+		`{"load": {
+		    "expected_load": 76.0
+		    }
+	     }`)
+	analyzerManager.Init(config)
+	analyzerManager.Start()
+
 	// cleanup everything
 	registerCleanup()
 
@@ -67,6 +79,7 @@ func registerCleanup() {
 		<-sigChan
 		store.Flush()
 		db.Close()
+		analyzerManager.Stop()
 		config.Flush()
 		os.Exit(0)
 	}()

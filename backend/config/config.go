@@ -69,6 +69,9 @@ type Configuration struct {
 	RadarChartMetrics []string `json:"RadarChartMetrics"`
 	// Configuration for email notifications
 	Email EmailConfig `json:"EmailNotification"`
+
+	// Configuration for analyzer manager and analyzers
+	Analyzer json.RawMessage `json:"Analyzer"`
 }
 
 // Config from the command line interface
