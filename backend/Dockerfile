@@ -20,6 +20,7 @@ RUN go mod download && \
 
 # Add source code to the image
 ADD analysis ./analysis
+ADD analyzer ./analyzer
 ADD auth ./auth
 ADD config ./config
 ADD db ./db
