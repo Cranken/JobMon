@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import JobFilter from "@/components/joblist/job-filter/JobFilter";
 import JobList from "@/components/joblist/JobList";
-import { dateToUnix, useGetJobs, useStorageState, useSessionStorageState, useIsWideDevice } from "@/utils/utils";
+import { dateToUnix, useGetJobs, useStorageState, useSessionStorageState, useIsWideDevice, clamp } from "@/utils/utils";
 import { JobSearchParams, JobMetadata } from "../types/job";
 import { useRouter } from "next/router";
 import { Box, Center, Divider, Spinner, Stack } from "@chakra-ui/react";
@@ -122,6 +122,11 @@ export const Jobs = () => {
 
 
   const pages = mutableJobs.length / joblistLimit;
+
+  // Clamp page if page is to high or low
+  if (!isNaN(pages) && isFinite(pages) && (page < 0 || Math.ceil(pages) < page)) {
+    setPageStorage(clamp(page, 0, Math.ceil(pages)))
+  }
 
   if (pages > 1) {
     elements.push(
