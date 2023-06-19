@@ -479,6 +479,13 @@ func (r *Router) Login(
 		return
 	}
 
+	// Refuse access for job-control users to the frontend
+	if utils.Contains(user.Roles, auth.JOBCONTROL) && dat.FrontendOnly {
+		logging.Warning("Router: Login(): Login with job-control role in frontend-only mode by user '", dat.Username, "'")
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	err = r.authManager.AppendJWT(user, w)
 	if err != nil {
 		logging.Error("Router: Login(): Could not generate JWT for user '", dat.Username, "': ", err)

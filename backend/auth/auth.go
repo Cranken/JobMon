@@ -34,8 +34,9 @@ const (
 
 // AuthPayLoad stores credentials of local users.
 type AuthPayload struct {
-	Username string
-	Password string
+	Username     string
+	Password     string
+	FrontendOnly bool
 }
 
 // UserInfo stores the roles and the username of a user.
