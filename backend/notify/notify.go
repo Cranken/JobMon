@@ -4,7 +4,7 @@ import (
 	"jobmon/config"
 )
 
-// EmailNotifier provides functions to send notifications as emails to notify administrators.
+// Notifier provides functions to send notifications to administrators.
 type Notifier interface {
 	// Init initializes the Notifier
 	Init(c config.Configuration)

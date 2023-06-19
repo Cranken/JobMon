@@ -289,8 +289,11 @@ func (auth *AuthManager) GenerateJWT(user UserInfo) (string, error) {
 
 	// Set JSON web token life time
 	lifeTime := auth.JSONWebTokenLifeTime
+
 	if utils.Contains(user.Roles, JOBCONTROL) {
+		// Notify admins that a new JWT for an api-user was created
 		(*auth.notifier).Notify("JWT for job-control user changed", "The JWT for user '"+user.Username+"' got newly generated.")
+		// Expand lifetime of JWT for api-users
 		lifeTime = auth.APITokenLifeTime
 	}
 
