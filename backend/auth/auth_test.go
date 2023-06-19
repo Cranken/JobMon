@@ -2,6 +2,7 @@ package auth
 
 import (
 	"jobmon/config"
+	"jobmon/notify"
 	"jobmon/store"
 	"jobmon/test"
 	"reflect"
@@ -47,7 +48,8 @@ func TestValidToken(t *testing.T) {
 		LocalUsers:           LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
-	authManager.Init(config, &store)
+	var notify notify.Notifier = &test.MockEmailNotifier{}
+	authManager.Init(config, &store, &notify)
 	val := authManager.localUsers["userTest"]
 	user :=
 		UserInfo{
@@ -78,7 +80,8 @@ func TestExpiredToken(t *testing.T) {
 		LocalUsers:           LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
-	authManager.Init(config, &store)
+	var notify notify.Notifier = &test.MockEmailNotifier{}
+	authManager.Init(config, &store, &notify)
 	val := authManager.localUsers["userTest"]
 	user :=
 		UserInfo{
@@ -105,7 +108,8 @@ func TestTokenFromFuture(t *testing.T) {
 		LocalUsers:           LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
-	authManager.Init(config, &store)
+	var notify notify.Notifier = &test.MockEmailNotifier{}
+	authManager.Init(config, &store, &notify)
 	val := authManager.localUsers["userTest"]
 	user :=
 		UserInfo{
@@ -145,7 +149,8 @@ func TestTokenWrongIssuer(t *testing.T) {
 		LocalUsers:           LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
-	authManager.Init(config, &store)
+	var notify notify.Notifier = &test.MockEmailNotifier{}
+	authManager.Init(config, &store, &notify)
 	val := authManager.localUsers["userTest"]
 	user :=
 		UserInfo{
@@ -184,7 +189,8 @@ func TestTokenUnknownUser(t *testing.T) {
 		LocalUsers:           LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
-	authManager.Init(config, &store)
+	var notify notify.Notifier = &test.MockEmailNotifier{}
+	authManager.Init(config, &store, &notify)
 	val := authManager.localUsers["userTest"]
 	user :=
 		UserInfo{
@@ -223,7 +229,8 @@ func TestLogoutTokenDelete(t *testing.T) {
 		LocalUsers:           LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
-	authManager.Init(config, &store)
+	var notify notify.Notifier = &test.MockEmailNotifier{}
+	authManager.Init(config, &store, &notify)
 	val := authManager.localUsers["userTest"]
 	user :=
 		UserInfo{

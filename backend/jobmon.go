@@ -23,7 +23,7 @@ var (
 	authManager = auth.AuthManager{}
 	router      = routerImport.Router{}
 	webLogger   = utils.WebLogger{}
-	notifier    = notify.EmailNotifier{}
+	notifier    notify.Notifier
 )
 
 func main() {
@@ -44,11 +44,12 @@ func main() {
 	// setup lru cache for storing job data
 	jobCache.Init(config, &db, &store)
 
-	// setup the authentication manager
-	authManager.Init(config, &store)
-
 	// setup email notifier
+	notifier = &notify.EmailNotifier{}
 	notifier.Init(config)
+
+	// setup the authentication manager
+	authManager.Init(config, &store, &notifier)
 
 	// cleanup everything
 	registerCleanup()
