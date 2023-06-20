@@ -9,7 +9,10 @@ import {
   Flex,
   FormControl,
   FormLabel,
+  HStack,
   Heading,
+  Hide,
+  Image,
   Input,
   Stack,
   Text,
@@ -57,29 +60,21 @@ export const Login = () => {
   return (
     <JobMonAppContext.Consumer>
       {(value: { headerHeight: number; setHeaderHeight: (n: number) => void; }) => (
-        <Container bgGradient={'linear(to-r, horeka.100, horeka.900)'} p={0} maxWidth={"100vw"} w={'100%'} minHeight={'calc(100vh - ' + value.headerHeight + 'px)'}>
-          <Center paddingTop={{ base: 5, md: 15, lg: 50 }} paddingBottom={5} w={'100%'}>
-            <Stack w={["95%", "70%", "60%", "40%", "35%"]}>
+        <Container p={0} maxWidth={"100vw"} w={'100vw'} minHeight={'calc(100vh - ' + value.headerHeight + 'px)'}>
+          <HStack>
+            <Container h={"100%"} w={{ base: "100vw", md: "50vw", lg: "30vw" }} p={4} maxWidth={"100vw"}>
+              <Center>
+                <Heading>
+                  Welcome to Jobmon
+                </Heading>
+              </Center>
+              <Text>
+                Jobmon monitors jobs running on the High Performance Computing system HoreKa.
+                Jobmon visualizes the usage of the computing system and helps you understand the performance of your job.
+              </Text>
               <Stack
                 w={'100%'}
-                borderWidth="1px"
-                borderRadius="lg"
-                borderColor={borderColor}
-                bg={backgroundColor}
-                p={5}
-              >
-                <Center>
-                  <Heading>
-                    Welcome to Jobmon
-                  </Heading>
-                </Center>
-                <Text>
-                  Jobmon monitors jobs running on the High Performance Computing system HoreKa.
-                  Jobmon visualizes the usage of the computing system and helps you understand the performance of your job.
-                </Text>
-              </Stack>
-              <Stack
-                w={'100%'}
+                maxWidth={"100vw"}
                 borderWidth="1px"
                 borderRadius="lg"
                 borderColor={borderColor}
@@ -138,8 +133,11 @@ export const Login = () => {
                   Login with OIDC
                 </Button>
               </Stack>
-            </Stack>
-          </Center>
+            </Container>
+            <Hide below="md">
+            <Image src="./login.jpg" h={'calc(100vh - ' + value.headerHeight + 'px)'} w={{ base: "0vw", md: "50vw", lg: "70vw" }} fit={"cover"} />
+            </Hide>
+          </HStack>
         </Container>
       )}
     </JobMonAppContext.Consumer>
