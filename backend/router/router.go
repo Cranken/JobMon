@@ -39,7 +39,7 @@ type Router struct {
 	authManager *auth.AuthManager
 	upgrader    websocket.Upgrader
 	logger      *utils.WebLogger
-	notifier    *notify.EmailNotifier
+	notifier    *notify.Notifier
 }
 
 // Init starts up the server and sets up all the necessary handlers then it start the main web server.
@@ -50,7 +50,7 @@ func (r *Router) Init(
 	jobCache *cache.LRUCache,
 	authManager *auth.AuthManager,
 	logger *utils.WebLogger,
-	notifier *notify.EmailNotifier) {
+	notifier *notify.Notifier) {
 
 	r.store = store
 	r.config = config
@@ -475,6 +475,13 @@ func (r *Router) Login(
 	user, err := r.authManager.AuthLocalUser(dat.Username, dat.Password)
 	if err != nil {
 		logging.Error("Router: Login(): Could not authenticate user '", dat.Username, "': ", err)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Refuse access for job-control users to the frontend
+	if utils.Contains(user.Roles, auth.JOBCONTROL) && dat.FrontendOnly {
+		logging.Warning("Router: Login(): Login with job-control role in frontend-only mode by user '", dat.Username, "'")
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -1174,7 +1181,7 @@ func (r *Router) NotifyAdmin(
 		"Currently this user has no role allwoing to access the webinterface." +
 		"\n\n" + dat.Username + " requests a Role to access the webinterface."
 
-	if r.notifier.Notify(subject, message) != nil {
+	if (*r.notifier).Notify(subject, message) != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	} else {
 		w.WriteHeader(http.StatusOK)
