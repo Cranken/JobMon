@@ -64,45 +64,6 @@ func createSimpleMeasurementQuery(
 	return
 }
 
-// createSimpleAggMeasurementQuery creates a simple flux aggregation query
-//
-//lint:ignore U1000 Ignore unused function temporarily
-func createSimpleAggMeasurementQuery(
-	bucket string,
-	StartTime int, StopTime int,
-	measurement string,
-	metricType string,
-	nodes string,
-	sampleInterval time.Duration,
-	metricFilterFunc string,
-	metricPostQueryOp string,
-	aggregationFunc string,
-) (q string) {
-	q = fmt.Sprintf(`
-    from(bucket: "%v")
-		|> range(start: %v, stop: %v)
-		|> filter(fn: (r) => r["_measurement"] == "%v")
-		|> filter(fn: (r) => r["type"] == "%v")
-    	|> filter(fn: (r) => r["hostname"] =~ /%v/)
-		%v
-		%v
-		|> group(columns: ["_measurement", "hostname"], mode:"by")
-		|> aggregateWindow(every: %v, fn: %v, createEmpty: false)
-		|> truncateTimeColumn(unit: %v)
-	`,
-		bucket,
-		StartTime, StopTime,
-		measurement,
-		metricType,
-		nodes,
-		metricFilterFunc,
-		metricPostQueryOp,
-		sampleInterval, aggregationFunc,
-		sampleInterval,
-	)
-	return
-}
-
 // Parameters: bucket, startTime, stopTime, measurement,
 // nodelist, sampleInterval, filterfunc, postQueryOp, sampleInterval
 const AggregateMeasurementQuery = `
@@ -163,35 +124,6 @@ max = data
   	|> set(key: "_field", value: "max")
 	
 union(tables: [mean, max])	
-`
-
-// Parameters: bucket, startTime, stopTime, measurement,
-// type, filterFunc, postQueryOp, sampleInterval, aggFn
-// measurement, measurement, bucket, org
-const AggregationTaskQuery = `
-from(bucket: "%v")
-	|> range(start: -task.every)
-	|> filter(fn: (r) => r["_measurement"] == "%v")
-	|> filter(fn: (r) => r.type == "%v")
-	%v
-	%v
-	|> group(columns: ["_measurement", "hostname"], mode:"by")
-	|> aggregateWindow(every: %v, fn: %v, createEmpty: false)
-	|> group(columns: ["hostname"], mode:"by")
-	|> keep(
-        columns: [
-            "hostname",
-            "_start",
-            "_stop",
-            "_time",
-            "_value",
-            "cluster",
-            "hostname",
-        ],
-    )
-	|> set(key: "_measurement", value: "%v")
-	|> set(key: "_field", value: "%v")
-	|> to(bucket: "%v", org: "%v")
 `
 
 // Parameters: bucket, measurements regex, type,
