@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"jobmon/logging"
+	"strings"
 	"time"
 )
 
@@ -38,27 +39,23 @@ func createSimpleMeasurementQuery(
 		return
 	}
 
-	q = fmt.Sprintf(`
-	from(bucket: "%s")
-		|> range(start: %d, stop: %d)
-		|> filter(fn: (r) => r["_measurement"] == "%s")
-		|> filter(fn: (r) => r["type"] == "%s")
-		|> filter(fn: (r) => r["hostname"] =~ /%s/)
-		%s
-		%s
-		|> aggregateWindow(every: %v, fn: mean, createEmpty: false)
-		|> truncateTimeColumn(unit: %v)
-	`,
-		bucket,
-		StartTime, StopTime,
-		measurement,
-		metricType,
-		nodes,
-		metricFilterFunc,
-		metricPostQueryOp,
-		sampleInterval,
-		sampleInterval,
-	)
+	sb := new(strings.Builder)
+	fmt.Fprintf(sb, `from(bucket: "%s")`, bucket)
+	fmt.Fprintf(sb, `|> range(start: %d, stop: %d)`, StartTime, StopTime)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s")`, measurement)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["type"] == "%s")`, metricType)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["hostname"] =~ /%s/)`, nodes)
+	if len(metricFilterFunc) > 0 {
+		fmt.Fprintf(sb, `%s`, metricFilterFunc)
+	}
+	if len(metricPostQueryOp) > 0 {
+		fmt.Fprintf(sb, `%s`, metricPostQueryOp)
+	}
+	// Aggregation to sampleInterval after all filtering to aggregate on all metric data available
+	fmt.Fprintf(sb, `|> aggregateWindow(every: %v, fn: mean, createEmpty: false)`, sampleInterval)
+	// Truncate time to sampleInterval to synchronize measurements from different nodes
+	fmt.Fprintf(sb, `|> truncateTimeColumn(unit: %v)`, sampleInterval)
+	q = sb.String()
 
 	logging.Debug("db: createSimpleMeasurementQuery(): flux query string = ", q)
 	return
