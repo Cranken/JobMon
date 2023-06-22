@@ -94,7 +94,6 @@ export const JobList = ({
 interface JobListItemProps {
   job: JobMetadata;
   radarChartMetrics: string[];
-  config: Configuration;
 }
 
 /**
