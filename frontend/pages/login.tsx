@@ -68,10 +68,6 @@ export const Login = () => {
                   Welcome to Jobmon
                 </Heading>
               </Center>
-              <Text>
-                Jobmon monitors jobs running on the High Performance Computing system HoreKa.
-                Jobmon visualizes the usage of the computing system and helps you understand the performance of your job.
-              </Text>
               <Stack
                 w={'100%'}
                 maxWidth={"100vw"}
@@ -80,6 +76,22 @@ export const Login = () => {
                 borderColor={borderColor}
                 bg={backgroundColor}
                 p={5}
+              >
+                <Text>
+                  Jobmon monitors jobs running on the High Performance Computing system HoreKa.
+                  Jobmon visualizes the usage of the computing system and helps you understand the performance of your job.
+                </Text>
+              </Stack>
+
+              <Stack
+                w={'100%'}
+                maxWidth={"100vw"}
+                borderWidth="1px"
+                borderRadius="lg"
+                borderColor={borderColor}
+                bg={backgroundColor}
+                p={5}
+                marginTop={5}
               >
                 <Center>
                   <Heading>
@@ -118,7 +130,16 @@ export const Login = () => {
                     >
                       Remember Me
                     </Checkbox>
-                    <Button onClick={() => submit()}>Login</Button>
+                    <Button
+                      onClick={() => submit()}
+                      bgColor={'horeka.900'}
+                      color={"white"}
+                      _hover={{
+                        transform: 'scale(0.95)',
+                      }}
+                    >
+                      Login
+                    </Button>
                   </Flex>
                 </FormControl>
                 <Divider />
@@ -129,13 +150,18 @@ export const Login = () => {
                       "/auth/oauth/login"
                     )
                   }
+                  bgGradient={'linear(to-r, horeka.100, horeka.900)'}
+                  color={"white"}
+                  _hover={{
+                    transform: 'scale(0.95)',
+                  }}
                 >
                   Login with OIDC
                 </Button>
               </Stack>
             </Container>
             <Hide below="md">
-            <Image src="./login.jpg" h={'calc(100vh - ' + value.headerHeight + 'px)'} w={{ base: "0vw", md: "50vw", lg: "70vw" }} fit={"cover"} />
+              <Image src="./login.jpg" h={'calc(100vh - ' + value.headerHeight + 'px)'} w={{ base: "0vw", md: "50vw", lg: "70vw" }} fit={"cover"} />
             </Hide>
           </HStack>
         </Container>
