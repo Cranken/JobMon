@@ -1,4 +1,5 @@
-import { JobMetadata } from "../../types/job";
+import { JobMetadata, MetricConfig } from "../../types/job";
+
 import {
   Alert, AlertDescription,
   AlertIcon, AlertTitle,
@@ -17,6 +18,8 @@ import {
 } from "@chakra-ui/react";
 import { RadarChart } from "../charts/RadarChart";
 import React from "react";
+import { useGetConfig } from "@/utils/utils";
+import { Configuration } from "@/types/config";
 
 interface JobListProps {
   jobs: JobMetadata[];
@@ -91,6 +94,7 @@ export const JobList = ({
 interface JobListItemProps {
   job: JobMetadata;
   radarChartMetrics: string[];
+  config: Configuration;
 }
 
 /**
@@ -110,17 +114,42 @@ export const JobListItem = ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let radarChartData: any[] = [];
   if (job.Data) {
-    radarChartData = job.Data.filter((val) =>
-      radarChartMetrics.includes(val.Config.GUID)
-    ).map((val) => {
-      let deviceMax = Math.max(val.Config.MaxPerNode, val.Config.MaxPerType);
-      deviceMax = deviceMax !== 0 ? deviceMax : val.Data;
-      return {
-        mean: val.Data / deviceMax,
-        max: val.Max / deviceMax,
-        title: val.Config.DisplayName,
-      };
+    // First filter out all the metrics that do not belong to the RadarChartMetrics
+    const tempRadarChartData = job.Data.filter((val) => radarChartMetrics.includes(val.Config.GUID));
+
+    // Next iterate through all the radarChart metrics and add dummy data in the case
+    // the data is missing for the job. This should eliminate missing chart categories.
+    radarChartData = radarChartMetrics.map((val) => {
+      // First get the actual configuration
+      const [config, _] = useGetConfig();  
+      if (!config) {
+        return {}
+      }
+      
+      const getValue = tempRadarChartData.find(element => element.Config.GUID == val);
+
+      if (getValue === undefined ){
+        // If the values where missing then get them from the metric configuration.
+        const metricConfig = config.Metrics.find((element) => element.GUID == val);
+        if (!metricConfig) {
+          return {}
+        }
+        return {
+          mean: 0.0,
+          max: 0.0,
+          title: metricConfig.DisplayName
+        };
+      } else {
+        let deviceMax = Math.max(getValue.Config.MaxPerNode, getValue.Config.MaxPerType);
+        deviceMax = deviceMax !== 0 ? deviceMax : getValue.Data;
+        return {
+          mean: getValue.Data / deviceMax,
+          max: getValue.Max / deviceMax,       
+          title: getValue.Config.DisplayName,
+        };
+      }
     });
+    
     radarChartData.sort((a, b) => (a.title < b.title ? -1 : 1));
   }
 
