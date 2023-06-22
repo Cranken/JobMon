@@ -44,7 +44,7 @@ func createSimpleMeasurementQuery(
 		|> filter(fn: (r) => r["_measurement"] == "%s")
 		|> filter(fn: (r) => r["type"] == "%s")
 		|> filter(fn: (r) => r["hostname"] =~ /%s/)
-		|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
+		|> aggregateWindow(every: %v, fn: mean, createEmpty: false)
 		%s
 		%s
 		|> truncateTimeColumn(unit: %v)
@@ -87,7 +87,7 @@ func createSimpleAggMeasurementQuery(
 		%v
 		%v
 		|> group(columns: ["_measurement", "hostname"], mode:"by")
-		|> aggregateWindow(every: %v, fn: %v, createEmpty: true)
+		|> aggregateWindow(every: %v, fn: %v, createEmpty: false)
 		|> truncateTimeColumn(unit: %v)
 	`,
 		bucket,
@@ -110,7 +110,7 @@ from(bucket: "%v")
 	|> range(start: %v, stop: %v)
 	|> filter(fn: (r) => r["_measurement"] == "%v")
 	|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
+	|> aggregateWindow(every: %v, fn: mean, createEmpty: false)
 	%v
 	%v
 	|> truncateTimeColumn(unit: %v)
@@ -124,7 +124,7 @@ data = from(bucket: "%v")
 	|> range(start: %v, stop: %v)
 	|> filter(fn: (r) => r["_measurement"] == "%v")
 	|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	|> aggregateWindow(every: %s, fn: mean, createEmpty: true)
+	|> aggregateWindow(every: %s, fn: mean, createEmpty: false)
 	%v
 	%v
 	|> truncateTimeColumn(unit: %v)
