@@ -44,9 +44,9 @@ func createSimpleMeasurementQuery(
 		|> filter(fn: (r) => r["_measurement"] == "%s")
 		|> filter(fn: (r) => r["type"] == "%s")
 		|> filter(fn: (r) => r["hostname"] =~ /%s/)
+		%s
+		%s
 		|> aggregateWindow(every: %v, fn: mean, createEmpty: false)
-		%s
-		%s
 		|> truncateTimeColumn(unit: %v)
 	`,
 		bucket,
@@ -54,9 +54,9 @@ func createSimpleMeasurementQuery(
 		measurement,
 		metricType,
 		nodes,
-		sampleInterval,
 		metricFilterFunc,
 		metricPostQueryOp,
+		sampleInterval,
 		sampleInterval,
 	)
 
