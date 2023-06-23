@@ -173,6 +173,31 @@
             "SubMeasurements": []
         },
         {
+            "GUID": "e6fb6087-f709-45e8-aa63-5892e110640b",
+            "Type": "cpu",
+            "Categories": [
+                "Performance"
+            ],
+            "Measurement": "ipc",
+            "AggFn": "sum",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "max",
+                "min"
+            ],
+            "SampleInterval": "",
+            "Unit": "",
+            "DisplayName": "Instructions per Cycle",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "type-id",
+            "MaxPerNode": 304,
+            "MaxPerType": 4,
+            "PThreadAggFn": "",
+            "SubMeasurements": []
+        },
+        {
             "GUID": "6cf6178f-90ea-4682-9d94-0c9f0c8f6b72",
             "Type": "node",
             "Categories": [
@@ -574,7 +599,8 @@
                 "cf1926cc-f478-48ae-91df-c03a43374158",
                 "b985d0d8-0329-4811-811f-daa648289d18",
                 "687b8465-4d6e-4fed-a17e-28ac3a154ae8",
-                "ebf6b249-7f62-4a97-a4c4-39b7611e4be4"
+                "ebf6b249-7f62-4a97-a4c4-39b7611e4be4",
+                "e6fb6087-f709-45e8-aa63-5892e110640b"
             ],
             "VirtualPartitions": null
         },
@@ -595,7 +621,8 @@
                 "abe42586-c04c-4c1e-aed7-813160764c84",
                 "b985d0d8-0329-4811-811f-daa648289d18",
                 "687b8465-4d6e-4fed-a17e-28ac3a154ae8",
-                "ebf6b249-7f62-4a97-a4c4-39b7611e4be4"
+                "ebf6b249-7f62-4a97-a4c4-39b7611e4be4",
+                "e6fb6087-f709-45e8-aa63-5892e110640b"
             ],
             "VirtualPartitions": null
         },
