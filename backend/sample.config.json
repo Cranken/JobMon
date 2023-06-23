@@ -600,6 +600,30 @@
             "SubMeasurements": []
         },
         {
+            "GUID": "006a881e-afa9-4d99-99c9-d5aec1369ab1",
+            "Type": "accelerator",
+            "Categories": [
+                "Performance"
+            ],
+            "Measurement": "nv_sm_clock",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "mean",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "MHz",
+            "DisplayName": "GPU Frequency",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "type-id",
+            "MaxPerNode": 1410,
+            "MaxPerType": 1410,
+            "PThreadAggFn": "",
+            "SubMeasurements": []
+        },
+        {
             "GUID": "08e83677-131b-42da-bcd5-f5414f5bd7b3",
             "Type": "node",
             "Categories": [
@@ -700,7 +724,8 @@
                 "eaaf8930-c5d1-44a4-9fc3-61d264657cbc",
                 "1d481817-c2cf-4109-a71b-20ebc99243d8",
                 "c2638489-3125-4d14-a21f-2481d86e261c",
-                "9113a26b-fecc-4d40-9655-ca537ecc82bf"
+                "9113a26b-fecc-4d40-9655-ca537ecc82bf",
+                "006a881e-afa9-4d99-99c9-d5aec1369ab1"
             ],
             "VirtualPartitions": null
         },
