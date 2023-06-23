@@ -66,6 +66,10 @@ export const Units: UnitsType = {
     DisplayFormat: "OP/s",
     Prefix: PrefixType.Metric,
   },
+  Herz: {
+    DisplayFormat: "Hz",
+    Prefix: PrefixType.Metric
+  },
   None: {
     DisplayFormat: "",
     Prefix: PrefixType.None,
