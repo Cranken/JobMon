@@ -21,6 +21,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Spacer,
   Stack,
   Text,
   useColorModeValue,
@@ -72,9 +73,9 @@ export const Login = () => {
       {(value: { headerHeight: number; setHeaderHeight: (n: number) => void; }) => (
         <Container p={0} maxWidth={"100vw"} w={'100vw'} minHeight={'calc(100vh - ' + value.headerHeight + 'px)'}>
           <HStack>
-            <Container h={"100%"} w={{ base: "100vw", sm: "60vw", md: "50vw", lg: "40vw" , xl: "30vw" }} p={4} maxWidth={"100vw"}>
+            <Container h={"100%"} w={{ base: "100vw", sm: "60vw", md: "50vw", lg: "40vw", xl: "30vw" }} p={4} maxWidth={"100vw"}>
               <Center>
-                <Heading>
+                <Heading size={"2xl"}>
                   Welcome to Jobmon
                 </Heading>
               </Center>
@@ -86,6 +87,7 @@ export const Login = () => {
                 borderColor={borderColor}
                 bg={backgroundColor}
                 p={5}
+                mt={5}
               >
                 <Text>
                   Jobmon monitors jobs running on the High Performance Computing system HoreKa.
@@ -104,7 +106,7 @@ export const Login = () => {
                 marginTop={5}
               >
                 <Center>
-                  <Heading>
+                  <Heading size={"lg"}>
                     Login
                   </Heading>
                 </Center>
@@ -114,6 +116,11 @@ export const Login = () => {
                     Login Failed
                   </Alert>
                 ) : null}
+                <Center>
+                  <Text fontSize={"lg"}>
+                    Login with OIDC is recommended for most users
+                  </Text>
+                </Center>
                 <Button
                   onClick={() =>
                     router.push(
@@ -129,6 +136,7 @@ export const Login = () => {
                 >
                   Login with OIDC
                 </Button>
+                <Spacer />
                 <Button
                   onClick={() =>
                     setOpenLocalLogin(!openLocalLogin)
@@ -185,7 +193,7 @@ export const Login = () => {
               </Stack>
             </Container>
             <Hide below="sm">
-              <Image src="./login.jpg" h={'calc(100vh - ' + value.headerHeight + 'px)'} w={{ base: "00vw", sm: "40vw", md: "50vw", lg: "60vw" , xl: "70vw" }} fit={"cover"} />
+              <Image src="./login.jpg" h={'calc(100vh - ' + value.headerHeight + 'px)'} w={{ base: "00vw", sm: "40vw", md: "50vw", lg: "60vw", xl: "70vw" }} fit={"cover"} />
             </Hide>
           </HStack>
         </Container>
