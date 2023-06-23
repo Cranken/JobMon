@@ -365,11 +365,10 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (
 				return
 			}
 
+			// Initialize job metadata with metric config
+			md := job.JobMetadataData{Config: m}
+
 			if res, ok := result["_result"]; ok {
-
-				// Initialize job metadata with metric config
-				md := job.JobMetadataData{Config: m}
-
 				// Add metrics mean value to job metadata
 				if len(res) >= 1 {
 					mean := res[0]["_value"]
@@ -390,6 +389,11 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (
 					}
 				}
 
+				data = append(data, md)
+			} else {
+				// Add zero values in the case metadata is missing.
+				md.Data = 0.0
+				md.Max = 0.0
 				data = append(data, md)
 			}
 		}(db.metrics[m])

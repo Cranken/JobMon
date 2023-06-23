@@ -22,8 +22,9 @@ import UsersView from "@/components/settings/UsersView";
 import { Configuration } from "@/types/config";
 import { useGetUser, UserRole } from "@/utils/user";
 import AccessDenied from "./accessDenied";
-import { useIsWideDevice, useGetConfig } from "@/utils/utils";
+import { useIsWideDevice } from "@/utils/utils";
 import { ChevronDownIcon } from "@chakra-ui/icons";
+import { authFetch } from "@/utils/auth";
 
 enum SettingsView {
   General = "General Settings",
@@ -130,6 +131,50 @@ const renderSettingsView = (
       return <UsersView />;
   }
   return null;
+};
+
+export const useGetConfig: () => [
+  Configuration | undefined,
+  (c: Configuration) => void
+] = () => {
+  const [config, setConfig] = useState<Configuration>();
+  const toast = useToast();
+  const setAndSubmit = (c: Configuration) => {
+    setConfig(c);
+
+    const url = new URL(
+      process.env.NEXT_PUBLIC_BACKEND_URL + "/api/config/update"
+    );
+
+    authFetch(url.toString(), { method: "PATCH", body: JSON.stringify(c) }).then((data: Configuration) => {
+      setConfig(data);
+      toast({
+        description: "Config updated successfully",
+        status: "success",
+        isClosable: true
+      });
+    }, (reason) =>
+      toast({
+        description: `Config update failed: ${reason}`,
+        status: "error",
+        isClosable: true
+      })
+    );
+
+  };
+
+  useEffect(() => {
+    const url = new URL(
+      process.env.NEXT_PUBLIC_BACKEND_URL + "/api/config"
+    );
+
+    fetch(url.toString(), { credentials: "include" }).then((res) => {
+      res.json().then((data: Configuration) => {
+        setConfig(data);
+      });
+    });
+  }, []);
+  return [config, setAndSubmit];
 };
 
 export default Settings;
