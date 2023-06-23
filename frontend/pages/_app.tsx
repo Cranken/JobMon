@@ -1,13 +1,29 @@
 import "../styles/globals.css";
-import type {AppProps} from "next/app";
-import {Center, ChakraProvider} from "@chakra-ui/react";
+import type { AppProps } from "next/app";
+import { Center, ChakraProvider } from "@chakra-ui/react";
 import theme from "../styles/theme";
 import Header from "@/components/header/Header";
-import { useHasNoAllowedRole, useIsAuthenticated} from "@/utils/auth";
+import { useHasNoAllowedRole, useIsAuthenticated } from "@/utils/auth";
 import { useGetUser } from "@/utils/user";
-import {useRouter} from "next/router";
-import React, {useEffect} from "react";
+import { useRouter } from "next/router";
+import React, { useEffect } from "react";
 import dynamic from "next/dynamic";
+
+/**
+ * App context provided to all pages and components.
+ */
+export const JobMonAppContext = React.createContext({
+  /**
+   * The current hight of the header.
+   */
+  headerHeight: 0,
+
+  /**
+   * A callback function to set the hight of the header.
+   * @param n The hight to set.
+   */
+  setHeaderHeight: (n: number) => { console.log(n) },
+});
 
 /**
  * By deafult Next.js uses the App component to initialize pages. We override it to 
@@ -24,24 +40,26 @@ function MyApp({ Component, pageProps }: AppProps) {
   const isAuthenticated = useIsAuthenticated();
   const router = useRouter();
   const user = useGetUser();
+  const [headerHeight, setHeaderHeight] = React.useState(0);
+
   let redirectionString;
   if (isAuthenticated &&
-      router.pathname !== "/role-error" &&
-      useHasNoAllowedRole(user)) {
+    router.pathname !== "/role-error" &&
+    useHasNoAllowedRole(user)) {
 
-      useEffect(() => {
-        router.push("/role-error")
-      });
-      redirectionString = "Checking user-roles";
+    useEffect(() => {
+      router.push("/role-error")
+    });
+    redirectionString = "Checking user-roles";
   }
   else if (isAuthenticated &&
-      router.pathname == "/role-error" &&
-      !useHasNoAllowedRole(user)) {
+    router.pathname == "/role-error" &&
+    !useHasNoAllowedRole(user)) {
 
     useEffect(() => {
       router.push("/jobs")
     });
-        
+
     redirectionString = "Redirecting to jobs...";
   }
   else {
@@ -68,11 +86,14 @@ function MyApp({ Component, pageProps }: AppProps) {
     <Component {...pageProps} />
   );
 
+
   return (
-    <ChakraProvider theme={theme}>
-      <Header pathname={router.pathname}/>
-      {content}
-    </ChakraProvider>
+    <JobMonAppContext.Provider value={{ headerHeight, setHeaderHeight }}>
+      <ChakraProvider theme={theme}>
+        <Header pathname={router.pathname} setHeaderHeight={setHeaderHeight} />
+        {content}
+      </ChakraProvider>
+    </JobMonAppContext.Provider>
   );
 }
 
