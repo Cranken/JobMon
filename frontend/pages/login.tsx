@@ -14,9 +14,17 @@ import {
   Hide,
   Image,
   Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
   Stack,
   Text,
   useColorModeValue,
+  useDisclosure,
 } from "@chakra-ui/react";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
@@ -34,6 +42,7 @@ export const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
+  const { isOpen, onOpen, onClose } = useDisclosure()
 
   const submit = (e?: React.KeyboardEvent) => {
     if (!e || e.key == "Enter") {
@@ -104,45 +113,6 @@ export const Login = () => {
                     Login Failed
                   </Alert>
                 ) : null}
-                <FormControl>
-                  <FormLabel htmlFor="username">Username</FormLabel>
-                  <Input
-                    id="username"
-                    type="text"
-                    value={username}
-                    borderColor={borderColor}
-                    onChange={(e) => setUsername(e.target.value)}
-                    onKeyPress={submit}
-                  />
-                  <FormLabel htmlFor="password">Password</FormLabel>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    borderColor={borderColor}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onKeyPress={submit}
-                  />
-                  <Flex mt={5} justify="space-between">
-                    <Checkbox
-                      isChecked={remember}
-                      onChange={(e) => setRemember(e.target.checked)}
-                    >
-                      Remember Me
-                    </Checkbox>
-                    <Button
-                      onClick={() => submit()}
-                      bgColor={'horeka.900'}
-                      color={"white"}
-                      _hover={{
-                        transform: 'scale(0.95)',
-                      }}
-                    >
-                      Login
-                    </Button>
-                  </Flex>
-                </FormControl>
-                <Divider />
                 <Button
                   onClick={() =>
                     router.push(
@@ -158,6 +128,63 @@ export const Login = () => {
                 >
                   Login with OIDC
                 </Button>
+                <Button
+                  onClick={onOpen}
+                  bgGradient={'linear(to-r, horeka.100, horeka.900)'}
+                  color={"white"}
+                  _hover={{
+                    transform: 'scale(0.95)',
+                  }}
+                >
+                  Login with local account
+                </Button>
+                <Modal isOpen={isOpen} onClose={onClose}>
+                  <ModalOverlay />
+                  <ModalContent>
+                    <ModalHeader>Modal Title</ModalHeader>
+                    <ModalCloseButton />
+                    <ModalBody>
+                      <FormControl>
+                        <FormLabel htmlFor="username">Username</FormLabel>
+                        <Input
+                          id="username"
+                          type="text"
+                          value={username}
+                          borderColor={borderColor}
+                          onChange={(e) => setUsername(e.target.value)}
+                          onKeyPress={submit}
+                        />
+                        <FormLabel htmlFor="password">Password</FormLabel>
+                        <Input
+                          id="password"
+                          type="password"
+                          value={password}
+                          borderColor={borderColor}
+                          onChange={(e) => setPassword(e.target.value)}
+                          onKeyPress={submit}
+                        />
+                        <Flex mt={5} justify="space-between">
+                          <Checkbox
+                            isChecked={remember}
+                            onChange={(e) => setRemember(e.target.checked)}
+                          >
+                            Remember Me
+                          </Checkbox>
+                          <Button
+                            onClick={() => submit()}
+                            bgColor={'horeka.900'}
+                            color={"white"}
+                            _hover={{
+                              transform: 'scale(0.95)',
+                            }}
+                          >
+                            Login
+                          </Button>
+                        </Flex>
+                      </FormControl>
+                    </ModalBody>
+                  </ModalContent>
+                </Modal>
               </Stack>
             </Container>
             <Hide below="md">
