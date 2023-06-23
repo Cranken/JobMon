@@ -75,7 +75,21 @@ ENV NEXT_TELEMETRY_DISABLED 1
 
 CMD [ \
 "sh", "-c", \
-"yarn --frozen-lockfile && yarn test_artifacts && yarn audit" \
+"yarn --frozen-lockfile && yarn test_artifacts" \
+]
+
+###
+# Create image from builder to audit for outdated packages
+###
+FROM builder AS auditing
+
+ENV NODE_ENV development
+# Disable telemetry during the build. See: https://nextjs.org/telemetry
+ENV NEXT_TELEMETRY_DISABLED 1
+
+CMD [ \
+"sh", "-c", \
+"yarn --frozen-lockfile && yarn audit" \
 ]
 
 # Production image, copy all the files and run next
