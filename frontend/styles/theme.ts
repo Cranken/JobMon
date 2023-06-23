@@ -13,8 +13,8 @@ const theme = extendTheme({
 
     // Horeka are the tow colors used in the horeka logo
     horeka: {
-      100: "#005aa0", // Blue
-      900: "#00a88f", // Green
+      blue: "#005aa0", // Blue
+      green: "#00a88f", // Green
     }
   },
 });

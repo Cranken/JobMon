@@ -72,7 +72,7 @@ export const Login = () => {
       {(value: { headerHeight: number; setHeaderHeight: (n: number) => void; }) => (
         <Container p={0} maxWidth={"100vw"} w={'100vw'} minHeight={'calc(100vh - ' + value.headerHeight + 'px)'}>
           <HStack>
-            <Container h={"100%"} w={{ base: "100vw", md: "50vw", lg: "30vw" }} p={4} maxWidth={"100vw"}>
+            <Container h={"100%"} w={{ base: "100vw", sm: "60vw", md: "50vw", lg: "40vw" , xl: "30vw" }} p={4} maxWidth={"100vw"}>
               <Center>
                 <Heading>
                   Welcome to Jobmon
@@ -121,10 +121,10 @@ export const Login = () => {
                       "/auth/oauth/login"
                     )
                   }
-                  bgGradient={'linear(to-r, horeka.100, horeka.900)'}
+                  bgGradient={'linear(to-r, horeka.blue, horeka.green)'}
                   color={"white"}
                   _hover={{
-                    transform: 'scale(0.95)',
+                    transform: 'scale(0.98)',
                   }}
                 >
                   Login with OIDC
@@ -133,10 +133,10 @@ export const Login = () => {
                   onClick={() =>
                     setOpenLocalLogin(!openLocalLogin)
                   }
-                  bgGradient={'linear(to-r, horeka.100, horeka.900)'}
+                  bgGradient={'linear(to-r, horeka.blue, horeka.green)'}
                   color={"white"}
                   _hover={{
-                    transform: 'scale(0.95)',
+                    transform: 'scale(0.98)',
                   }}
                 >
                   Login with local account
@@ -165,12 +165,13 @@ export const Login = () => {
                       <Checkbox
                         isChecked={remember}
                         onChange={(e) => setRemember(e.target.checked)}
+                        borderColor={'horeka.blue'}
                       >
                         Remember Me
                       </Checkbox>
                       <Button
                         onClick={() => submit()}
-                        bgColor={'horeka.900'}
+                        bgColor={'horeka.green'}
                         color={"white"}
                         _hover={{
                           transform: 'scale(0.95)',
@@ -183,8 +184,8 @@ export const Login = () => {
                   : null}
               </Stack>
             </Container>
-            <Hide below="md">
-              <Image src="./login.jpg" h={'calc(100vh - ' + value.headerHeight + 'px)'} w={{ base: "0vw", md: "50vw", lg: "70vw" }} fit={"cover"} />
+            <Hide below="sm">
+              <Image src="./login.jpg" h={'calc(100vh - ' + value.headerHeight + 'px)'} w={{ base: "00vw", sm: "40vw", md: "50vw", lg: "60vw" , xl: "70vw" }} fit={"cover"} />
             </Hide>
           </HStack>
         </Container>
