@@ -173,6 +173,54 @@
             "SubMeasurements": []
         },
         {
+            "GUID": "1d481817-c2cf-4109-a71b-20ebc99243d8",
+            "Type": "hwthread",
+            "Categories": [
+                "Performance"
+            ],
+            "Measurement": "cpu_user",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "mean",
+                "max",
+                "min"
+            ],
+            "SampleInterval": "",
+            "Unit": "%",
+            "DisplayName": "CPU Time in Userspace",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "type-id",
+            "MaxPerNode": 100,
+            "MaxPerType": 100,
+            "PThreadAggFn": "",
+            "SubMeasurements": []
+        },
+        {
+            "GUID": "c2638489-3125-4d14-a21f-2481d86e261c",
+            "Type": "hwthread",
+            "Categories": [
+                "Performance"
+            ],
+            "Measurement": "cpu_sys",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "mean",
+                "max",
+                "min"
+            ],
+            "SampleInterval": "",
+            "Unit": "%",
+            "DisplayName": "CPU Time in Kernelspace",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "type-id",
+            "MaxPerNode": 100,
+            "MaxPerType": 100,
+            "PThreadAggFn": "",
+            "SubMeasurements": []
+        },
+        {
             "GUID": "eaaf8930-c5d1-44a4-9fc3-61d264657cbc",
             "Type": "hwthread",
             "Categories": [
@@ -625,7 +673,9 @@
                 "687b8465-4d6e-4fed-a17e-28ac3a154ae8",
                 "ebf6b249-7f62-4a97-a4c4-39b7611e4be4",
                 "e6fb6087-f709-45e8-aa63-5892e110640b",
-                "eaaf8930-c5d1-44a4-9fc3-61d264657cbc"
+                "eaaf8930-c5d1-44a4-9fc3-61d264657cbc",
+                "1d481817-c2cf-4109-a71b-20ebc99243d8",
+                "c2638489-3125-4d14-a21f-2481d86e261c"
             ],
             "VirtualPartitions": null
         },
@@ -648,7 +698,9 @@
                 "687b8465-4d6e-4fed-a17e-28ac3a154ae8",
                 "ebf6b249-7f62-4a97-a4c4-39b7611e4be4",
                 "e6fb6087-f709-45e8-aa63-5892e110640b",
-                "eaaf8930-c5d1-44a4-9fc3-61d264657cbc"
+                "eaaf8930-c5d1-44a4-9fc3-61d264657cbc",
+                "1d481817-c2cf-4109-a71b-20ebc99243d8",
+                "c2638489-3125-4d14-a21f-2481d86e261c"
             ],
             "VirtualPartitions": null
         },
