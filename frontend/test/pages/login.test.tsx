@@ -7,7 +7,7 @@ import theme from "../../styles/theme";
 import { ChakraProvider } from "@chakra-ui/react";
 
 describe("Login component", () => {
-    /**test("Tests rendering.", () => {
+    test("Tests rendering.", () => {
         const router = createMockRouter({});
         render(
             <RouterContext.Provider value={router}>
@@ -17,8 +17,8 @@ describe("Login component", () => {
             </RouterContext.Provider>
         );
 
-        const loginOpenButton = screen.getByRole("button", { name: 'Login with local account' });
-        fireEvent.click(loginOpenButton);
+        const localLoginOpenButton = screen.getByRole("button", { name: 'Login with local account' });
+        fireEvent.click(localLoginOpenButton);
 
         const usernameInput = screen.getByLabelText(/username/i);
         expect(usernameInput).toBeInTheDocument();
@@ -27,7 +27,7 @@ describe("Login component", () => {
         const loginButton = screen.getByRole("button", { name: 'Login' });
         expect(loginButton).toBeInTheDocument();
     });
-    
+
     test("Tests form submission with correct credentials.", async () => {
         const router = createMockRouter({});
         
@@ -38,6 +38,9 @@ describe("Login component", () => {
                 </ChakraProvider>
             </RouterContext.Provider>
         );
+
+        const localLoginOpenButton = screen.getByRole("button", { name: 'Login with local account' });
+        fireEvent.click(localLoginOpenButton);
 
         const usernameInput = screen.getByLabelText('Username');
         const passwordInput = screen.getByLabelText('Password');
@@ -63,6 +66,10 @@ describe("Login component", () => {
                 </ChakraProvider>
             </RouterContext.Provider>
         );
+
+        const localLoginOpenButton = screen.getByRole("button", { name: 'Login with local account' });
+        fireEvent.click(localLoginOpenButton);
+
         const usernameInput = screen.getByLabelText('Username');
         const passwordInput = screen.getByLabelText('Password');
         const loginButton = screen.getByRole("button", { name: 'Login' });
@@ -76,7 +83,8 @@ describe("Login component", () => {
             // In the case of failure, the user is redirected to the login page with a query parameter.
             expect(router.push).toHaveBeenCalledWith('/login?login_failed');
         });
-    });**/
+    });
+
     test("Tests oauth login.", async () => {
         const router = createMockRouter({});
         render(
@@ -92,7 +100,7 @@ describe("Login component", () => {
         await waitFor(() => {
             // Oath login button redirects to the oauth URL.
             expect(router.push).toHaveBeenCalledWith(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/oauth/login`);
-        
+
         });
     });
 });
