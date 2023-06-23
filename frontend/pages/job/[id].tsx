@@ -481,7 +481,6 @@ export const useGetJobData: (
         if (!sampleInterval) {
           return;
         }
-        console.log(sampleInterval, nodeCache);
         if (nodeCache && sampleInterval in nodeCache) {
           const nodes = nodeCache[sampleInterval];
           if (node in nodes) {

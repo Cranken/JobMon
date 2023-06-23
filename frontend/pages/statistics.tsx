@@ -10,9 +10,9 @@ import {
 import JobFilter from "@/components/joblist/job-filter/JobFilter";
 import { Panel, PanelManager } from "@/components/panelmanager/PanelManager";
 import { JobSearchParams } from "../types/job";
-import { useGetJobs, useStorageState } from "@/utils/utils";
+import { dateToUnix, useGetJobs, useStorageState } from "@/utils/utils";
 import { StatItem } from "@/components/statistics/StatItem";
-import React from "react";
+import React, { useEffect } from "react";
 import {useGetUser, UserRole} from "@/utils/user";
 import AccessDenied from "./accessDenied";
 
@@ -28,6 +28,22 @@ export const Statistics = () => {
   const [jobListData, isLoading] = useGetJobs(
     isLoadingParams ? undefined : params
   );
+
+  // Set time-range to two weeks per default
+  useEffect(() => {
+    if (!isLoadingParams) {
+      setParams({
+        ...params,
+        Time: [
+          dateToUnix(
+            new Date(Math.floor(Date.now()) - 60 * 60 * 24 * 14 * 1000)
+          ),
+          dateToUnix(new Date()),
+        ],
+      });
+    }
+  }, [isLoadingParams]);
+
   const [selectedPanels, setSelectedPanels] = useStorageState<Panel[]>(
     "statistics-panel-config",
     []

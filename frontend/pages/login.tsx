@@ -43,12 +43,13 @@ export const Login = () => {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [openLocalLogin, setOpenLocalLogin] = useState(false);
+  const frontendOnly = true;
 
   const submit = (e?: React.KeyboardEvent) => {
     if (!e || e.key == "Enter") {
       fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/login", {
         method: "POST",
-        body: JSON.stringify({ username, password, remember }),
+        body: JSON.stringify({ username, password, remember, frontendOnly }),
         credentials: "include",
       }).then((resp) => {
         if (resp.ok) {
