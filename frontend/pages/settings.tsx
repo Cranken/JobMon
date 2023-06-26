@@ -20,11 +20,11 @@ import MetricsView from "@/components/settings/MetricsView";
 import PartitionsView from "@/components/settings/PartitionsView";
 import UsersView from "@/components/settings/UsersView";
 import { Configuration } from "@/types/config";
-import { authFetch } from "@/utils/auth";
 import { useGetUser, UserRole } from "@/utils/user";
 import AccessDenied from "./accessDenied";
 import { useIsWideDevice } from "@/utils/utils";
 import { ChevronDownIcon } from "@chakra-ui/icons";
+import { authFetch } from "@/utils/auth";
 
 enum SettingsView {
   General = "General Settings",
@@ -133,7 +133,7 @@ const renderSettingsView = (
   return null;
 };
 
-const useGetConfig: () => [
+export const useGetConfig: () => [
   Configuration | undefined,
   (c: Configuration) => void
 ] = () => {
