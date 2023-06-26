@@ -1,7 +1,9 @@
 package auth
 
 import (
+	"fmt"
 	"jobmon/config"
+	"jobmon/notify"
 	"jobmon/store"
 	"jobmon/test"
 	"reflect"
@@ -28,6 +30,16 @@ var LocalUsersTestConfig = map[string]config.LocalUser{
 		BCryptHash: "$2a$12$uVKPshHBvvIF4m22TleIiOiPAlO4icb/BlirjNWPv3UKooKOPQXtW",
 		Role:       "user",
 	},
+
+	"apiTest": {
+		BCryptHash: "$2a$12$uVKPshHBvvIF4m22TleIiOiPAlO4icb/BlirjNWPv3UKooKOPQXtW",
+		Role:       "job-control",
+	},
+
+	"adminTest": {
+		BCryptHash: "$2a$12$uVKPshHBvvIF4m22TleIiOiPAlO4icb/BlirjNWPv3UKooKOPQXtW",
+		Role:       "admin",
+	},
 }
 
 var standartLifetime, _ = time.ParseDuration("120s")
@@ -47,7 +59,8 @@ func TestValidToken(t *testing.T) {
 		LocalUsers:           LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
-	authManager.Init(config, &store)
+	var notify notify.Notifier = &test.MockEmailNotifier{}
+	authManager.Init(config, &store, &notify)
 	val := authManager.localUsers["userTest"]
 	user :=
 		UserInfo{
@@ -78,7 +91,8 @@ func TestExpiredToken(t *testing.T) {
 		LocalUsers:           LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
-	authManager.Init(config, &store)
+	var notify notify.Notifier = &test.MockEmailNotifier{}
+	authManager.Init(config, &store, &notify)
 	val := authManager.localUsers["userTest"]
 	user :=
 		UserInfo{
@@ -105,7 +119,8 @@ func TestTokenFromFuture(t *testing.T) {
 		LocalUsers:           LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
-	authManager.Init(config, &store)
+	var notify notify.Notifier = &test.MockEmailNotifier{}
+	authManager.Init(config, &store, &notify)
 	val := authManager.localUsers["userTest"]
 	user :=
 		UserInfo{
@@ -145,7 +160,8 @@ func TestTokenWrongIssuer(t *testing.T) {
 		LocalUsers:           LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
-	authManager.Init(config, &store)
+	var notify notify.Notifier = &test.MockEmailNotifier{}
+	authManager.Init(config, &store, &notify)
 	val := authManager.localUsers["userTest"]
 	user :=
 		UserInfo{
@@ -184,7 +200,8 @@ func TestTokenUnknownUser(t *testing.T) {
 		LocalUsers:           LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
-	authManager.Init(config, &store)
+	var notify notify.Notifier = &test.MockEmailNotifier{}
+	authManager.Init(config, &store, &notify)
 	val := authManager.localUsers["userTest"]
 	user :=
 		UserInfo{
@@ -223,7 +240,8 @@ func TestLogoutTokenDelete(t *testing.T) {
 		LocalUsers:           LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
-	authManager.Init(config, &store)
+	var notify notify.Notifier = &test.MockEmailNotifier{}
+	authManager.Init(config, &store, &notify)
 	val := authManager.localUsers["userTest"]
 	user :=
 		UserInfo{
@@ -247,5 +265,110 @@ func TestLogoutTokenDelete(t *testing.T) {
 	_, err = authManager.validate(token)
 	if err == nil {
 		t.Fatalf("Token accepted after logout")
+	}
+}
+
+// Test if the administrators get notified when a new JWT for a user with the role jobcontrol is created
+func TestNotifyJobControlUser(t *testing.T) {
+	authManager := AuthManager{}
+	config := config.Configuration{
+		JSONWebTokenLifeTime: standartLifetime,
+		APITokenLifeTime:     standartLifetime,
+		JWTSecret:            "<jwt_secret (secret to use when generating java web tokens)>",
+		OAuth:                OauthTestConfig,
+		LocalUsers:           LocalUsersTestConfig,
+	}
+	var store store.Store = &test.MockStore{}
+	var e_notifier test.MockEmailNotifier
+	var notifier notify.Notifier = &e_notifier
+	authManager.Init(config, &store, &notifier)
+	val := authManager.localUsers["apiTest"]
+	user :=
+		UserInfo{
+			Roles:    []string{val.Role},
+			Username: "apiTest",
+		}
+
+	e_notifier.ClearMessages()
+	if len(e_notifier.GetMessages()) != 0 {
+		t.Fatalf("Initializing failed")
+	}
+
+	_, _ = authManager.GenerateJWT(user)
+
+	fmt.Println(e_notifier.GetMessages())
+
+	if len(e_notifier.GetMessages()) == 0 {
+		t.Fatalf("No message to administrators")
+	}
+}
+
+// Test if the administrators do not get notified for newly created JWT by normal users
+func TestNoNotifyNormalUser(t *testing.T) {
+	authManager := AuthManager{}
+	config := config.Configuration{
+		JSONWebTokenLifeTime: standartLifetime,
+		APITokenLifeTime:     standartLifetime,
+		JWTSecret:            "<jwt_secret (secret to use when generating java web tokens)>",
+		OAuth:                OauthTestConfig,
+		LocalUsers:           LocalUsersTestConfig,
+	}
+	var store store.Store = &test.MockStore{}
+	var e_notifier test.MockEmailNotifier
+	var notifier notify.Notifier = &e_notifier
+	authManager.Init(config, &store, &notifier)
+	val := authManager.localUsers["userTest"]
+	user :=
+		UserInfo{
+			Roles:    []string{val.Role},
+			Username: "userTest",
+		}
+
+	e_notifier.ClearMessages()
+	if len(e_notifier.GetMessages()) != 0 {
+		t.Fatalf("Initializing failed")
+	}
+
+	_, _ = authManager.GenerateJWT(user)
+
+	fmt.Println(e_notifier.GetMessages())
+
+	if len(e_notifier.GetMessages()) != 0 {
+		t.Fatalf("Message to administrators send")
+	}
+}
+
+// Test if the administrators do not get notified for newly created JWT by normal users
+func TestNoNotifyAdminUser(t *testing.T) {
+	authManager := AuthManager{}
+	config := config.Configuration{
+		JSONWebTokenLifeTime: standartLifetime,
+		APITokenLifeTime:     standartLifetime,
+		JWTSecret:            "<jwt_secret (secret to use when generating java web tokens)>",
+		OAuth:                OauthTestConfig,
+		LocalUsers:           LocalUsersTestConfig,
+	}
+	var store store.Store = &test.MockStore{}
+	var e_notifier test.MockEmailNotifier
+	var notifier notify.Notifier = &e_notifier
+	authManager.Init(config, &store, &notifier)
+	val := authManager.localUsers["adminTest"]
+	user :=
+		UserInfo{
+			Roles:    []string{val.Role},
+			Username: "adminTest",
+		}
+
+	e_notifier.ClearMessages()
+	if len(e_notifier.GetMessages()) != 0 {
+		t.Fatalf("Initializing failed")
+	}
+
+	_, _ = authManager.GenerateJWT(user)
+
+	fmt.Println(e_notifier.GetMessages())
+
+	if len(e_notifier.GetMessages()) != 0 {
+		t.Fatalf("Message to administrators send")
 	}
 }

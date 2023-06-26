@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import JobFilter from "@/components/joblist/job-filter/JobFilter";
 import JobList from "@/components/joblist/JobList";
-import { dateToUnix, useGetJobs, useStorageState, useSessionStorageState, useIsWideDevice } from "@/utils/utils";
+import { dateToUnix, useGetJobs, useStorageState, useSessionStorageState, useIsWideDevice, clamp } from "@/utils/utils";
 import { JobSearchParams, JobMetadata } from "../types/job";
 import { useRouter } from "next/router";
 import { Box, Center, Divider, Spinner, Stack } from "@chakra-ui/react";
@@ -13,7 +13,7 @@ export const Jobs = () => {
   const [joblistLimit, setJoblistLimit] = useStorageState("joblistLimit", 25);
   const [sortBy, setSortBy] = useStorageState("sortyBy", "StartTime");
   const [sortByDescending, setSortByDescending] = useState(true);
-  const [page, setPageStorage, _, pageIsLoading] = useSessionStorageState("jobsPage", 1)
+  const [page, setPageStorage, , pageIsLoading] = useSessionStorageState("jobsPage", 1)
   const isWideDevice = useIsWideDevice();
 
   const [params, setParams, , isLoadingParams] =
@@ -122,16 +122,25 @@ export const Jobs = () => {
 
 
   const pages = mutableJobs.length / joblistLimit;
-  elements.push(
-    <JoblistPageSelection
-        key="pageselection"
-        currentPage={page}
-        pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
-        setPage={setPageStorage}
-        marginBottomEnable={true}
-        displayExtendedSelection={isWideDevice}
-    ></JoblistPageSelection>
-  );
+
+  // Clamp page if page is to high or low
+  if (!isNaN(pages) && isFinite(pages) && (page < 0 || Math.ceil(pages) < page)) {
+    setPageStorage(clamp(page, 0, Math.ceil(pages)))
+  }
+
+  if (pages > 1) {
+    elements.push(
+      <JoblistPageSelection
+          key="pageselection_top"
+          currentPage={page}
+          pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
+          setPage={setPageStorage}
+          marginBottomEnable={true}
+          displayExtendedSelection={isWideDevice}
+      ></JoblistPageSelection>
+    );
+  }
+
   elements.push(
     <Box key="joblist" ref={joblistRef}>
       <JobList
@@ -142,17 +151,20 @@ export const Jobs = () => {
       />
     </Box>
   );
-  elements.push(
-    <JoblistPageSelection
-      key="pageselection"
-      currentPage={page}
-      pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
-      setPage={setPageStorage}
-      marginTopEnable={true}
-      marginBottomEnable={true}
-      displayExtendedSelection={isWideDevice}
-    ></JoblistPageSelection>
-  );
+  
+  if (pages > 1) {
+    elements.push(
+      <JoblistPageSelection
+        key="pageselection_end"
+        currentPage={page}
+        pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
+        setPage={setPageStorage}
+        marginTopEnable={true}
+        marginBottomEnable={true}
+        displayExtendedSelection={isWideDevice}
+      ></JoblistPageSelection>
+    );
+  }
 
   return <React.Fragment>{elements}</React.Fragment>;
 };

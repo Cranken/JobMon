@@ -1,4 +1,4 @@
-import { HamburgerIcon, MoonIcon, SunIcon } from "@chakra-ui/icons";
+import { HamburgerIcon, MoonIcon, SearchIcon, SunIcon } from "@chakra-ui/icons";
 import {
   Box,
   Button,
@@ -11,6 +11,8 @@ import {
   Flex,
   Icon,
   Input,
+  InputGroup,
+  InputRightElement,
   LinkBox,
   LinkOverlay,
   Tooltip,
@@ -20,9 +22,9 @@ import {
 } from "@chakra-ui/react";
 import { useCookies } from "react-cookie";
 import { MdLogout } from "react-icons/md";
-import {useHasNoAllowedRole, useIsAuthenticated } from "@/utils/auth";
+import { useHasNoAllowedRole, useIsAuthenticated } from "@/utils/auth";
 import { useGetUser, UserRole } from "@/utils/user";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useIsWideDevice } from "@/utils/utils";
 
 /**
@@ -32,7 +34,13 @@ interface HeaderProps {
   /**
    * The pathname on which the website currently renders.
    */
-  pathname: string
+  pathname: string;
+
+  /**
+   * Callback function to set the height of the header
+   * @param n The height
+   */
+  setHeaderHeight: (n: number) => void;
 }
 
 /**
@@ -44,7 +52,7 @@ interface HeaderProps {
  * This path determines whether one of the links in the header shall be highlighted as the currently active page.
  * @returns The component
  */
-export const Header = ({pathname} : HeaderProps) => {
+export const Header = ({ pathname, setHeaderHeight}: HeaderProps) => {
   const user = useGetUser();
   const { colorMode, toggleColorMode } = useColorMode();
   const [, , removeCookie] = useCookies(["Authorization"]);
@@ -55,6 +63,17 @@ export const Header = ({pathname} : HeaderProps) => {
   const hasRole = (user.Roles) ? !useHasNoAllowedRole(user) : false;
   const { isOpen, onOpen, onClose } = useDisclosure();
   const isWideDevice = useIsWideDevice();
+  const [searchValue, setSearchValue] = React.useState('');
+  const headerRef = useRef<HTMLElement>(null);
+
+  /**
+   * Stores the current hight of the header.
+   */
+  useEffect(() => {
+    if (headerRef !== null && headerRef.current !== null) {
+      setHeaderHeight(headerRef.current.clientHeight);
+    }
+  });
 
   /**
    * Logout is a function called to to logout a user.
@@ -71,7 +90,7 @@ export const Header = ({pathname} : HeaderProps) => {
   // Small device header
   if (!isWideDevice) {
     return (
-      <header>
+      <header ref={headerRef}>
         <Flex bg={headerBg} p={2}>
           {isAuthenticated && hasRole ? (
             <>
@@ -129,15 +148,27 @@ export const Header = ({pathname} : HeaderProps) => {
                 </DrawerContent>
               </Drawer>
             </>
-          ) : null }
+          ) : null}
           <Box flexGrow={1}>
             {isAuthenticated && hasRole ? (
-              <Input
-                placeholder="Search user/job"
-                onKeyPress={(ev) => searchHandler(ev.key, ev.currentTarget.value)}
-                borderColor={searchInputColor}
-                _placeholder={{ color: searchInputColor }}
-              />
+              <InputGroup>
+                <Input
+                  placeholder="Search user/job"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      search(searchValue)
+                    }
+                  }}
+                  onChange={(event) => setSearchValue(event.target.value)}
+                  borderColor={searchInputColor}
+                  _placeholder={{ color: searchInputColor }}
+                />
+                <InputRightElement width='4.5rem'>
+                  <Button h='1.75rem' size='sm' onClick={() => { search(searchValue) }} bg={buttonBg}>
+                    <SearchIcon />
+                  </Button>
+                </InputRightElement>
+              </InputGroup>
             ) : null}
           </Box>
           <Flex flexGrow={1} justify={"end"} gap={2} pl={2}>
@@ -161,7 +192,7 @@ export const Header = ({pathname} : HeaderProps) => {
 
   // Wide device header
   return (
-    <header>
+    <header ref={headerRef}>
       <Flex bg={headerBg} p={2}>
         <Flex flexGrow={1} gap={2}>
           {isAuthenticated && hasRole ? (
@@ -197,12 +228,24 @@ export const Header = ({pathname} : HeaderProps) => {
         </Flex>
         <Box flexGrow={1}>
           {isAuthenticated && hasRole ? (
-            <Input
-              placeholder="Search user/job"
-              onKeyPress={(ev) => searchHandler(ev.key, ev.currentTarget.value)}
-              borderColor={searchInputColor}
-              _placeholder={{ color: searchInputColor }}
-            />
+            <InputGroup>
+              <Input
+                placeholder="Search user/job"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    search(searchValue)
+                  }
+                }}
+                onChange={(event) => setSearchValue(event.target.value)}
+                borderColor={searchInputColor}
+                _placeholder={{ color: searchInputColor }}
+              />
+              <InputRightElement width='4.5rem'>
+                <Button h='1.75rem' size='sm' onClick={() => { search(searchValue) }} bg={buttonBg}>
+                  <SearchIcon />
+                </Button>
+              </InputRightElement>
+            </InputGroup>
           ) : null}
         </Box>
         <Flex flexGrow={1} justify={"end"} gap={2}>
@@ -225,31 +268,30 @@ export const Header = ({pathname} : HeaderProps) => {
 };
 
 /**
- * This handler is called for changes in the search input-field.
- * @param key The key that caused the handler to get called.
- * @param term The term currently written in the input-field.
+ * This function searches for a given string
+ * The search is performed in the backend. Searches for jobs and users are supported.
+ * 
+ * @param term The term to search for.
  */
-const searchHandler = (key: string, term: string) => {
-  if (key === "Enter") {
-    fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/${term}`, {
-      credentials: "include",
-    }).then((res) =>
-      res.text().then((val) => {
-        const split = val.split(":");
-        if (split.length !== 2) {
+const search = (term: string) => {
+  fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/${term}`, {
+    credentials: "include",
+  }).then((res) =>
+    res.text().then((val) => {
+      const split = val.split(":");
+      if (split.length !== 2) {
+        return;
+      }
+      switch (split[0]) {
+        case "job":
+          window.location.href = `/job/${split[1]}`;
           return;
-        }
-        switch (split[0]) {
-          case "job":
-            window.location.href = `/job/${split[1]}`;
-            return;
-          case "user":
-            window.location.href = `/jobs?user=${split[1]}`;
-            return;
-        }
-      })
-    );
-  }
-};
+        case "user":
+          window.location.href = `/jobs?user=${split[1]}`;
+          return;
+      }
+    })
+  );
+}
 
 export default Header;

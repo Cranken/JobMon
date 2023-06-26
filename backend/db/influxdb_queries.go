@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"jobmon/logging"
+	"strings"
 	"time"
 )
 
@@ -38,68 +39,25 @@ func createSimpleMeasurementQuery(
 		return
 	}
 
-	q = fmt.Sprintf(`
-	from(bucket: "%s")
-		|> range(start: %d, stop: %d)
-		|> filter(fn: (r) => r["_measurement"] == "%s")
-		|> filter(fn: (r) => r["type"] == "%s")
-		|> filter(fn: (r) => r["hostname"] =~ /%s/)
-		|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
-		%s
-		%s
-		|> truncateTimeColumn(unit: %v)
-	`,
-		bucket,
-		StartTime, StopTime,
-		measurement,
-		metricType,
-		nodes,
-		sampleInterval,
-		metricFilterFunc,
-		metricPostQueryOp,
-		sampleInterval,
-	)
+	sb := new(strings.Builder)
+	fmt.Fprintf(sb, `from(bucket: "%s")`, bucket)
+	fmt.Fprintf(sb, `|> range(start: %d, stop: %d)`, StartTime, StopTime)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s")`, measurement)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["type"] == "%s")`, metricType)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["hostname"] =~ /%s/)`, nodes)
+	if len(metricFilterFunc) > 0 {
+		fmt.Fprintf(sb, `%s`, metricFilterFunc)
+	}
+	if len(metricPostQueryOp) > 0 {
+		fmt.Fprintf(sb, `%s`, metricPostQueryOp)
+	}
+	// Aggregation to sampleInterval after all filtering to aggregate on all metric data available
+	fmt.Fprintf(sb, `|> aggregateWindow(every: %v, fn: mean, createEmpty: false)`, sampleInterval)
+	// Truncate time to sampleInterval to synchronize measurements from different nodes
+	fmt.Fprintf(sb, `|> truncateTimeColumn(unit: %v)`, sampleInterval)
+	q = sb.String()
 
 	logging.Debug("db: createSimpleMeasurementQuery(): flux query string = ", q)
-	return
-}
-
-// createSimpleAggMeasurementQuery creates a simple flux aggregation query
-//
-//lint:ignore U1000 Ignore unused function temporarily
-func createSimpleAggMeasurementQuery(
-	bucket string,
-	StartTime int, StopTime int,
-	measurement string,
-	metricType string,
-	nodes string,
-	sampleInterval time.Duration,
-	metricFilterFunc string,
-	metricPostQueryOp string,
-	aggregationFunc string,
-) (q string) {
-	q = fmt.Sprintf(`
-    from(bucket: "%v")
-		|> range(start: %v, stop: %v)
-		|> filter(fn: (r) => r["_measurement"] == "%v")
-		|> filter(fn: (r) => r["type"] == "%v")
-    	|> filter(fn: (r) => r["hostname"] =~ /%v/)
-		%v
-		%v
-		|> group(columns: ["_measurement", "hostname"], mode:"by")
-		|> aggregateWindow(every: %v, fn: %v, createEmpty: true)
-		|> truncateTimeColumn(unit: %v)
-	`,
-		bucket,
-		StartTime, StopTime,
-		measurement,
-		metricType,
-		nodes,
-		metricFilterFunc,
-		metricPostQueryOp,
-		sampleInterval, aggregationFunc,
-		sampleInterval,
-	)
 	return
 }
 
@@ -110,7 +68,7 @@ from(bucket: "%v")
 	|> range(start: %v, stop: %v)
 	|> filter(fn: (r) => r["_measurement"] == "%v")
 	|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	|> aggregateWindow(every: %v, fn: mean, createEmpty: true)
+	|> aggregateWindow(every: %v, fn: mean, createEmpty: false)
 	%v
 	%v
 	|> truncateTimeColumn(unit: %v)
@@ -124,7 +82,7 @@ data = from(bucket: "%v")
 	|> range(start: %v, stop: %v)
 	|> filter(fn: (r) => r["_measurement"] == "%v")
 	|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	|> aggregateWindow(every: %s, fn: mean, createEmpty: true)
+	|> aggregateWindow(every: %s, fn: mean, createEmpty: false)
 	%v
 	%v
 	|> truncateTimeColumn(unit: %v)
@@ -163,35 +121,6 @@ max = data
   	|> set(key: "_field", value: "max")
 	
 union(tables: [mean, max])	
-`
-
-// Parameters: bucket, startTime, stopTime, measurement,
-// type, filterFunc, postQueryOp, sampleInterval, aggFn
-// measurement, measurement, bucket, org
-const AggregationTaskQuery = `
-from(bucket: "%v")
-	|> range(start: -task.every)
-	|> filter(fn: (r) => r["_measurement"] == "%v")
-	|> filter(fn: (r) => r.type == "%v")
-	%v
-	%v
-	|> group(columns: ["_measurement", "hostname"], mode:"by")
-	|> aggregateWindow(every: %v, fn: %v, createEmpty: false)
-	|> group(columns: ["hostname"], mode:"by")
-	|> keep(
-        columns: [
-            "hostname",
-            "_start",
-            "_stop",
-            "_time",
-            "_value",
-            "cluster",
-            "hostname",
-        ],
-    )
-	|> set(key: "_measurement", value: "%v")
-	|> set(key: "_field", value: "%v")
-	|> to(bucket: "%v", org: "%v")
 `
 
 // Parameters: bucket, measurements regex, type,

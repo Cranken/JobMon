@@ -84,6 +84,14 @@ testing-frontend:
     - docker build -t jobmon-frontend_testing --target testing --pull frontend
     - docker run --name jobmon-frontend_testing --rm jobmon-frontend_testing
 
+audit-frontend:
+  needs:
+    - build-frontend
+  stage: test
+  allow_failure: true
+  script: 
+    - docker build -t jobmon-frontend_testing --target auditing --pull frontend
+    - docker run --name jobmon-frontend_testing --rm jobmon-frontend_testing
 
 testreport-frontend:
   needs:

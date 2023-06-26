@@ -9,6 +9,7 @@ import (
 	"io"
 	"jobmon/config"
 	"jobmon/logging"
+	"jobmon/notify"
 	"jobmon/store"
 	"jobmon/utils"
 	"net/http"
@@ -34,8 +35,9 @@ const (
 
 // AuthPayLoad stores credentials of local users.
 type AuthPayload struct {
-	Username string
-	Password string
+	Username     string
+	Password     string
+	FrontendOnly bool
 }
 
 // UserInfo stores the roles and the username of a user.
@@ -81,6 +83,7 @@ type AuthManager struct {
 	oauthUserInfoURL     string
 	sessions             map[string]UserSession
 	sessionsLock         sync.Mutex
+	notifier             *notify.Notifier
 }
 
 // default JWT issuer
@@ -168,7 +171,7 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 }
 
 // Init initializes auth with c and store.
-func (auth *AuthManager) Init(c config.Configuration, store *store.Store) {
+func (auth *AuthManager) Init(c config.Configuration, store *store.Store, notifier *notify.Notifier) {
 
 	auth.JSONWebTokenLifeTime = c.JSONWebTokenLifeTime
 	auth.APITokenLifeTime = c.APITokenLifeTime
@@ -183,6 +186,7 @@ func (auth *AuthManager) Init(c config.Configuration, store *store.Store) {
 	}
 	auth.store = store
 	auth.localUsers = c.LocalUsers
+	auth.notifier = notifier
 
 	err := auth.createOAuthConfig(c)
 	if err != nil {
@@ -285,7 +289,11 @@ func (auth *AuthManager) GenerateJWT(user UserInfo) (string, error) {
 
 	// Set JSON web token life time
 	lifeTime := auth.JSONWebTokenLifeTime
+
 	if utils.Contains(user.Roles, JOBCONTROL) {
+		// Notify admins that a new JWT for an api-user was created
+		(*auth.notifier).Notify("JWT for job-control user changed", "The JWT for user '"+user.Username+"' got newly generated.")
+		// Expand lifetime of JWT for api-users
 		lifeTime = auth.APITokenLifeTime
 	}
 
