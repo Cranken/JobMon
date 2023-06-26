@@ -4,7 +4,7 @@ import {
 } from "react";
 import { useCookies } from "react-cookie";
 import { DataMap, JobListData, JobTag, JobSearchParams } from "@/types/job";
-import { useBreakpointValue } from "@chakra-ui/react";
+import { useBreakpointValue, useToast } from "@chakra-ui/react";
 
 
 export const clamp = (val: number, min: number, max: number) =>
@@ -199,3 +199,4 @@ export const useIsWideDevice = () => {
 
     return (isWideDevice != undefined) ? isWideDevice : true;
 }
+

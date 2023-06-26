@@ -128,6 +128,7 @@ union(tables: [mean, max])
 // list of columns to drop as a string, each column representing a measurement,
 // name of the synthesized measurement
 // bucket, organization.
+// Deprecated
 const SynthesizedMetricsCreationQuery = `
 from(bucket: "%v")
 	|> range(start: -task.every)
