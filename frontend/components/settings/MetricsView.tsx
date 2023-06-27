@@ -334,8 +334,6 @@ const MetricForm = ({ isNewMetric, metricConfig, setMetricConfig, ...categories}
         {TextField("Separation Key", "SeparationKey", errors.SeparationKey, true, undefined, TOOLTIP_SEPARATION_KEY)}
         {TextField("Filter Function", "FilterFunc", "", false, undefined, TOOLTIP_FILTER_FUNC)}
         {TextField("Post Query Operation", "PostQueryOp", "", false, undefined, TOOLTIP_POST_QUERY_OP)}
-        {/* {TextField("SubMeasurements", "SubMeas", "", false, undefined, TOOLTIP_SUB_MEASUREMENTS)} */}
-        {/* {StringFromStringList("SubMeasurements", "SubMeas", values.SubMeasurements, TOOLTIP_SUB_MEASUREMENTS)} */}
         <Flex mt={3} justify="space-between" gap={2}>
         {
           // Show the Reset and Submit buttons only if a metric configuration is being inserted.

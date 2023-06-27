@@ -122,21 +122,3 @@ max = data
 	
 union(tables: [mean, max])	
 `
-
-// Parameters: bucket, measurements regex, type,
-// computed value from subMeasurements as string,
-// list of columns to drop as a string, each column representing a measurement,
-// name of the synthesized measurement
-// bucket, organization.
-// Deprecated
-const SynthesizedMetricsCreationQuery = `
-from(bucket: "%v")
-	|> range(start: -task.every)
-	|> filter(fn: (r) => r["_measurement"] =~ /%v/)
-	|> filter(fn: (r) => r["type"] == "%v")
-	|> pivot(rowKey: ["_time"], columnKey: ["_measurement"], valueColumn: "_value")
-	|> map(fn: (r) => ({r with _value: %v}))
-	|> drop(columns: [%v])
-	|> set(key: "_measurement", value: "%v")
-	|> to(bucket: "%v", org: "%v")
-`

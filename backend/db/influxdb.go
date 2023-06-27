@@ -728,26 +728,6 @@ func (db *InfluxDB) createAggregationTask(
 	return db.createTask(aggTaskName, query, orgId)
 }
 
-// DEPRECATED //
-// The aggregation can be done from the collector
-
-// createSynthesizedMetricTask calls the function createTask
-// func (db *InfluxDB) createSynthesizedMetricTask(metric conf.MetricConfig, subMeasurements, orgId string) (task *domain.Task, err error) {
-// 	taskName := strings.Join([]string{db.bucketName, metric.Measurement, subMeasurements}, "_")
-// 	subMeasurementsRegex := strings.Join(metric.SubMeasurements, "|")
-// 	quotedSubMeasurements := strings.Join(utils.SliceMap(utils.ApplyQuotes, metric.SubMeasurements), ", ")
-// 	addedSubMeasurements := strings.Join(
-// 		utils.SliceMap(func(s string) string {
-// 			return fmt.Sprintf(`r["%v"]`, s)
-// 		}, metric.SubMeasurements), " + ")
-
-// 	query := fmt.Sprintf(SynthesizedMetricsCreationQuery,
-// 		db.bucketName, subMeasurementsRegex, metric.Type,
-// 		addedSubMeasurements, quotedSubMeasurements,
-// 		metric.Measurement, db.bucketName, db.organizationName)
-// 	return db.createTask(taskName, query, orgId)
-// }
-
 // updateAggregationTask finds first all the missing tasks for job metrics.
 // then for each metric find the available aggregation functions adding this tasks
 // to db, finally it launches an aggregation task for each missing metric.

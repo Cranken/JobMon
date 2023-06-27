@@ -112,8 +112,6 @@ type MetricConfig struct {
 	MaxPerType int `json:"MaxPerType"`
 	// Which aggregation function to use when aggregating pthreads and their corresponding hyperthread
 	PThreadAggFn string `json:"PThreadAggFn"`
-	//A list of measurements from which the actual measurement is computed.
-	SubMeasurements []string `json:"SubMeasurements"` // TODO: to be removed
 }
 
 // A BasePartitionConfig represents a partition configuration
