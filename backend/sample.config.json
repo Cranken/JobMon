@@ -179,9 +179,10 @@
                 "Performance"
             ],
             "Measurement": "cpu_user",
-            "AggFn": "mean",
+            "AggFn": "sum",
             "AvailableAggFns": [
                 "mean",
+                "sum",
                 "max",
                 "min"
             ],
@@ -203,9 +204,10 @@
                 "Performance"
             ],
             "Measurement": "cpu_sys",
-            "AggFn": "mean",
+            "AggFn": "sum",
             "AvailableAggFns": [
                 "mean",
+                "sum",
                 "max",
                 "min"
             ],
@@ -260,7 +262,7 @@
             ],
             "SampleInterval": "",
             "Unit": "",
-            "DisplayName": "Instructions per Cycle",
+            "DisplayName": "CPU Instructions per Cycle",
             "FilterFunc": "",
             "PostQueryOp": "",
             "SeparationKey": "type-id",
