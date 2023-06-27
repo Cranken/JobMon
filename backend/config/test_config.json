@@ -207,7 +207,7 @@
             "SeparationKey": "filesystem",
             "MaxPerNode": 0,
             "MaxPerType": 0,
-            "PThreadAggFn": "",
+            "PThreadAggFn": ""
         },
         {
             "GUID": "cf1926cc-f478-48ae-91df-c03a43374158",
