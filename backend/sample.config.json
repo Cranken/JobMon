@@ -89,7 +89,7 @@
                 "max"
             ],
             "SampleInterval": "",
-            "Unit": "KB",
+            "Unit": "kB",
             "DisplayName": "CPU Memory Usage",
             "FilterFunc": "",
             "PostQueryOp": "",
