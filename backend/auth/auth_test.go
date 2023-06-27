@@ -43,6 +43,7 @@ var LocalUsersTestConfig = map[string]config.LocalUser{
 }
 
 var standartLifetime, _ = time.ParseDuration("120s")
+var extendedLifetime, _ = time.ParseDuration("240s")
 
 // Tests
 
@@ -52,11 +53,12 @@ func TestValidToken(t *testing.T) {
 	authManager := AuthManager{}
 	// Set required global jobmon config options
 	config := config.Configuration{
-		JSONWebTokenLifeTime: standartLifetime,
-		APITokenLifeTime:     standartLifetime,
-		JWTSecret:            "<jwt_secret (secret to use when generating java web tokens)>",
-		OAuth:                OauthTestConfig,
-		LocalUsers:           LocalUsersTestConfig,
+		JSONWebTokenLifeTime:         standartLifetime,
+		JSONWebTokenExtendedLifeTime: extendedLifetime,
+		APITokenLifeTime:             standartLifetime,
+		JWTSecret:                    "<jwt_secret (secret to use when generating java web tokens)>",
+		OAuth:                        OauthTestConfig,
+		LocalUsers:                   LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
 	var notify notify.Notifier = &test.MockEmailNotifier{}
@@ -69,7 +71,7 @@ func TestValidToken(t *testing.T) {
 		}
 
 	// Test with valid user
-	token, _ := authManager.GenerateJWT(user)
+	token, _ := authManager.GenerateJWT(user, false)
 	UI, err := authManager.validate(token)
 	if err != nil {
 		t.Fatalf("Token not accepted")
@@ -84,11 +86,12 @@ func TestExpiredToken(t *testing.T) {
 	authManager := AuthManager{}
 	configLifetime, _ := time.ParseDuration("0s")
 	config := config.Configuration{
-		JSONWebTokenLifeTime: configLifetime,
-		APITokenLifeTime:     configLifetime,
-		JWTSecret:            "<jwt_secret (secret to use when generating java web tokens)>",
-		OAuth:                OauthTestConfig,
-		LocalUsers:           LocalUsersTestConfig,
+		JSONWebTokenLifeTime:         configLifetime,
+		JSONWebTokenExtendedLifeTime: extendedLifetime,
+		APITokenLifeTime:             configLifetime,
+		JWTSecret:                    "<jwt_secret (secret to use when generating java web tokens)>",
+		OAuth:                        OauthTestConfig,
+		LocalUsers:                   LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
 	var notify notify.Notifier = &test.MockEmailNotifier{}
@@ -101,7 +104,7 @@ func TestExpiredToken(t *testing.T) {
 		}
 
 	// Test with expired token
-	token, _ := authManager.GenerateJWT(user)
+	token, _ := authManager.GenerateJWT(user, false)
 	_, err := authManager.validate(token)
 	if err == nil {
 		t.Fatalf("Token was accepted")
@@ -112,11 +115,12 @@ func TestExpiredToken(t *testing.T) {
 func TestTokenFromFuture(t *testing.T) {
 	authManager := AuthManager{}
 	config := config.Configuration{
-		JSONWebTokenLifeTime: standartLifetime,
-		APITokenLifeTime:     standartLifetime,
-		JWTSecret:            "<jwt_secret (secret to use when generating java web tokens)>",
-		OAuth:                OauthTestConfig,
-		LocalUsers:           LocalUsersTestConfig,
+		JSONWebTokenLifeTime:         standartLifetime,
+		JSONWebTokenExtendedLifeTime: extendedLifetime,
+		APITokenLifeTime:             standartLifetime,
+		JWTSecret:                    "<jwt_secret (secret to use when generating java web tokens)>",
+		OAuth:                        OauthTestConfig,
+		LocalUsers:                   LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
 	var notify notify.Notifier = &test.MockEmailNotifier{}
@@ -153,11 +157,12 @@ func TestTokenFromFuture(t *testing.T) {
 func TestTokenWrongIssuer(t *testing.T) {
 	authManager := AuthManager{}
 	config := config.Configuration{
-		JSONWebTokenLifeTime: standartLifetime,
-		APITokenLifeTime:     standartLifetime,
-		JWTSecret:            "<jwt_secret (secret to use when generating java web tokens)>",
-		OAuth:                OauthTestConfig,
-		LocalUsers:           LocalUsersTestConfig,
+		JSONWebTokenLifeTime:         standartLifetime,
+		JSONWebTokenExtendedLifeTime: extendedLifetime,
+		APITokenLifeTime:             standartLifetime,
+		JWTSecret:                    "<jwt_secret (secret to use when generating java web tokens)>",
+		OAuth:                        OauthTestConfig,
+		LocalUsers:                   LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
 	var notify notify.Notifier = &test.MockEmailNotifier{}
@@ -193,11 +198,12 @@ func TestTokenWrongIssuer(t *testing.T) {
 func TestTokenUnknownUser(t *testing.T) {
 	authManager := AuthManager{}
 	config := config.Configuration{
-		JSONWebTokenLifeTime: standartLifetime,
-		APITokenLifeTime:     standartLifetime,
-		JWTSecret:            "<jwt_secret (secret to use when generating java web tokens)>",
-		OAuth:                OauthTestConfig,
-		LocalUsers:           LocalUsersTestConfig,
+		JSONWebTokenLifeTime:         standartLifetime,
+		JSONWebTokenExtendedLifeTime: extendedLifetime,
+		APITokenLifeTime:             standartLifetime,
+		JWTSecret:                    "<jwt_secret (secret to use when generating java web tokens)>",
+		OAuth:                        OauthTestConfig,
+		LocalUsers:                   LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
 	var notify notify.Notifier = &test.MockEmailNotifier{}
@@ -233,11 +239,12 @@ func TestTokenUnknownUser(t *testing.T) {
 func TestLogoutTokenDelete(t *testing.T) {
 	authManager := AuthManager{}
 	config := config.Configuration{
-		JSONWebTokenLifeTime: standartLifetime,
-		APITokenLifeTime:     standartLifetime,
-		JWTSecret:            "<jwt_secret (secret to use when generating java web tokens)>",
-		OAuth:                OauthTestConfig,
-		LocalUsers:           LocalUsersTestConfig,
+		JSONWebTokenLifeTime:         standartLifetime,
+		JSONWebTokenExtendedLifeTime: extendedLifetime,
+		APITokenLifeTime:             standartLifetime,
+		JWTSecret:                    "<jwt_secret (secret to use when generating java web tokens)>",
+		OAuth:                        OauthTestConfig,
+		LocalUsers:                   LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
 	var notify notify.Notifier = &test.MockEmailNotifier{}
@@ -249,7 +256,7 @@ func TestLogoutTokenDelete(t *testing.T) {
 			Username: "userTest",
 		}
 
-	token, _ := authManager.GenerateJWT(user)
+	token, _ := authManager.GenerateJWT(user, false)
 
 	// Test with valid user before logout
 	UI, err := authManager.validate(token)
@@ -272,11 +279,12 @@ func TestLogoutTokenDelete(t *testing.T) {
 func TestNotifyJobControlUser(t *testing.T) {
 	authManager := AuthManager{}
 	config := config.Configuration{
-		JSONWebTokenLifeTime: standartLifetime,
-		APITokenLifeTime:     standartLifetime,
-		JWTSecret:            "<jwt_secret (secret to use when generating java web tokens)>",
-		OAuth:                OauthTestConfig,
-		LocalUsers:           LocalUsersTestConfig,
+		JSONWebTokenLifeTime:         standartLifetime,
+		JSONWebTokenExtendedLifeTime: extendedLifetime,
+		APITokenLifeTime:             standartLifetime,
+		JWTSecret:                    "<jwt_secret (secret to use when generating java web tokens)>",
+		OAuth:                        OauthTestConfig,
+		LocalUsers:                   LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
 	var e_notifier test.MockEmailNotifier
@@ -294,7 +302,7 @@ func TestNotifyJobControlUser(t *testing.T) {
 		t.Fatalf("Initializing failed")
 	}
 
-	_, _ = authManager.GenerateJWT(user)
+	_, _ = authManager.GenerateJWT(user, false)
 
 	fmt.Println(e_notifier.GetMessages())
 
@@ -307,11 +315,12 @@ func TestNotifyJobControlUser(t *testing.T) {
 func TestNoNotifyNormalUser(t *testing.T) {
 	authManager := AuthManager{}
 	config := config.Configuration{
-		JSONWebTokenLifeTime: standartLifetime,
-		APITokenLifeTime:     standartLifetime,
-		JWTSecret:            "<jwt_secret (secret to use when generating java web tokens)>",
-		OAuth:                OauthTestConfig,
-		LocalUsers:           LocalUsersTestConfig,
+		JSONWebTokenLifeTime:         standartLifetime,
+		JSONWebTokenExtendedLifeTime: extendedLifetime,
+		APITokenLifeTime:             standartLifetime,
+		JWTSecret:                    "<jwt_secret (secret to use when generating java web tokens)>",
+		OAuth:                        OauthTestConfig,
+		LocalUsers:                   LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
 	var e_notifier test.MockEmailNotifier
@@ -329,7 +338,7 @@ func TestNoNotifyNormalUser(t *testing.T) {
 		t.Fatalf("Initializing failed")
 	}
 
-	_, _ = authManager.GenerateJWT(user)
+	_, _ = authManager.GenerateJWT(user, false)
 
 	fmt.Println(e_notifier.GetMessages())
 
@@ -342,11 +351,12 @@ func TestNoNotifyNormalUser(t *testing.T) {
 func TestNoNotifyAdminUser(t *testing.T) {
 	authManager := AuthManager{}
 	config := config.Configuration{
-		JSONWebTokenLifeTime: standartLifetime,
-		APITokenLifeTime:     standartLifetime,
-		JWTSecret:            "<jwt_secret (secret to use when generating java web tokens)>",
-		OAuth:                OauthTestConfig,
-		LocalUsers:           LocalUsersTestConfig,
+		JSONWebTokenLifeTime:         standartLifetime,
+		JSONWebTokenExtendedLifeTime: extendedLifetime,
+		APITokenLifeTime:             standartLifetime,
+		JWTSecret:                    "<jwt_secret (secret to use when generating java web tokens)>",
+		OAuth:                        OauthTestConfig,
+		LocalUsers:                   LocalUsersTestConfig,
 	}
 	var store store.Store = &test.MockStore{}
 	var e_notifier test.MockEmailNotifier
@@ -364,7 +374,7 @@ func TestNoNotifyAdminUser(t *testing.T) {
 		t.Fatalf("Initializing failed")
 	}
 
-	_, _ = authManager.GenerateJWT(user)
+	_, _ = authManager.GenerateJWT(user, false)
 
 	fmt.Println(e_notifier.GetMessages())
 

@@ -1,5 +1,6 @@
 {
     "json_web_token_life_time": "24h",
+    "json_web_token_extended_life_time": "48h",
     "api_token_life_time": "87600h",
     "auto_assign_user_role": true,
     "DBHost": "http://my-influxdb.example.org:9200",

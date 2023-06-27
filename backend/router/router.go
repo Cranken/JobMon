@@ -486,7 +486,7 @@ func (r *Router) Login(
 		return
 	}
 
-	err = r.authManager.AppendJWT(user, w)
+	err = r.authManager.AppendJWT(user, w, dat.Remember)
 	if err != nil {
 		logging.Error("Router: Login(): Could not generate JWT for user '", dat.Username, "': ", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -604,7 +604,7 @@ func (r *Router) LoginOAuthCallback(
 	logging.Info("Router: LoginOAuthCallback(): User: ", user.Username, ", Roles: ", user.Roles)
 
 	// Generate Java web token
-	err = r.authManager.AppendJWT(user, w)
+	err = r.authManager.AppendJWT(user, w, false)
 	if err != nil {
 		logging.Error("Router: LoginOAuthCallback(): Could not generate JWT: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -669,6 +669,7 @@ func (r *Router) GenerateAPIKey(
 				Roles:    []string{auth.JOBCONTROL},
 				Username: "api",
 			},
+			false,
 		)
 	if err != nil {
 		logging.Error("Router: GenerateAPIKey(): Could not generate JWT: ", err)

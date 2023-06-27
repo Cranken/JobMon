@@ -1,4 +1,6 @@
 {
+    "json_web_token_life_time": "24h",
+    "json_web_token_extended_life_time": "48h",
     "DBHost": "http://jobmon_influxdb:8086",
     "DBToken": "<influxdb_auth_token (access token to bucket myBucket>",
     "DBOrg": "myOrg",

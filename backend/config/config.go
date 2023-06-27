@@ -22,10 +22,12 @@ type Configuration struct {
 	// Config from the command line interface
 	CLIConfig `json:"-"`
 
-	JSONWebTokenLifeTimeString string        `json:"json_web_token_life_time"`
-	JSONWebTokenLifeTime       time.Duration `json:"-"`
-	APITokenLifeTimeString     string        `json:"api_token_life_time"`
-	APITokenLifeTime           time.Duration `json:"-"`
+	JSONWebTokenLifeTimeString         string        `json:"json_web_token_life_time"`
+	JSONWebTokenLifeTime               time.Duration `json:"-"`
+	JSONWebTokenExtendedLifeTimeString string        `json:"json_web_token_extended_life_time"`
+	JSONWebTokenExtendedLifeTime       time.Duration `json:"-"`
+	APITokenLifeTimeString             string        `json:"api_token_life_time"`
+	APITokenLifeTime                   time.Duration `json:"-"`
 
 	// Do you want to automatically assign user role to users without assigned roles?
 	AutoAssignUserRole bool `json:"auto_assign_user_role"`
@@ -257,6 +259,7 @@ func (c *Configuration) Init() {
 
 	// Default config values
 	c.JSONWebTokenLifeTimeString = "24h"
+	c.JSONWebTokenExtendedLifeTimeString = "48h"
 	c.APITokenLifeTimeString = fmt.Sprint(10*365*24, "h") // API token should "never" expire
 	c.AutoAssignUserRole = false
 
@@ -272,6 +275,10 @@ func (c *Configuration) Init() {
 	c.JSONWebTokenLifeTime, err = time.ParseDuration(c.JSONWebTokenLifeTimeString)
 	if err != nil {
 		logging.Fatal("config: Init(): Failed to parse json_web_token_life_time `", c.JSONWebTokenLifeTimeString, "`: ", err)
+	}
+	c.JSONWebTokenExtendedLifeTime, err = time.ParseDuration(c.JSONWebTokenExtendedLifeTimeString)
+	if err != nil {
+		logging.Fatal("config: Init(): Failed to parse json_web_token_extended_life_time `", c.JSONWebTokenExtendedLifeTimeString, "`: ", err)
 	}
 	c.APITokenLifeTime, err = time.ParseDuration(c.APITokenLifeTimeString)
 	if err != nil {

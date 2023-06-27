@@ -38,6 +38,7 @@ type AuthPayload struct {
 	Username     string
 	Password     string
 	FrontendOnly bool
+	Remember     bool
 }
 
 // UserInfo stores the roles and the username of a user.
@@ -73,17 +74,18 @@ type UserSession struct {
 // AuthManager is the main object that stores all the necessary information for
 // localUsers, OAuthUsers, sessions etc.
 type AuthManager struct {
-	hmacSampleSecret     []byte // JWT secret
-	JSONWebTokenLifeTime time.Duration
-	APITokenLifeTime     time.Duration
-	store                *store.Store
-	localUsers           map[string]config.LocalUser
-	oauthAvailable       bool
-	oauthConfig          oauth2.Config
-	oauthUserInfoURL     string
-	sessions             map[string]UserSession
-	sessionsLock         sync.Mutex
-	notifier             *notify.Notifier
+	hmacSampleSecret             []byte // JWT secret
+	JSONWebTokenLifeTime         time.Duration
+	JSONWebTokenExtendedLifeTime time.Duration
+	APITokenLifeTime             time.Duration
+	store                        *store.Store
+	localUsers                   map[string]config.LocalUser
+	oauthAvailable               bool
+	oauthConfig                  oauth2.Config
+	oauthUserInfoURL             string
+	sessions                     map[string]UserSession
+	sessionsLock                 sync.Mutex
+	notifier                     *notify.Notifier
 }
 
 // default JWT issuer
@@ -174,6 +176,7 @@ func (authManager *AuthManager) Protected(h APIHandle, authLevel string) httprou
 func (auth *AuthManager) Init(c config.Configuration, store *store.Store, notifier *notify.Notifier) {
 
 	auth.JSONWebTokenLifeTime = c.JSONWebTokenLifeTime
+	auth.JSONWebTokenExtendedLifeTime = c.JSONWebTokenExtendedLifeTime
 	auth.APITokenLifeTime = c.APITokenLifeTime
 
 	if c.JWTSecret == "" {
@@ -285,10 +288,13 @@ func (auth *AuthManager) validate(tokenStr string) (UserInfo, error) {
 }
 
 // GenerateJWT, generates a JSON Web Token for the given user.
-func (auth *AuthManager) GenerateJWT(user UserInfo) (string, error) {
+func (auth *AuthManager) GenerateJWT(user UserInfo, extendedLifeTime bool) (string, error) {
 
 	// Set JSON web token life time
 	lifeTime := auth.JSONWebTokenLifeTime
+	if extendedLifeTime {
+		lifeTime = auth.JSONWebTokenExtendedLifeTime
+	}
 
 	if utils.Contains(user.Roles, JOBCONTROL) {
 		// Notify admins that a new JWT for an api-user was created
@@ -322,13 +328,16 @@ func (auth *AuthManager) GenerateJWT(user UserInfo) (string, error) {
 }
 
 // AppendJWT appends a JWT cookie to the http response for user UserInfo to the writer w.
-func (auth *AuthManager) AppendJWT(user UserInfo, w http.ResponseWriter) (err error) {
-	token, err := auth.GenerateJWT(user)
+func (auth *AuthManager) AppendJWT(user UserInfo, w http.ResponseWriter, extendedLifeTime bool) (err error) {
+	token, err := auth.GenerateJWT(user, extendedLifeTime)
 	if err != nil {
 		return
 	}
 
 	lifeTime := auth.JSONWebTokenLifeTime
+	if extendedLifeTime {
+		lifeTime = auth.JSONWebTokenExtendedLifeTime
+	}
 
 	http.SetCookie(
 		w,
