@@ -519,11 +519,25 @@ func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (
 
 // queryAggregateMeasurement is similar to querySimpleMeasurement except that here an aggregation
 // over the metric type is performed.
-func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, j *job.JobMetadata, nodes string, aggFn string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) queryAggregateMeasurement(
+	metric conf.MetricConfig,
+	j *job.JobMetadata,
+	nodes string,
+	aggFn string,
+	sampleInterval time.Duration,
+) (
+	result *api.QueryTableResult,
+	err error) {
 	measurement := metric.Measurement + "_" + aggFn
-	query := fmt.Sprintf(AggregateMeasurementQuery,
-		db.bucketName, j.StartTime, j.StopTime, measurement,
-		nodes, sampleInterval, metric.FilterFunc, metric.PostQueryOp, sampleInterval)
+	query := createAggregateMeasurementQuery(
+		db.bucketName,
+		j.StartTime, j.StopTime,
+		measurement,
+		nodes,
+		sampleInterval,
+		metric.FilterFunc,
+		metric.PostQueryOp,
+	)
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		logging.Error("db: queryAggregateMeasurement(): Error at aggregate query '", query, "': ", err)
@@ -533,11 +547,26 @@ func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, j *job.J
 
 // queryAggregateMeasurementRaw is similar to querySimpleMeasurementRaw except that here an aggregation
 // over the metric type is performed.
-func (db *InfluxDB) queryAggregateMeasurementRaw(metric conf.MetricConfig, j *job.JobMetadata, nodes string, aggFn string, sampleInterval time.Duration) (result string, err error) {
+func (db *InfluxDB) queryAggregateMeasurementRaw(
+	metric conf.MetricConfig,
+	j *job.JobMetadata,
+	nodes string,
+	aggFn string,
+	sampleInterval time.Duration,
+) (
+	result string,
+	err error,
+) {
 	measurement := metric.Measurement + "_" + aggFn
-	query := fmt.Sprintf(AggregateMeasurementQuery,
-		db.bucketName, j.StartTime, j.StopTime, measurement,
-		nodes, sampleInterval, metric.FilterFunc, metric.PostQueryOp, sampleInterval)
+	query := createAggregateMeasurementQuery(
+		db.bucketName,
+		j.StartTime, j.StopTime,
+		measurement,
+		nodes,
+		sampleInterval,
+		metric.FilterFunc,
+		metric.PostQueryOp,
+	)
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
 	if err != nil {
 		logging.Error("db: queryAggregateMeasurementRaw(): Error at aggregate raw query '", query, "': ", err)

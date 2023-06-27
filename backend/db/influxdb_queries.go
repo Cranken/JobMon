@@ -61,18 +61,51 @@ func createSimpleMeasurementQuery(
 	return
 }
 
-// Parameters: bucket, startTime, stopTime, measurement,
-// nodelist, sampleInterval, filterfunc, postQueryOp, sampleInterval
-const AggregateMeasurementQuery = `
-from(bucket: "%v")
-	|> range(start: %v, stop: %v)
-	|> filter(fn: (r) => r["_measurement"] == "%v")
-	|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	|> aggregateWindow(every: %v, fn: mean, createEmpty: false)
-	%v
-	%v
-	|> truncateTimeColumn(unit: %v)
-`
+func createAggregateMeasurementQuery(
+	bucket string,
+	StartTime int, StopTime int,
+	measurement string,
+	nodes string,
+	sampleInterval time.Duration,
+	metricFilterFunc string,
+	metricPostQueryOp string,
+) (q string) {
+
+	if bucket == "" {
+		logging.Error("db: createAggregateMeasurementQuery(): Missing bucket configuration")
+		return
+	}
+
+	if measurement == "" {
+		logging.Error("db: createAggregateMeasurementQuery(): Missing measurement configuration")
+		return
+	}
+
+	if StartTime < 0 || StopTime < 0 || StartTime >= StopTime {
+		logging.Error("db: createAggregateMeasurementQuery(): Wrong start time = ", StartTime, ", StopTime = ", StopTime, " configuration")
+		return
+	}
+
+	sb := new(strings.Builder)
+	fmt.Fprintf(sb, `from(bucket: "%s")`, bucket)
+	fmt.Fprintf(sb, `|> range(start: %d, stop: %d)`, StartTime, StopTime)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s")`, measurement)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["hostname"] =~ /%s/)`, nodes)
+	if len(metricFilterFunc) > 0 {
+		fmt.Fprintf(sb, `%s`, metricFilterFunc)
+	}
+	if len(metricPostQueryOp) > 0 {
+		fmt.Fprintf(sb, `%s`, metricPostQueryOp)
+	}
+	// Aggregation to sampleInterval after all filtering to aggregate on all metric data available
+	fmt.Fprintf(sb, `|> aggregateWindow(every: %v, fn: mean, createEmpty: false)`, sampleInterval)
+	// Truncate time to sampleInterval to synchronize measurements from different nodes
+	fmt.Fprintf(sb, `|> truncateTimeColumn(unit: %v)`, sampleInterval)
+	q = sb.String()
+
+	logging.Debug("db: createAggregateMeasurementQuery(): flux query string = ", q)
+	return
+}
 
 // Parameters: bucket, startTime, stopTime, measurement,
 // nodelist, sampleInterval, filterFunc, postQueryOp, sampleInterval,
