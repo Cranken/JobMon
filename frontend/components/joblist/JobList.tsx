@@ -82,12 +82,13 @@ export const JobList = ({
   if (compactView) {
     return (
       <Center id="joblist">
-        <Grid templateColumns={{ base: 'repeat(1, 1fr)', lg: 'repeat(2, 1fr)', '2xl': 'repeat(3, 1fr)' }} gap={6} ml={2} mr={2}>
+        <Grid templateColumns={{ base: 'repeat(1, 1fr)', lg: 'repeat(3, 1fr)', '2xl': 'repeat(5, 1fr)'}} gap={6} ml={2} mr={2}>
           {slice.map((job) => (
-            <GridItem w='100%' key={job.Id}>
+            <GridItem w='100%' key={job.Id} colSpan={1}>
               <JobListItem
                 job={job}
                 radarChartMetrics={radarChartMetrics}
+                compactView={true}
               />
             </GridItem>
           ))}
@@ -114,6 +115,7 @@ export const JobList = ({
 interface JobListItemProps {
   job: JobMetadata;
   radarChartMetrics: string[];
+  compactView?: boolean;
 }
 
 /**
@@ -123,11 +125,13 @@ interface JobListItemProps {
  * 
  * @param job The job to display.
  * @param radarChartMetrics The metrics that might be contained in the radar-chart.
+ * @param compactView If the listitem should be displayed more compact
  * @returns The component.
  */
 export const JobListItem = ({
   job,
   radarChartMetrics,
+  compactView = false,
 }: JobListItemProps) => {
   const borderColor = useColorModeValue("gray.300", "whiteAlpha.400");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -165,6 +169,85 @@ export const JobListItem = ({
     dataAvailable = false;
     reason = "No metadata metrics available for jobs shorter than two minutes.";
   }
+
+  if (compactView) {
+    return (
+      <LinkBox>
+      <LinkOverlay href={`/job/${job.Id}`}>
+        <Stack
+          direction={"column"}
+          divider={
+            <StackDivider marginX="3% !important" borderColor={borderColor} />
+          }
+          gap={2}
+          border="1px"
+          borderColor={borderColor}
+          borderRadius={5}
+        >
+          <Stack m="auto" direction="row" flexGrow={1}>
+            <Stack textAlign="start" m={5} pl={5}>
+              <Heading size="sm" textDecoration="underline">
+                {job.Id}
+              </Heading>
+              <Text>
+                User: {job.UserName} ({job.GroupName})
+              </Text>
+              <Text>Name: {job.JobName}</Text>
+              <Text>
+                Start: {new Date(job.StartTime * 1000).toLocaleString()}
+              </Text>
+              {job.IsRunning ? (
+                <Box>
+                  <Tag colorScheme="green">Running</Tag>
+                </Box>
+              ) : (
+                <Text>
+                  End: {new Date(job.StopTime * 1000).toLocaleString()}
+                </Text>
+              )}
+              {job.Tags && job.Tags.length > 0 ? (
+                <Wrap>
+                  {job.Tags.map((tag) => (
+                    <Tag key={tag.Name}>{tag.Name}</Tag>
+                  ))}
+                </Wrap>
+              ) : null}
+            </Stack>
+          </Stack>
+          <Box pr={{ base: 0, lg: 5 }} pb={{ base: 5, lg: 0 }}>
+            {!dataAvailable ? (
+              <Center h="100%" mb={2}>
+                <Box>
+                  <Alert status="info">
+                    <AlertIcon />
+                    {reason}
+                  </Alert>
+                </Box>
+              </Center>
+            ) : (
+              <Stack direction="row" gap={2} h="100%">
+                {job.IsRunning ? null : (
+                  <Center width="100%" height="100%">
+                    {radarChartData ? (
+                      <RadarChart
+                        data={radarChartData}
+                        value={(d) => d.mean}
+                        title={(d) => d.title}
+                        maxVal={(d) => d.max}
+                        size={350}
+                        margin={60}
+                      ></RadarChart>
+                    ) : null}
+                  </Center>
+                )}
+              </Stack>
+            )}
+          </Box>
+        </Stack>
+      </LinkOverlay>
+    </LinkBox>
+    );
+  }  
 
   return (
     <LinkBox>
