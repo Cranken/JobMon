@@ -61,18 +61,51 @@ func createSimpleMeasurementQuery(
 	return
 }
 
-// Parameters: bucket, startTime, stopTime, measurement,
-// nodelist, sampleInterval, filterfunc, postQueryOp, sampleInterval
-const AggregateMeasurementQuery = `
-from(bucket: "%v")
-	|> range(start: %v, stop: %v)
-	|> filter(fn: (r) => r["_measurement"] == "%v")
-	|> filter(fn: (r) => r["hostname"] =~ /%v/)
-	|> aggregateWindow(every: %v, fn: mean, createEmpty: false)
-	%v
-	%v
-	|> truncateTimeColumn(unit: %v)
-`
+func createAggregateMeasurementQuery(
+	bucket string,
+	StartTime int, StopTime int,
+	measurement string,
+	nodes string,
+	sampleInterval time.Duration,
+	metricFilterFunc string,
+	metricPostQueryOp string,
+) (q string) {
+
+	if bucket == "" {
+		logging.Error("db: createAggregateMeasurementQuery(): Missing bucket configuration")
+		return
+	}
+
+	if measurement == "" {
+		logging.Error("db: createAggregateMeasurementQuery(): Missing measurement configuration")
+		return
+	}
+
+	if StartTime < 0 || StopTime < 0 || StartTime >= StopTime {
+		logging.Error("db: createAggregateMeasurementQuery(): Wrong start time = ", StartTime, ", StopTime = ", StopTime, " configuration")
+		return
+	}
+
+	sb := new(strings.Builder)
+	fmt.Fprintf(sb, `from(bucket: "%s")`, bucket)
+	fmt.Fprintf(sb, `|> range(start: %d, stop: %d)`, StartTime, StopTime)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s")`, measurement)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["hostname"] =~ /%s/)`, nodes)
+	if len(metricFilterFunc) > 0 {
+		fmt.Fprintf(sb, `%s`, metricFilterFunc)
+	}
+	if len(metricPostQueryOp) > 0 {
+		fmt.Fprintf(sb, `%s`, metricPostQueryOp)
+	}
+	// Aggregation to sampleInterval after all filtering to aggregate on all metric data available
+	fmt.Fprintf(sb, `|> aggregateWindow(every: %v, fn: mean, createEmpty: false)`, sampleInterval)
+	// Truncate time to sampleInterval to synchronize measurements from different nodes
+	fmt.Fprintf(sb, `|> truncateTimeColumn(unit: %v)`, sampleInterval)
+	q = sb.String()
+
+	logging.Debug("db: createAggregateMeasurementQuery(): flux query string = ", q)
+	return
+}
 
 // Parameters: bucket, startTime, stopTime, measurement,
 // nodelist, sampleInterval, filterFunc, postQueryOp, sampleInterval,
@@ -121,21 +154,4 @@ max = data
   	|> set(key: "_field", value: "max")
 	
 union(tables: [mean, max])	
-`
-
-// Parameters: bucket, measurements regex, type,
-// computed value from subMeasurements as string,
-// list of columns to drop as a string, each column representing a measurement,
-// name of the synthesized measurement
-// bucket, organization.
-const SynthesizedMetricsCreationQuery = `
-from(bucket: "%v")
-	|> range(start: -task.every)
-	|> filter(fn: (r) => r["_measurement"] =~ /%v/)
-	|> filter(fn: (r) => r["type"] == "%v")
-	|> pivot(rowKey: ["_time"], columnKey: ["_measurement"], valueColumn: "_value")
-	|> map(fn: (r) => ({r with _value: %v}))
-	|> drop(columns: [%v])
-	|> set(key: "_measurement", value: "%v")
-	|> to(bucket: "%v", org: "%v")
 `

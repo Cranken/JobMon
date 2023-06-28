@@ -1,6 +1,8 @@
 {
     "json_web_token_life_time": "24h",
     "json_web_token_extended_life_time": "48h",
+    "api_token_life_time": "87600h",
+    "auto_assign_user_role": true,
     "DBHost": "http://jobmon_influxdb:8086",
     "DBToken": "<influxdb_auth_token (access token to bucket myBucket>",
     "DBOrg": "myOrg",
@@ -19,10 +21,724 @@
         "Secret": "<oauth_secret>",
         "AuthURL": "<auth_url>",
         "TokenURL": "<token_url>",
+        "RedirectURL": "https://<backend_url>:<backend_port>/auth/oauth/callback",
         "UserInfoURL": "<user_info_url>",
-        "RedirectURL": "http://<backend_url>:<backend_port>/auth/oauth/callback",
-        "AfterLoginRedirectUrl": "http://<frontend_url>:<frontend_port>/jobs"
+        "AfterLoginRedirectUrl": "https://<frontend_url>:<frontend_port>/jobs"
     },
+    "Metrics": [
+        {
+            "GUID": "19437fd9-20b9-4702-8c79-76a5445db78b",
+            "Type": "node",
+            "Categories": [
+                "Energy"
+            ],
+            "Measurement": "consumed_watts",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "mean",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "W",
+            "DisplayName": "CPU Consumed Watts",
+            "FilterFunc": "|\u003e filter(fn: (r) =\u003e r[\"power_control_physical_context\"] == \"Chassis\" and r[\"chassis_typ\"] == \"Blade\")",
+            "PostQueryOp": "",
+            "SeparationKey": "hostname",
+            "MaxPerNode": 0,
+            "MaxPerType": 0,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "b0ee235b-a2e1-4f87-88ac-ec56f51c3b8c",
+            "Type": "socket",
+            "Categories": [
+                "Memory"
+            ],
+            "Measurement": "mem_bw",
+            "AggFn": "sum",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "MB/s",
+            "DisplayName": "CPU Memory Bandwidth",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "type-id",
+            "MaxPerNode": 340000,
+            "MaxPerType": 170000,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "b3fed750-ce8d-4370-8066-bd9d343db570",
+            "Type": "node",
+            "Categories": [
+                "Memory"
+            ],
+            "Measurement": "mem_used",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "kB",
+            "DisplayName": "CPU Memory Usage",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "hostname",
+            "MaxPerNode": 256000000,
+            "MaxPerType": 256000000,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "d13ef9e4-28bc-401e-a7f0-53918385f9f4",
+            "Type": "hwthread",
+            "Categories": [
+                "Temperature"
+            ],
+            "Measurement": "temp",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "mean",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "°C",
+            "DisplayName": "CPU Temp",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "type-id",
+            "MaxPerNode": 0,
+            "MaxPerType": 0,
+            "PThreadAggFn": "mean"
+        },
+        {
+            "GUID": "ebf6b249-7f62-4a97-a4c4-39b7611e4be4",
+            "Type": "node",
+            "Categories": [
+                "Performance"
+            ],
+            "Measurement": "load_one",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "mean",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "",
+            "DisplayName": "CPU One Minute Load",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "hostname",
+            "MaxPerNode": 76,
+            "MaxPerType": 76,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "d395edec-8a60-4d98-8959-6e94980c7019",
+            "Type": "hwthread",
+            "Categories": [
+                "Performance"
+            ],
+            "Measurement": "flops_dp",
+            "AggFn": "sum",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "max",
+                "min"
+            ],
+            "SampleInterval": "",
+            "Unit": "MFLOP/s",
+            "DisplayName": "CPU FLOPs",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "type-id",
+            "MaxPerNode": 5032000,
+            "MaxPerType": 68000,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "1d481817-c2cf-4109-a71b-20ebc99243d8",
+            "Type": "hwthread",
+            "Categories": [
+                "Performance"
+            ],
+            "Measurement": "cpu_user",
+            "AggFn": "sum",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "max",
+                "min"
+            ],
+            "SampleInterval": "",
+            "Unit": "%",
+            "DisplayName": "CPU Time in Userspace",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "type-id",
+            "MaxPerNode": 100,
+            "MaxPerType": 100,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "c2638489-3125-4d14-a21f-2481d86e261c",
+            "Type": "hwthread",
+            "Categories": [
+                "Performance"
+            ],
+            "Measurement": "cpu_sys",
+            "AggFn": "sum",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "max",
+                "min"
+            ],
+            "SampleInterval": "",
+            "Unit": "%",
+            "DisplayName": "CPU Time in Kernelspace",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "type-id",
+            "MaxPerNode": 100,
+            "MaxPerType": 100,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "eaaf8930-c5d1-44a4-9fc3-61d264657cbc",
+            "Type": "hwthread",
+            "Categories": [
+                "Performance"
+            ],
+            "Measurement": "cpufreq",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "mean",
+                "max",
+                "min"
+            ],
+            "SampleInterval": "",
+            "Unit": "MHz",
+            "DisplayName": "CPU Frequency",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "type-id",
+            "MaxPerNode": 3200,
+            "MaxPerType": 3200,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "e6fb6087-f709-45e8-aa63-5892e110640b",
+            "Type": "hwthread",
+            "Categories": [
+                "Performance"
+            ],
+            "Measurement": "ipc",
+            "AggFn": "sum",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "max",
+                "min"
+            ],
+            "SampleInterval": "",
+            "Unit": "",
+            "DisplayName": "CPU Instructions per Cycle",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "type-id",
+            "MaxPerNode": 304,
+            "MaxPerType": 4,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "6cf6178f-90ea-4682-9d94-0c9f0c8f6b72",
+            "Type": "node",
+            "Categories": [
+                "Filesystem"
+            ],
+            "Measurement": "gpfs_bytes_read",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "sum",
+                "mean",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "B/s",
+            "DisplayName": "GPFS Bytes Read",
+            "FilterFunc": "",
+            "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
+            "SeparationKey": "filesystem",
+            "MaxPerNode": 0,
+            "MaxPerType": 0,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "69414157-6d1f-42d9-b7e8-31a4cc5b9615",
+            "Type": "node",
+            "Categories": [
+                "Filesystem"
+            ],
+            "Measurement": "gpfs_bytes_written",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "sum",
+                "mean",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "B/s",
+            "DisplayName": "GPFS Bytes Written",
+            "FilterFunc": "",
+            "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
+            "SeparationKey": "filesystem",
+            "MaxPerNode": 0,
+            "MaxPerType": 0,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "cf1926cc-f478-48ae-91df-c03a43374158",
+            "Type": "node",
+            "Categories": [
+                "Filesystem"
+            ],
+            "Measurement": "gpfs_iops",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "OP/s",
+            "DisplayName": "GPFS IOPS",
+            "FilterFunc": "",
+            "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
+            "SeparationKey": "filesystem",
+            "MaxPerNode": 0,
+            "MaxPerType": 0,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "86251d9b-693c-461c-b121-830fd85c1ab7",
+            "Type": "node",
+            "Categories": [
+                "Filesystem"
+            ],
+            "Measurement": "gpfs_num_inode_updates",
+            "AggFn": "sum",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "OP/s",
+            "DisplayName": "GPFS Inode Updates",
+            "FilterFunc": "",
+            "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
+            "SeparationKey": "hostname",
+            "MaxPerNode": 1000000,
+            "MaxPerType": 1000000,
+            "PThreadAggFn": "mean"
+        },
+        {
+            "GUID": "abe42586-c04c-4c1e-aed7-813160764c84",
+            "Type": "node",
+            "Categories": [
+                "Filesystem"
+            ],
+            "Measurement": "gpfs_metaops",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "OP/s",
+            "DisplayName": "GPFS MetaOps",
+            "FilterFunc": "",
+            "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
+            "SeparationKey": "filesystem",
+            "MaxPerNode": 0,
+            "MaxPerType": 0,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "ef4f8f13-82e2-4dc0-8b8a-615da76815fd",
+            "Type": "node",
+            "Categories": [
+                "Filesystem"
+            ],
+            "Measurement": "gpfs_num_closes",
+            "AggFn": "sum",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "OP/s",
+            "DisplayName": "GPFS Num Closes",
+            "FilterFunc": "",
+            "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
+            "SeparationKey": "hostname",
+            "MaxPerNode": 1000000,
+            "MaxPerType": 1000000,
+            "PThreadAggFn": "mean"
+        },
+        {
+            "GUID": "50f5a265-fcbf-4fc0-b4f4-453e74605668",
+            "Type": "node",
+            "Categories": [
+                "Filesystem"
+            ],
+            "Measurement": "gpfs_num_opens",
+            "AggFn": "sum",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "OP/s",
+            "DisplayName": "GPFS Num Opens",
+            "FilterFunc": "",
+            "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
+            "SeparationKey": "hostname",
+            "MaxPerNode": 1000000,
+            "MaxPerType": 1000000,
+            "PThreadAggFn": "mean"
+        },
+        {
+            "GUID": "89784861-8766-4d3f-bc34-418bb08c0d7f",
+            "Type": "node",
+            "Categories": [
+                "Filesystem"
+            ],
+            "Measurement": "gpfs_num_readdirs",
+            "AggFn": "sum",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "OP/s",
+            "DisplayName": "GPFS Num Readdirs",
+            "FilterFunc": "",
+            "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
+            "SeparationKey": "hostname",
+            "MaxPerNode": 1000000,
+            "MaxPerType": 1000000,
+            "PThreadAggFn": "mean"
+        },
+        {
+            "GUID": "b985d0d8-0329-4811-811f-daa648289d18",
+            "Type": "node",
+            "Categories": [
+                "Filesystem"
+            ],
+            "Measurement": "gpfs_num_reads",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "OP/s",
+            "DisplayName": "GPFS Num Reads",
+            "FilterFunc": "",
+            "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
+            "SeparationKey": "filesystem",
+            "MaxPerNode": 0,
+            "MaxPerType": 0,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "687b8465-4d6e-4fed-a17e-28ac3a154ae8",
+            "Type": "node",
+            "Categories": [
+                "Filesystem"
+            ],
+            "Measurement": "gpfs_num_writes",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "OP/s",
+            "DisplayName": "GPFS Num Writes",
+            "FilterFunc": "",
+            "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
+            "SeparationKey": "filesystem",
+            "MaxPerNode": 0,
+            "MaxPerType": 0,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "dc49f76d-15a1-4eae-8595-048426371795",
+            "Type": "node",
+            "Categories": [
+                "Filesystem"
+            ],
+            "Measurement": "gpfs_bytes_total",
+            "AggFn": "sum",
+            "AvailableAggFns": [
+                "mean",
+                "min",
+                "max",
+                "sum"
+            ],
+            "SampleInterval": "",
+            "Unit": "B/s",
+            "DisplayName": "GPFS Throughput",
+            "FilterFunc": "",
+            "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
+            "SeparationKey": "filesystem",
+            "MaxPerNode": 0,
+            "MaxPerType": 0,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "5f09b3a4-2f4d-4122-945b-a36082ac12c8",
+            "Type": "node",
+            "Categories": [
+                "Energy"
+            ],
+            "Measurement": "power",
+            "AggFn": "sum",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "W",
+            "DisplayName": "GPU Consumed Watts",
+            "FilterFunc": "|\u003e filter(fn: (r) =\u003e r[\"name\"] == \"gpu_board\")",
+            "PostQueryOp": "",
+            "SeparationKey": "hostname",
+            "MaxPerNode": 0,
+            "MaxPerType": 0,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "3184052f-d178-4fb3-8fbb-c3077fcd3058",
+            "Type": "accelerator",
+            "Categories": [
+                "Memory"
+            ],
+            "Measurement": "nv_mem_util",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "%",
+            "DisplayName": "GPU Memory Utilization",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "type-id",
+            "MaxPerNode": 100,
+            "MaxPerType": 100,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "3b0c2afa-2cf2-4e17-9ece-b78ef7ff18dc",
+            "Type": "accelerator",
+            "Categories": [
+                "Memory"
+            ],
+            "Measurement": "nv_fb_mem_used",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "MB",
+            "DisplayName": "GPU Memory Usage",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "type-id",
+            "MaxPerNode": 40536,
+            "MaxPerType": 40536,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "9113a26b-fecc-4d40-9655-ca537ecc82bf",
+            "Type": "accelerator",
+            "Categories": [
+                "Memory"
+            ],
+            "Measurement": "nv_mem_clock",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "mean",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "MHz",
+            "DisplayName": "GPU Memory Frequency",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "type-id",
+            "MaxPerNode": 1215,
+            "MaxPerType": 1215,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "42b6eccc-e7e7-41da-99e8-9f28f0804c9c",
+            "Type": "accelerator",
+            "Categories": [
+                "Temperature"
+            ],
+            "Measurement": "nv_temp",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "min",
+                "max",
+                "mean"
+            ],
+            "SampleInterval": "",
+            "Unit": "°C",
+            "DisplayName": "GPU Temp",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "type-id",
+            "MaxPerNode": 0,
+            "MaxPerType": 0,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "e770d05b-64e0-4e90-b2e2-2f29a6e175bc",
+            "Type": "accelerator",
+            "Categories": [
+                "Performance"
+            ],
+            "Measurement": "nv_util",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "mean",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "%",
+            "DisplayName": "GPU Utilization",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "type-id",
+            "MaxPerNode": 100,
+            "MaxPerType": 100,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "006a881e-afa9-4d99-99c9-d5aec1369ab1",
+            "Type": "accelerator",
+            "Categories": [
+                "Performance"
+            ],
+            "Measurement": "nv_sm_clock",
+            "AggFn": "mean",
+            "AvailableAggFns": [
+                "mean",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "MHz",
+            "DisplayName": "GPU Frequency",
+            "FilterFunc": "",
+            "PostQueryOp": "",
+            "SeparationKey": "type-id",
+            "MaxPerNode": 1410,
+            "MaxPerType": 1410,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "08e83677-131b-42da-bcd5-f5414f5bd7b3",
+            "Type": "node",
+            "Categories": [
+                "Interconnect"
+            ],
+            "Measurement": "ib_total_pkts",
+            "AggFn": "sum",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "max",
+                "min"
+            ],
+            "SampleInterval": "",
+            "Unit": "Packet/s",
+            "DisplayName": "Infiniband Packets",
+            "FilterFunc": "",
+            "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
+            "SeparationKey": "device",
+            "MaxPerNode": 0,
+            "MaxPerType": 0,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "cf5a491e-0499-41ea-b388-c5ffb360537b",
+            "Type": "node",
+            "Categories": [
+                "Interconnect"
+            ],
+            "Measurement": "ib_total",
+            "AggFn": "sum",
+            "AvailableAggFns": [
+                "mean",
+                "sum",
+                "min",
+                "max"
+            ],
+            "SampleInterval": "",
+            "Unit": "B/s",
+            "DisplayName": "Infiniband Traffic",
+            "FilterFunc": "",
+            "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
+            "SeparationKey": "device",
+            "MaxPerNode": 25000000000,
+            "MaxPerType": 25000000000,
+            "PThreadAggFn": ""
+        }
+    ],
     "CacheSize": 50,
     "Prefetch": true,
     "SampleInterval": "30s",
@@ -31,10 +747,6 @@
         "0.5",
         "0.75"
     ],
-    "Partitions": {},
-    "RadarChartMetrics": [],
-    "Metrics": [],
-    "MetricCategories": [],
     "LocalUsers": {
         "user123": {
             "BCryptHash": "$2b$12$autyf5ohFPAnLIAqszvcBuAo1Rod94dN8ZgnRNe0zRir1XDrCmc8K",
@@ -49,11 +761,93 @@
             "Role": "admin"
         }
     },
-    "EmailNotification": {
-        "SenderAddress": "<sender_email>",
-        "SenderPassword": "<sender_password>",
-        "ReceiverAddress": "<receiver_email>",
-        "SmtpHost": "<smtp_host>",
-        "SmtpPort": 465
+    "Partitions": {
+        "accelerated": {
+            "MaxTime": 172800,
+            "Metrics": [
+                "19437fd9-20b9-4702-8c79-76a5445db78b",
+                "08e83677-131b-42da-bcd5-f5414f5bd7b3",
+                "cf5a491e-0499-41ea-b388-c5ffb360537b",
+                "d395edec-8a60-4d98-8959-6e94980c7019",
+                "dc49f76d-15a1-4eae-8595-048426371795",
+                "b0ee235b-a2e1-4f87-88ac-ec56f51c3b8c",
+                "b3fed750-ce8d-4370-8066-bd9d343db570",
+                "d13ef9e4-28bc-401e-a7f0-53918385f9f4",
+                "3184052f-d178-4fb3-8fbb-c3077fcd3058",
+                "3b0c2afa-2cf2-4e17-9ece-b78ef7ff18dc",
+                "e770d05b-64e0-4e90-b2e2-2f29a6e175bc",
+                "6cf6178f-90ea-4682-9d94-0c9f0c8f6b72",
+                "69414157-6d1f-42d9-b7e8-31a4cc5b9615",
+                "42b6eccc-e7e7-41da-99e8-9f28f0804c9c",
+                "5f09b3a4-2f4d-4122-945b-a36082ac12c8",
+                "abe42586-c04c-4c1e-aed7-813160764c84",
+                "cf1926cc-f478-48ae-91df-c03a43374158",
+                "b985d0d8-0329-4811-811f-daa648289d18",
+                "687b8465-4d6e-4fed-a17e-28ac3a154ae8",
+                "ebf6b249-7f62-4a97-a4c4-39b7611e4be4",
+                "e6fb6087-f709-45e8-aa63-5892e110640b",
+                "eaaf8930-c5d1-44a4-9fc3-61d264657cbc",
+                "1d481817-c2cf-4109-a71b-20ebc99243d8",
+                "c2638489-3125-4d14-a21f-2481d86e261c",
+                "9113a26b-fecc-4d40-9655-ca537ecc82bf",
+                "006a881e-afa9-4d99-99c9-d5aec1369ab1",
+                "86251d9b-693c-461c-b121-830fd85c1ab7",
+                "89784861-8766-4d3f-bc34-418bb08c0d7f",
+                "50f5a265-fcbf-4fc0-b4f4-453e74605668",
+                "ef4f8f13-82e2-4dc0-8b8a-615da76815fd"
+            ],
+            "VirtualPartitions": null
+        },
+        "cpuonly": {
+            "MaxTime": 259200,
+            "Metrics": [
+                "19437fd9-20b9-4702-8c79-76a5445db78b",
+                "08e83677-131b-42da-bcd5-f5414f5bd7b3",
+                "cf5a491e-0499-41ea-b388-c5ffb360537b",
+                "b0ee235b-a2e1-4f87-88ac-ec56f51c3b8c",
+                "b3fed750-ce8d-4370-8066-bd9d343db570",
+                "d13ef9e4-28bc-401e-a7f0-53918385f9f4",
+                "dc49f76d-15a1-4eae-8595-048426371795",
+                "d395edec-8a60-4d98-8959-6e94980c7019",
+                "6cf6178f-90ea-4682-9d94-0c9f0c8f6b72",
+                "69414157-6d1f-42d9-b7e8-31a4cc5b9615",
+                "cf1926cc-f478-48ae-91df-c03a43374158",
+                "abe42586-c04c-4c1e-aed7-813160764c84",
+                "b985d0d8-0329-4811-811f-daa648289d18",
+                "687b8465-4d6e-4fed-a17e-28ac3a154ae8",
+                "ebf6b249-7f62-4a97-a4c4-39b7611e4be4",
+                "e6fb6087-f709-45e8-aa63-5892e110640b",
+                "eaaf8930-c5d1-44a4-9fc3-61d264657cbc",
+                "1d481817-c2cf-4109-a71b-20ebc99243d8",
+                "c2638489-3125-4d14-a21f-2481d86e261c",
+                "86251d9b-693c-461c-b121-830fd85c1ab7",
+                "89784861-8766-4d3f-bc34-418bb08c0d7f",
+                "50f5a265-fcbf-4fc0-b4f4-453e74605668",
+                "ef4f8f13-82e2-4dc0-8b8a-615da76815fd"
+            ],
+            "VirtualPartitions": null
+        },
+        "MetricCategories": [
+            "Filesystem",
+            "Memory",
+            "Energy",
+            "Interconnect",
+            "Performance",
+            "Temperature"
+        ],
+        "RadarChartMetrics": [
+            "cf5a491e-0499-41ea-b388-c5ffb360537b",
+            "b0ee235b-a2e1-4f87-88ac-ec56f51c3b8c",
+            "d395edec-8a60-4d98-8959-6e94980c7019",
+            "3184052f-d178-4fb3-8fbb-c3077fcd3058",
+            "e770d05b-64e0-4e90-b2e2-2f29a6e175bc"
+        ],
+        "EmailNotification": {
+            "SenderAddress": "<sender_email>",
+            "SenderPassword": "<sender_password>",
+            "ReceiverAddress": "<receiver_email>",
+            "SmtpHost": "<smtp_host>",
+            "SmtpPort": 465
+        }
     }
 }

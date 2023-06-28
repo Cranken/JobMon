@@ -56,7 +56,7 @@ services:
     environment:
       # command line options for config file, log leven and listen address
       CONFIG: /app/config.json
-      LOGLEVEL: "3"
+      LOGLEVEL: "4"
       LISTEN_ADDR: :8080
     healthcheck:
       test: "curl --fail http://jobmon_backend:8080/api/ping"

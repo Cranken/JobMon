@@ -1,4 +1,5 @@
-import { JobMetadata } from "../../types/job";
+import { JobMetadata, MetricConfig } from "../../types/job";
+
 import {
   Alert, AlertDescription,
   AlertIcon, AlertTitle,
@@ -123,6 +124,7 @@ export const JobListItem = ({
     });
     radarChartData.sort((a, b) => (a.title < b.title ? -1 : 1));
   }
+
 
   let dataAvailable = true;
   let reason = "";

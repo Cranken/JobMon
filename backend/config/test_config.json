@@ -46,8 +46,7 @@
             "SeparationKey": "hostname",
             "MaxPerNode": 0,
             "MaxPerType": 0,
-            "PThreadAggFn": "",
-            "SubMeasurements": []
+            "PThreadAggFn": ""
         },
         {
             "GUID": "b0ee235b-a2e1-4f87-88ac-ec56f51c3b8c",
@@ -71,8 +70,7 @@
             "SeparationKey": "type-id",
             "MaxPerNode": 340000,
             "MaxPerType": 170000,
-            "PThreadAggFn": "",
-            "SubMeasurements": []
+            "PThreadAggFn": ""
         },
         {
             "GUID": "b3fed750-ce8d-4370-8066-bd9d343db570",
@@ -96,8 +94,7 @@
             "SeparationKey": "hostname",
             "MaxPerNode": 256000000,
             "MaxPerType": 256000000,
-            "PThreadAggFn": "",
-            "SubMeasurements": []
+            "PThreadAggFn": ""
         },
         {
             "GUID": "d13ef9e4-28bc-401e-a7f0-53918385f9f4",
@@ -120,8 +117,7 @@
             "SeparationKey": "type-id",
             "MaxPerNode": 0,
             "MaxPerType": 0,
-            "PThreadAggFn": "mean",
-            "SubMeasurements": []
+            "PThreadAggFn": "mean"
         },
         {
             "GUID": "ebf6b249-7f62-4a97-a4c4-39b7611e4be4",
@@ -140,8 +136,7 @@
             "SeparationKey": "hostname",
             "MaxPerNode": 100,
             "MaxPerType": 100,
-            "PThreadAggFn": "",
-            "SubMeasurements": []
+            "PThreadAggFn": ""
         },
         {
             "GUID": "d395edec-8a60-4d98-8959-6e94980c7019",
@@ -165,8 +160,7 @@
             "SeparationKey": "type-id",
             "MaxPerNode": 5032000,
             "MaxPerType": 68000,
-            "PThreadAggFn": "",
-            "SubMeasurements": []
+            "PThreadAggFn": ""
         },
         {
             "GUID": "6cf6178f-90ea-4682-9d94-0c9f0c8f6b72",
@@ -190,8 +184,7 @@
             "SeparationKey": "filesystem",
             "MaxPerNode": 0,
             "MaxPerType": 0,
-            "PThreadAggFn": "",
-            "SubMeasurements": []
+            "PThreadAggFn": ""
         },
         {
             "GUID": "69414157-6d1f-42d9-b7e8-31a4cc5b9615",
@@ -215,8 +208,7 @@
             "SeparationKey": "filesystem",
             "MaxPerNode": 0,
             "MaxPerType": 0,
-            "PThreadAggFn": "",
-            "SubMeasurements": []
+            "PThreadAggFn": ""
         },
         {
             "GUID": "cf1926cc-f478-48ae-91df-c03a43374158",
@@ -240,11 +232,7 @@
             "SeparationKey": "filesystem",
             "MaxPerNode": 0,
             "MaxPerType": 0,
-            "PThreadAggFn": "",
-            "SubMeasurements": [
-                "gpfs_num_reads",
-                "gpfs_num_writes"
-            ]
+            "PThreadAggFn": ""
         },
         {
             "GUID": "abe42586-c04c-4c1e-aed7-813160764c84",
@@ -268,13 +256,7 @@
             "SeparationKey": "filesystem",
             "MaxPerNode": 0,
             "MaxPerType": 0,
-            "PThreadAggFn": "",
-            "SubMeasurements": [
-                "gpfs_num_opens",
-                "gpfs_num_closes",
-                "gpfs_num_inode_updates",
-                "gpfs_num_readdirs"
-            ]
+            "PThreadAggFn": ""
         },
         {
             "GUID": "b985d0d8-0329-4811-811f-daa648289d18",
@@ -298,8 +280,7 @@
             "SeparationKey": "filesystem",
             "MaxPerNode": 0,
             "MaxPerType": 0,
-            "PThreadAggFn": "",
-            "SubMeasurements": []
+            "PThreadAggFn": ""
         },
         {
             "GUID": "687b8465-4d6e-4fed-a17e-28ac3a154ae8",
@@ -323,8 +304,7 @@
             "SeparationKey": "filesystem",
             "MaxPerNode": 0,
             "MaxPerType": 0,
-            "PThreadAggFn": "",
-            "SubMeasurements": []
+            "PThreadAggFn": ""
         },
         {
             "GUID": "dc49f76d-15a1-4eae-8595-048426371795",
@@ -348,8 +328,7 @@
             "SeparationKey": "filesystem",
             "MaxPerNode": 0,
             "MaxPerType": 0,
-            "PThreadAggFn": "",
-            "SubMeasurements": []
+            "PThreadAggFn": ""
         },
         {
             "GUID": "5f09b3a4-2f4d-4122-945b-a36082ac12c8",
@@ -373,8 +352,7 @@
             "SeparationKey": "hostname",
             "MaxPerNode": 0,
             "MaxPerType": 0,
-            "PThreadAggFn": "",
-            "SubMeasurements": []
+            "PThreadAggFn": ""
         },
         {
             "GUID": "3b0c2afa-2cf2-4e17-9ece-b78ef7ff18dc",
@@ -398,8 +376,7 @@
             "SeparationKey": "type-id",
             "MaxPerNode": 40536,
             "MaxPerType": 40536,
-            "PThreadAggFn": "",
-            "SubMeasurements": []
+            "PThreadAggFn": ""
         },
         {
             "GUID": "3184052f-d178-4fb3-8fbb-c3077fcd3058",
@@ -423,8 +400,7 @@
             "SeparationKey": "type-id",
             "MaxPerNode": 100,
             "MaxPerType": 100,
-            "PThreadAggFn": "",
-            "SubMeasurements": []
+            "PThreadAggFn": ""
         },
         {
             "GUID": "42b6eccc-e7e7-41da-99e8-9f28f0804c9c",
@@ -447,8 +423,7 @@
             "SeparationKey": "type-id",
             "MaxPerNode": 0,
             "MaxPerType": 0,
-            "PThreadAggFn": "",
-            "SubMeasurements": []
+            "PThreadAggFn": ""
         },
         {
             "GUID": "e770d05b-64e0-4e90-b2e2-2f29a6e175bc",
@@ -471,8 +446,7 @@
             "SeparationKey": "type-id",
             "MaxPerNode": 100,
             "MaxPerType": 100,
-            "PThreadAggFn": "",
-            "SubMeasurements": []
+            "PThreadAggFn": ""
         },
         {
             "GUID": "08e83677-131b-42da-bcd5-f5414f5bd7b3",
@@ -496,8 +470,7 @@
             "SeparationKey": "device",
             "MaxPerNode": 0,
             "MaxPerType": 0,
-            "PThreadAggFn": "",
-            "SubMeasurements": []
+            "PThreadAggFn": ""
         },
         {
             "GUID": "cf5a491e-0499-41ea-b388-c5ffb360537b",
@@ -521,8 +494,7 @@
             "SeparationKey": "device",
             "MaxPerNode": 25000000000,
             "MaxPerType": 25000000000,
-            "PThreadAggFn": "",
-            "SubMeasurements": []
+            "PThreadAggFn": ""
         }
     ],
     "CacheSize": 50,
