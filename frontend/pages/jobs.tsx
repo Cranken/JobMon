@@ -13,6 +13,7 @@ export const Jobs = () => {
   const [joblistLimit, setJoblistLimit] = useStorageState("joblistLimit", 25);
   const [sortBy, setSortBy] = useStorageState("sortyBy", "StartTime");
   const [sortByDescending, setSortByDescending] = useState(true);
+  const [compactView, setCompactView] = useState(false);
   const [page, setPageStorage, , pageIsLoading] = useSessionStorageState("jobsPage", 1)
   const isWideDevice = useIsWideDevice();
 
@@ -82,6 +83,7 @@ export const Jobs = () => {
           joblistLimit={[joblistLimit, setJoblistLimit]}
           sortBy={[sortBy, setSortBy]}
           sortByDescending={[sortByDescending, setSortByDescending]}
+          compactView={[compactView, setCompactView]}
         ></JobListDisplaySettings>
       </Stack>
     </Center>
@@ -148,6 +150,7 @@ export const Jobs = () => {
           radarChartMetrics={jobListData.Config.RadarChartMetrics}
           limit={joblistLimit}
           page={page}
+          compactView={compactView}
       />
     </Box>
   );

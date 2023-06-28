@@ -1,4 +1,4 @@
-import { JobMetadata, MetricConfig } from "../../types/job";
+import { JobMetadata } from "../../types/job";
 
 import {
   Alert, AlertDescription,
@@ -6,6 +6,8 @@ import {
   Box,
   Center,
   Divider,
+  Grid,
+  GridItem,
   Heading,
   LinkBox,
   LinkOverlay,
@@ -26,6 +28,7 @@ interface JobListProps {
   sortBy?: string;
   limit: number;
   page: number;
+  compactView?: boolean;
 }
 
 /**
@@ -36,6 +39,7 @@ interface JobListProps {
  * @param radarChartMetrics The metrics to show in the radar-chart.
  * @param limit The limit of jobs to show on one page. To display all jobs on one page set this value to 0.
  * @param page The currently selected page.
+ * @param compactView Determines if the list should use all available space for a more compact list design.
  * @returns The component.
  */
 export const JobList = ({
@@ -43,6 +47,7 @@ export const JobList = ({
   radarChartMetrics,
   limit,
   page,
+  compactView = false,
 }: JobListProps) => {
   const slice =
     limit !== 0
@@ -50,30 +55,47 @@ export const JobList = ({
       : jobs;
   if (slice.length == 0) {
     return (
-        <Center id="nojobinfo">
-          <Box>
-            <Alert
-                status="info"
-                flexDirection="column"
-                alignItems="center"
-                justifyContent="center"
-                textAlign="center"
-                marginLeft="15px"
-                marginRight="15px"
-                width="calc(100% - 30px)">
-              <AlertIcon />
-              <AlertTitle mt={4} mb={1}>
-                No jobs can be shown here.
-              </AlertTitle>
-              <AlertDescription>
-                There are multiple possible reasons, why you can not see any jobs.
-                Either you have not ran any jobs with the account you are currently logged in with or all your jobs were executed too long ago
-              </AlertDescription>
-            </Alert>
-          </Box>
-        </Center>
+      <Center id="nojobinfo">
+        <Box>
+          <Alert
+            status="info"
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            textAlign="center"
+            marginLeft="15px"
+            marginRight="15px"
+            width="calc(100% - 30px)">
+            <AlertIcon />
+            <AlertTitle mt={4} mb={1}>
+              No jobs can be shown here.
+            </AlertTitle>
+            <AlertDescription>
+              There are multiple possible reasons, why you can not see any jobs.
+              Either you have not ran any jobs with the account you are currently logged in with or all your jobs were executed too long ago
+            </AlertDescription>
+          </Alert>
+        </Box>
+      </Center>
     );
   }
+  if (compactView) {
+    return (
+      <Center id="joblist">
+        <Grid templateColumns={{ base: 'repeat(1, 1fr)', lg: 'repeat(2, 1fr)', '2xl': 'repeat(3, 1fr)' }} gap={6} ml={2} mr={2}>
+          {slice.map((job) => (
+            <GridItem w='100%' key={job.Id}>
+              <JobListItem
+                job={job}
+                radarChartMetrics={radarChartMetrics}
+              />
+            </GridItem>
+          ))}
+        </Grid>
+      </Center>
+    )
+  }
+
   return (
     <Center id="joblist">
       <Stack>
@@ -148,7 +170,7 @@ export const JobListItem = ({
     <LinkBox>
       <LinkOverlay href={`/job/${job.Id}`}>
         <Stack
-          direction={{base : "column", lg: "row"}}
+          direction={{ base: "column", lg: "row" }}
           divider={
             <StackDivider marginY="3% !important" borderColor={borderColor} />
           }
@@ -197,7 +219,7 @@ export const JobListItem = ({
               <Divider orientation="vertical" borderColor={borderColor} />
             </Center>
           </Stack>
-          <Box pr={{base: 0, lg: 5}} pb={{base: 5, lg: 0}}>
+          <Box pr={{ base: 0, lg: 5 }} pb={{ base: 5, lg: 0 }}>
             {!dataAvailable ? (
               <Center h="100%">
                 <Box>
