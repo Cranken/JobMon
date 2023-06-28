@@ -68,7 +68,20 @@ export const Jobs = () => {
   const elements = [];
   elements.push(
     <Center key="list-control">
-      <Stack borderWidth="1px" borderRadius="lg" p={5} margin={4} w={{base: "97%", md: "70%", lg: "70%", xl: "50%"}}>
+      <Stack
+        borderWidth="1px"
+        borderRadius="lg"
+        p={5}
+        margin={4}
+        w={{
+          base: "97%",
+          md: "70%",
+          lg: "85%",
+          xl: "70%",
+          '2xl': "60%",
+          '4xl': "50%"
+        }}
+      >
         <JobFilter
           key="jobfilter"
           params={params}
@@ -133,12 +146,12 @@ export const Jobs = () => {
   if (pages > 1) {
     elements.push(
       <JoblistPageSelection
-          key="pageselection_top"
-          currentPage={page}
-          pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
-          setPage={setPageStorage}
-          marginBottomEnable={true}
-          displayExtendedSelection={isWideDevice}
+        key="pageselection_top"
+        currentPage={page}
+        pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
+        setPage={setPageStorage}
+        marginBottomEnable={true}
+        displayExtendedSelection={isWideDevice}
       ></JoblistPageSelection>
     );
   }
@@ -146,15 +159,15 @@ export const Jobs = () => {
   elements.push(
     <Box key="joblist" ref={joblistRef}>
       <JobList
-          jobs={mutableJobs}
-          radarChartMetrics={jobListData.Config.RadarChartMetrics}
-          limit={joblistLimit}
-          page={page}
-          compactView={compactView}
+        jobs={mutableJobs}
+        radarChartMetrics={jobListData.Config.RadarChartMetrics}
+        limit={joblistLimit}
+        page={page}
+        compactView={compactView}
       />
     </Box>
   );
-  
+
   if (pages > 1) {
     elements.push(
       <JoblistPageSelection
