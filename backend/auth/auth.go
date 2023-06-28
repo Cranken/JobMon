@@ -288,6 +288,7 @@ func (auth *AuthManager) validate(tokenStr string) (UserInfo, error) {
 }
 
 // GenerateJWT, generates a JSON Web Token for the given user.
+// The lifetime of the token can be extended by setting the extendedLifeTime bit.
 func (auth *AuthManager) GenerateJWT(user UserInfo, extendedLifeTime bool) (string, error) {
 
 	// Set JSON web token life time
@@ -328,6 +329,7 @@ func (auth *AuthManager) GenerateJWT(user UserInfo, extendedLifeTime bool) (stri
 }
 
 // AppendJWT appends a JWT cookie to the http response for user UserInfo to the writer w.
+// The lifetime of the token and the cookie can be extended by setting the extendedLifeTime bit.
 func (auth *AuthManager) AppendJWT(user UserInfo, w http.ResponseWriter, extendedLifeTime bool) (err error) {
 	token, err := auth.GenerateJWT(user, extendedLifeTime)
 	if err != nil {

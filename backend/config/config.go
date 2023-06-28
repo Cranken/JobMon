@@ -22,6 +22,7 @@ type Configuration struct {
 	// Config from the command line interface
 	CLIConfig `json:"-"`
 
+	// Token lifetime
 	JSONWebTokenLifeTimeString         string        `json:"json_web_token_life_time"`
 	JSONWebTokenLifeTime               time.Duration `json:"-"`
 	JSONWebTokenExtendedLifeTimeString string        `json:"json_web_token_extended_life_time"`

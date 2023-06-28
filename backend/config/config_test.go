@@ -25,9 +25,11 @@ func TestInit(t *testing.T) {
 	if c.ConfigFile != "./test_config.json" {
 		t.Error("ConfigFile value is incorrect")
 	}
-
 	if c.JSONWebTokenLifeTimeString != "24h" {
 		t.Error("JSONWebTokenLifeTimeString value is incorrect")
+	}
+	if c.JSONWebTokenExtendedLifeTimeString != "48h" {
+		t.Error("JSONWebTokenExtendedLifeTimeString value is incorrect")
 	}
 	if c.JSONWebTokenLifeTime != 24*time.Hour {
 		t.Error("JSONWebTokenLifeTime value is incorrect")
@@ -241,5 +243,27 @@ func TestRemoveMissingMetrics(t *testing.T) {
 
 	if !reflect.DeepEqual(pc.Metrics, expectedMetrics) {
 		t.Errorf("RemoveMissingMetrics failed, expected: %v, got: %v", expectedMetrics, pc.Metrics)
+	}
+}
+
+func TestParsedTokenLifeTime(t *testing.T) {
+	// Create a test configuration
+	InitTesting()
+
+	var c Configuration
+
+	c.ConfigFile = "./test_config.json"
+
+	// Call the Init function
+	c.Init()
+
+	if c.APITokenLifeTime.Milliseconds() != 87600*60*60*1000 {
+		t.Error("APITokenLifeTime parsed incorrect")
+	}
+	if c.JSONWebTokenLifeTime.Milliseconds() != 24*60*60*1000 {
+		t.Error("JSONWebTokenLifeTime parsed incorrect")
+	}
+	if c.JSONWebTokenExtendedLifeTime.Milliseconds() != 48*60*60*1000 {
+		t.Error("JSONWebTokenExtendedLifeTime parsed incorrect")
 	}
 }
