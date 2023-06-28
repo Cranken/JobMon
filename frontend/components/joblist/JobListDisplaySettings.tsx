@@ -1,5 +1,5 @@
 import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
-import { Stack, Select, IconButton, Text, Switch } from "@chakra-ui/react";
+import { Stack, Select, IconButton, Text, Switch, Hide } from "@chakra-ui/react";
 import React from "react";
 
 interface JobListDisplaySettingsProps {
@@ -65,14 +65,18 @@ export const JobListDisplaySettings = ({
           }
         />
       </Stack>
-      <Stack flexGrow={1} direction="row" align="center" justify={{ base: "start", lg: "end" }}>
-        <Text>Compact view:</Text>
-        <Switch 
-          onChange={(e) => {
-            compactView[1](e.target.checked)
-          }}
-        />
-      </Stack>
+      <Hide below="lg">
+        <Stack flexGrow={1} direction="row" align="center" justify={{ base: "start", lg: "end" }}>
+          <Text>Compact view:</Text>
+          <Switch
+            defaultChecked={compactView[0]}
+            onChange={(e) => {
+              compactView[1](e.target.checked)
+            }}
+          />
+        </Stack>
+      </Hide>
+
     </Stack>
   );
 };
