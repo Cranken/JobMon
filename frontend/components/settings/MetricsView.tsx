@@ -444,8 +444,6 @@ const TOOLTIP_MAX_PER_TYPE = "Maximum value a unit as specified in the above \"T
 const TOOLTIP_SEPARATION_KEY = "Separation key used to differentiate between nodes in the InfluxDB query.";
 const TOOLTIP_FILTER_FUNC = "Optional filter function used in InfluxDB queries. Must be a valid Flux query.";
 const TOOLTIP_POST_QUERY_OP = "Optional post query function used in InfluxDB queries. Must be a valid Flux query.";
-// const TOOLTIP_SUB_MEASUREMENTS = "If the metric is a synthesized metric, a sum of two or more metrics. Then these metrics \
-//                                   should be entered as comma separated string.";
                       
 const AggFnSelection = (displayName: string, name: string, availableAggFns: string[]) => {
   if ((availableAggFns?.length ?? 0) === 0) {

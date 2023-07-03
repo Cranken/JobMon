@@ -107,7 +107,6 @@ func (db *InfluxDB) Init(c conf.Configuration) {
 	db.defaultSampleInterval = c.SampleInterval
 	db.metricQuantiles = c.MetricQuantiles
 	go db.updateAggregationTasks()
-	// go db.updateSynthesizedMetricTask()
 }
 
 // Close implements Close method of DB interface.
@@ -824,60 +823,6 @@ func (db *InfluxDB) updateAggregationTasks() (err error) {
 	}
 	return
 }
-
-// DEPRECATED //
-// The aggregation can be done from the collector
-
-// updateSynthesizedMetricTask adds aggregated metrics that are computed from other measurements(metrics),
-// these measurements can be found in the metric configuration.
-// func (db *InfluxDB) updateSynthesizedMetricTask() (err error) {
-// 	tasks, err := db.tasksAPI.FindTasks(context.Background(), nil)
-// 	if err != nil {
-// 		logging.Error("db: updateSynthesizedMetricTask(): Could not get tasks from influxdb: ", err)
-// 		return
-// 	}
-
-// 	missingMetricTasks := make([]utils.Tuple[conf.MetricConfig, string], 0)
-// 	for _, metric := range db.metrics {
-// 		// Check if the metric is a synthesized metric.
-// 		if len(metric.SubMeasurements) != 0 {
-
-// 			joinedSubMeasurements := strings.Join(metric.SubMeasurements, "_")
-// 			name := strings.Join([]string{db.bucketName, metric.Measurement, joinedSubMeasurements}, "_")
-// 			// Check if the tasks already exists
-// 			found := false
-// 			for _, task := range tasks {
-// 				if task.Name == name {
-// 					db.tasks = append(db.tasks, task)
-// 					found = true
-// 					break
-// 				}
-// 			}
-// 			// If task is missing, add it to to the list of missing aggregation tasks
-// 			if !found {
-// 				missingMetricTasks =
-// 					append(missingMetricTasks,
-// 						utils.Tuple[conf.MetricConfig, string]{
-// 							First:  metric,
-// 							Second: joinedSubMeasurements,
-// 						})
-// 			}
-// 		}
-// 	}
-// 	org, err := db.organizationsAPI.FindOrganizationByName(context.Background(), db.organizationName)
-// 	if err != nil {
-// 		logging.Error("db: addAggregatedMetrics(): Could not get orgId from influxdb: ", err)
-// 		return
-// 	}
-// 	for _, metric := range missingMetricTasks {
-// 		go func(metric conf.MetricConfig, subMeasurements string) {
-// 			_, err = db.createSynthesizedMetricTask(metric, subMeasurements, *org.Id)
-// 		}(metric.First, metric.Second)
-
-// 	}
-// 	return
-
-// }
 
 // getPartition returns a partition configuration for job j.
 func (db *InfluxDB) getPartition(j *job.JobMetadata) conf.BasePartitionConfig {
