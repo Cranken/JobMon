@@ -759,21 +759,9 @@ func (db *InfluxDB) createAggregationTask(
 // updateAggregationTask finds first all the missing tasks for job metrics.
 // then for each metric find the available aggregation functions adding this tasks
 // to db, finally it launches an aggregation task for each missing metric.
-func (db *InfluxDB) updateAggregationTasks() (err error) {
-
-	// Get configured tasks from InfluxDB
-	tasks, err := db.tasksAPI.FindTasks(context.Background(), nil)
-	if err != nil {
-		logging.Error("db: updateAggregationTasks(): Could not get tasks from influxdb: ", err)
-		return
-	}
-
-	// Create empty list of missing tasks
-	type tuple struct {
-		metricConf conf.MetricConfig
-		aggFn      string
-	}
-	missingAggTasks := make([]tuple, 0)
+func (db *InfluxDB) updateAggregationTasks() error {
+	// Measure required time to update aggregation tasks
+	start := time.Now()
 
 	for _, metricConfig := range db.metrics {
 		for _, aggFn := range metricConfig.AvailableAggFns {
@@ -781,47 +769,39 @@ func (db *InfluxDB) updateAggregationTasks() (err error) {
 			// For each configured metric and its aggregation functions create a aggregation task
 			name := db.bucketName + "_" + metricConfig.Measurement + "_" + aggFn
 
-			// Check if this task already exists
-			found := false
-			for _, task := range tasks {
-				if task.Name == name {
-					db.tasks = append(db.tasks, task)
-					found = true
-					break
-				}
+			// Check if task is already created
+			tasks, err := db.tasksAPI.FindTasks(
+				context.Background(),
+				&api.TaskFilter{
+					Name: name,
+				})
+			if err != nil {
+				logging.Error("db: updateAggregationTasks(): Could not get tasks from influxdb: ", err)
+				continue
 			}
 
-			// If task is missing, add it to to the list of missing aggregation tasks
+			if len(tasks) > 1 {
+				logging.Error("db: updateAggregationTasks(): Multiple InfluxDB tasks exists for aggregation ", name)
+				continue
+			}
+
+			// If task is missing, create it
+			found := len(tasks) > 0
 			if !found {
-				missingAggTasks =
-					append(missingAggTasks,
-						tuple{
-							metricConf: metricConfig,
-							aggFn:      aggFn,
-						},
-					)
 				logging.Info("db: updateAggregationTasks(): Create missing aggregation task ", name)
-			}
-		}
-	}
-
-	// Create aggregation tasks for all missing tasks
-	for _, t := range missingAggTasks {
-		go func(
-			metricConfig conf.MetricConfig,
-			aggFn string,
-		) {
-			if _, err :=
-				db.createAggregationTask(
+				if _, err := db.createAggregationTask(
 					metricConfig,
 					aggFn,
 					*db.organization.Id,
 				); err != nil {
-				logging.Error("db: updateAggregationTasks(): Failed to create aggregation task: ", err)
+					logging.Error("db: updateAggregationTasks(): Failed to create aggregation task: ", err)
+				}
 			}
-		}(t.metricConf, t.aggFn)
+		}
 	}
-	return
+
+	logging.Info("db: updateAggregationTasks() took ", time.Since(start))
+	return nil
 }
 
 // getPartition returns a partition configuration for job j.
