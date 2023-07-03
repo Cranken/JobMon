@@ -3,9 +3,7 @@ import {
   AlertIcon,
   Button,
   Center,
-  Checkbox,
   Container,
-  Divider,
   Flex,
   FormControl,
   FormLabel,
@@ -14,18 +12,10 @@ import {
   Hide,
   Image,
   Input,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
   Spacer,
   Stack,
   Text,
   useColorModeValue,
-  useDisclosure,
 } from "@chakra-ui/react";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
@@ -42,7 +32,6 @@ export const Login = () => {
   const failed = router.query["login_failed"] !== undefined;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
   const [openLocalLogin, setOpenLocalLogin] = useState(false);
   const frontendOnly = true;
 
@@ -50,7 +39,7 @@ export const Login = () => {
     if (!e || e.key == "Enter") {
       fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/login", {
         method: "POST",
-        body: JSON.stringify({ username, password, remember, frontendOnly }),
+        body: JSON.stringify({ username, password, frontendOnly }),
         credentials: "include",
       }).then((resp) => {
         if (resp.ok) {
@@ -169,14 +158,7 @@ export const Login = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       onKeyPress={submit}
                     />
-                    <Flex mt={5} justify="space-between">
-                      <Checkbox
-                        isChecked={remember}
-                        onChange={(e) => setRemember(e.target.checked)}
-                        borderColor={'horeka.blue'}
-                      >
-                        Remember Me
-                      </Checkbox>
+                    <Flex mt={5} justify="end">
                       <Button
                         onClick={() => submit()}
                         bgColor={'horeka.green'}
