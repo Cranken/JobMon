@@ -96,7 +96,14 @@ You can access the containers with the `docker` command.
   # -> Set bucket ID
   BUCKET_ID="..."
   sudo docker exec jobmon_influxdb \
-    influx bucket update --id $BUCKET_ID} --retention 3360h
+    influx bucket update --id ${BUCKET_ID} --retention 3360h
+  ```
+
+* List tasks
+
+  ```bash
+  sudo docker exec jobmon_influxdb \
+    influx task list
   ```
 
 * Query the InfluxDB
