@@ -110,6 +110,7 @@ type MetricData struct {
 	// Only set when querying parsed raw data
 	Data map[string][]QueryResult
 	// Only set when querying raw data
+	// The raw data is used in the frontend for "export as CSV"
 	RawData string
 }
 
