@@ -42,9 +42,8 @@ func createSimpleMeasurementQuery(
 	sb := new(strings.Builder)
 	fmt.Fprintf(sb, `from(bucket: "%s")`, bucket)
 	fmt.Fprintf(sb, `|> range(start: %d, stop: %d)`, StartTime, StopTime)
-	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s")`, measurement)
-	fmt.Fprintf(sb, `|> filter(fn: (r) => r["type"] == "%s")`, metricType)
-	fmt.Fprintf(sb, `|> filter(fn: (r) => r["hostname"] =~ /%s/)`, nodes)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s" and  r["type"] == "%s" and r["hostname"] =~ /%s/)`,
+		measurement, metricType, nodes)
 	if len(metricFilterFunc) > 0 {
 		fmt.Fprintf(sb, `%s`, metricFilterFunc)
 	}
@@ -89,8 +88,8 @@ func createAggregateMeasurementQuery(
 	sb := new(strings.Builder)
 	fmt.Fprintf(sb, `from(bucket: "%s")`, bucket)
 	fmt.Fprintf(sb, `|> range(start: %d, stop: %d)`, StartTime, StopTime)
-	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s")`, measurement)
-	fmt.Fprintf(sb, `|> filter(fn: (r) => r["hostname"] =~ /%s/)`, nodes)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s" and r["hostname"] =~ /%s/)`,
+		measurement, nodes)
 	if len(metricFilterFunc) > 0 {
 		fmt.Fprintf(sb, `%s`, metricFilterFunc)
 	}
@@ -113,8 +112,7 @@ func createAggregateMeasurementQuery(
 const QuantileMeasurementQuery = `
 data = from(bucket: "%v")
 	|> range(start: %v, stop: %v)
-	|> filter(fn: (r) => r["_measurement"] == "%v")
-	|> filter(fn: (r) => r["hostname"] =~ /%v/)
+	|> filter(fn: (r) => r["_measurement"] == "%v" and r["hostname"] =~ /%v/)
 	|> aggregateWindow(every: %s, fn: mean, createEmpty: false)
 	%v
 	%v
@@ -138,8 +136,7 @@ const QuantileStringTemplate = `
 const MetadataMeasurementsQuery = `
 data = from(bucket: "%v")
 	|> range(start: %v, stop: %v)
-	|> filter(fn: (r) => r["_measurement"] == "%v")
-	|> filter(fn: (r) => r["hostname"] =~ /%v/)
+	|> filter(fn: (r) => r["_measurement"] == "%v" and r["hostname"] =~ /%v/)
 	%v
 	%v
 mean = data

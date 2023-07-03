@@ -721,8 +721,8 @@ func (db *InfluxDB) createAggregationTask(
 	sb := new(strings.Builder)
 	fmt.Fprintf(sb, `from(bucket: "%s")`, db.bucketName)
 	fmt.Fprintf(sb, `|> range(start: -task.every)`)
-	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s")`, metric.Measurement)
-	fmt.Fprintf(sb, `|> filter(fn: (r) => r.type == "%s")`, metric.Type)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s" and r.type == "%s")`,
+		metric.Measurement, metric.Type)
 	if len(metric.FilterFunc) > 0 {
 		fmt.Fprintf(sb, `%s`, metric.FilterFunc)
 	}
