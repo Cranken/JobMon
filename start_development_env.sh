@@ -15,11 +15,17 @@ function clear_dev_env() {
     sudo docker volume ls
 }
 
+SUDO="sudo"
+REGEX_DOCKER_GROUP='[(]docker[)]'
+if [[ "$(id)" =~ ${REGEX_DOCKER_GROUP} ]]; then
+    unset SUDO
+fi
+
 # Rebuild development environment containers
-sudo docker compose --file docker-compose.development.yml build --pull
+eval ${SUDO} docker compose --file docker-compose.development.yml build --pull
 
 # Start develepment environmemnt services
-sudo \
+eval ${SUDO} \
   DO_VET=true \
   DO_STATICCHECK=true \
   DO_PKG_UPDATE=false \
