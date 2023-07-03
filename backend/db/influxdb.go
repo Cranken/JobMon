@@ -717,42 +717,37 @@ func (db *InfluxDB) createAggregationTask(
 		sampleInterval = db.defaultSampleInterval
 	}
 
-	query := fmt.Sprintf(`
-	from(bucket: "%s")
-		|> range(start: -task.every)
-		|> filter(fn: (r) => r["_measurement"] == "%s")
-		|> filter(fn: (r) => r.type == "%s")
-		%s
-		%s
-		|> group(columns: ["_measurement", "hostname"], mode:"by")
-		|> aggregateWindow(every: %s, fn: %s, createEmpty: false)
-		|> group(columns: ["hostname"], mode:"by")
-		|> keep(
-			columns: [
-				"hostname",
-				"_start",
-				"_stop",
-				"_time",
-				"_value",
-				"cluster",
-				"hostname",
-			],
-		)
-		|> set(key: "_measurement", value: "%s")
-		|> set(key: "_field", value: "%s")
-		|> to(bucket: "%s", org: "%s")
-	`,
-		db.bucketName,
-		metric.Measurement,
-		metric.Type,
-		metric.FilterFunc,
-		metric.PostQueryOp,
-		sampleInterval, aggFn,
-		aggMeasurement,
-		aggMeasurement,
-		db.bucketName,
-		db.organizationName)
+	// Create a InfluxDB task (scheduled Flux script)
+	sb := new(strings.Builder)
+	fmt.Fprintf(sb, `from(bucket: "%s")`, db.bucketName)
+	fmt.Fprintf(sb, `|> range(start: -task.every)`)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s")`, metric.Measurement)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r.type == "%s")`, metric.Type)
+	if len(metric.FilterFunc) > 0 {
+		fmt.Fprintf(sb, `%s`, metric.FilterFunc)
+	}
+	if len(metric.PostQueryOp) > 0 {
+		fmt.Fprintf(sb, `%s`, metric.PostQueryOp)
+	}
+	fmt.Fprintf(sb, `|> group(columns: ["_measurement", "hostname"], mode:"by")`)
+	fmt.Fprintf(sb, `|> aggregateWindow(every: %s, fn: %s, createEmpty: false)`, sampleInterval, aggFn)
+	fmt.Fprintf(sb, `|> group(columns: ["hostname"], mode:"by")`)
+	fmt.Fprintf(sb, `|> keep(
+		columns: [
+			"hostname",
+			"_start",
+			"_stop",
+			"_time",
+			"_value",
+			"cluster",
+			"hostname",
+		],
+	)`)
+	fmt.Fprintf(sb, `|> set(key: "_measurement", value: "%s")`, aggMeasurement)
+	fmt.Fprintf(sb, `|> set(key: "_field", value: "%s")`, aggMeasurement)
+	fmt.Fprintf(sb, `|> to(bucket: "%s", org: "%s")`, db.bucketName, db.organizationName)
 
+	query := sb.String()
 	return db.createTask(aggTaskName, query, orgId)
 }
 
@@ -767,13 +762,13 @@ func (db *InfluxDB) updateAggregationTasks() {
 		for _, aggFn := range metricConfig.AvailableAggFns {
 
 			// For each configured metric and its aggregation functions create a aggregation task
-			name := db.bucketName + "_" + metricConfig.Measurement + "_" + aggFn
+			aggTaskName := db.bucketName + "_" + metricConfig.Measurement + "_" + aggFn
 
 			// Check if task is already created
 			tasks, err := db.tasksAPI.FindTasks(
 				context.Background(),
 				&api.TaskFilter{
-					Name: name,
+					Name: aggTaskName,
 				})
 			if err != nil {
 				logging.Error("db: updateAggregationTasks(): Could not get tasks from influxdb: ", err)
@@ -781,14 +776,14 @@ func (db *InfluxDB) updateAggregationTasks() {
 			}
 
 			if len(tasks) > 1 {
-				logging.Error("db: updateAggregationTasks(): Multiple InfluxDB tasks exists for aggregation ", name)
+				logging.Error("db: updateAggregationTasks(): Multiple InfluxDB tasks exists for aggregation ", aggTaskName)
 				continue
 			}
 
 			// If task is missing, create it
 			found := len(tasks) > 0
 			if !found {
-				logging.Info("db: updateAggregationTasks(): Create missing aggregation task ", name)
+				logging.Info("db: updateAggregationTasks(): Create missing aggregation task ", aggTaskName)
 				if _, err := db.createAggregationTask(
 					metricConfig,
 					aggFn,
