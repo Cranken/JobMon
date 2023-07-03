@@ -4,9 +4,10 @@ import JobList from "@/components/joblist/JobList";
 import { dateToUnix, useGetJobs, useStorageState, useSessionStorageState, useIsWideDevice, clamp } from "@/utils/utils";
 import { JobSearchParams, JobMetadata } from "../types/job";
 import { useRouter } from "next/router";
-import { Box, Center, Divider, Spinner, Stack } from "@chakra-ui/react";
+import { Box, Center, Divider, Stack } from "@chakra-ui/react";
 import JoblistPageSelection from "@/components/joblist/JoblistPageSelection";
 import { JobListDisplaySettings } from "@/components/joblist/JobListDisplaySettings";
+import CentredSpinner from "@/components/utils/CentredSpinner";
 
 export const Jobs = () => {
   const router = useRouter();
@@ -59,9 +60,7 @@ export const Jobs = () => {
 
   if (!jobListData || pageIsLoading) {
     return (
-      <Center>
-        <Spinner />
-      </Center>
+      <CentredSpinner />
     );
   }
 
