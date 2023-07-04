@@ -123,13 +123,18 @@ union(tables: %v)
 	|> group(columns: ["_field"])
 `
 
-// Parameters: streamName, quantile, quantile, measurement
-const QuantileStringTemplate = `
-%v = data
-    |> quantile(column: "_value", q: %v, method: "estimate_tdigest", compression: 1000.0)
-    |> set(key: "_field", value: "%v")
-    |> set(key: "_measurement", value: "%v_quant")
-`
+// quantileString returns a string which is a database query generated for
+// the parameters streamName, q and measurement.
+//
+//lint:ignore U1000 Ignore unused function temporarily for debugging
+func quantileString(streamName string, q string, measurement string) string {
+	sb := new(strings.Builder)
+	fmt.Fprintf(sb, "%v = data", streamName)
+	fmt.Fprintf(sb, `|> quantile(column: "_value", q: %v, method: "estimate_tdigest", compression: 1000.0)`, q)
+	fmt.Fprintf(sb, `|> set(key: "_field", value: "%v")`, q)
+	fmt.Fprintf(sb, `|> set(key: "_measurement", value: "%v_quant")`, measurement)
+	return sb.String()
+}
 
 // Parameters: bucket, startTime, stopTime, measurement,
 // nodelist, filterFunc, postQueryOp

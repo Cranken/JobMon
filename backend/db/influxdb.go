@@ -574,41 +574,47 @@ func (db *InfluxDB) queryAggregateMeasurementRaw(
 }
 
 // queryQuantileMeasurement is similar to querySimpleMeasurement except that here the query is extended with quantiles.
-func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, j *job.JobMetadata, quantiles []string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) queryQuantileMeasurement(
+	metric conf.MetricConfig,
+	j *job.JobMetadata,
+	quantiles []string,
+	sampleInterval time.Duration,
+) (
+	result *api.QueryTableResult,
+	err error,
+) {
+	start := time.Now()
 	measurement := metric.Measurement
 	filterFunc := metric.FilterFunc
 	if metric.AggFn != "" {
 		measurement += "_" + metric.AggFn
 		filterFunc = ""
 	}
-	tempKeys := []string{}
-	for i := 'A'; i <= 'Z'; i++ {
-		tempKeys = append(tempKeys, string(i))
-	}
 
+	streamNames := make([]string, len(quantiles))
+	streamName := 'A'
 	quantileSubQuery := ""
 	for i, q := range quantiles {
-		quantileSubQuery += quantileString(tempKeys[i], q, measurement) + "\n"
+		streamNames[i] = string(streamName)
+		streamName++
+		quantileSubQuery += quantileString(streamNames[i], q, measurement) + "\n"
 	}
 
-	tempKeyAggregation := "[" + strings.Join(tempKeys[0:len(quantiles)], ",") + "]"
-	query := fmt.Sprintf(QuantileMeasurementQuery,
+	streamNamesAggregation := "[" + strings.Join(streamNames, ",") + "]"
+	query := fmt.Sprintf(
+		QuantileMeasurementQuery,
 		db.bucketName, j.StartTime, j.StopTime, measurement,
 		j.NodeList, sampleInterval, filterFunc, metric.PostQueryOp,
-		sampleInterval, quantileSubQuery, tempKeyAggregation)
+		sampleInterval, quantileSubQuery, streamNamesAggregation)
+	logging.Debug("db: queryQuantileMeasurement(): flux query string = ", query)
 
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		logging.Error("db: queryQuantileMeasurement(): Error at quantile query '", query, "': ", err)
 	}
-	return
-}
 
-// quantileString returns a string which is a database query generated for
-// the parameters streamName,q and measurement.
-func quantileString(streamName string, q string, measurement string) string {
-	return fmt.Sprintf(QuantileStringTemplate,
-		streamName, q, q, measurement)
+	logging.Info("db: queryQuantileMeasurement() for metric,", metric.GUID, " took ", time.Since(start))
+	return
 }
 
 // queryMetadataMeasurements returns the influx query result table containing
