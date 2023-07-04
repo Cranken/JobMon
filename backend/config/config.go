@@ -115,6 +115,8 @@ type MetricConfig struct {
 	MaxPerNode int `json:"MaxPerNode"`
 	// max value per type
 	MaxPerType int `json:"MaxPerType"`
+	// Which aggregation function to use when aggregating pthreads and their corresponding hyperthread
+	PThreadAggFn string `json:"PThreadAggFn"`
 }
 
 // A BasePartitionConfig represents a partition configuration
