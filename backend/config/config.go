@@ -89,14 +89,19 @@ type MetricConfig struct {
 	// Measurement name in Influxdb
 	Measurement string `json:"Measurement"`
 	// Default Aggregation function to use in aggregation of per device
-	// (cpu, socket, accelerator) data to node data.
+	// (hwthread, cpu, socket, accelerator) data to node data.
 	// Not used for metrics with type == "node"
 	AggFn string `json:"AggFn"`
-	// List of all possible aggregation functions
+	// List of all possible aggregation functions to use in aggregation of per device
+	// (hwthread, cpu, socket, accelerator) data to node data.
 	AvailableAggFns []string `json:"AvailableAggFns"`
 	// Sample interval of the metric
 	SampleInterval string `json:"SampleInterval"`
-	// Unit; supported units are: "FLOP/s", "Bit/s", "°C", "B/s", "B", "%", ""
+	// Unit:
+	// * supported units are:
+	//   "FLOP/s", "OP/s", "Packet/s", "Bit/s", "B/s", "Hz", "°C", "W", "B", "%", ""
+	// * supported prefixes are:
+	//   k (Kilo), M (Mega), G (Giga)
 	Unit string `json:"Unit"`
 	// Display name for the metric
 	DisplayName string `json:"DisplayName"`
@@ -110,8 +115,6 @@ type MetricConfig struct {
 	MaxPerNode int `json:"MaxPerNode"`
 	// max value per type
 	MaxPerType int `json:"MaxPerType"`
-	// Which aggregation function to use when aggregating pthreads and their corresponding hyperthread
-	PThreadAggFn string `json:"PThreadAggFn"`
 }
 
 // A BasePartitionConfig represents a partition configuration
