@@ -141,9 +141,9 @@ export const JobListItem = ({
       radarChartMetrics.includes(val.Config.GUID)
     ).map((val) => {
       let deviceMax = Math.max(val.Config.MaxPerNode, val.Config.MaxPerType);
-      deviceMax = deviceMax !== 0 ? deviceMax : val.Data;
+      deviceMax = deviceMax !== 0 ? deviceMax : val.Mean;
       return {
-        mean: val.Data / deviceMax,
+        mean: val.Mean / deviceMax,
         max: val.Max / deviceMax,
         title: val.Config.DisplayName,
       };

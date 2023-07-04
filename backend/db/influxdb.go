@@ -270,10 +270,10 @@ func (db *InfluxDB) getJobData(
 
 		// Query metric data
 		wg.Add(1)
-		go func(m conf.MetricConfig) {
+		go func(metric conf.MetricConfig) {
 			defer wg.Done()
 			if raw {
-				result, err := db.queryRaw(m, j, nodes, sampleInterval, forceAggregate)
+				result, err := db.queryRaw(metric, j, nodes, sampleInterval, forceAggregate)
 				if err != nil {
 					logging.Error("db: getJobData(): Job ", j.Id, ": could not get raw metric data: ", err)
 					return
@@ -281,12 +281,12 @@ func (db *InfluxDB) getJobData(
 				metricData =
 					append(metricData,
 						job.MetricData{
-							Config:  m,
+							Config:  metric,
 							RawData: result,
 						},
 					)
 			} else {
-				result, err := db.query(m, j, nodes, sampleInterval, forceAggregate)
+				result, err := db.query(metric, j, nodes, sampleInterval, forceAggregate)
 				if err != nil {
 					logging.Error("db: getJobData(): Job ", j.Id, ": could not get metric data: ", err)
 					return
@@ -294,7 +294,7 @@ func (db *InfluxDB) getJobData(
 				metricData =
 					append(metricData,
 						job.MetricData{
-							Config: m,
+							Config: metric,
 							Data:   result,
 						},
 					)
@@ -373,7 +373,7 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (
 					mean := res[0]["_value"]
 					switch v := mean.(type) {
 					case float64:
-						md.Data = v
+						md.Mean = v
 					default:
 					}
 				}
@@ -391,7 +391,7 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (
 				data = append(data, md)
 			} else {
 				// Add zero values in the case metadata is missing.
-				md.Data = 0.0
+				md.Mean = 0.0
 				md.Max = 0.0
 				data = append(data, md)
 			}

@@ -160,7 +160,7 @@ export interface JobData {
  */
 export interface JobMetadataData {
   Config: MetricConfig;
-  Data: number;
+  Mean: number;
   Max: number;
   ChangePoints: string[];
 }
