@@ -190,13 +190,13 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 // GetMetricDataWithAggFn returns the the metric-data data for job j based on the configuration m
 // and aggregated by function aggFn.
 func (db *InfluxDB) GetMetricDataWithAggFn(j *job.JobMetadata, m conf.MetricConfig, aggFn string, sampleInterval time.Duration) (data job.MetricData, err error) {
-	tempRes, err := db.queryAggregateMeasurement(m, j, j.NodeList, aggFn, sampleInterval)
+	tempResult, err := db.queryAggregateMeasurement(m, j, j.NodeList, aggFn, sampleInterval)
 	if err != nil {
 		logging.Error("db: GetMetricDataWithAggFn(): Job ", j.Id, ": could not get quantile data: ", err)
 		return
 	}
 
-	result, err := parseQueryResult(tempRes, "hostname")
+	result, err := parseQueryResult(tempResult, "hostname")
 	if err != nil {
 		logging.Error("db: GetMetricDataWithAggFn(): Job ", j.Id, ": could not parse quantile data: ", err)
 		return
@@ -485,7 +485,13 @@ func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, j *job.J
 
 // parseQueryResult returns result which is a map with keys separation key(or the empty string) and values slices
 // of job.QueryResult. The function parses queryResult using the separationKey.
-func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (result map[string][]job.QueryResult, err error) {
+func parseQueryResult(
+	queryResult *api.QueryTableResult,
+	separationKey string,
+) (
+	result map[string][]job.QueryResult,
+	err error,
+) {
 	result = make(map[string][]job.QueryResult)
 	tableRows := []job.QueryResult{}
 	curNode := ""
@@ -510,7 +516,7 @@ func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (
 	result[curNode] = tableRows
 
 	if queryResult.Err() != nil {
-		fmt.Printf("query parsing error: %s\n", queryResult.Err().Error())
+		logging.Error("db: parseQueryResult(): ", queryResult.Err())
 		return nil, queryResult.Err()
 	}
 	return
@@ -526,7 +532,8 @@ func (db *InfluxDB) queryAggregateMeasurement(
 	sampleInterval time.Duration,
 ) (
 	result *api.QueryTableResult,
-	err error) {
+	err error,
+) {
 	measurement := metric.Measurement + "_" + aggFn
 	query := createAggregateMeasurementQuery(
 		db.bucketName,
@@ -584,6 +591,9 @@ func (db *InfluxDB) queryQuantileMeasurement(
 	err error,
 ) {
 	start := time.Now()
+
+	// if a per node metric aggregation function is defined
+	// use their values to compute the quantiles
 	measurement := metric.Measurement
 	filterFunc := metric.FilterFunc
 	if metric.AggFn != "" {
@@ -591,22 +601,15 @@ func (db *InfluxDB) queryQuantileMeasurement(
 		filterFunc = ""
 	}
 
-	streamNames := make([]string, len(quantiles))
-	streamName := 'A'
-	quantileSubQuery := ""
-	for i, q := range quantiles {
-		streamNames[i] = string(streamName)
-		streamName++
-		quantileSubQuery += quantileString(streamNames[i], q, measurement) + "\n"
-	}
-
-	streamNamesAggregation := "[" + strings.Join(streamNames, ",") + "]"
-	query := fmt.Sprintf(
-		QuantileMeasurementQuery,
-		db.bucketName, j.StartTime, j.StopTime, measurement,
-		j.NodeList, sampleInterval, filterFunc, metric.PostQueryOp,
-		sampleInterval, quantileSubQuery, streamNamesAggregation)
-	logging.Debug("db: queryQuantileMeasurement(): flux query string = ", query)
+	query := createQuantileMeasurementQuery(
+		db.bucketName,
+		j.StartTime, j.StopTime,
+		measurement,
+		j.NodeList,
+		sampleInterval,
+		filterFunc,
+		metric.PostQueryOp,
+		quantiles)
 
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
@@ -693,8 +696,20 @@ func (db *InfluxDB) queryLastDatapoints(j job.JobMetadata) (metricData []job.Met
 }
 
 // createTask appends task with name taskName, with query taskStr and id orgID to db.task.
-func (db *InfluxDB) createTask(taskName string, taskStr string, orgId string) (task *domain.Task, err error) {
-	task, err = db.tasksAPI.CreateTaskWithEvery(context.Background(), taskName, taskStr, "1m", orgId)
+func (db *InfluxDB) createTask(
+	taskName string,
+	taskStr string,
+	orgId string,
+) (
+	task *domain.Task,
+	err error,
+) {
+	task, err = db.tasksAPI.CreateTaskWithEvery(
+		context.Background(),
+		taskName,
+		taskStr, // flux task script
+		"1m",    // run every minute
+		orgId)
 	if err != nil {
 		logging.Error("db: createTask(): Could not create task: ", err)
 		return
@@ -738,17 +753,7 @@ func (db *InfluxDB) createAggregationTask(
 	fmt.Fprintf(sb, `|> group(columns: ["_measurement", "hostname"], mode:"by")`)
 	fmt.Fprintf(sb, `|> aggregateWindow(every: %s, fn: %s, createEmpty: false)`, sampleInterval, aggFn)
 	fmt.Fprintf(sb, `|> group(columns: ["hostname"], mode:"by")`)
-	fmt.Fprintf(sb, `|> keep(
-		columns: [
-			"hostname",
-			"_start",
-			"_stop",
-			"_time",
-			"_value",
-			"cluster",
-			"hostname",
-		],
-	)`)
+	fmt.Fprintf(sb, `|> keep(columns: ["hostname", "_start", "_stop", "_time", "_value", "cluster"])`)
 	fmt.Fprintf(sb, `|> set(key: "_measurement", value: "%s")`, aggMeasurement)
 	fmt.Fprintf(sb, `|> set(key: "_field", value: "%s")`, aggMeasurement)
 	fmt.Fprintf(sb, `|> to(bucket: "%s", org: "%s")`, db.bucketName, db.organizationName)
@@ -809,6 +814,7 @@ func (db *InfluxDB) getPartition(j *job.JobMetadata) conf.BasePartitionConfig {
 	nodes := strings.Split(j.NodeList, "|")
 	for _, vp := range db.partitionConfig[j.Partition].VirtualPartitions {
 		matches := true
+		// Check if all nodes are in vp
 		for _, n := range nodes {
 			if !utils.Contains(vp.Nodes, n) {
 				matches = false
