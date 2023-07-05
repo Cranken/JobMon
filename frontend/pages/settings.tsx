@@ -8,7 +8,6 @@ import {
   MenuButton,
   MenuItem,
   MenuList,
-  Spinner,
   Stack,
   useToast,
 } from "@chakra-ui/react";
@@ -25,6 +24,7 @@ import AccessDenied from "./accessDenied";
 import { useIsWideDevice } from "@/utils/utils";
 import { ChevronDownIcon } from "@chakra-ui/icons";
 import { authFetch } from "@/utils/auth";
+import CentredSpinner from "@/components/utils/CentredSpinner";
 
 enum SettingsView {
   General = "General Settings",
@@ -45,9 +45,7 @@ export const Settings = () => {
 
   if (!config) {
     return (
-      <Center>
-        <Spinner />
-      </Center>
+      <CentredSpinner />
     );
   }
 

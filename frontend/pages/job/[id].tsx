@@ -20,9 +20,7 @@ import {
   AlertIcon,
   AlertTitle,
   Box,
-  Center,
   Grid,
-  Spinner,
   Tab,
   TabList,
   TabPanel,
@@ -34,6 +32,7 @@ import { SelectionMap } from "@/types/helpers";
 import { useIsWideDevice, useStorageState } from "@/utils/utils";
 import { WSLoadMetricsMsg } from "@/types/job";
 import { authFetch } from "@/utils/auth";
+import CentredSpinner from "@/components/utils/CentredSpinner";
 
 const Job: NextPage = () => {
   const router = useRouter();
@@ -123,9 +122,7 @@ const Job: NextPage = () => {
 
   if (!data) {
     return (
-      <Center>
-        <Spinner size="xl" />
-      </Center>
+      <CentredSpinner />
     );
   }
 

@@ -1,11 +1,12 @@
 import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
-import { Stack, Select, IconButton, Text } from "@chakra-ui/react";
+import { Stack, Select, IconButton, Text, Switch, Hide } from "@chakra-ui/react";
 import React from "react";
 
 interface JobListDisplaySettingsProps {
   joblistLimit: [number, (l: number) => void];
   sortBy: [string, (by: string) => void];
   sortByDescending: [boolean, (val: boolean) => void];
+  compactView: [boolean, (val: boolean) => void];
 }
 
 /**
@@ -14,15 +15,17 @@ interface JobListDisplaySettingsProps {
  * @param joblistLimit The currently set limit of jobs per page and a callback-function to change this limit.
  * @param sortBy The currently set parameter to sort jobs by and a callback-function to change this parameter.
  * @param sortByDescending The currently set direction for the sorted values and a callback-function to change this parameter.
+ * @param compactView The currently set view type and a callback-function to change this parameter.
  * @returns The component.
  */
 export const JobListDisplaySettings = ({
   joblistLimit,
   sortBy,
   sortByDescending,
+  compactView,
 }: JobListDisplaySettingsProps) => {
   return (
-    <Stack direction={{base : "column", lg: "row"}} justify="space-between">
+    <Stack direction={{ base: "column", lg: "row" }} justify="space-between">
       <Stack flexGrow={1} direction="row" align="center">
         <Text>Set limit of visible jobs per page:</Text>
         <Select
@@ -36,7 +39,7 @@ export const JobListDisplaySettings = ({
           <option value={50}>Show 50</option>
         </Select>
       </Stack>
-      <Stack flexGrow={1} direction="row" align="center" justify={{base: "start", lg: "end"}}>
+      <Stack flexGrow={1} direction="row" align="center" justify={{ base: "start", lg: "center" }}>
         <Text>Sort by:</Text>
         <Select
           value={sortBy[0]}
@@ -62,6 +65,18 @@ export const JobListDisplaySettings = ({
           }
         />
       </Stack>
+      <Hide below="lg">
+        <Stack flexGrow={1} direction="row" align="center" justify={{ base: "start", lg: "end" }}>
+          <Text>Compact view:</Text>
+          <Switch
+            defaultChecked={compactView[0]}
+            onChange={(e) => {
+              compactView[1](e.target.checked)
+            }}
+          />
+        </Stack>
+      </Hide>
+
     </Stack>
   );
 };

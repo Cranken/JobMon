@@ -22,7 +22,7 @@ export const AnalysisBoxPlot = ({ data, autoScale }: AnalysisBoxPlotProps) => {
     elements.push(
       <BoxPlot
         key={val.Config.Measurement}
-        data={Object.values(val.Data)}
+        data={Object.values(val.Mean)}
         y={(dat) => dat}
         width={window.document.body.clientWidth / 6}
         yLabel={val.Config.DisplayName}

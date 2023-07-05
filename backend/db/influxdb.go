@@ -107,7 +107,6 @@ func (db *InfluxDB) Init(c conf.Configuration) {
 	db.defaultSampleInterval = c.SampleInterval
 	db.metricQuantiles = c.MetricQuantiles
 	go db.updateAggregationTasks()
-	// go db.updateSynthesizedMetricTask()
 }
 
 // Close implements Close method of DB interface.
@@ -271,10 +270,10 @@ func (db *InfluxDB) getJobData(
 
 		// Query metric data
 		wg.Add(1)
-		go func(m conf.MetricConfig) {
+		go func(metric conf.MetricConfig) {
 			defer wg.Done()
 			if raw {
-				result, err := db.queryRaw(m, j, nodes, sampleInterval, forceAggregate)
+				result, err := db.queryRaw(metric, j, nodes, sampleInterval, forceAggregate)
 				if err != nil {
 					logging.Error("db: getJobData(): Job ", j.Id, ": could not get raw metric data: ", err)
 					return
@@ -282,12 +281,12 @@ func (db *InfluxDB) getJobData(
 				metricData =
 					append(metricData,
 						job.MetricData{
-							Config:  m,
+							Config:  metric,
 							RawData: result,
 						},
 					)
 			} else {
-				result, err := db.query(m, j, nodes, sampleInterval, forceAggregate)
+				result, err := db.query(metric, j, nodes, sampleInterval, forceAggregate)
 				if err != nil {
 					logging.Error("db: getJobData(): Job ", j.Id, ": could not get metric data: ", err)
 					return
@@ -295,7 +294,7 @@ func (db *InfluxDB) getJobData(
 				metricData =
 					append(metricData,
 						job.MetricData{
-							Config: m,
+							Config: metric,
 							Data:   result,
 						},
 					)
@@ -374,7 +373,7 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (
 					mean := res[0]["_value"]
 					switch v := mean.(type) {
 					case float64:
-						md.Data = v
+						md.Mean = v
 					default:
 					}
 				}
@@ -392,7 +391,7 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (
 				data = append(data, md)
 			} else {
 				// Add zero values in the case metadata is missing.
-				md.Data = 0.0
+				md.Mean = 0.0
 				md.Max = 0.0
 				data = append(data, md)
 			}
@@ -519,11 +518,25 @@ func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (
 
 // queryAggregateMeasurement is similar to querySimpleMeasurement except that here an aggregation
 // over the metric type is performed.
-func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, j *job.JobMetadata, nodes string, aggFn string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) queryAggregateMeasurement(
+	metric conf.MetricConfig,
+	j *job.JobMetadata,
+	nodes string,
+	aggFn string,
+	sampleInterval time.Duration,
+) (
+	result *api.QueryTableResult,
+	err error) {
 	measurement := metric.Measurement + "_" + aggFn
-	query := fmt.Sprintf(AggregateMeasurementQuery,
-		db.bucketName, j.StartTime, j.StopTime, measurement,
-		nodes, sampleInterval, metric.FilterFunc, metric.PostQueryOp, sampleInterval)
+	query := createAggregateMeasurementQuery(
+		db.bucketName,
+		j.StartTime, j.StopTime,
+		measurement,
+		nodes,
+		sampleInterval,
+		metric.FilterFunc,
+		metric.PostQueryOp,
+	)
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		logging.Error("db: queryAggregateMeasurement(): Error at aggregate query '", query, "': ", err)
@@ -533,11 +546,26 @@ func (db *InfluxDB) queryAggregateMeasurement(metric conf.MetricConfig, j *job.J
 
 // queryAggregateMeasurementRaw is similar to querySimpleMeasurementRaw except that here an aggregation
 // over the metric type is performed.
-func (db *InfluxDB) queryAggregateMeasurementRaw(metric conf.MetricConfig, j *job.JobMetadata, nodes string, aggFn string, sampleInterval time.Duration) (result string, err error) {
+func (db *InfluxDB) queryAggregateMeasurementRaw(
+	metric conf.MetricConfig,
+	j *job.JobMetadata,
+	nodes string,
+	aggFn string,
+	sampleInterval time.Duration,
+) (
+	result string,
+	err error,
+) {
 	measurement := metric.Measurement + "_" + aggFn
-	query := fmt.Sprintf(AggregateMeasurementQuery,
-		db.bucketName, j.StartTime, j.StopTime, measurement,
-		nodes, sampleInterval, metric.FilterFunc, metric.PostQueryOp, sampleInterval)
+	query := createAggregateMeasurementQuery(
+		db.bucketName,
+		j.StartTime, j.StopTime,
+		measurement,
+		nodes,
+		sampleInterval,
+		metric.FilterFunc,
+		metric.PostQueryOp,
+	)
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
 	if err != nil {
 		logging.Error("db: queryAggregateMeasurementRaw(): Error at aggregate raw query '", query, "': ", err)
@@ -689,186 +717,86 @@ func (db *InfluxDB) createAggregationTask(
 		sampleInterval = db.defaultSampleInterval
 	}
 
-	query := fmt.Sprintf(`
-	from(bucket: "%s")
-		|> range(start: -task.every)
-		|> filter(fn: (r) => r["_measurement"] == "%s")
-		|> filter(fn: (r) => r.type == "%s")
-		%s
-		%s
-		|> group(columns: ["_measurement", "hostname"], mode:"by")
-		|> aggregateWindow(every: %s, fn: %s, createEmpty: false)
-		|> group(columns: ["hostname"], mode:"by")
-		|> keep(
-			columns: [
-				"hostname",
-				"_start",
-				"_stop",
-				"_time",
-				"_value",
-				"cluster",
-				"hostname",
-			],
-		)
-		|> set(key: "_measurement", value: "%s")
-		|> set(key: "_field", value: "%s")
-		|> to(bucket: "%s", org: "%s")
-	`,
-		db.bucketName,
-		metric.Measurement,
-		metric.Type,
-		metric.FilterFunc,
-		metric.PostQueryOp,
-		sampleInterval, aggFn,
-		aggMeasurement,
-		aggMeasurement,
-		db.bucketName,
-		db.organizationName)
+	// Create a InfluxDB task (scheduled Flux script)
+	sb := new(strings.Builder)
+	fmt.Fprintf(sb, `from(bucket: "%s")`, db.bucketName)
+	fmt.Fprintf(sb, `|> range(start: -task.every)`)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s" and r.type == "%s")`,
+		metric.Measurement, metric.Type)
+	if len(metric.FilterFunc) > 0 {
+		fmt.Fprintf(sb, `%s`, metric.FilterFunc)
+	}
+	if len(metric.PostQueryOp) > 0 {
+		fmt.Fprintf(sb, `%s`, metric.PostQueryOp)
+	}
+	fmt.Fprintf(sb, `|> group(columns: ["_measurement", "hostname"], mode:"by")`)
+	fmt.Fprintf(sb, `|> aggregateWindow(every: %s, fn: %s, createEmpty: false)`, sampleInterval, aggFn)
+	fmt.Fprintf(sb, `|> group(columns: ["hostname"], mode:"by")`)
+	fmt.Fprintf(sb, `|> keep(
+		columns: [
+			"hostname",
+			"_start",
+			"_stop",
+			"_time",
+			"_value",
+			"cluster",
+			"hostname",
+		],
+	)`)
+	fmt.Fprintf(sb, `|> set(key: "_measurement", value: "%s")`, aggMeasurement)
+	fmt.Fprintf(sb, `|> set(key: "_field", value: "%s")`, aggMeasurement)
+	fmt.Fprintf(sb, `|> to(bucket: "%s", org: "%s")`, db.bucketName, db.organizationName)
 
+	query := sb.String()
 	return db.createTask(aggTaskName, query, orgId)
 }
-
-// DEPRECATED //
-// The aggregation can be done from the collector
-
-// createSynthesizedMetricTask calls the function createTask
-// func (db *InfluxDB) createSynthesizedMetricTask(metric conf.MetricConfig, subMeasurements, orgId string) (task *domain.Task, err error) {
-// 	taskName := strings.Join([]string{db.bucketName, metric.Measurement, subMeasurements}, "_")
-// 	subMeasurementsRegex := strings.Join(metric.SubMeasurements, "|")
-// 	quotedSubMeasurements := strings.Join(utils.SliceMap(utils.ApplyQuotes, metric.SubMeasurements), ", ")
-// 	addedSubMeasurements := strings.Join(
-// 		utils.SliceMap(func(s string) string {
-// 			return fmt.Sprintf(`r["%v"]`, s)
-// 		}, metric.SubMeasurements), " + ")
-
-// 	query := fmt.Sprintf(SynthesizedMetricsCreationQuery,
-// 		db.bucketName, subMeasurementsRegex, metric.Type,
-// 		addedSubMeasurements, quotedSubMeasurements,
-// 		metric.Measurement, db.bucketName, db.organizationName)
-// 	return db.createTask(taskName, query, orgId)
-// }
 
 // updateAggregationTask finds first all the missing tasks for job metrics.
 // then for each metric find the available aggregation functions adding this tasks
 // to db, finally it launches an aggregation task for each missing metric.
-func (db *InfluxDB) updateAggregationTasks() (err error) {
-
-	// Get configured tasks from InfluxDB
-	tasks, err := db.tasksAPI.FindTasks(context.Background(), nil)
-	if err != nil {
-		logging.Error("db: updateAggregationTasks(): Could not get tasks from influxdb: ", err)
-		return
-	}
-
-	// Create empty list of missing tasks
-	type tuple struct {
-		metricConf conf.MetricConfig
-		aggFn      string
-	}
-	missingAggTasks := make([]tuple, 0)
+func (db *InfluxDB) updateAggregationTasks() {
+	// Measure required time to update aggregation tasks
+	start := time.Now()
 
 	for _, metricConfig := range db.metrics {
 		for _, aggFn := range metricConfig.AvailableAggFns {
 
 			// For each configured metric and its aggregation functions create a aggregation task
-			name := db.bucketName + "_" + metricConfig.Measurement + "_" + aggFn
+			aggTaskName := db.bucketName + "_" + metricConfig.Measurement + "_" + aggFn
 
-			// Check if this task already exists
-			found := false
-			for _, task := range tasks {
-				if task.Name == name {
-					db.tasks = append(db.tasks, task)
-					found = true
-					break
-				}
+			// Check if task is already created
+			tasks, err := db.tasksAPI.FindTasks(
+				context.Background(),
+				&api.TaskFilter{
+					Name: aggTaskName,
+				})
+			if err != nil {
+				logging.Error("db: updateAggregationTasks(): Could not get tasks from influxdb: ", err)
+				continue
 			}
 
-			// If task is missing, add it to to the list of missing aggregation tasks
+			if len(tasks) > 1 {
+				logging.Error("db: updateAggregationTasks(): Multiple InfluxDB tasks exists for aggregation ", aggTaskName)
+				continue
+			}
+
+			// If task is missing, create it
+			found := len(tasks) > 0
 			if !found {
-				missingAggTasks =
-					append(missingAggTasks,
-						tuple{
-							metricConf: metricConfig,
-							aggFn:      aggFn,
-						},
-					)
-				logging.Info("db: updateAggregationTasks(): Create missing aggregation task ", name)
-			}
-		}
-	}
-
-	// Create aggregation tasks for all missing tasks
-	for _, t := range missingAggTasks {
-		go func(
-			metricConfig conf.MetricConfig,
-			aggFn string,
-		) {
-			if _, err :=
-				db.createAggregationTask(
+				logging.Info("db: updateAggregationTasks(): Create missing aggregation task ", aggTaskName)
+				if _, err := db.createAggregationTask(
 					metricConfig,
 					aggFn,
 					*db.organization.Id,
 				); err != nil {
-				logging.Error("db: updateAggregationTasks(): Failed to create aggregation task: ", err)
+					logging.Error("db: updateAggregationTasks(): Failed to create aggregation task: ", err)
+				}
 			}
-		}(t.metricConf, t.aggFn)
+		}
 	}
-	return
+
+	logging.Info("db: updateAggregationTasks() took ", time.Since(start))
 }
-
-// DEPRECATED //
-// The aggregation can be done from the collector
-
-// updateSynthesizedMetricTask adds aggregated metrics that are computed from other measurements(metrics),
-// these measurements can be found in the metric configuration.
-// func (db *InfluxDB) updateSynthesizedMetricTask() (err error) {
-// 	tasks, err := db.tasksAPI.FindTasks(context.Background(), nil)
-// 	if err != nil {
-// 		logging.Error("db: updateSynthesizedMetricTask(): Could not get tasks from influxdb: ", err)
-// 		return
-// 	}
-
-// 	missingMetricTasks := make([]utils.Tuple[conf.MetricConfig, string], 0)
-// 	for _, metric := range db.metrics {
-// 		// Check if the metric is a synthesized metric.
-// 		if len(metric.SubMeasurements) != 0 {
-
-// 			joinedSubMeasurements := strings.Join(metric.SubMeasurements, "_")
-// 			name := strings.Join([]string{db.bucketName, metric.Measurement, joinedSubMeasurements}, "_")
-// 			// Check if the tasks already exists
-// 			found := false
-// 			for _, task := range tasks {
-// 				if task.Name == name {
-// 					db.tasks = append(db.tasks, task)
-// 					found = true
-// 					break
-// 				}
-// 			}
-// 			// If task is missing, add it to to the list of missing aggregation tasks
-// 			if !found {
-// 				missingMetricTasks =
-// 					append(missingMetricTasks,
-// 						utils.Tuple[conf.MetricConfig, string]{
-// 							First:  metric,
-// 							Second: joinedSubMeasurements,
-// 						})
-// 			}
-// 		}
-// 	}
-// 	org, err := db.organizationsAPI.FindOrganizationByName(context.Background(), db.organizationName)
-// 	if err != nil {
-// 		logging.Error("db: addAggregatedMetrics(): Could not get orgId from influxdb: ", err)
-// 		return
-// 	}
-// 	for _, metric := range missingMetricTasks {
-// 		go func(metric conf.MetricConfig, subMeasurements string) {
-// 			_, err = db.createSynthesizedMetricTask(metric, subMeasurements, *org.Id)
-// 		}(metric.First, metric.Second)
-
-// 	}
-// 	return
-
-// }
 
 // getPartition returns a partition configuration for job j.
 func (db *InfluxDB) getPartition(j *job.JobMetadata) conf.BasePartitionConfig {

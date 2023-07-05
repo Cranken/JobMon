@@ -10,26 +10,26 @@ const DEFAULT_MAX_POINTS_PER_JOB = 200
 
 // JobMetadata represents all the metadata of a job.
 type JobMetadata struct {
-	Id           int `bun:",pk"`
-	UserId       int
-	UserName     string
-	GroupId      int
-	GroupName    string
-	ClusterId    string
-	NumNodes     int
-	NumTasks     int
-	TasksPerNode int
-	GPUsPerNode  int
-	NodeList     string
-	StartTime    int
-	StopTime     int
-	IsRunning    bool
-	JobName      string
-	Account      string
-	TTL          int
-	Partition    string
-	JobScript    string
-	ExitCode     int
+	Id           int       `bun:",pk"` // uniq job ID
+	UserId       int       // numeric unix user ID
+	UserName     string    // unix user name
+	GroupId      int       // numeric unix group ID
+	GroupName    string    // unix group name
+	ClusterId    string    // cluster name
+	NumNodes     int       // number of requested nodes
+	NumTasks     int       // number of requested tasks / processes
+	TasksPerNode int       // number of requested tasks per node
+	GPUsPerNode  int       // number of requested GPUs / accelerators  per node
+	NodeList     string    // Nodes allocated for the job
+	StartTime    int       // Job start time (in seconds since the Epoch (1970-01-01 00:00 UTC))
+	StopTime     int       // Job end time
+	IsRunning    bool      // is job still running?
+	JobName      string    // job name / description
+	Account      string    // account charged for the resources
+	TTL          int       // Time to life
+	Partition    string    // Requested resource partition
+	JobScript    string    // Submitted job script
+	ExitCode     int       // global job exit code
 	Tags         []*JobTag `bun:"m2m:job_to_tags,join:Job=Tag"`
 	Data         []JobMetadataData
 }
@@ -38,7 +38,7 @@ type JobMetadata struct {
 type JobMetadataData struct {
 	Config config.MetricConfig
 	// Mean
-	Data float64
+	Mean float64
 	// Max
 	Max float64
 	// Change points
@@ -110,6 +110,7 @@ type MetricData struct {
 	// Only set when querying parsed raw data
 	Data map[string][]QueryResult
 	// Only set when querying raw data
+	// The raw data is used in the frontend for "export as CSV"
 	RawData string
 }
 

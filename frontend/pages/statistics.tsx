@@ -2,7 +2,6 @@ import {
   Box,
   Center,
   Grid,
-  Spinner,
   Stack,
   Tab,
   TabPanel,
@@ -15,6 +14,7 @@ import { StatItem } from "@/components/statistics/StatItem";
 import React, { useEffect } from "react";
 import {useGetUser, UserRole} from "@/utils/user";
 import AccessDenied from "./accessDenied";
+import CentredSpinner from "@/components/utils/CentredSpinner";
 
 export const Statistics = () => {
   if (!(useGetUser().Roles?.includes(UserRole.Admin) ?? false)) {
@@ -90,9 +90,7 @@ export const Statistics = () => {
     );
   }
   return (
-    <Center>
-      <Spinner />
-    </Center>
+    <CentredSpinner />
   );
 };
 
