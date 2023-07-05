@@ -352,7 +352,7 @@
             "DisplayName": "GPFS Inode Updates",
             "FilterFunc": "",
             "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
-            "SeparationKey": "hostname",
+            "SeparationKey": "filesystem",
             "MaxPerNode": 1000000,
             "MaxPerType": 1000000,
             "PThreadAggFn": "mean"
@@ -400,7 +400,7 @@
             "DisplayName": "GPFS Num Closes",
             "FilterFunc": "",
             "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
-            "SeparationKey": "hostname",
+            "SeparationKey": "filesystem",
             "MaxPerNode": 1000000,
             "MaxPerType": 1000000,
             "PThreadAggFn": "mean"
@@ -424,7 +424,7 @@
             "DisplayName": "GPFS Num Opens",
             "FilterFunc": "",
             "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
-            "SeparationKey": "hostname",
+            "SeparationKey": "filesystem",
             "MaxPerNode": 1000000,
             "MaxPerType": 1000000,
             "PThreadAggFn": "mean"
@@ -448,7 +448,7 @@
             "DisplayName": "GPFS Num Readdirs",
             "FilterFunc": "",
             "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
-            "SeparationKey": "hostname",
+            "SeparationKey": "filesystem",
             "MaxPerNode": 1000000,
             "MaxPerType": 1000000,
             "PThreadAggFn": "mean"
