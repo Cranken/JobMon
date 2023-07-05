@@ -492,33 +492,72 @@ func parseQueryResult(
 	result map[string][]job.QueryResult,
 	err error,
 ) {
+	// Create empty mapping from key to result table
 	result = make(map[string][]job.QueryResult)
-	tableRows := []job.QueryResult{}
-	curNode := ""
-	tableIndex := int64(0)
-	for queryResult.Next() {
-		row := queryResult.Record().Values()
-		if row["table"].(int64) != tableIndex {
-			tableIndex++
-			result[curNode] = tableRows
-			tableRows = []job.QueryResult{}
-		} else if curNode != "" && curNode != row[separationKey].(string) {
-			result[curNode] = tableRows
-			tableRows = []job.QueryResult{}
-		}
-		tableRows = append(tableRows, row)
-		if val, ok := row[separationKey]; ok {
-			curNode = val.(string)
-		} else {
-			return nil, fmt.Errorf("could not parse query result %v with separation key %v", row, separationKey)
-		}
-	}
-	result[curNode] = tableRows
 
-	if queryResult.Err() != nil {
-		logging.Error("db: parseQueryResult(): ", queryResult.Err())
-		return nil, queryResult.Err()
+	// Create empty result table
+	tableRows := []job.QueryResult{}
+
+	var key string
+	var tableIndex int64
+	firstRun := true
+	for queryResult.Next() {
+		// Read next row in query result
+		row := queryResult.Record().Values()
+
+		// Check for parsing errors
+		if queryResult.Err() != nil {
+			logging.Error("db: parseQueryResult(): ", queryResult.Err())
+			return nil, queryResult.Err()
+		}
+
+		if firstRun {
+			firstRun = false
+
+			// Initialize key
+			if val, ok := row[separationKey]; ok {
+				key = val.(string)
+			} else {
+				return nil, fmt.Errorf(
+					`db: parseQueryResult(): could not find separation key "%s" in row "%v"`,
+					separationKey, row)
+			}
+
+			// Initialize tableIndex
+			if val, ok := row["table"]; ok {
+				tableIndex = val.(int64)
+			} else {
+				return nil, fmt.Errorf(
+					`db: parseQueryResult(): could not find "table" in row "%v"`, row)
+			}
+		}
+
+		// Check if table index or key is changed in this row
+		if valTableIndex, valKey := row["table"].(int64), row[separationKey].(string); valTableIndex != tableIndex || valKey != key {
+
+			// Check if result table already exists
+			if _, ok := result[key]; ok {
+				logging.Warning(`db: parseQueryResult(): Result table for separation key = "`, separationKey, `" with key value = "`, key, `" already exists. Overwriting old result table for measurement = "`, tableRows[0]["_measurement"].(string), `"`)
+			}
+
+			// Safe current result table
+			result[key] = tableRows
+
+			// Create empty new result table
+			tableRows = []job.QueryResult{}
+
+			// New table has started -> Initialize table index and key
+			tableIndex = valTableIndex
+			key = valKey
+		}
+
+		// add row to result table
+		tableRows = append(tableRows, row)
 	}
+
+	// Safe current result table
+	result[key] = tableRows
+
 	return
 }
 

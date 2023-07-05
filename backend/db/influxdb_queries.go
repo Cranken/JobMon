@@ -123,12 +123,12 @@ func createQuantileMeasurementQuery(
 	}
 
 	if measurement == "" {
-		logging.Error("db: createAggregateMeasurementQuery(): Missing measurement configuration")
+		logging.Error("db: createQuantileMeasurementQuery(): Missing measurement configuration")
 		return
 	}
 
 	if StartTime < 0 || StopTime < 0 || StartTime >= StopTime {
-		logging.Error("db: createAggregateMeasurementQuery(): Wrong start time = ", StartTime, ", StopTime = ", StopTime, " configuration")
+		logging.Error("db: createQuantileMeasurementQuery(): Wrong start time = ", StartTime, ", StopTime = ", StopTime, " configuration")
 		return
 	}
 
