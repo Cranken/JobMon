@@ -18,6 +18,7 @@ import { JobMetadata } from "../../types/job";
 import React, { ReactNode, useEffect, useState } from "react";
 
 import "rc-slider/assets/index.css";
+import { RepeatClockIcon } from "@chakra-ui/icons";
 
 const Range = createSliderWithTooltip(Slider.Range);
 interface TimeControlProps {
@@ -135,6 +136,7 @@ const TimeControl = ({
                 }}
                 w={"100%"}
               >
+                <RepeatClockIcon mr={2}/>
                 Reset Time Range
               </Button>
             </ModalBody>
