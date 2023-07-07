@@ -142,6 +142,11 @@ export const Jobs = () => {
     setPageStorage(clamp(page, 0, Math.ceil(pages)))
   }
 
+  // Set page to 1. This case is necessary coming from a filter with zero jobs to a filter with more than zero jobs.
+  if (page == 0 && pages > 0) {
+    setPageStorage(1)
+  }
+
   if (pages > 1) {
     elements.push(
       <JoblistPageSelection
