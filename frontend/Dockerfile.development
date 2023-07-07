@@ -1,7 +1,7 @@
 # Node.js Docker Image
 # * [DockerHub Page](https://hub.docker.com/_/node)
 ARG NODE_RELEASE=16 \
-    DEBIAN_RELEASE=bullseye \
+    DEBIAN_RELEASE=bookworm \
     NODE_TAG=${NODE_RELEASE}-${DEBIAN_RELEASE}
 
 # Taken from https://nextjs.org/docs/deployment

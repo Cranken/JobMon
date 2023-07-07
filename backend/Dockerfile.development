@@ -5,7 +5,7 @@
 # * [Release History](https://go.dev/doc/devel/release)
 ###
 ARG GOLANG_RELEASE=1.20 \
-    DEBIAN_RELEASE=bullseye \
+    DEBIAN_RELEASE=bookworm \
     GOLANG_TAG=${GOLANG_RELEASE}-${DEBIAN_RELEASE} \
     DEBIAN_TAG=${DEBIAN_RELEASE}
 
