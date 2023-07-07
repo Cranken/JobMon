@@ -189,7 +189,7 @@
             "Categories": [
                 "Performance"
             ],
-            "Measurement": "cpu_sys",
+            "Measurement": "cpu_system",
             "AggFn": "sum",
             "AvailableAggFns": [
                 "mean",
