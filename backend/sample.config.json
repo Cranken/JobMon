@@ -34,9 +34,7 @@
             "Measurement": "consumed_watts",
             "AggFn": "mean",
             "AvailableAggFns": [
-                "mean",
-                "min",
-                "max"
+                "mean"
             ],
             "SampleInterval": "",
             "Unit": "W",
@@ -81,10 +79,7 @@
             "Measurement": "mem_used",
             "AggFn": "mean",
             "AvailableAggFns": [
-                "mean",
-                "sum",
-                "min",
-                "max"
+                "mean"
             ],
             "SampleInterval": "",
             "Unit": "kB",
@@ -128,9 +123,7 @@
             "Measurement": "load_one",
             "AggFn": "mean",
             "AvailableAggFns": [
-                "mean",
-                "min",
-                "max"
+                "mean"
             ],
             "SampleInterval": "",
             "Unit": "",
