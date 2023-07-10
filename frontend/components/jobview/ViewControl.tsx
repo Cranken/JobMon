@@ -1,4 +1,4 @@
-import { Button, Select, Stack, Text, Tooltip } from "@chakra-ui/react";
+import { Button, Select, Stack, Text, Tooltip, useToast } from "@chakra-ui/react";
 import JSZip from "jszip";
 import React from "react";
 import { useCookies } from "react-cookie";
@@ -23,7 +23,7 @@ interface ControlProps {
   selectedMetrics: string[];
   setSelectedMetrics: (val: string[]) => void;
   showChangepoints: boolean
-  setShowChangepoints?: (b:boolean) => void;
+  setShowChangepoints?: (b: boolean) => void;
 }
 
 /**
@@ -66,21 +66,29 @@ export const ViewControl = ({
   setShowChangepoints
 }: ControlProps) => {
   const [, , removeCookie] = useCookies(["Authorization"]);
+  const toast = useToast();
   return (
-    <Stack px={{base: 0, lg: 3}}>
-      <Stack direction={{base: "column", lg: "row"}} justify="space-between">
+    <Stack px={{ base: 0, lg: 3 }}>
+      <Stack direction={{ base: "column", lg: "row" }} justify="space-between">
         <MetricSelection
           metrics={jobdata.MetricData?.map((val) => val.Config) ?? []}
           selectedMetrics={selectedMetrics}
           setSelectedMetrics={setSelectedMetrics}
         />
         {jobdata.Metadata.IsRunning ? null : (
-          <Button onClick={() => exportData(jobdata.Metadata.Id, removeCookie)}>
+          <Button onClick={() => {
+            exportData(jobdata.Metadata.Id, removeCookie)
+            toast({
+              title: `CSV Export started. This may take a few seconds.`,
+              status: "info",
+              isClosable: true,
+            })
+          }}>
             Export as CSV
           </Button>
         )}
       </Stack>
-      <Stack direction={{base: "column", lg: "row"}} gap={2}>
+      <Stack direction={{ base: "column", lg: "row" }} gap={2}>
         {setShowChangepoints ? (
           <Tooltip label={"Changepoints indicate changes in your codes behavior"}>
             <Button fontSize="sm" onClick={() => setShowChangepoints(!showChangepoints)}>
@@ -141,12 +149,13 @@ export default ViewControl;
  */
 const exportData = (
   id: number,
-  removeCookie: (name: "Authorization") => void
+  removeCookie: (name: "Authorization") => void,
 ) => {
   const url = new URL(
     process.env.NEXT_PUBLIC_BACKEND_URL +
     `/api/job/${id}?raw=true`
   );
+
   fetch(url.toString(), { credentials: "include" }).then((res) => {
     if (!res.ok && (res.status === 401 || res.status === 403)) {
       removeCookie("Authorization");
