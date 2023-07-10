@@ -29,11 +29,6 @@ func createSimpleMeasurementQuery(
 		return
 	}
 
-	if metricType == "" {
-		logging.Error("db: createSimpleMeasurementQuery(): Missing metric type configuration")
-		return
-	}
-
 	if StartTime < 0 || StopTime < 0 || StartTime >= StopTime {
 		logging.Error("db: createSimpleMeasurementQuery(): Wrong start time = ", StartTime, ", StopTime = ", StopTime, " configuration")
 		return
@@ -43,7 +38,9 @@ func createSimpleMeasurementQuery(
 	fmt.Fprintf(sb, `from(bucket: "%s")`, bucket)
 	fmt.Fprintf(sb, `|> range(start: %d, stop: %d)`, StartTime, StopTime)
 	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s")`, measurement)
-	fmt.Fprintf(sb, `|> filter(fn: (r) => r["type"] == "%s")`, metricType)
+	if metricType != "" {
+		fmt.Fprintf(sb, `|> filter(fn: (r) => r["type"] == "%s")`, metricType)
+	}
 	if strings.Contains(nodes, "|") {
 		fmt.Fprintf(sb, `|> filter(fn: (r) => r["hostname"] =~ /^(%s)$/)`, nodes)
 	} else {

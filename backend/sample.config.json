@@ -256,7 +256,7 @@
         },
         {
             "GUID": "6cf6178f-90ea-4682-9d94-0c9f0c8f6b72",
-            "Type": "node",
+            "Type": "",
             "Categories": [
                 "Filesystem"
             ],
@@ -280,7 +280,7 @@
         },
         {
             "GUID": "69414157-6d1f-42d9-b7e8-31a4cc5b9615",
-            "Type": "node",
+            "Type": "",
             "Categories": [
                 "Filesystem"
             ],
@@ -328,7 +328,7 @@
         },
         {
             "GUID": "86251d9b-693c-461c-b121-830fd85c1ab7",
-            "Type": "node",
+            "Type": "",
             "Categories": [
                 "Filesystem"
             ],
@@ -352,7 +352,7 @@
         },
         {
             "GUID": "abe42586-c04c-4c1e-aed7-813160764c84",
-            "Type": "node",
+            "Type": "",
             "Categories": [
                 "Filesystem"
             ],
@@ -376,7 +376,7 @@
         },
         {
             "GUID": "ef4f8f13-82e2-4dc0-8b8a-615da76815fd",
-            "Type": "node",
+            "Type": "",
             "Categories": [
                 "Filesystem"
             ],
@@ -400,7 +400,7 @@
         },
         {
             "GUID": "50f5a265-fcbf-4fc0-b4f4-453e74605668",
-            "Type": "node",
+            "Type": "",
             "Categories": [
                 "Filesystem"
             ],
@@ -424,7 +424,7 @@
         },
         {
             "GUID": "89784861-8766-4d3f-bc34-418bb08c0d7f",
-            "Type": "node",
+            "Type": "",
             "Categories": [
                 "Filesystem"
             ],
@@ -448,7 +448,7 @@
         },
         {
             "GUID": "b985d0d8-0329-4811-811f-daa648289d18",
-            "Type": "node",
+            "Type": "",
             "Categories": [
                 "Filesystem"
             ],
@@ -472,7 +472,7 @@
         },
         {
             "GUID": "687b8465-4d6e-4fed-a17e-28ac3a154ae8",
-            "Type": "node",
+            "Type": "",
             "Categories": [
                 "Filesystem"
             ],
@@ -496,7 +496,7 @@
         },
         {
             "GUID": "dc49f76d-15a1-4eae-8595-048426371795",
-            "Type": "node",
+            "Type": "",
             "Categories": [
                 "Filesystem"
             ],
@@ -701,7 +701,7 @@
             "DisplayName": "Infiniband Packets",
             "FilterFunc": "",
             "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
-            "SeparationKey": "device",
+            "SeparationKey": "hostname",
             "MaxPerNode": 0,
             "MaxPerType": 0,
             "PThreadAggFn": ""
@@ -773,7 +773,7 @@
             "DisplayName": "Infiniband Traffic",
             "FilterFunc": "",
             "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
-            "SeparationKey": "device",
+            "SeparationKey": "hostname",
             "MaxPerNode": 25000000000,
             "MaxPerType": 25000000000,
             "PThreadAggFn": ""
