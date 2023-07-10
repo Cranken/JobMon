@@ -42,8 +42,14 @@ func createSimpleMeasurementQuery(
 	sb := new(strings.Builder)
 	fmt.Fprintf(sb, `from(bucket: "%s")`, bucket)
 	fmt.Fprintf(sb, `|> range(start: %d, stop: %d)`, StartTime, StopTime)
-	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s" and  r["type"] == "%s" and r["hostname"] =~ /%s/)`,
-		measurement, metricType, nodes)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s")`, measurement)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["type"] == "%s")`, metricType)
+	if strings.Contains(nodes, "|") {
+		fmt.Fprintf(sb, `|> filter(fn: (r) => r["hostname"] =~ /^(%s)$/)`, nodes)
+	} else {
+		fmt.Fprintf(sb, `|> filter(fn: (r) => r["hostname"] == "%s")`, nodes)
+	}
+
 	if len(metricFilterFunc) > 0 {
 		fmt.Fprintf(sb, `%s`, metricFilterFunc)
 	}
@@ -88,8 +94,12 @@ func createAggregateMeasurementQuery(
 	sb := new(strings.Builder)
 	fmt.Fprintf(sb, `from(bucket: "%s")`, bucket)
 	fmt.Fprintf(sb, `|> range(start: %d, stop: %d)`, StartTime, StopTime)
-	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s" and r["hostname"] =~ /%s/)`,
-		measurement, nodes)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s")`, measurement)
+	if strings.Contains(nodes, "|") {
+		fmt.Fprintf(sb, `|> filter(fn: (r) => r["hostname"] =~ /^(%s)$/)`, nodes)
+	} else {
+		fmt.Fprintf(sb, `|> filter(fn: (r) => r["hostname"] == "%s")`, nodes)
+	}
 	if len(metricFilterFunc) > 0 {
 		fmt.Fprintf(sb, `%s`, metricFilterFunc)
 	}
@@ -135,8 +145,12 @@ func createQuantileMeasurementQuery(
 	sb := new(strings.Builder)
 	fmt.Fprintf(sb, `data = from(bucket: "%s")`, bucket)
 	fmt.Fprintf(sb, `|> range(start: %d, stop: %d)`, StartTime, StopTime)
-	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s" and r["hostname"] =~ /%s/)`,
-		measurement, nodes)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s")`, measurement)
+	if strings.Contains(nodes, "|") {
+		fmt.Fprintf(sb, `|> filter(fn: (r) => r["hostname"] =~ /^(%s)$/)`, nodes)
+	} else {
+		fmt.Fprintf(sb, `|> filter(fn: (r) => r["hostname"] == "%s")`, nodes)
+	}
 	if len(metricFilterFunc) > 0 {
 		fmt.Fprintf(sb, `%s`, metricFilterFunc)
 	}
@@ -177,7 +191,8 @@ func createQuantileMeasurementQuery(
 const MetadataMeasurementsQuery = `
 data = from(bucket: "%v")
 	|> range(start: %v, stop: %v)
-	|> filter(fn: (r) => r["_measurement"] == "%v" and r["hostname"] =~ /%v/)
+	|> filter(fn: (r) => r["_measurement"] == "%v")
+	|> filter(fn: (r) => r["hostname"] =~ /^(%v)$/)
 	%v
 	%v
 mean = data
