@@ -1,6 +1,6 @@
 # Node.js Docker Image
 # * [DockerHub Page](https://hub.docker.com/_/node)
-ARG NODE_RELEASE=16 \
+ARG NODE_RELEASE=18 \
     DEBIAN_RELEASE=bookworm \
     NODE_TAG=${NODE_RELEASE}-${DEBIAN_RELEASE}
 
