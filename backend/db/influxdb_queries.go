@@ -7,7 +7,15 @@ import (
 	"time"
 )
 
-// createSimpleMeasurementQuery creates an InfluxDB flux query string
+// createSimpleMeasurementQuery creates an flux query string to query an InfluxDB
+// The query contains:
+// * a filter by time range
+// * a filter by measurement
+// * an optional filter by type
+// * a filter by nodes / host names
+// * an optional additional metric filter function
+// * optional post query operations
+// Query result is aggregated and truncated to duration "sample interval"
 func createSimpleMeasurementQuery(
 	bucket string,
 	StartTime int, StopTime int,
@@ -17,7 +25,9 @@ func createSimpleMeasurementQuery(
 	sampleInterval time.Duration,
 	metricFilterFunc string,
 	metricPostQueryOp string,
-) (q string) {
+) (
+	q string,
+) {
 
 	if bucket == "" {
 		logging.Error("db: createSimpleMeasurementQuery(): Missing bucket configuration")
@@ -54,6 +64,7 @@ func createSimpleMeasurementQuery(
 		fmt.Fprintf(sb, `%s`, metricPostQueryOp)
 	}
 	// Aggregation to sampleInterval after all filtering to aggregate on all metric data available
+	// https://docs.influxdata.com/flux/v0.x/stdlib/universe/mean/
 	fmt.Fprintf(sb, `|> aggregateWindow(every: %v, fn: mean, createEmpty: false)`, sampleInterval)
 	// Truncate time to sampleInterval to synchronize measurements from different nodes
 	fmt.Fprintf(sb, `|> truncateTimeColumn(unit: %v)`, sampleInterval)
@@ -63,6 +74,15 @@ func createSimpleMeasurementQuery(
 	return
 }
 
+// createAggregateMeasurementQuery creates an flux query string to query an InfluxDB
+// It is similar to createSimpleMeasurementQuery except that here an aggregation over the metric type is performed.
+// The query contains:
+// * a filter by time range
+// * a filter by measurement
+// * a filter by nodes / host names
+// * an optional additional metric filter function
+// * optional post query operations
+// Query result is aggregated and truncated to duration "sample interval"
 func createAggregateMeasurementQuery(
 	bucket string,
 	StartTime int, StopTime int,
