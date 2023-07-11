@@ -631,11 +631,12 @@ func (db *InfluxDB) queryQuantileMeasurement(
 ) {
 	start := time.Now()
 
-	// if a per node metric aggregation function is defined
-	// use their values to compute the quantiles
+	// If a job has more than one node
+	// and a per node metric aggregation function is defined
+	// then use their values to compute the quantiles
 	measurement := metric.Measurement
 	filterFunc := metric.FilterFunc
-	if metric.AggFn != "" {
+	if j.NumNodes > 1 && metric.AggFn != "" {
 		measurement += "_" + metric.AggFn
 		filterFunc = ""
 	}
