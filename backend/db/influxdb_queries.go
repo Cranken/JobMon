@@ -174,11 +174,8 @@ func createQuantileMeasurementQuery(
 	if len(metricPostQueryOp) > 0 {
 		fmt.Fprintf(sb, `%s`, metricPostQueryOp)
 	}
-	// Aggregation to sampleInterval after all filtering to aggregate on all metric data available
-	fmt.Fprintf(sb, `|> aggregateWindow(every: %v, fn: mean, createEmpty: false)`, sampleInterval)
-	// Truncate time to sampleInterval to synchronize measurements from different nodes
-	fmt.Fprintf(sb, `|> truncateTimeColumn(unit: %v)`, sampleInterval)
-	fmt.Fprintf(sb, `|> group(columns: ["_time"], mode: "by")`)
+	// Un-group all measurements
+	fmt.Fprintf(sb, `|> group()`)
 	fmt.Fprintf(sb, "\n")
 
 	// For each defined quantile create a separate result stream
@@ -188,9 +185,14 @@ func createQuantileMeasurementQuery(
 		streamNames[i] = string(streamName)
 		streamName++
 		fmt.Fprintf(sb, "%s = data", streamNames[i])
-		fmt.Fprintf(sb, `|> quantile(column: "_value", q: %v, method: "estimate_tdigest", compression: 1000.0)`, q)
-		fmt.Fprintf(sb, `|> set(key: "_field", value: "%v")`, q)
-		fmt.Fprintf(sb, `|> set(key: "_measurement", value: "%v_quant")`, measurement)
+		// Aggregation to sampleInterval after all filtering to aggregate on all metric data available
+		// Use quantile as aggregation function
+		// See: https://docs.influxdata.com/flux/v0.x/stdlib/universe/quantile/
+		fmt.Fprintf(sb, `|> aggregateWindow(every: %v, fn: (tables=<-, column) => tables |> quantile(column: "_value", q: %s, method: "estimate_tdigest", compression: 1000.0), createEmpty: false)`, sampleInterval, q)
+		// Truncate time to sampleInterval to synchronize measurements from different nodes
+		fmt.Fprintf(sb, `|> truncateTimeColumn(unit: %v)`, sampleInterval)
+		fmt.Fprintf(sb, `|> set(key: "_field", value: "%s")`, q)
+		fmt.Fprintf(sb, `|> set(key: "_measurement", value: "%s_quant")`, measurement)
 		fmt.Fprintf(sb, "\n")
 	}
 
