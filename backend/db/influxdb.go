@@ -425,12 +425,12 @@ func (db *InfluxDB) query(
 	separationKey := metric.SeparationKey
 	// If only one node is specified, always return detailed data, never aggregated data
 	if j.NumNodes == 1 && !forceAggregate {
-		queryResult, err = db.querySimpleMeasurement(metric, j, j.NodeList, sampleInterval)
+		queryResult, err = db.querySimpleMeasurement(metric, j, sampleInterval)
 	} else {
 		if metric.Type != "node" {
 			queryResult, err = db.queryAggregateMeasurement(metric, j, j.NodeList, metric.AggFn, sampleInterval)
 		} else {
-			queryResult, err = db.querySimpleMeasurement(metric, j, j.NodeList, sampleInterval)
+			queryResult, err = db.querySimpleMeasurement(metric, j, sampleInterval)
 		}
 		separationKey = "hostname"
 	}
@@ -465,12 +465,19 @@ func (db *InfluxDB) queryRaw(metric conf.MetricConfig, j *job.JobMetadata, node 
 
 // querySimpleMeasurement returns a flux table result corresponding to a simple query based on the
 // given parameters.
-func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) querySimpleMeasurement(
+	metric conf.MetricConfig,
+	j *job.JobMetadata,
+	sampleInterval time.Duration,
+) (
+	result *api.QueryTableResult,
+	err error,
+) {
 	query := createSimpleMeasurementQuery(
 		db.bucketName,
 		j.StartTime, j.StopTime,
 		metric.Measurement, metric.Type,
-		nodes, sampleInterval,
+		j.NodeList, sampleInterval,
 		metric.FilterFunc, metric.PostQueryOp,
 	)
 	result, err = db.queryAPI.Query(context.Background(), query)
@@ -739,7 +746,7 @@ func (db *InfluxDB) queryLastDatapoints(j job.JobMetadata) (metricData []job.Met
 			var queryResult *api.QueryTableResult
 			separationKey := "hostname"
 			if j.NumNodes == 1 {
-				queryResult, err = db.querySimpleMeasurement(m, &j, j.NodeList, sampleInterval)
+				queryResult, err = db.querySimpleMeasurement(m, &j, sampleInterval)
 				separationKey = m.SeparationKey
 			} else {
 				queryResult, err = db.queryAggregateMeasurement(m, &j, j.NodeList, m.AggFn, sampleInterval)
