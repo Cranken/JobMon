@@ -125,6 +125,7 @@ func (db *InfluxDB) GetJobData(
 	data job.JobData,
 	err error,
 ) {
+	// if no subset of job nodes is selected then use all nodes from NodeList
 	if nodes == "" {
 		nodes = j.NodeList
 	}
@@ -142,7 +143,7 @@ func (db *InfluxDB) GetAggregatedJobData(
 	data job.JobData,
 	err error,
 ) {
-
+	// if no subset of job nodes is selected then use all nodes from NodeList
 	if nodes == "" {
 		nodes = j.NodeList
 	}
@@ -433,7 +434,7 @@ func (db *InfluxDB) query(
 	var queryResult *api.QueryTableResult
 	separationKey := metric.SeparationKey
 	// If only one node is specified, always return detailed data, never aggregated data
-	if j.NumNodes == 1 && !forceAggregate {
+	if numNodes := strings.Count(nodes, "|") + 1; numNodes == 1 && !forceAggregate {
 		queryResult, err = db.querySimpleMeasurement(metric, j, nodes, sampleInterval)
 	} else {
 		if metric.Type != "node" {
@@ -463,7 +464,16 @@ func (db *InfluxDB) query(
 
 // queryRaw checks if the metric.Type is "node", if that's the case then it calls the function queryAggregateMeasurementRaw
 // otherwise it calls querySimpleMeasurementRaw.
-func (db *InfluxDB) queryRaw(metric conf.MetricConfig, j *job.JobMetadata, node string, sampleInterval time.Duration, forceAggregate bool) (result string, err error) {
+func (db *InfluxDB) queryRaw(
+	metric conf.MetricConfig,
+	j *job.JobMetadata,
+	node string,
+	sampleInterval time.Duration,
+	forceAggregate bool,
+) (
+	result string,
+	err error,
+) {
 	if metric.Type != "node" && forceAggregate {
 		result, err = db.queryAggregateMeasurementRaw(metric, j, node, metric.AggFn, sampleInterval)
 	} else {
@@ -474,12 +484,21 @@ func (db *InfluxDB) queryRaw(metric conf.MetricConfig, j *job.JobMetadata, node 
 
 // querySimpleMeasurement returns a flux table result corresponding to a simple query based on the
 // given parameters.
-func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) querySimpleMeasurement(
+	metric conf.MetricConfig,
+	j *job.JobMetadata,
+	nodes string,
+	sampleInterval time.Duration,
+) (
+	result *api.QueryTableResult,
+	err error,
+) {
 	query := createSimpleMeasurementQuery(
 		db.bucketName,
 		j.StartTime, j.StopTime,
 		metric.Measurement, metric.Type,
-		nodes, sampleInterval,
+		nodes,
+		sampleInterval,
 		metric.FilterFunc, metric.PostQueryOp,
 	)
 	result, err = db.queryAPI.Query(context.Background(), query)
@@ -491,12 +510,21 @@ func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, j *job.JobM
 
 // querySimpleMeasurementRaw is similar to querySimpleMeasurement except that this one returns the table as string,
 // with table annotations according to dialect.
-func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result string, err error) {
+func (db *InfluxDB) querySimpleMeasurementRaw(
+	metric conf.MetricConfig,
+	j *job.JobMetadata,
+	nodes string,
+	sampleInterval time.Duration,
+) (
+	result string,
+	err error,
+) {
 	query := createSimpleMeasurementQuery(
 		db.bucketName,
 		j.StartTime, j.StopTime,
 		metric.Measurement, metric.Type,
-		nodes, sampleInterval,
+		nodes,
+		sampleInterval,
 		metric.FilterFunc, metric.PostQueryOp,
 	)
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
