@@ -44,8 +44,7 @@ func (c *LRUCache) Get(j *job.JobMetadata, sampleInterval time.Duration) (data j
 		return data, err
 	}
 	raw := false
-	forceAggregate := false
-	data, err = (*c.db).GetJobData(j, sampleInterval, raw, forceAggregate)
+	data, err = (*c.db).GetJobData(j, sampleInterval, raw)
 	if err == nil {
 		c.put(Item{id: j.Id, data: data})
 	}

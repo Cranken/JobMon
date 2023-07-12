@@ -311,8 +311,7 @@ func (r *Router) GetJob(
 			j.StopTime = int(time.Now().Unix())
 			node = ""
 		}
-		forceAggregate := false
-		jobData, err = (*r.db).GetJobData(&j, sampleInterval, raw, forceAggregate)
+		jobData, err = (*r.db).GetJobData(&j, sampleInterval, raw)
 	}
 	if err != nil {
 		logging.Error("router: GetJob(): Could not get job metric data (job ID = ", id, "): ", err)
@@ -782,8 +781,7 @@ func (r *Router) LiveMonitoring(
 						dur, _ := time.ParseDuration(r.config.SampleInterval)
 						_, bestInterval := j.CalculateSampleIntervals(dur)
 						raw := false
-						forceAggregate := false
-						data, err := (*r.db).GetJobData(&j, bestInterval, raw, forceAggregate)
+						data, err := (*r.db).GetJobData(&j, bestInterval, raw)
 						j.StartTime = origStartTime
 						j.StopTime = origStopTime
 						if err == nil {
