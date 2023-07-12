@@ -1,4 +1,4 @@
-import { Button, Select, Stack, Text, Tooltip, useToast } from "@chakra-ui/react";
+import { Button, Select, Stack, Switch, Text, Tooltip, useToast } from "@chakra-ui/react";
 import JSZip from "jszip";
 import React from "react";
 import { useCookies } from "react-cookie";
@@ -88,27 +88,45 @@ export const ViewControl = ({
           </Button>
         )}
       </Stack>
+
       <Stack direction={{ base: "column", lg: "row" }} gap={2}>
-        {setShowChangepoints ? (
-          <Tooltip label={"Changepoints indicate changes in your codes behavior"}>
-            <Button fontSize="sm" onClick={() => setShowChangepoints(!showChangepoints)}>
-              Toggle Changepoints
-            </Button>
-          </Tooltip>
-        ) : null}
-        {setShowQuantiles ? (
-          <Button
-            fontSize="sm"
-            onClick={() => setShowQuantiles(!showQuantiles)}
-          >
-            Toggle Quantile View
-          </Button>
-        ) : null}
-        <Button fontSize="sm" onClick={() => setAutoScale(!autoScale)}>
-          Toggle Automatic Scaling
-        </Button>
+        <Tooltip label={"Changepoints indicate changes in your codes behavior"}>
+          <Stack flexGrow={1} direction="row" align="center" justify={{ base: "center", lg: "start" }}>
+            <Text>Changepoints</Text>
+            <Switch
+              defaultChecked={showChangepoints}
+              onChange={(e) => {
+                { setShowChangepoints ? setShowChangepoints(e.target.checked) : null }
+              }}
+              isDisabled={setShowChangepoints ? false : true}
+            />
+          </Stack>
+        </Tooltip>
+        <Tooltip label={"Quantile View shows quantiles instead of the actual values"}>
+          <Stack flexGrow={1} direction="row" align="center" justify={{ base: "center", lg: "start" }}>
+            <Text>Quantile View</Text>
+            <Switch
+              defaultChecked={showQuantiles}
+              onChange={(e) => {
+                { setShowQuantiles ? setShowQuantiles(e.target.checked) : null }
+              }}
+              isDisabled={setShowQuantiles ? false : true}
+            />
+          </Stack>
+        </Tooltip>
+        <Tooltip label={"By default the charts are scaled automatically, using the displayed values"}>
+          <Stack flexGrow={1} direction="row" align="center" justify={{ base: "center", lg: "start" }}>
+            <Text>Automatic Scaling</Text>
+            <Switch
+              defaultChecked={autoScale}
+              onChange={(e) => {
+                setAutoScale(e.target.checked)
+              }}
+            />
+          </Stack>
+        </Tooltip>
         {sampleInterval && sampleIntervals && !jobdata.Metadata.IsRunning ? (
-          <Stack direction="row" flexGrow={1} align="center" justify="end">
+          <Stack direction="row" flexGrow={1} align="center" justify={{ base: "center", lg: "end" }}>
             <Text>Select sample interval in seconds:</Text>
             <Select
               maxW="15ch"
