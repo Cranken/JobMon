@@ -288,7 +288,7 @@ func (db *InfluxDB) getJobData(
 						},
 					)
 			} else {
-				result, err := db.query(metric, j, j.NodeList, sampleInterval, forceAggregate)
+				result, err := db.query(metric, j, sampleInterval, forceAggregate)
 				if err != nil {
 					logging.Error("db: getJobData(): Job ", j.Id, ": could not get metric data: ", err)
 					return
@@ -412,7 +412,6 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (
 func (db *InfluxDB) query(
 	metric conf.MetricConfig,
 	j *job.JobMetadata,
-	nodes string,
 	sampleInterval time.Duration,
 	forceAggregate bool,
 ) (
@@ -426,12 +425,12 @@ func (db *InfluxDB) query(
 	separationKey := metric.SeparationKey
 	// If only one node is specified, always return detailed data, never aggregated data
 	if j.NumNodes == 1 && !forceAggregate {
-		queryResult, err = db.querySimpleMeasurement(metric, j, nodes, sampleInterval)
+		queryResult, err = db.querySimpleMeasurement(metric, j, j.NodeList, sampleInterval)
 	} else {
 		if metric.Type != "node" {
-			queryResult, err = db.queryAggregateMeasurement(metric, j, nodes, metric.AggFn, sampleInterval)
+			queryResult, err = db.queryAggregateMeasurement(metric, j, j.NodeList, metric.AggFn, sampleInterval)
 		} else {
-			queryResult, err = db.querySimpleMeasurement(metric, j, nodes, sampleInterval)
+			queryResult, err = db.querySimpleMeasurement(metric, j, j.NodeList, sampleInterval)
 		}
 		separationKey = "hostname"
 	}
