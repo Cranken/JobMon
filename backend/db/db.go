@@ -16,16 +16,13 @@ type DB interface {
 	// Close shuts down the connection to the InfluxDB.
 	Close()
 
-	// GetJobData returns data for job executed on nodes for sampleInterval, if raw is true then
-	// result data contains the raw metric data.
-	GetJobData(job *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data job.JobData, err error)
+	// GetJobData returns metric data for a job for each sampleInterval
+	// * if raw is true then result data contains the raw metric data.
+	// * if forceAggregate is true metrics are aggregated per node
+	GetJobData(job *job.JobMetadata, sampleInterval time.Duration, raw bool, forceAggregate bool) (data job.JobData, err error)
 
 	// GetJobMetadataMetrics returns the metadata metrics data for job j.
 	GetJobMetadataMetrics(job *job.JobMetadata) (data []job.JobMetadataData, err error)
-
-	// GetAggregatedJobData similar to GetJobData except that it returns the data for single node jobs.
-	// Single node jobs also return aggregated data for metrics with metric granularity finer than per node.
-	GetAggregatedJobData(job *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data job.JobData, err error)
 
 	// GetMetricDataWithAggFn returns the the metric-data data for job j based on the configuration m
 	// and aggregated by function aggFn.

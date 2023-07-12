@@ -114,42 +114,6 @@ func (db *InfluxDB) Close() {
 	db.client.Close()
 }
 
-// GetJobData is just a wrapper for getJobData that initializes the nodes parameter
-// in case it was not specified.
-func (db *InfluxDB) GetJobData(
-	j *job.JobMetadata,
-	nodes string,
-	sampleInterval time.Duration,
-	raw bool,
-) (
-	data job.JobData,
-	err error,
-) {
-	if nodes == "" {
-		nodes = j.NodeList
-	}
-	return db.getJobData(j, nodes, sampleInterval, raw, false)
-}
-
-// GetAggregatedJobData similar to GetJobData except that it returns the data for single node jobs.
-// Single node jobs also return aggregated data for metrics with metric granularity finer than per node.
-func (db *InfluxDB) GetAggregatedJobData(
-	j *job.JobMetadata,
-	nodes string,
-	sampleInterval time.Duration,
-	raw bool,
-) (
-	data job.JobData,
-	err error,
-) {
-
-	if nodes == "" {
-		nodes = j.NodeList
-	}
-	forceAggregate := true
-	return db.getJobData(j, nodes, sampleInterval, raw, forceAggregate)
-}
-
 // GetJobMetadataMetrics returns the metadata metrics data for job j.
 func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMetadataData, err error) {
 	// Skip jobs that are still running
@@ -177,7 +141,7 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 	// Get aggregated metrics
 	raw := false
 	forceAggregate := true
-	aggData, err := db.getJobData(j, j.NodeList, interval, raw, forceAggregate)
+	aggData, err := db.GetJobData(j, interval, raw, forceAggregate)
 
 	// Compute change points that split measurements into
 	// "statistically homogeneous" segments
@@ -193,7 +157,7 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 // GetMetricDataWithAggFn returns the the metric-data data for job j based on the configuration m
 // and aggregated by function aggFn.
 func (db *InfluxDB) GetMetricDataWithAggFn(j *job.JobMetadata, m conf.MetricConfig, aggFn string, sampleInterval time.Duration) (data job.MetricData, err error) {
-	tempResult, err := db.queryAggregateMeasurement(m, j, j.NodeList, aggFn, sampleInterval)
+	tempResult, err := db.queryAggregateMeasurement(m, j, aggFn, sampleInterval)
 	if err != nil {
 		logging.Error("db: GetMetricDataWithAggFn(): Job ", j.Id, ": could not get quantile data: ", err)
 		return
@@ -263,9 +227,8 @@ func (db *InfluxDB) CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []job.
 // If raw is true then the MetricData contained in the result data contains the raw metric data.
 // Nodes should be specified as a list of nodes separated by a '|' character.
 // If no nodes are specified, data for all nodes are queried.
-func (db *InfluxDB) getJobData(
+func (db *InfluxDB) GetJobData(
 	j *job.JobMetadata,
-	nodes string,
 	sampleInterval time.Duration,
 	raw bool,
 	forceAggregate bool,
@@ -283,7 +246,7 @@ func (db *InfluxDB) getJobData(
 		go func(metric conf.MetricConfig) {
 			defer wg.Done()
 			if raw {
-				result, err := db.queryRaw(metric, j, nodes, sampleInterval, forceAggregate)
+				result, err := db.queryRaw(metric, j, j.NodeList, sampleInterval, forceAggregate)
 				if err != nil {
 					logging.Error("db: getJobData(): Job ", j.Id, ": could not get raw metric data: ", err)
 					return
@@ -296,7 +259,7 @@ func (db *InfluxDB) getJobData(
 						},
 					)
 			} else {
-				result, err := db.query(metric, j, nodes, sampleInterval, forceAggregate)
+				result, err := db.query(metric, j, sampleInterval, forceAggregate)
 				if err != nil {
 					logging.Error("db: getJobData(): Job ", j.Id, ": could not get metric data: ", err)
 					return
@@ -420,7 +383,6 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (
 func (db *InfluxDB) query(
 	metric conf.MetricConfig,
 	j *job.JobMetadata,
-	nodes string,
 	sampleInterval time.Duration,
 	forceAggregate bool,
 ) (
@@ -434,12 +396,12 @@ func (db *InfluxDB) query(
 	separationKey := metric.SeparationKey
 	// If only one node is specified, always return detailed data, never aggregated data
 	if j.NumNodes == 1 && !forceAggregate {
-		queryResult, err = db.querySimpleMeasurement(metric, j, nodes, sampleInterval)
+		queryResult, err = db.querySimpleMeasurement(metric, j, sampleInterval)
 	} else {
 		if metric.Type != "node" {
-			queryResult, err = db.queryAggregateMeasurement(metric, j, nodes, metric.AggFn, sampleInterval)
+			queryResult, err = db.queryAggregateMeasurement(metric, j, metric.AggFn, sampleInterval)
 		} else {
-			queryResult, err = db.querySimpleMeasurement(metric, j, nodes, sampleInterval)
+			queryResult, err = db.querySimpleMeasurement(metric, j, sampleInterval)
 		}
 		separationKey = "hostname"
 	}
@@ -474,12 +436,19 @@ func (db *InfluxDB) queryRaw(metric conf.MetricConfig, j *job.JobMetadata, node 
 
 // querySimpleMeasurement returns a flux table result corresponding to a simple query based on the
 // given parameters.
-func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) querySimpleMeasurement(
+	metric conf.MetricConfig,
+	j *job.JobMetadata,
+	sampleInterval time.Duration,
+) (
+	result *api.QueryTableResult,
+	err error,
+) {
 	query := createSimpleMeasurementQuery(
 		db.bucketName,
 		j.StartTime, j.StopTime,
 		metric.Measurement, metric.Type,
-		nodes, sampleInterval,
+		j.NodeList, sampleInterval,
 		metric.FilterFunc, metric.PostQueryOp,
 	)
 	result, err = db.queryAPI.Query(context.Background(), query)
@@ -594,7 +563,6 @@ func parseQueryResult(
 func (db *InfluxDB) queryAggregateMeasurement(
 	metric conf.MetricConfig,
 	j *job.JobMetadata,
-	nodes string,
 	aggFn string,
 	sampleInterval time.Duration,
 ) (
@@ -609,7 +577,7 @@ func (db *InfluxDB) queryAggregateMeasurement(
 		db.bucketName,
 		j.StartTime, j.StopTime,
 		measurement,
-		nodes,
+		j.NodeList,
 		sampleInterval,
 		metric.FilterFunc,
 		metric.PostQueryOp,
@@ -748,10 +716,10 @@ func (db *InfluxDB) queryLastDatapoints(j job.JobMetadata) (metricData []job.Met
 			var queryResult *api.QueryTableResult
 			separationKey := "hostname"
 			if j.NumNodes == 1 {
-				queryResult, err = db.querySimpleMeasurement(m, &j, j.NodeList, sampleInterval)
+				queryResult, err = db.querySimpleMeasurement(m, &j, sampleInterval)
 				separationKey = m.SeparationKey
 			} else {
-				queryResult, err = db.queryAggregateMeasurement(m, &j, j.NodeList, m.AggFn, sampleInterval)
+				queryResult, err = db.queryAggregateMeasurement(m, &j, m.AggFn, sampleInterval)
 			}
 			if err != nil {
 				logging.Error("db: queryLastDatapoints(): Job ", j.Id, ": could not get last datapoints: ", err)
