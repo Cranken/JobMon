@@ -16,7 +16,7 @@ type DB interface {
 	// Close shuts down the connection to the InfluxDB.
 	Close()
 
-	// GetJobData returns data for job executed on nodes for sampleInterval, if raw is true then
+	// GetJobData returns metric data for a job for each sampleInterval, if raw is true then
 	// result data contains the raw metric data.
 	GetJobData(job *job.JobMetadata, sampleInterval time.Duration, raw bool) (data job.JobData, err error)
 

@@ -186,7 +186,7 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 // GetMetricDataWithAggFn returns the the metric-data data for job j based on the configuration m
 // and aggregated by function aggFn.
 func (db *InfluxDB) GetMetricDataWithAggFn(j *job.JobMetadata, m conf.MetricConfig, aggFn string, sampleInterval time.Duration) (data job.MetricData, err error) {
-	tempResult, err := db.queryAggregateMeasurement(m, j, j.NodeList, aggFn, sampleInterval)
+	tempResult, err := db.queryAggregateMeasurement(m, j, aggFn, sampleInterval)
 	if err != nil {
 		logging.Error("db: GetMetricDataWithAggFn(): Job ", j.Id, ": could not get quantile data: ", err)
 		return
@@ -428,7 +428,7 @@ func (db *InfluxDB) query(
 		queryResult, err = db.querySimpleMeasurement(metric, j, sampleInterval)
 	} else {
 		if metric.Type != "node" {
-			queryResult, err = db.queryAggregateMeasurement(metric, j, j.NodeList, metric.AggFn, sampleInterval)
+			queryResult, err = db.queryAggregateMeasurement(metric, j, metric.AggFn, sampleInterval)
 		} else {
 			queryResult, err = db.querySimpleMeasurement(metric, j, sampleInterval)
 		}
@@ -592,7 +592,6 @@ func parseQueryResult(
 func (db *InfluxDB) queryAggregateMeasurement(
 	metric conf.MetricConfig,
 	j *job.JobMetadata,
-	nodes string,
 	aggFn string,
 	sampleInterval time.Duration,
 ) (
@@ -607,7 +606,7 @@ func (db *InfluxDB) queryAggregateMeasurement(
 		db.bucketName,
 		j.StartTime, j.StopTime,
 		measurement,
-		nodes,
+		j.NodeList,
 		sampleInterval,
 		metric.FilterFunc,
 		metric.PostQueryOp,
@@ -749,7 +748,7 @@ func (db *InfluxDB) queryLastDatapoints(j job.JobMetadata) (metricData []job.Met
 				queryResult, err = db.querySimpleMeasurement(m, &j, sampleInterval)
 				separationKey = m.SeparationKey
 			} else {
-				queryResult, err = db.queryAggregateMeasurement(m, &j, j.NodeList, m.AggFn, sampleInterval)
+				queryResult, err = db.queryAggregateMeasurement(m, &j, m.AggFn, sampleInterval)
 			}
 			if err != nil {
 				logging.Error("db: queryLastDatapoints(): Job ", j.Id, ": could not get last datapoints: ", err)
