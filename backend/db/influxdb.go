@@ -125,7 +125,7 @@ func (db *InfluxDB) GetJobData(
 	err error,
 ) {
 	forceAggregate := false
-	return db.getJobData(j, j.NodeList, sampleInterval, raw, forceAggregate)
+	return db.getJobData(j, sampleInterval, raw, forceAggregate)
 }
 
 // GetAggregatedJobData similar to GetJobData except that it returns the data for single node jobs.
@@ -140,7 +140,7 @@ func (db *InfluxDB) GetAggregatedJobData(
 ) {
 
 	forceAggregate := true
-	return db.getJobData(j, j.NodeList, sampleInterval, raw, forceAggregate)
+	return db.getJobData(j, sampleInterval, raw, forceAggregate)
 }
 
 // GetJobMetadataMetrics returns the metadata metrics data for job j.
@@ -170,7 +170,7 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 	// Get aggregated metrics
 	raw := false
 	forceAggregate := true
-	aggData, err := db.getJobData(j, j.NodeList, interval, raw, forceAggregate)
+	aggData, err := db.getJobData(j, interval, raw, forceAggregate)
 
 	// Compute change points that split measurements into
 	// "statistically homogeneous" segments
@@ -258,7 +258,6 @@ func (db *InfluxDB) CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []job.
 // If no nodes are specified, data for all nodes are queried.
 func (db *InfluxDB) getJobData(
 	j *job.JobMetadata,
-	nodes string,
 	sampleInterval time.Duration,
 	raw bool,
 	forceAggregate bool,
@@ -276,7 +275,7 @@ func (db *InfluxDB) getJobData(
 		go func(metric conf.MetricConfig) {
 			defer wg.Done()
 			if raw {
-				result, err := db.queryRaw(metric, j, nodes, sampleInterval, forceAggregate)
+				result, err := db.queryRaw(metric, j, j.NodeList, sampleInterval, forceAggregate)
 				if err != nil {
 					logging.Error("db: getJobData(): Job ", j.Id, ": could not get raw metric data: ", err)
 					return
@@ -289,7 +288,7 @@ func (db *InfluxDB) getJobData(
 						},
 					)
 			} else {
-				result, err := db.query(metric, j, nodes, sampleInterval, forceAggregate)
+				result, err := db.query(metric, j, j.NodeList, sampleInterval, forceAggregate)
 				if err != nil {
 					logging.Error("db: getJobData(): Job ", j.Id, ": could not get metric data: ", err)
 					return
