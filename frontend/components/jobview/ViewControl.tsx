@@ -1,4 +1,4 @@
-import { Button, Select, Stack, Switch, Text, Tooltip } from "@chakra-ui/react";
+import { Button, Select, Stack, Switch, Text, Tooltip, useToast } from "@chakra-ui/react";
 import JSZip from "jszip";
 import React from "react";
 import { useCookies } from "react-cookie";
@@ -66,6 +66,7 @@ export const ViewControl = ({
   setShowChangepoints
 }: ControlProps) => {
   const [, , removeCookie] = useCookies(["Authorization"]);
+  const toast = useToast();
   return (
     <Stack px={{ base: 0, lg: 3 }}>
       <Stack direction={{ base: "column", lg: "row" }} justify="space-between">
@@ -75,7 +76,14 @@ export const ViewControl = ({
           setSelectedMetrics={setSelectedMetrics}
         />
         {jobdata.Metadata.IsRunning ? null : (
-          <Button onClick={() => exportData(jobdata.Metadata.Id, removeCookie)}>
+          <Button onClick={() => {
+            exportData(jobdata.Metadata.Id, removeCookie)
+            toast({
+              title: `CSV Export started. This may take a few seconds.`,
+              status: "info",
+              isClosable: true,
+            })
+          }}>
             Export as CSV
           </Button>
         )}
@@ -159,12 +167,13 @@ export default ViewControl;
  */
 const exportData = (
   id: number,
-  removeCookie: (name: "Authorization") => void
+  removeCookie: (name: "Authorization") => void,
 ) => {
   const url = new URL(
     process.env.NEXT_PUBLIC_BACKEND_URL +
     `/api/job/${id}?raw=true`
   );
+
   fetch(url.toString(), { credentials: "include" }).then((res) => {
     if (!res.ok && (res.status === 401 || res.status === 403)) {
       removeCookie("Authorization");
