@@ -114,35 +114,6 @@ func (db *InfluxDB) Close() {
 	db.client.Close()
 }
 
-// GetJobData is just a wrapper for getJobData that initializes the nodes parameter
-// in case it was not specified.
-func (db *InfluxDB) GetJobData(
-	j *job.JobMetadata,
-	sampleInterval time.Duration,
-	raw bool,
-) (
-	data job.JobData,
-	err error,
-) {
-	forceAggregate := false
-	return db.getJobData(j, sampleInterval, raw, forceAggregate)
-}
-
-// GetAggregatedJobData similar to GetJobData except that it returns the data for single node jobs.
-// Single node jobs also return aggregated data for metrics with metric granularity finer than per node.
-func (db *InfluxDB) GetAggregatedJobData(
-	j *job.JobMetadata,
-	sampleInterval time.Duration,
-	raw bool,
-) (
-	data job.JobData,
-	err error,
-) {
-
-	forceAggregate := true
-	return db.getJobData(j, sampleInterval, raw, forceAggregate)
-}
-
 // GetJobMetadataMetrics returns the metadata metrics data for job j.
 func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMetadataData, err error) {
 	// Skip jobs that are still running
@@ -170,7 +141,7 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 	// Get aggregated metrics
 	raw := false
 	forceAggregate := true
-	aggData, err := db.getJobData(j, interval, raw, forceAggregate)
+	aggData, err := db.GetJobData(j, interval, raw, forceAggregate)
 
 	// Compute change points that split measurements into
 	// "statistically homogeneous" segments
@@ -256,7 +227,7 @@ func (db *InfluxDB) CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []job.
 // If raw is true then the MetricData contained in the result data contains the raw metric data.
 // Nodes should be specified as a list of nodes separated by a '|' character.
 // If no nodes are specified, data for all nodes are queried.
-func (db *InfluxDB) getJobData(
+func (db *InfluxDB) GetJobData(
 	j *job.JobMetadata,
 	sampleInterval time.Duration,
 	raw bool,
