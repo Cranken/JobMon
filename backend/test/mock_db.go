@@ -18,7 +18,7 @@ func (db *MockDB) Close() {
 	db.Calls += 1
 }
 
-func (db *MockDB) GetJobData(j *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data job.JobData, err error) {
+func (db *MockDB) GetJobData(j *job.JobMetadata, sampleInterval time.Duration, raw bool) (data job.JobData, err error) {
 	db.Calls += 1
 	return job.JobData{Metadata: j}, nil
 }

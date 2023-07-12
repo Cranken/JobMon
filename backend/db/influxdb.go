@@ -118,17 +118,14 @@ func (db *InfluxDB) Close() {
 // in case it was not specified.
 func (db *InfluxDB) GetJobData(
 	j *job.JobMetadata,
-	nodes string,
 	sampleInterval time.Duration,
 	raw bool,
 ) (
 	data job.JobData,
 	err error,
 ) {
-	if nodes == "" {
-		nodes = j.NodeList
-	}
-	return db.getJobData(j, nodes, sampleInterval, raw, false)
+	forceAggregate := false
+	return db.getJobData(j, j.NodeList, sampleInterval, raw, forceAggregate)
 }
 
 // GetAggregatedJobData similar to GetJobData except that it returns the data for single node jobs.

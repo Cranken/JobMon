@@ -18,7 +18,7 @@ type DB interface {
 
 	// GetJobData returns data for job executed on nodes for sampleInterval, if raw is true then
 	// result data contains the raw metric data.
-	GetJobData(job *job.JobMetadata, nodes string, sampleInterval time.Duration, raw bool) (data job.JobData, err error)
+	GetJobData(job *job.JobMetadata, sampleInterval time.Duration, raw bool) (data job.JobData, err error)
 
 	// GetJobMetadataMetrics returns the metadata metrics data for job j.
 	GetJobMetadataMetrics(job *job.JobMetadata) (data []job.JobMetadataData, err error)
