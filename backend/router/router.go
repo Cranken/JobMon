@@ -349,8 +349,14 @@ func (r *Router) GetMetric(
 	metric := req.URL.Query().Get("metric")
 	aggFn := req.URL.Query().Get("aggFn")
 
-	if metric == "" || aggFn == "" {
-		logging.Error("router: GetMetric(): Metric or aggFn was not provided")
+	if metric == "" {
+		logging.Error("router: GetMetric(): Metric was not provided")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if aggFn == "" {
+		logging.Error("router: GetMetric(): aggFn was not provided")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
