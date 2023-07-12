@@ -316,8 +316,10 @@ func (c *Configuration) Init() {
 	}
 
 	for _, metricConfig := range c.Metrics {
-		if !aggFnAvailable[metricConfig.AggFn] {
-			logging.Fatal("config: Init(): Metric ", metricConfig.GUID, " uses unknown AggFn = ", metricConfig.AggFn)
+		if metricConfig.AggFn != "" {
+			if !aggFnAvailable[metricConfig.AggFn] {
+				logging.Fatal("config: Init(): Metric ", metricConfig.GUID, " uses unknown AggFn = ", metricConfig.AggFn)
+			}
 		}
 		for _, aggFn := range metricConfig.AvailableAggFns {
 			if !aggFnAvailable[aggFn] {

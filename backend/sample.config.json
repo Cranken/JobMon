@@ -32,10 +32,8 @@
                 "Energy"
             ],
             "Measurement": "consumed_watts",
-            "AggFn": "mean",
-            "AvailableAggFns": [
-                "mean"
-            ],
+            "AggFn": "",
+            "AvailableAggFns": [],
             "SampleInterval": "",
             "Unit": "W",
             "DisplayName": "CPU Consumed Watts",
@@ -55,10 +53,7 @@
             "Measurement": "mem_bw",
             "AggFn": "sum",
             "AvailableAggFns": [
-                "mean",
-                "sum",
-                "min",
-                "max"
+                "sum"
             ],
             "SampleInterval": "",
             "Unit": "MB/s",
@@ -77,10 +72,8 @@
                 "Memory"
             ],
             "Measurement": "mem_used",
-            "AggFn": "mean",
-            "AvailableAggFns": [
-                "mean"
-            ],
+            "AggFn": "",
+            "AvailableAggFns": [],
             "SampleInterval": "",
             "Unit": "kB",
             "DisplayName": "CPU Memory Usage",
@@ -121,10 +114,8 @@
                 "Performance"
             ],
             "Measurement": "load_one",
-            "AggFn": "mean",
-            "AvailableAggFns": [
-                "mean"
-            ],
+            "AggFn": "",
+            "AvailableAggFns": [],
             "SampleInterval": "",
             "Unit": "",
             "DisplayName": "CPU One Minute Load",
@@ -144,10 +135,7 @@
             "Measurement": "flops_dp",
             "AggFn": "sum",
             "AvailableAggFns": [
-                "mean",
-                "sum",
-                "max",
-                "min"
+                "sum"
             ],
             "SampleInterval": "",
             "Unit": "MFLOP/s",
@@ -168,10 +156,7 @@
             "Measurement": "cpu_user",
             "AggFn": "sum",
             "AvailableAggFns": [
-                "mean",
-                "sum",
-                "max",
-                "min"
+                "sum"
             ],
             "SampleInterval": "",
             "Unit": "%",
@@ -192,10 +177,7 @@
             "Measurement": "cpu_system",
             "AggFn": "sum",
             "AvailableAggFns": [
-                "mean",
-                "sum",
-                "max",
-                "min"
+                "sum"
             ],
             "SampleInterval": "",
             "Unit": "%",
@@ -239,10 +221,7 @@
             "Measurement": "ipc",
             "AggFn": "sum",
             "AvailableAggFns": [
-                "mean",
-                "sum",
-                "max",
-                "min"
+                "sum"
             ],
             "SampleInterval": "",
             "Unit": "",
@@ -256,7 +235,7 @@
         },
         {
             "GUID": "6cf6178f-90ea-4682-9d94-0c9f0c8f6b72",
-            "Type": "",
+            "Type": "node",
             "Categories": [
                 "Filesystem"
             ],
@@ -280,7 +259,7 @@
         },
         {
             "GUID": "69414157-6d1f-42d9-b7e8-31a4cc5b9615",
-            "Type": "",
+            "Type": "node",
             "Categories": [
                 "Filesystem"
             ],
@@ -328,7 +307,7 @@
         },
         {
             "GUID": "86251d9b-693c-461c-b121-830fd85c1ab7",
-            "Type": "",
+            "Type": "node",
             "Categories": [
                 "Filesystem"
             ],
@@ -352,7 +331,7 @@
         },
         {
             "GUID": "abe42586-c04c-4c1e-aed7-813160764c84",
-            "Type": "",
+            "Type": "node",
             "Categories": [
                 "Filesystem"
             ],
@@ -376,7 +355,7 @@
         },
         {
             "GUID": "ef4f8f13-82e2-4dc0-8b8a-615da76815fd",
-            "Type": "",
+            "Type": "node",
             "Categories": [
                 "Filesystem"
             ],
@@ -400,7 +379,7 @@
         },
         {
             "GUID": "50f5a265-fcbf-4fc0-b4f4-453e74605668",
-            "Type": "",
+            "Type": "node",
             "Categories": [
                 "Filesystem"
             ],
@@ -424,7 +403,7 @@
         },
         {
             "GUID": "89784861-8766-4d3f-bc34-418bb08c0d7f",
-            "Type": "",
+            "Type": "node",
             "Categories": [
                 "Filesystem"
             ],
@@ -448,7 +427,7 @@
         },
         {
             "GUID": "b985d0d8-0329-4811-811f-daa648289d18",
-            "Type": "",
+            "Type": "node",
             "Categories": [
                 "Filesystem"
             ],
@@ -472,7 +451,7 @@
         },
         {
             "GUID": "687b8465-4d6e-4fed-a17e-28ac3a154ae8",
-            "Type": "",
+            "Type": "node",
             "Categories": [
                 "Filesystem"
             ],
@@ -496,7 +475,7 @@
         },
         {
             "GUID": "dc49f76d-15a1-4eae-8595-048426371795",
-            "Type": "",
+            "Type": "node",
             "Categories": [
                 "Filesystem"
             ],
@@ -525,13 +504,8 @@
                 "Energy"
             ],
             "Measurement": "power",
-            "AggFn": "sum",
-            "AvailableAggFns": [
-                "mean",
-                "sum",
-                "min",
-                "max"
-            ],
+            "AggFn": "",
+            "AvailableAggFns": [],
             "SampleInterval": "",
             "Unit": "W",
             "DisplayName": "GPU Consumed Watts",
@@ -691,10 +665,7 @@
             "Measurement": "ib_total_pkts",
             "AggFn": "sum",
             "AvailableAggFns": [
-                "mean",
-                "sum",
-                "max",
-                "min"
+                "sum"
             ],
             "SampleInterval": "",
             "Unit": "Packet/s",
@@ -715,10 +686,7 @@
             "Measurement": "ib_recv_pkts",
             "AggFn": "sum",
             "AvailableAggFns": [
-                "mean",
-                "sum",
-                "max",
-                "min"
+                "sum"
             ],
             "SampleInterval": "",
             "Unit": "Packet/s",
@@ -739,10 +707,7 @@
             "Measurement": "ib_xmit_pkts",
             "AggFn": "sum",
             "AvailableAggFns": [
-                "mean",
-                "sum",
-                "max",
-                "min"
+                "sum"
             ],
             "SampleInterval": "",
             "Unit": "Packet/s",
@@ -763,10 +728,7 @@
             "Measurement": "ib_total",
             "AggFn": "sum",
             "AvailableAggFns": [
-                "mean",
-                "sum",
-                "min",
-                "max"
+                "sum"
             ],
             "SampleInterval": "",
             "Unit": "B/s",
@@ -787,10 +749,7 @@
             "Measurement": "ib_recv",
             "AggFn": "sum",
             "AvailableAggFns": [
-                "mean",
-                "sum",
-                "min",
-                "max"
+                "sum"
             ],
             "SampleInterval": "",
             "Unit": "B/s",
@@ -811,10 +770,7 @@
             "Measurement": "ib_xmit",
             "AggFn": "sum",
             "AvailableAggFns": [
-                "mean",
-                "sum",
-                "min",
-                "max"
+                "sum"
             ],
             "SampleInterval": "",
             "Unit": "B/s",
