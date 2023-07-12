@@ -132,7 +132,6 @@ func (db *InfluxDB) GetJobData(
 // Single node jobs also return aggregated data for metrics with metric granularity finer than per node.
 func (db *InfluxDB) GetAggregatedJobData(
 	j *job.JobMetadata,
-	nodes string,
 	sampleInterval time.Duration,
 	raw bool,
 ) (
@@ -140,11 +139,8 @@ func (db *InfluxDB) GetAggregatedJobData(
 	err error,
 ) {
 
-	if nodes == "" {
-		nodes = j.NodeList
-	}
 	forceAggregate := true
-	return db.getJobData(j, nodes, sampleInterval, raw, forceAggregate)
+	return db.getJobData(j, j.NodeList, sampleInterval, raw, forceAggregate)
 }
 
 // GetJobMetadataMetrics returns the metadata metrics data for job j.
