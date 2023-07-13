@@ -26,6 +26,7 @@ import { useHasNoAllowedRole, useIsAuthenticated } from "@/utils/auth";
 import { useGetUser, UserRole } from "@/utils/user";
 import React, { useEffect, useRef } from "react";
 import { useIsWideDevice } from "@/utils/utils";
+import SearchBar from "../search/SearchBar";
 
 /**
  * Props for the header component.
@@ -52,7 +53,7 @@ interface HeaderProps {
  * This path determines whether one of the links in the header shall be highlighted as the currently active page.
  * @returns The component
  */
-export const Header = ({ pathname, setHeaderHeight}: HeaderProps) => {
+export const Header = ({ pathname, setHeaderHeight }: HeaderProps) => {
   const user = useGetUser();
   const { colorMode, toggleColorMode } = useColorMode();
   const [, , removeCookie] = useCookies(["Authorization"]);
@@ -151,24 +152,12 @@ export const Header = ({ pathname, setHeaderHeight}: HeaderProps) => {
           ) : null}
           <Box flexGrow={1}>
             {isAuthenticated && hasRole ? (
-              <InputGroup>
-                <Input
-                  placeholder="Search user/job"
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      search(searchValue)
-                    }
-                  }}
-                  onChange={(event) => setSearchValue(event.target.value)}
-                  borderColor={searchInputColor}
-                  _placeholder={{ color: searchInputColor }}
-                />
-                <InputRightElement width='4.5rem'>
-                  <Button h='1.75rem' size='sm' onClick={() => { search(searchValue) }} bg={buttonBg}>
-                    <SearchIcon />
-                  </Button>
-                </InputRightElement>
-              </InputGroup>
+              <SearchBar
+                search={search}
+                searchBorderColor={searchInputColor}
+                searchButtonBackgroundColor={buttonBg}
+                placeholderText={"Search user/job"}
+              />
             ) : null}
           </Box>
           <Flex flexGrow={1} justify={"end"} gap={2} pl={2}>
