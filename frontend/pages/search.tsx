@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Center, Stack, Text, useColorModeValue } from "@chakra-ui/react";
+import { Center, Grid, GridItem, Stack, Text, useColorModeValue } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import SearchSelection from "@/components/search/SearchSelection";
 import SearchBar from "@/components/search/SearchBar";
@@ -29,24 +29,40 @@ const Search = () => {
                     search={(s: string) => console.log(s)}
                     searchBorderColor={searchBorderColor}
                     searchButtonBackgroundColor={searchButtonBackgroundColor}
-                    initialValue={ searchTerm }
-                    />
+                    initialValue={searchTerm}
+                />
             </Center>
-            <Center>   
-            <SearchSelection categories={[
-                {
-                    name: "test",
-                    select: (() => console.log("test")),
-                    number: 2,
-                    active: true
-                },
-                {
-                    name: "test2",
-                    select: (() => console.log("test")),
-                    number: 213541,
-                }
-            ]} />
-            <Text>{searchTerm}</Text>
+            <Center>
+                <Grid templateColumns={"repeat(6, 1fr)"} w={"100%"} p={2} gap={2}>
+                    <GridItem colSpan={1}>
+                        <SearchSelection categories={[
+                            {
+                                name: "All",
+                                select: (() => console.log("All")),
+                                number: 5023,
+                                active: true
+                            },
+                            {
+                                name: "Users",
+                                select: (() => console.log("users")),
+                                number: 12,
+                            },
+                            {
+                                name: "Jobs",
+                                select: (() => console.log("Jobs")),
+                                number: 6,
+                            },
+                            {
+                                name: "Tags",
+                                select: (() => console.log("tags")),
+                                number: 3,
+                            }
+                        ]} />
+                    </GridItem>
+                    <GridItem colSpan={5}>
+                        <Text>{searchTerm}</Text>
+                    </GridItem>
+                </Grid>
             </Center>
         </Stack>
     );

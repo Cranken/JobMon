@@ -43,8 +43,7 @@ export const SearchSelection = ({
     const borderColor = useColorModeValue("gray.300", "whiteAlpha.400");
     return (
         <Box
-            w={"33%"}
-            mt={10}
+            w={"100%"}
             borderColor={borderColor}
             borderRadius={5}
             borderWidth={1}>
@@ -74,7 +73,14 @@ interface SearchSelectionItemProps {
  */
 const SearchSelectionItem = ({ category }: SearchSelectionItemProps) => {
     return (
-        <Grid templateColumns={"repeat(2, 1fr)"} gap={1} w={"100%"} onClick={category.select} bg={category.active ? "red" : undefined}>
+        <Grid
+        templateColumns={"repeat(2, 1fr)"}
+        gap={1}
+        w={"100%"}
+        onClick={category.select}
+        bg={category.active ? "red" : undefined}
+        borderRadius={5}
+        p={1}>
             <GridItem>{category.name}</GridItem>
             <GridItem justifySelf={"end"}>{category.number}</GridItem>
         </Grid>
