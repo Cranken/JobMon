@@ -44,6 +44,14 @@ staticchecking-backend:
     - docker build -t jobmon-backend_staticchecking --target staticchecking --pull backend
     - docker run --name jobmon-backend_staticchecking --rm jobmon-backend_staticchecking
 
+vulnchecking-backend:
+  needs:
+    - build-backend
+  stage: test
+  script:
+    - docker build -t jobmon-backend_vulnchecking --target vulnchecking --pull backend
+    - docker run --name jobmon-backend_vulnchecking --rm jobmon-backend_vulnchecking
+
 testing-backend:
   needs:
     - build-backend

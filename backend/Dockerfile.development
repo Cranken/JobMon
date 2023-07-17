@@ -16,6 +16,9 @@ WORKDIR /app
 # Install [The advanced Go linter](https://github.com/dominikh/go-tools)
 RUN go install honnef.co/go/tools/cmd/staticcheck@latest
 
+# Install [govulncheck](https://go.googlesource.com/vuln)
+RUN go install golang.org/x/vuln/cmd/govulncheck@latest
+
 # Install CA certificates to verify certificate of OpenID providers
 RUN apt-get update \
     && apt-get install -y ca-certificates curl \
@@ -26,6 +29,7 @@ RUN apt-get update \
 ENV DO_PKG_UPDATE=false \
     DO_VET=true \
     DO_STATICCHECK=true \
+    DO_VULNCHECK=false \
     DO_TESTS=false \
     CONFIG="/app/config.json" \
     LOGLEVEL=3 \
@@ -45,6 +49,9 @@ CMD [ \
  fi && \
  if [[ ${DO_STATICCHECK} == true ]]; then \
     /go/bin/staticcheck ./... ; \
+ fi && \
+ if [[ ${DO_VULNCHECK} == true ]]; then \
+    /go/bin/govulncheck ./... ; \
  fi && \
  if [[ ${DO_TESTS} == true ]]; then \
    go test -v ./... ; \
