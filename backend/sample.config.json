@@ -663,10 +663,8 @@
                 "Interconnect"
             ],
             "Measurement": "ib_total_pkts",
-            "AggFn": "sum",
-            "AvailableAggFns": [
-                "sum"
-            ],
+            "AggFn": "",
+            "AvailableAggFns": [],
             "SampleInterval": "",
             "Unit": "Packet/s",
             "DisplayName": "Infiniband Packets",
@@ -684,10 +682,8 @@
                 "Interconnect"
             ],
             "Measurement": "ib_recv_pkts",
-            "AggFn": "sum",
-            "AvailableAggFns": [
-                "sum"
-            ],
+            "AggFn": "",
+            "AvailableAggFns": [],
             "SampleInterval": "",
             "Unit": "Packet/s",
             "DisplayName": "Infiniband Packets Received",
@@ -705,10 +701,8 @@
                 "Interconnect"
             ],
             "Measurement": "ib_xmit_pkts",
-            "AggFn": "sum",
-            "AvailableAggFns": [
-                "sum"
-            ],
+            "AggFn": "",
+            "AvailableAggFns": [],
             "SampleInterval": "",
             "Unit": "Packet/s",
             "DisplayName": "Infiniband Packets Send",
@@ -726,10 +720,8 @@
                 "Interconnect"
             ],
             "Measurement": "ib_total",
-            "AggFn": "sum",
-            "AvailableAggFns": [
-                "sum"
-            ],
+            "AggFn": "",
+            "AvailableAggFns": [],
             "SampleInterval": "",
             "Unit": "B/s",
             "DisplayName": "Infiniband Traffic",
@@ -747,10 +739,8 @@
                 "Interconnect"
             ],
             "Measurement": "ib_recv",
-            "AggFn": "sum",
-            "AvailableAggFns": [
-                "sum"
-            ],
+            "AggFn": "",
+            "AvailableAggFns": [],
             "SampleInterval": "",
             "Unit": "B/s",
             "DisplayName": "Infiniband Traffic Received",
@@ -768,10 +758,8 @@
                 "Interconnect"
             ],
             "Measurement": "ib_xmit",
-            "AggFn": "sum",
-            "AvailableAggFns": [
-                "sum"
-            ],
+            "AggFn": "",
+            "AvailableAggFns": [],
             "SampleInterval": "",
             "Unit": "B/s",
             "DisplayName": "Infiniband Traffic Send",
