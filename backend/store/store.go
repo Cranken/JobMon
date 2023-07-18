@@ -39,6 +39,12 @@ type Store interface {
 	// GetJobTags returns all job tags for the user 'username'
 	GetJobTags(username string) ([]job.JobTag, error)
 
+	// GetAllUsersWithJob returns all users with at least one job
+	GetAllUsersWithJob() ([]string, error)
+
+	// GetUserWithJob returns all users with at least one job with a username containing the search term.
+	GetUserWithJob(searchTerm string) ([]string, error)
+
 	// AddTag adds tag to the job identified with id.
 	AddTag(id int, tag *job.JobTag) error
 

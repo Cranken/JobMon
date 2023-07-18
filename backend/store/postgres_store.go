@@ -244,6 +244,47 @@ func (s *PostgresStore) GetJobTags(
 	return
 }
 
+// GetUsersWithJob implements GetUsersWithJob of store interface
+func (s *PostgresStore) GetAllUsersWithJob() (
+	data []string,
+	err error,
+) {
+	start := time.Now()
+
+	err = s.db.NewSelect().
+		Distinct().
+		Model(&data).
+		Table("job_metadata").
+		Column("user_name").
+		Scan(context.Background())
+
+	logging.Info("store: GetUsersWithJob took ", time.Since(start))
+
+	return
+}
+
+// GetAllUsersWithJob implements GetAllUsersWithJob of store interface
+func (s *PostgresStore) GetUserWithJob(
+	searchTerm string,
+) (
+	data []string,
+	err error,
+) {
+	start := time.Now()
+
+	err = s.db.NewSelect().
+		Distinct().
+		Model(&data).
+		Table("job_metadata").
+		Column("user_name").
+		Where("user_name LIKE '%" + searchTerm + "%'").
+		Scan(context.Background())
+
+	logging.Info("store: GetUsersWithJob took ", time.Since(start))
+
+	return
+}
+
 // StopJob implements StopJob method of store interface.
 func (s *PostgresStore) StopJob(
 	id int,

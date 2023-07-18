@@ -263,7 +263,7 @@ export const Header = ({ pathname, setHeaderHeight }: HeaderProps) => {
  * @param term The term to search for.
  */
 const search = (term: string) => {
-  fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/${term}`, {
+  fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/all/${term}`, {
     credentials: "include",
   }).then((res) =>
     res.text().then((val) => {

@@ -73,7 +73,8 @@ func (r *Router) Init(
 	router.GET("/api/job/:id", authManager.Protected(r.GetJob, auth.USER))
 	router.GET("/api/metric/:id", authManager.Protected(r.GetMetric, auth.USER))
 	router.GET("/api/live/:id", authManager.Protected(r.LiveMonitoring, auth.USER))
-	router.GET("/api/search/:term", authManager.Protected(r.Search, auth.USER))
+	router.GET("/api/search/all/:term", authManager.Protected(r.Search, auth.USER))
+	router.GET("/api/search/user/:term", authManager.Protected(r.SearchUser, auth.ADMIN))
 	router.POST("/api/login", r.Login)
 	router.POST("/api/logout", authManager.Protected(r.Logout, auth.USER))
 	router.POST("/api/generateAPIKey", authManager.Protected(r.GenerateAPIKey, auth.ADMIN))
@@ -473,6 +474,33 @@ func (r *Router) Search(
 	}
 
 	w.Write([]byte(fmt.Sprintf("user:%v", searchTerm)))
+}
+
+func (r *Router) SearchUser(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	user auth.UserInfo) {
+
+	searchTerm := params.ByName("term")
+
+	data, err := r.store.GetUserWithJob(searchTerm)
+	if err != nil {
+		errStr := fmt.Sprintln("router: SearchUser(): Could not read users")
+		logging.Error(errStr)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(errStr))
+		return
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		logging.Error("router: SearchUser(): Could not marshal search data to json")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(jsonData)
 }
 
 // Login writes to the WriteHeader of w, for the given request req, params and user

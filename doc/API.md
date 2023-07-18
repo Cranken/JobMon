@@ -87,7 +87,7 @@ Authentication level: admin
 
 Body return data: None
 
-## [GET] /api/search/:term
+## [GET] /api/search/all/:term
 
 Query the job or users for the specified term.
 
@@ -100,6 +100,14 @@ Potential search terms:
 Body return data: String with prefix "user:" or "job:" and the search term appended.
 
 The frontend will redirect the user once received.
+
+## [GET] /api/search/user/:term
+
+Search for a user containing the given substring in it's username. The search is performed on all users with at least one job.
+
+Authentication level: admin
+
+Body return data: A list of usernames.
 
 ## [POST] /api/login
 

@@ -55,6 +55,16 @@ func (s *MockStore) GetJobTags(username string) ([]job.JobTag, error) {
 	return make([]job.JobTag, 0), nil
 }
 
+func (s *MockStore) GetAllUsersWithJob() ([]string, error) {
+	s.Calls += 1
+	return make([]string, 0), nil
+}
+
+func (s *MockStore) GetUserWithJob(searchTerm string) ([]string, error) {
+	s.Calls += 1
+	return make([]string, 0), nil
+}
+
 func (s *MockStore) AddTag(id int, tag *job.JobTag) error {
 	s.Calls += 1
 	return nil
