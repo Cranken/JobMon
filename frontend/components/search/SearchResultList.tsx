@@ -1,4 +1,4 @@
-import { Box, Heading, Stack, useColorModeValue } from "@chakra-ui/react";
+import { Box, Heading, Text, Stack, useColorModeValue } from "@chakra-ui/react";
 import React from "react";
 
 /**
@@ -41,10 +41,9 @@ interface SearchResultListProps {
 export const SearchResultList = ({
     results
 }: SearchResultListProps) => {
-    const borderColor = useColorModeValue("gray.300", "whiteAlpha.400");
     return (
         <Stack w={"100%"}>
-        {results.map((r: SearchResult) => (<SearchResultListItem item={r} />))}
+        {results.map((r: SearchResult) => (<SearchResultListItem item={r} key={"item_" + r.name + "_" + r.category}/>))}
         </Stack>
     );
 };
@@ -71,8 +70,12 @@ const SearchResultListItem = ({
             w={"100%"}
             borderColor={borderColor}
             borderRadius={5}
-            borderWidth={1}>
-            <Heading>TODO</Heading>
+            borderWidth={1}
+            p={2}
+            onClick={item.open}>
+           <Text>{item.category}</Text>
+           <Heading>{item.name}</Heading>
+           <Text>{item.text}</Text>
         </Box>
     );
 };
