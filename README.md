@@ -99,6 +99,13 @@ You can access the containers with the `docker` command.
     influx bucket update --id ${BUCKET_ID} --retention 3360h
   ```
 
+* Remove all metrics before `${STOP_DATE}` from bucket `${BUCKET_NAME}`
+
+  ```bash
+  sudo docker exec jobmon_influxdb \
+  influx delete --bucket "${BUCKET_NAME}" --start '1970-01-01T00:00:00Z' --stop '${STOP_DATE}'
+  ```
+
 * List tasks
 
   ```bash

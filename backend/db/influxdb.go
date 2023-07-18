@@ -125,6 +125,7 @@ func (db *InfluxDB) GetJobData(
 	data job.JobData,
 	err error,
 ) {
+	// if no subset of job nodes is selected then use all nodes from NodeList
 	if nodes == "" {
 		nodes = j.NodeList
 	}
@@ -142,11 +143,12 @@ func (db *InfluxDB) GetAggregatedJobData(
 	data job.JobData,
 	err error,
 ) {
-
+	// if no subset of job nodes is selected then use all nodes from NodeList
 	if nodes == "" {
 		nodes = j.NodeList
 	}
-	return db.getJobData(j, nodes, sampleInterval, raw, true)
+	forceAggregate := true
+	return db.getJobData(j, nodes, sampleInterval, raw, forceAggregate)
 }
 
 // GetJobMetadataMetrics returns the metadata metrics data for job j.
@@ -174,7 +176,9 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 	_, interval := j.CalculateSampleIntervals(s)
 
 	// Get aggregated metrics
-	aggData, err := db.getJobData(j, j.NodeList, interval, false, true)
+	raw := false
+	forceAggregate := true
+	aggData, err := db.getJobData(j, j.NodeList, interval, raw, forceAggregate)
 
 	// Compute change points that split measurements into
 	// "statistically homogeneous" segments
@@ -190,19 +194,23 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 // GetMetricDataWithAggFn returns the the metric-data data for job j based on the configuration m
 // and aggregated by function aggFn.
 func (db *InfluxDB) GetMetricDataWithAggFn(j *job.JobMetadata, m conf.MetricConfig, aggFn string, sampleInterval time.Duration) (data job.MetricData, err error) {
-	tempRes, err := db.queryAggregateMeasurement(m, j, j.NodeList, aggFn, sampleInterval)
+	tempResult, err := db.queryAggregateMeasurement(m, j, j.NodeList, aggFn, sampleInterval)
 	if err != nil {
 		logging.Error("db: GetMetricDataWithAggFn(): Job ", j.Id, ": could not get quantile data: ", err)
 		return
 	}
 
-	result, err := parseQueryResult(tempRes, "hostname")
+	result, err := parseQueryResult(tempResult, "hostname")
 	if err != nil {
 		logging.Error("db: GetMetricDataWithAggFn(): Job ", j.Id, ": could not parse quantile data: ", err)
 		return
 	}
 	m.AggFn = aggFn
-	data = job.MetricData{Data: result, Config: m}
+	data =
+		job.MetricData{
+			Data:   result,
+			Config: m,
+		}
 	return data, nil
 }
 
@@ -210,7 +218,10 @@ func (db *InfluxDB) GetMetricDataWithAggFn(j *job.JobMetadata, m conf.MetricConf
 func (db *InfluxDB) RunAggregation() {
 	for _, task := range db.tasks {
 		go func(task *domain.Task) {
-			db.tasksAPI.RunManually(context.Background(), task)
+			_, err := db.tasksAPI.RunManually(context.Background(), task)
+			if err != nil {
+				logging.Error("db: RunAggregation(): Failed to run task ", *task.Description, " manually")
+			}
 		}(&task)
 	}
 }
@@ -305,9 +316,9 @@ func (db *InfluxDB) getJobData(
 			wg.Add(1)
 
 			// Query quantile measurements
-			go func(m conf.MetricConfig) {
+			go func(metric conf.MetricConfig) {
 				defer wg.Done()
-				tempRes, err := db.queryQuantileMeasurement(m, j, db.metricQuantiles, sampleInterval)
+				tempRes, err := db.queryQuantileMeasurement(metric, j, db.metricQuantiles, sampleInterval)
 				if err != nil {
 					logging.Error("db: getJobData(): Job ", j.Id, ": could not get quantile data: ", err)
 					return
@@ -320,7 +331,7 @@ func (db *InfluxDB) getJobData(
 				quantileData =
 					append(quantileData,
 						job.QuantileData{
-							Config:    m,
+							Config:    metric,
 							Data:      result,
 							Quantiles: db.metricQuantiles,
 						},
@@ -358,14 +369,17 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (
 				return
 			}
 
-			result, err := parseQueryResult(tempRes, "result")
+			separationKey := "result"
+			result, err := parseQueryResult(tempRes, separationKey)
 			if err != nil {
 				logging.Error("db: getMetadataData(): Job ", j.Id, ": could not parse metadata data: ", err)
 				return
 			}
 
 			// Initialize job metadata with metric config
-			md := job.JobMetadataData{Config: m}
+			metadataData := job.JobMetadataData{
+				Config: m,
+			}
 
 			if res, ok := result["_result"]; ok {
 				// Add metrics mean value to job metadata
@@ -373,7 +387,7 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (
 					mean := res[0]["_value"]
 					switch v := mean.(type) {
 					case float64:
-						md.Mean = v
+						metadataData.Mean = v
 					default:
 					}
 				}
@@ -383,17 +397,17 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (
 					max := res[1]["_value"]
 					switch v := max.(type) {
 					case float64:
-						md.Max = v
+						metadataData.Max = v
 					default:
 					}
 				}
 
-				data = append(data, md)
+				data = append(data, metadataData)
 			} else {
 				// Add zero values in the case metadata is missing.
-				md.Mean = 0.0
-				md.Max = 0.0
-				data = append(data, md)
+				metadataData.Mean = 0.0
+				metadataData.Max = 0.0
+				data = append(data, metadataData)
 			}
 		}(db.metrics[m])
 	}
@@ -420,7 +434,7 @@ func (db *InfluxDB) query(
 	var queryResult *api.QueryTableResult
 	separationKey := metric.SeparationKey
 	// If only one node is specified, always return detailed data, never aggregated data
-	if len(strings.Split(nodes, "|")) == 1 && !forceAggregate {
+	if numNodes := strings.Count(nodes, "|") + 1; numNodes == 1 && !forceAggregate {
 		queryResult, err = db.querySimpleMeasurement(metric, j, nodes, sampleInterval)
 	} else {
 		if metric.Type != "node" {
@@ -430,8 +444,18 @@ func (db *InfluxDB) query(
 		}
 		separationKey = "hostname"
 	}
-	if err == nil {
-		result, err = parseQueryResult(queryResult, separationKey)
+
+	// Check for query errors
+	if err != nil {
+		logging.Error("db: query(): Job ", j.Id, ": could not get metric data for metric, ", metric.GUID, ": ", err)
+		return
+	}
+
+	// Parse query result
+	result, err = parseQueryResult(queryResult, separationKey)
+	if err != nil {
+		logging.Error("db: query(): Job ", j.Id, ": could not parse metric data for metric ", metric.GUID, ": ", err)
+		return
 	}
 
 	logging.Info("db: query for metric ", metric.GUID, " took ", time.Since(start))
@@ -440,7 +464,16 @@ func (db *InfluxDB) query(
 
 // queryRaw checks if the metric.Type is "node", if that's the case then it calls the function queryAggregateMeasurementRaw
 // otherwise it calls querySimpleMeasurementRaw.
-func (db *InfluxDB) queryRaw(metric conf.MetricConfig, j *job.JobMetadata, node string, sampleInterval time.Duration, forceAggregate bool) (result string, err error) {
+func (db *InfluxDB) queryRaw(
+	metric conf.MetricConfig,
+	j *job.JobMetadata,
+	node string,
+	sampleInterval time.Duration,
+	forceAggregate bool,
+) (
+	result string,
+	err error,
+) {
 	if metric.Type != "node" && forceAggregate {
 		result, err = db.queryAggregateMeasurementRaw(metric, j, node, metric.AggFn, sampleInterval)
 	} else {
@@ -451,12 +484,21 @@ func (db *InfluxDB) queryRaw(metric conf.MetricConfig, j *job.JobMetadata, node 
 
 // querySimpleMeasurement returns a flux table result corresponding to a simple query based on the
 // given parameters.
-func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) querySimpleMeasurement(
+	metric conf.MetricConfig,
+	j *job.JobMetadata,
+	nodes string,
+	sampleInterval time.Duration,
+) (
+	result *api.QueryTableResult,
+	err error,
+) {
 	query := createSimpleMeasurementQuery(
 		db.bucketName,
 		j.StartTime, j.StopTime,
 		metric.Measurement, metric.Type,
-		nodes, sampleInterval,
+		nodes,
+		sampleInterval,
 		metric.FilterFunc, metric.PostQueryOp,
 	)
 	result, err = db.queryAPI.Query(context.Background(), query)
@@ -468,12 +510,21 @@ func (db *InfluxDB) querySimpleMeasurement(metric conf.MetricConfig, j *job.JobM
 
 // querySimpleMeasurementRaw is similar to querySimpleMeasurement except that this one returns the table as string,
 // with table annotations according to dialect.
-func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, j *job.JobMetadata, nodes string, sampleInterval time.Duration) (result string, err error) {
+func (db *InfluxDB) querySimpleMeasurementRaw(
+	metric conf.MetricConfig,
+	j *job.JobMetadata,
+	nodes string,
+	sampleInterval time.Duration,
+) (
+	result string,
+	err error,
+) {
 	query := createSimpleMeasurementQuery(
 		db.bucketName,
 		j.StartTime, j.StopTime,
 		metric.Measurement, metric.Type,
-		nodes, sampleInterval,
+		nodes,
+		sampleInterval,
 		metric.FilterFunc, metric.PostQueryOp,
 	)
 	result, err = db.queryAPI.QueryRaw(context.Background(), query, api.DefaultDialect())
@@ -485,34 +536,84 @@ func (db *InfluxDB) querySimpleMeasurementRaw(metric conf.MetricConfig, j *job.J
 
 // parseQueryResult returns result which is a map with keys separation key(or the empty string) and values slices
 // of job.QueryResult. The function parses queryResult using the separationKey.
-func parseQueryResult(queryResult *api.QueryTableResult, separationKey string) (result map[string][]job.QueryResult, err error) {
+func parseQueryResult(
+	queryResult *api.QueryTableResult,
+	separationKey string,
+) (
+	result map[string][]job.QueryResult,
+	err error,
+) {
+	// Create empty mapping from key to result table
 	result = make(map[string][]job.QueryResult)
-	tableRows := []job.QueryResult{}
-	curNode := ""
-	tableIndex := int64(0)
-	for queryResult.Next() {
-		row := queryResult.Record().Values()
-		if row["table"].(int64) != tableIndex {
-			tableIndex++
-			result[curNode] = tableRows
-			tableRows = []job.QueryResult{}
-		} else if curNode != "" && curNode != row[separationKey].(string) {
-			result[curNode] = tableRows
-			tableRows = []job.QueryResult{}
-		}
-		tableRows = append(tableRows, row)
-		if val, ok := row[separationKey]; ok {
-			curNode = val.(string)
-		} else {
-			return nil, fmt.Errorf("could not parse query result %v with separation key %v", row, separationKey)
-		}
-	}
-	result[curNode] = tableRows
 
-	if queryResult.Err() != nil {
-		fmt.Printf("query parsing error: %s\n", queryResult.Err().Error())
-		return nil, queryResult.Err()
+	// Create empty result table
+	tableRows := []job.QueryResult{}
+
+	var key string
+	var tableIndex int64
+	numResultTableChanges := 0
+	for queryResult.Next() {
+
+		// Read next row in query result
+		row := queryResult.Record().Values()
+
+		// Check for parsing errors
+		if queryResult.Err() != nil {
+			logging.Error("db: parseQueryResult(): ", queryResult.Err())
+			return nil, queryResult.Err()
+		}
+
+		// New result table Table information is available
+		if queryResult.TableChanged() {
+			numResultTableChanges++
+			if numResultTableChanges > 1 {
+				return nil, fmt.Errorf(
+					`db: parseQueryResult(): Multiple table changes were detected`)
+			}
+
+			// Initialize key
+			if val, ok := row[separationKey]; ok {
+				key = val.(string)
+			} else {
+				return nil, fmt.Errorf(
+					`db: parseQueryResult(): could not find separation key "%s" in row "%v"`,
+					separationKey, row)
+			}
+
+			// Initialize tableIndex
+			if val, ok := row["table"]; ok {
+				tableIndex = val.(int64)
+			} else {
+				return nil, fmt.Errorf(
+					`db: parseQueryResult(): could not find "table" in row "%v"`, row)
+			}
+		}
+
+		// Check if table index or key is changed in this row
+		if valTableIndex, valKey := row["table"].(int64), row[separationKey].(string); valTableIndex != tableIndex || valKey != key {
+			// Check if result table already exists
+			if _, ok := result[key]; ok {
+				logging.Warning(`db: parseQueryResult(): Result table for separation key = "`, separationKey, `" with key value = "`, key, `" already exists. Overwriting old result table for measurement = "`, tableRows[0]["_measurement"].(string), `"`)
+			}
+
+			// Safe current result table
+			result[key] = tableRows
+
+			// Create empty new result table
+			tableRows = []job.QueryResult{}
+
+			// New table has started -> Initialize table index and key
+			tableIndex = valTableIndex
+			key = valKey
+		}
+
+		// add row to result table
+		tableRows = append(tableRows, row)
 	}
+
+	// Safe current result table
+	result[key] = tableRows
+
 	return
 }
 
@@ -526,8 +627,12 @@ func (db *InfluxDB) queryAggregateMeasurement(
 	sampleInterval time.Duration,
 ) (
 	result *api.QueryTableResult,
-	err error) {
-	measurement := metric.Measurement + "_" + aggFn
+	err error,
+) {
+	measurement := metric.Measurement
+	if aggFn != "" {
+		measurement += "_" + aggFn
+	}
 	query := createAggregateMeasurementQuery(
 		db.bucketName,
 		j.StartTime, j.StopTime,
@@ -556,7 +661,10 @@ func (db *InfluxDB) queryAggregateMeasurementRaw(
 	result string,
 	err error,
 ) {
-	measurement := metric.Measurement + "_" + aggFn
+	measurement := metric.Measurement
+	if aggFn != "" {
+		measurement += "_" + aggFn
+	}
 	query := createAggregateMeasurementQuery(
 		db.bucketName,
 		j.StartTime, j.StopTime,
@@ -574,41 +682,46 @@ func (db *InfluxDB) queryAggregateMeasurementRaw(
 }
 
 // queryQuantileMeasurement is similar to querySimpleMeasurement except that here the query is extended with quantiles.
-func (db *InfluxDB) queryQuantileMeasurement(metric conf.MetricConfig, j *job.JobMetadata, quantiles []string, sampleInterval time.Duration) (result *api.QueryTableResult, err error) {
+func (db *InfluxDB) queryQuantileMeasurement(
+	metric conf.MetricConfig,
+	j *job.JobMetadata,
+	quantiles []string,
+	sampleInterval time.Duration,
+) (
+	result *api.QueryTableResult,
+	err error,
+) {
+	start := time.Now()
+
+	// If a job has more than one node
+	// and a per node metric aggregation function is defined
+	// then use their values to compute the quantiles
 	measurement := metric.Measurement
 	filterFunc := metric.FilterFunc
-	if metric.AggFn != "" {
-		measurement += "_" + metric.AggFn
+	if j.NumNodes > 1 {
+		if metric.AggFn != "" {
+			measurement += "_" + metric.AggFn
+		}
 		filterFunc = ""
 	}
-	tempKeys := []string{}
-	for i := 'A'; i <= 'Z'; i++ {
-		tempKeys = append(tempKeys, string(i))
-	}
 
-	quantileSubQuery := ""
-	for i, q := range quantiles {
-		quantileSubQuery += quantileString(tempKeys[i], q, measurement) + "\n"
-	}
-
-	tempKeyAggregation := "[" + strings.Join(tempKeys[0:len(quantiles)], ",") + "]"
-	query := fmt.Sprintf(QuantileMeasurementQuery,
-		db.bucketName, j.StartTime, j.StopTime, measurement,
-		j.NodeList, sampleInterval, filterFunc, metric.PostQueryOp,
-		sampleInterval, quantileSubQuery, tempKeyAggregation)
+	query := createQuantileMeasurementQuery(
+		db.bucketName,
+		j.StartTime, j.StopTime,
+		measurement,
+		j.NodeList,
+		sampleInterval,
+		filterFunc,
+		metric.PostQueryOp,
+		quantiles)
 
 	result, err = db.queryAPI.Query(context.Background(), query)
 	if err != nil {
 		logging.Error("db: queryQuantileMeasurement(): Error at quantile query '", query, "': ", err)
 	}
-	return
-}
 
-// quantileString returns a string which is a database query generated for
-// the parameters streamName,q and measurement.
-func quantileString(streamName string, q string, measurement string) string {
-	return fmt.Sprintf(QuantileStringTemplate,
-		streamName, q, q, measurement)
+	logging.Info("db: queryQuantileMeasurement() for metric,", metric.GUID, " took ", time.Since(start))
+	return
 }
 
 // queryMetadataMeasurements returns the influx query result table containing
@@ -687,8 +800,20 @@ func (db *InfluxDB) queryLastDatapoints(j job.JobMetadata) (metricData []job.Met
 }
 
 // createTask appends task with name taskName, with query taskStr and id orgID to db.task.
-func (db *InfluxDB) createTask(taskName string, taskStr string, orgId string) (task *domain.Task, err error) {
-	task, err = db.tasksAPI.CreateTaskWithEvery(context.Background(), taskName, taskStr, "1m", orgId)
+func (db *InfluxDB) createTask(
+	taskName string,
+	taskStr string,
+	orgId string,
+) (
+	task *domain.Task,
+	err error,
+) {
+	task, err = db.tasksAPI.CreateTaskWithEvery(
+		context.Background(),
+		taskName,
+		taskStr, // flux task script
+		"1m",    // run every minute
+		orgId)
 	if err != nil {
 		logging.Error("db: createTask(): Could not create task: ", err)
 		return
@@ -721,8 +846,10 @@ func (db *InfluxDB) createAggregationTask(
 	sb := new(strings.Builder)
 	fmt.Fprintf(sb, `from(bucket: "%s")`, db.bucketName)
 	fmt.Fprintf(sb, `|> range(start: -task.every)`)
-	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s" and r.type == "%s")`,
-		metric.Measurement, metric.Type)
+	fmt.Fprintf(sb, `|> filter(fn: (r) => r["_measurement"] == "%s")`, metric.Measurement)
+	if metric.Type != "" {
+		fmt.Fprintf(sb, `|> filter(fn: (r) => r["type"] == "%s")`, metric.Type)
+	}
 	if len(metric.FilterFunc) > 0 {
 		fmt.Fprintf(sb, `%s`, metric.FilterFunc)
 	}
@@ -732,17 +859,7 @@ func (db *InfluxDB) createAggregationTask(
 	fmt.Fprintf(sb, `|> group(columns: ["_measurement", "hostname"], mode:"by")`)
 	fmt.Fprintf(sb, `|> aggregateWindow(every: %s, fn: %s, createEmpty: false)`, sampleInterval, aggFn)
 	fmt.Fprintf(sb, `|> group(columns: ["hostname"], mode:"by")`)
-	fmt.Fprintf(sb, `|> keep(
-		columns: [
-			"hostname",
-			"_start",
-			"_stop",
-			"_time",
-			"_value",
-			"cluster",
-			"hostname",
-		],
-	)`)
+	fmt.Fprintf(sb, `|> keep(columns: ["hostname", "_start", "_stop", "_time", "_value", "cluster"])`)
 	fmt.Fprintf(sb, `|> set(key: "_measurement", value: "%s")`, aggMeasurement)
 	fmt.Fprintf(sb, `|> set(key: "_field", value: "%s")`, aggMeasurement)
 	fmt.Fprintf(sb, `|> to(bucket: "%s", org: "%s")`, db.bucketName, db.organizationName)
@@ -803,6 +920,7 @@ func (db *InfluxDB) getPartition(j *job.JobMetadata) conf.BasePartitionConfig {
 	nodes := strings.Split(j.NodeList, "|")
 	for _, vp := range db.partitionConfig[j.Partition].VirtualPartitions {
 		matches := true
+		// Check if all nodes are in vp
 		for _, n := range nodes {
 			if !utils.Contains(vp.Nodes, n) {
 				matches = false

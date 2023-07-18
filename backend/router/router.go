@@ -256,8 +256,10 @@ func (r *Router) GetJob(
 	params httprouter.Params,
 	user auth.UserInfo) {
 
+	logging.Info("Router: GetJob(): Processing request: ", req.URL.String())
 	start := time.Now()
 
+	// Get request parameters
 	node := req.URL.Query().Get("node")
 	raw := req.URL.Query().Get("raw") == "true"
 	strId := params.ByName("id")
@@ -283,6 +285,21 @@ func (r *Router) GetJob(
 		logging.Error("router: GetJob(): User ", user.Username, " is not permitted to access job ", j.Id)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
+	}
+
+	// Check authorization to access node metrics
+	if node != "" {
+		jobNodeMap := make(map[string]struct{})
+		for _, jobNode := range strings.Split(j.NodeList, "|") {
+			jobNodeMap[jobNode] = struct{}{}
+		}
+		for _, reqNode := range strings.Split(node, "|") {
+			if _, ok := jobNodeMap[reqNode]; !ok {
+				logging.Error("router: GetJob(): Node ", reqNode, "does not belong to job ", j.Id)
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+		}
 	}
 
 	// Calculate best sample interval
@@ -348,8 +365,14 @@ func (r *Router) GetMetric(
 	metric := req.URL.Query().Get("metric")
 	aggFn := req.URL.Query().Get("aggFn")
 
-	if metric == "" || aggFn == "" {
-		logging.Error("router: GetMetric(): Metric or aggFn was not provided")
+	if metric == "" {
+		logging.Error("router: GetMetric(): Metric was not provided")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if aggFn == "" {
+		logging.Error("router: GetMetric(): aggFn was not provided")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -404,7 +427,7 @@ func (r *Router) GetMetric(
 		})
 	if mc == -1 {
 		logging.Error("router: GetMetric(): Requested metric with GUID '", metric, "' not found")
-		w.WriteHeader(http.StatusUnauthorized)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -429,7 +452,9 @@ func (r *Router) GetMetric(
 	w.Write(jsonData)
 }
 
-// Search writes the search result to w, for the given request req, params and user.
+// Search uses http request parameter term as search term
+// When a job is found which matches this search term then job:<Job ID> is returned
+// Otherwise it is assumed that it is a username and user:<search term> is returned
 func (r *Router) Search(
 	w http.ResponseWriter,
 	req *http.Request,
@@ -1028,12 +1053,19 @@ func (r *Router) SetUserConfig(
 
 	w.Write(data)
 }
+
+// parseTag reads
+// * job ID from http request parameter job
+// * a tag from the http body
+// * job metadata from the PostgreSQL database
 func (r *Router) parseTag(
 	w http.ResponseWriter,
-	req *http.Request) (
+	req *http.Request,
+) (
 	job job.JobMetadata,
 	tag job.JobTag,
-	ok bool) {
+	ok bool,
+) {
 
 	jobStr := req.URL.Query().Get("job")
 

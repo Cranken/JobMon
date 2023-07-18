@@ -32,12 +32,8 @@
                 "Energy"
             ],
             "Measurement": "consumed_watts",
-            "AggFn": "mean",
-            "AvailableAggFns": [
-                "mean",
-                "min",
-                "max"
-            ],
+            "AggFn": "",
+            "AvailableAggFns": [],
             "SampleInterval": "",
             "Unit": "W",
             "DisplayName": "CPU Consumed Watts",
@@ -57,10 +53,7 @@
             "Measurement": "mem_bw",
             "AggFn": "sum",
             "AvailableAggFns": [
-                "mean",
-                "sum",
-                "min",
-                "max"
+                "sum"
             ],
             "SampleInterval": "",
             "Unit": "MB/s",
@@ -79,13 +72,8 @@
                 "Memory"
             ],
             "Measurement": "mem_used",
-            "AggFn": "mean",
-            "AvailableAggFns": [
-                "mean",
-                "sum",
-                "min",
-                "max"
-            ],
+            "AggFn": "",
+            "AvailableAggFns": [],
             "SampleInterval": "",
             "Unit": "kB",
             "DisplayName": "CPU Memory Usage",
@@ -126,12 +114,8 @@
                 "Performance"
             ],
             "Measurement": "load_one",
-            "AggFn": "mean",
-            "AvailableAggFns": [
-                "mean",
-                "min",
-                "max"
-            ],
+            "AggFn": "",
+            "AvailableAggFns": [],
             "SampleInterval": "",
             "Unit": "",
             "DisplayName": "CPU One Minute Load",
@@ -151,10 +135,7 @@
             "Measurement": "flops_dp",
             "AggFn": "sum",
             "AvailableAggFns": [
-                "mean",
-                "sum",
-                "max",
-                "min"
+                "sum"
             ],
             "SampleInterval": "",
             "Unit": "MFLOP/s",
@@ -175,10 +156,7 @@
             "Measurement": "cpu_user",
             "AggFn": "sum",
             "AvailableAggFns": [
-                "mean",
-                "sum",
-                "max",
-                "min"
+                "sum"
             ],
             "SampleInterval": "",
             "Unit": "%",
@@ -196,13 +174,10 @@
             "Categories": [
                 "Performance"
             ],
-            "Measurement": "cpu_sys",
+            "Measurement": "cpu_system",
             "AggFn": "sum",
             "AvailableAggFns": [
-                "mean",
-                "sum",
-                "max",
-                "min"
+                "sum"
             ],
             "SampleInterval": "",
             "Unit": "%",
@@ -246,10 +221,7 @@
             "Measurement": "ipc",
             "AggFn": "sum",
             "AvailableAggFns": [
-                "mean",
-                "sum",
-                "max",
-                "min"
+                "sum"
             ],
             "SampleInterval": "",
             "Unit": "",
@@ -352,7 +324,7 @@
             "DisplayName": "GPFS Inode Updates",
             "FilterFunc": "",
             "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
-            "SeparationKey": "hostname",
+            "SeparationKey": "filesystem",
             "MaxPerNode": 1000000,
             "MaxPerType": 1000000,
             "PThreadAggFn": "mean"
@@ -400,7 +372,7 @@
             "DisplayName": "GPFS Num Closes",
             "FilterFunc": "",
             "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
-            "SeparationKey": "hostname",
+            "SeparationKey": "filesystem",
             "MaxPerNode": 1000000,
             "MaxPerType": 1000000,
             "PThreadAggFn": "mean"
@@ -424,7 +396,7 @@
             "DisplayName": "GPFS Num Opens",
             "FilterFunc": "",
             "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
-            "SeparationKey": "hostname",
+            "SeparationKey": "filesystem",
             "MaxPerNode": 1000000,
             "MaxPerType": 1000000,
             "PThreadAggFn": "mean"
@@ -448,7 +420,7 @@
             "DisplayName": "GPFS Num Readdirs",
             "FilterFunc": "",
             "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
-            "SeparationKey": "hostname",
+            "SeparationKey": "filesystem",
             "MaxPerNode": 1000000,
             "MaxPerType": 1000000,
             "PThreadAggFn": "mean"
@@ -532,13 +504,8 @@
                 "Energy"
             ],
             "Measurement": "power",
-            "AggFn": "sum",
-            "AvailableAggFns": [
-                "mean",
-                "sum",
-                "min",
-                "max"
-            ],
+            "AggFn": "",
+            "AvailableAggFns": [],
             "SampleInterval": "",
             "Unit": "W",
             "DisplayName": "GPU Consumed Watts",
@@ -696,16 +663,49 @@
                 "Interconnect"
             ],
             "Measurement": "ib_total_pkts",
-            "AggFn": "sum",
-            "AvailableAggFns": [
-                "mean",
-                "sum",
-                "max",
-                "min"
-            ],
+            "AggFn": "",
+            "AvailableAggFns": [],
             "SampleInterval": "",
             "Unit": "Packet/s",
             "DisplayName": "Infiniband Packets",
+            "FilterFunc": "",
+            "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
+            "SeparationKey": "hostname",
+            "MaxPerNode": 0,
+            "MaxPerType": 0,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "ca8970b8-8ca0-4da3-9881-b3e8e337c3dc",
+            "Type": "node",
+            "Categories": [
+                "Interconnect"
+            ],
+            "Measurement": "ib_recv_pkts",
+            "AggFn": "",
+            "AvailableAggFns": [],
+            "SampleInterval": "",
+            "Unit": "Packet/s",
+            "DisplayName": "Infiniband Packets Received",
+            "FilterFunc": "",
+            "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
+            "SeparationKey": "device",
+            "MaxPerNode": 0,
+            "MaxPerType": 0,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "0d4c3353-5ba3-4a60-836b-5b4bba948c28",
+            "Type": "node",
+            "Categories": [
+                "Interconnect"
+            ],
+            "Measurement": "ib_xmit_pkts",
+            "AggFn": "",
+            "AvailableAggFns": [],
+            "SampleInterval": "",
+            "Unit": "Packet/s",
+            "DisplayName": "Infiniband Packets Send",
             "FilterFunc": "",
             "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
             "SeparationKey": "device",
@@ -720,16 +720,49 @@
                 "Interconnect"
             ],
             "Measurement": "ib_total",
-            "AggFn": "sum",
-            "AvailableAggFns": [
-                "mean",
-                "sum",
-                "min",
-                "max"
-            ],
+            "AggFn": "",
+            "AvailableAggFns": [],
             "SampleInterval": "",
             "Unit": "B/s",
             "DisplayName": "Infiniband Traffic",
+            "FilterFunc": "",
+            "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
+            "SeparationKey": "hostname",
+            "MaxPerNode": 25000000000,
+            "MaxPerType": 25000000000,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "47ea6dd0-6d76-4aeb-9133-af70a5381b96",
+            "Type": "node",
+            "Categories": [
+                "Interconnect"
+            ],
+            "Measurement": "ib_recv",
+            "AggFn": "",
+            "AvailableAggFns": [],
+            "SampleInterval": "",
+            "Unit": "B/s",
+            "DisplayName": "Infiniband Traffic Received",
+            "FilterFunc": "",
+            "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
+            "SeparationKey": "device",
+            "MaxPerNode": 25000000000,
+            "MaxPerType": 25000000000,
+            "PThreadAggFn": ""
+        },
+        {
+            "GUID": "e8359d67-a507-4a16-93f4-9c984eada919",
+            "Type": "node",
+            "Categories": [
+                "Interconnect"
+            ],
+            "Measurement": "ib_xmit",
+            "AggFn": "",
+            "AvailableAggFns": [],
+            "SampleInterval": "",
+            "Unit": "B/s",
+            "DisplayName": "Infiniband Traffic Send",
             "FilterFunc": "",
             "PostQueryOp": "|\u003e derivative(unit: 1s, nonNegative: true, columns: [\"_value\"], timeColumn: \"_time\")",
             "SeparationKey": "device",
@@ -767,6 +800,10 @@
                 "19437fd9-20b9-4702-8c79-76a5445db78b",
                 "08e83677-131b-42da-bcd5-f5414f5bd7b3",
                 "cf5a491e-0499-41ea-b388-c5ffb360537b",
+                "ca8970b8-8ca0-4da3-9881-b3e8e337c3dc",
+                "0d4c3353-5ba3-4a60-836b-5b4bba948c28",
+                "47ea6dd0-6d76-4aeb-9133-af70a5381b96",
+                "e8359d67-a507-4a16-93f4-9c984eada919",
                 "d395edec-8a60-4d98-8959-6e94980c7019",
                 "dc49f76d-15a1-4eae-8595-048426371795",
                 "b0ee235b-a2e1-4f87-88ac-ec56f51c3b8c",
@@ -803,6 +840,10 @@
                 "19437fd9-20b9-4702-8c79-76a5445db78b",
                 "08e83677-131b-42da-bcd5-f5414f5bd7b3",
                 "cf5a491e-0499-41ea-b388-c5ffb360537b",
+                "ca8970b8-8ca0-4da3-9881-b3e8e337c3dc",
+                "0d4c3353-5ba3-4a60-836b-5b4bba948c28",
+                "47ea6dd0-6d76-4aeb-9133-af70a5381b96",
+                "e8359d67-a507-4a16-93f4-9c984eada919",
                 "b0ee235b-a2e1-4f87-88ac-ec56f51c3b8c",
                 "b3fed750-ce8d-4370-8066-bd9d343db570",
                 "d13ef9e4-28bc-401e-a7f0-53918385f9f4",

@@ -7,8 +7,8 @@ services:
       dockerfile: Dockerfile.development
       args:
         # Image based on node:16-alpine
-        NODE_RELEASE: "16"
-        DEBIAN_RELEASE: bullseye
+        NODE_RELEASE: "18"
+        DEBIAN_RELEASE: bookworm
         # Public URL to access the the backend from the clients webbrowser
         # e.g. https://my-monitor-db.example.org
         NEXT_PUBLIC_BACKEND_URL: ${BACKEND_URL}
@@ -49,9 +49,9 @@ services:
       context: ./backend
       dockerfile: Dockerfile.development
       args:
-        # Image based on golang:1.20-bullseye
+        # Image based on golang:1.20-bookworm
         GOLANG_RELEASE: "1.20"
-        DEBIAN_RELEASE: bullseye
+        DEBIAN_RELEASE: bookworm
     container_name: jobmon_backend_dev_env
     environment:
       # command line options for config file, log leven and listen address

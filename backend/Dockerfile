@@ -5,7 +5,7 @@
 # * [Release History](https://go.dev/doc/devel/release)
 ###
 ARG GOLANG_RELEASE=1.20 \
-    DEBIAN_RELEASE=bullseye \
+    DEBIAN_RELEASE=bookworm \
     GOLANG_TAG=${GOLANG_RELEASE}-${DEBIAN_RELEASE} \
     DEBIAN_TAG=${DEBIAN_RELEASE}
 
@@ -63,6 +63,23 @@ FROM builder AS staticchecking
 RUN go install honnef.co/go/tools/cmd/staticcheck@latest
 
 CMD [ "/go/bin/staticcheck", "-f", "stylish", "./..." ]
+
+###
+# Create image from builder for vulnerability checking
+#
+# Govulncheck is a low-noise tool that helps you
+# find and fix vulnerable dependencies in your Go projects.
+# It does this by scanning your project’s dependencies
+# for known vulnerabilities and then identifying any
+# direct or indirect calls to those vulnerabilities in your code
+# See: https://go.dev/doc/tutorial/govulncheck
+###
+FROM builder AS vulnchecking
+
+# Install [govulncheck](https://go.googlesource.com/vuln)
+RUN go install golang.org/x/vuln/cmd/govulncheck@latest
+
+CMD [ "/go/bin/govulncheck", "./..." ]
 
 ###
 # Create image from builder for testing
