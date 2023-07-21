@@ -39,6 +39,9 @@ type Store interface {
 	// GetJobTags returns all job tags for the user 'username'
 	GetJobTags(username string) ([]job.JobTag, error)
 
+	// GetJobTagsByName returns all job tags containing the given string in their name
+	GetJobTagsByName(searchTerm string, username string) ([]job.JobTag, error)
+
 	// GetAllUsersWithJob returns all users with at least one job
 	GetAllUsersWithJob() ([]string, error)
 

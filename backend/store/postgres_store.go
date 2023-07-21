@@ -244,6 +244,29 @@ func (s *PostgresStore) GetJobTags(
 	return
 }
 
+// GetJobTagsByName implements GetJobTagsByName of store interface.
+func (s *PostgresStore) GetJobTagsByName(
+	searchTerm string,
+	username string,
+) (
+	tags []job.JobTag,
+	err error,
+) {
+	start := time.Now()
+
+	query := s.db.NewSelect().
+		Table("job_tags").
+		ColumnExpr("job_tags.*").
+		Where("job_tags.name LIKE '%" + searchTerm + "%'")
+	if username != "" {
+		query = query.Where("job_tags.created_by=?", username)
+	}
+	err = query.Scan(context.Background(), &tags)
+
+	logging.Info("store: GetJobTagsByName took ", time.Since(start))
+	return
+}
+
 // GetUsersWithJob implements GetUsersWithJob of store interface
 func (s *PostgresStore) GetAllUsersWithJob() (
 	data []string,
