@@ -157,7 +157,9 @@ const Search = () => {
                 </Center>
                 <Center>
                     <SearchBar
-                        search={setSearchTerm}
+                        search={(term: string) => {
+                            window.location.href = `/search?term=${term}`
+                        }}
                         searchBorderColor={searchBorderColor}
                         searchButtonBackgroundColor={searchButtonBackgroundColor}
                         initialValue={searchTerm}
