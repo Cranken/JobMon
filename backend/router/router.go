@@ -75,6 +75,7 @@ func (r *Router) Init(
 	router.GET("/api/live/:id", authManager.Protected(r.LiveMonitoring, auth.USER))
 	router.GET("/api/search/all/:term", authManager.Protected(r.Search, auth.USER))
 	router.GET("/api/search/user/:term", authManager.Protected(r.SearchUser, auth.ADMIN))
+	router.GET("/api/search/job/:term", authManager.Protected(r.SearchJob, auth.USER))
 	router.POST("/api/login", r.Login)
 	router.POST("/api/logout", authManager.Protected(r.Logout, auth.USER))
 	router.POST("/api/generateAPIKey", authManager.Protected(r.GenerateAPIKey, auth.ADMIN))
@@ -476,6 +477,8 @@ func (r *Router) Search(
 	w.Write([]byte(fmt.Sprintf("user:%v", searchTerm)))
 }
 
+// SearchUser uses http request parameter term as search term
+// SearchUser searches users with jobs containing the search-term in their username
 func (r *Router) SearchUser(
 	w http.ResponseWriter,
 	req *http.Request,
@@ -496,6 +499,35 @@ func (r *Router) SearchUser(
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		logging.Error("router: SearchUser(): Could not marshal search data to json")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(jsonData)
+}
+
+// SearchJob uses http request parameter term as search term
+// SearchJob searches jobs with containing the search-term in their id, job-name or account-name
+func (r *Router) SearchJob(
+	w http.ResponseWriter,
+	req *http.Request,
+	params httprouter.Params,
+	user auth.UserInfo) {
+
+	searchTerm := params.ByName("term")
+
+	data, err := r.store.GetJobByString(searchTerm)
+	if err != nil {
+		errStr := fmt.Sprintln("router: SearchJob(): Could not read jobs")
+		logging.Error(errStr)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(errStr))
+		return
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		logging.Error("router: SearchJob(): Could not marshal search data to json")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

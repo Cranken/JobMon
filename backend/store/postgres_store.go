@@ -439,6 +439,21 @@ func (s *PostgresStore) SetUserRoles(
 	logging.Info("store: SetUserRoles took ", time.Since(start))
 }
 
+// GetJobByString implements GetJobByString method of store interface
+func (s *PostgresStore) GetJobByString(searchTerm string) (jobs []job.JobMetadata, err error) {
+	start := time.Now()
+
+	err = s.db.NewSelect().
+		Model(&jobs).
+		Where("CAST(job_metadata.id AS VARCHAR) LIKE '%" + searchTerm + "%' OR job_metadata.job_name LIKE '%" + searchTerm + "%' OR job_metadata.account LIKE '%" + searchTerm + "%'").
+		//Where("job_metadata.job_name LIKE '%" + searchTerm + "%' OR job_metadata.account LIKE '%" + searchTerm + "%'").
+		Scan(context.Background())
+
+	logging.Info("store: GetJobByString took ", time.Since(start))
+
+	return
+}
+
 // Flush implements Flush method of store interface.
 func (s *PostgresStore) Flush() {
 	err := s.db.Close()

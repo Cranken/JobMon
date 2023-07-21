@@ -107,3 +107,8 @@ func (s *MockStore) GetUserRoles(username string) (store.UserRoles, bool) {
 func (s *MockStore) SetUserRoles(username string, roles []string) {
 	s.Calls += 1
 }
+
+func (s *MockStore) GetJobByString(searchTerm string) ([]job.JobMetadata, error) {
+	s.Calls += 1
+	return make([]job.JobMetadata, 0), nil
+}

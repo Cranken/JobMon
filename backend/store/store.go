@@ -65,6 +65,9 @@ type Store interface {
 
 	// SetUserRoles sets roles for user 'username'.
 	SetUserRoles(username string, roles []string)
+
+	// Returns jobs that contain the given search term in their id, job-name or account-name
+	GetJobByString(searchTerm string) ([]job.JobMetadata, error)
 }
 
 // UserSession represents a User session consisting of a username and a token.
