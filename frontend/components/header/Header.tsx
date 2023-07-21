@@ -263,24 +263,7 @@ export const Header = ({ pathname, setHeaderHeight }: HeaderProps) => {
  * @param term The term to search for.
  */
 const search = (term: string) => {
-  fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/all/${term}`, {
-    credentials: "include",
-  }).then((res) =>
-    res.text().then((val) => {
-      const split = val.split(":");
-      if (split.length !== 2) {
-        return;
-      }
-      switch (split[0]) {
-        case "job":
-          window.location.href = `/job/${split[1]}`;
-          return;
-        case "user":
-          window.location.href = `/jobs?user=${split[1]}`;
-          return;
-      }
-    })
-  );
+  window.location.href = `/search?term=${term}`;
 }
 
 export default Header;
