@@ -5,9 +5,9 @@ import { dateToUnix, useGetJobs, useStorageState, useSessionStorageState, useIsW
 import { JobSearchParams, JobMetadata } from "../types/job";
 import { useRouter } from "next/router";
 import { Box, Center, Divider, Stack } from "@chakra-ui/react";
-import JoblistPageSelection from "@/components/joblist/JoblistPageSelection";
 import { JobListDisplaySettings } from "@/components/joblist/JobListDisplaySettings";
 import CentredSpinner from "@/components/utils/CentredSpinner";
+import PageSelection from "@/components/utils/PageSelection";
 
 export const Jobs = () => {
   const router = useRouter();
@@ -149,14 +149,14 @@ export const Jobs = () => {
 
   if (pages > 1) {
     elements.push(
-      <JoblistPageSelection
+      <PageSelection
         key="pageselection_top"
         currentPage={page}
         pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
         setPage={setPageStorage}
         marginBottomEnable={true}
         displayExtendedSelection={isWideDevice}
-      ></JoblistPageSelection>
+      ></PageSelection>
     );
   }
 
@@ -174,7 +174,7 @@ export const Jobs = () => {
 
   if (pages > 1) {
     elements.push(
-      <JoblistPageSelection
+      <PageSelection
         key="pageselection_end"
         currentPage={page}
         pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
@@ -182,7 +182,7 @@ export const Jobs = () => {
         marginTopEnable={true}
         marginBottomEnable={true}
         displayExtendedSelection={isWideDevice}
-      ></JoblistPageSelection>
+      ></PageSelection>
     );
   }
 

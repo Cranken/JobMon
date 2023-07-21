@@ -2,7 +2,7 @@ import {ArrowBackIcon, ArrowForwardIcon, ArrowLeftIcon, ArrowRightIcon} from "@c
 import { Button, Center, IconButton, Stack } from "@chakra-ui/react";
 import React from "react";
 
-interface JoblistPageSelectionProps {
+interface PageSelectionProps {
   currentPage: number;
   pages: number;
   setPage: (p: number) => void;
@@ -21,14 +21,14 @@ interface JoblistPageSelectionProps {
  * @param marginBottomEnable Enabling a margin at the bottom.
  * @param displayExtendedSelection Enables a wider version of the page selector 
  */
-export const JoblistPageSelection = ({
+export const PageSelection = ({
   currentPage,
   pages,
   setPage,
   marginTopEnable = false,
   marginBottomEnable = false,
   displayExtendedSelection = true,
-}: JoblistPageSelectionProps) => {
+}: PageSelectionProps) => {
   return (
     <Center mt={(marginTopEnable) ? 5 : 0} mb={(marginBottomEnable) ? 5 : 0} >
       <Stack direction="row">
@@ -77,4 +77,4 @@ export const JoblistPageSelection = ({
   );
 };
 
-export default JoblistPageSelection;
+export default PageSelection;
