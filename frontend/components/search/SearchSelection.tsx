@@ -1,14 +1,23 @@
-import { Box, Grid, GridItem, Heading, useColorModeValue } from "@chakra-ui/react";
+import { Box, Grid, GridItem, Heading, Spinner, useColorModeValue } from "@chakra-ui/react";
 import React from "react";
+
+/**
+ * Categories for the search results
+ */
+export enum SearchResultsCategories {
+    All = "All",
+    Users = "Users",
+    Jobs = "Jobs",
+}
 
 /**
  * SearchSelectionCategory describes a category in the selection menu.
  */
-interface SearchSelectionCategory {
+export interface SearchSelectionCategory {
     /**
      * The name of the category.
      */
-    name: string;
+    category: SearchResultsCategories;
 
     /**
      * A callback function to select this category.
@@ -21,9 +30,9 @@ interface SearchSelectionCategory {
     number: number;
 
     /**
-     * A boolean to determine whether this category should be highlighted.
+     * A boolean to determine whether the values are still loading
      */
-    active?: boolean
+    isLoading?: boolean
 }
 
 /**
@@ -31,6 +40,7 @@ interface SearchSelectionCategory {
  */
 interface SearchSelectionProps {
     categories: SearchSelectionCategory[];
+    activeCategory: SearchResultsCategories;
 }
 
 /**
@@ -38,7 +48,8 @@ interface SearchSelectionProps {
  * @param categories The categories for the user to select.
  */
 export const SearchSelection = ({
-    categories
+    categories,
+    activeCategory
 }: SearchSelectionProps) => {
     const borderColor = useColorModeValue("gray.300", "whiteAlpha.400");
     return (
@@ -51,7 +62,8 @@ export const SearchSelection = ({
             {categories.map((category: SearchSelectionCategory) => (
                 <SearchSelectionItem
                     category={category}
-                    key={category.name + "_category"}
+                    key={category.category + "_category"}
+                    active={category.category == activeCategory}
                 />
             ))}
         </Box>
@@ -65,24 +77,26 @@ export default SearchSelection
  */
 interface SearchSelectionItemProps {
     category: SearchSelectionCategory;
+    active: boolean;
 }
 
 /**
  * SearchSelectionItem is a React Fragment for an item in the {@link SearchSelection}.
  * @param category The category to display in the item.
  */
-const SearchSelectionItem = ({ category }: SearchSelectionItemProps) => {
+const SearchSelectionItem = ({ category, active }: SearchSelectionItemProps) => {
+    const activeColor = useColorModeValue("gray.300", "whiteAlpha.400");
     return (
         <Grid
         templateColumns={"repeat(2, 1fr)"}
         gap={1}
         w={"100%"}
         onClick={category.select}
-        bg={category.active ? "red" : undefined}
+        bg={active ? activeColor : undefined}
         borderRadius={5}
         p={1}>
-            <GridItem>{category.name}</GridItem>
-            <GridItem justifySelf={"end"}>{category.number}</GridItem>
+            <GridItem>{category.category}</GridItem>
+            <GridItem justifySelf={"end"}>{category.isLoading ? <Spinner /> : category.number}</GridItem>
         </Grid>
     );
 };

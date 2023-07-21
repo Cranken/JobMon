@@ -1,10 +1,10 @@
-import { Box, Heading, Text, Stack, useColorModeValue } from "@chakra-ui/react";
+import { Box, Heading, Text, Stack, useColorModeValue, LinkOverlay, LinkBox } from "@chakra-ui/react";
 import React from "react";
 
 /**
  * A search-result.
  */
-interface SearchResult {
+export interface SearchResult {
 
     /**
      * The name of the result.
@@ -14,7 +14,7 @@ interface SearchResult {
     /**
      * A function to call to open the result
      */
-    open: () => void;
+    link: string;
 
     /**
      * The category the result is in.
@@ -24,7 +24,7 @@ interface SearchResult {
     /**
      * A text describing the result or giving a hint, why the result matches the search.
      */
-    text: string;
+    text?: string;
 }
 
 /**
@@ -43,7 +43,7 @@ export const SearchResultList = ({
 }: SearchResultListProps) => {
     return (
         <Stack w={"100%"}>
-        {results.map((r: SearchResult) => (<SearchResultListItem item={r} key={"item_" + r.name + "_" + r.category}/>))}
+            {results.map((r: SearchResult) => (<SearchResultListItem item={r} key={"item_" + r.name + "_" + r.category} />))}
         </Stack>
     );
 };
@@ -66,16 +66,19 @@ const SearchResultListItem = ({
 }: SearchResultListItemProps) => {
     const borderColor = useColorModeValue("gray.300", "whiteAlpha.400");
     return (
-        <Box
-            w={"100%"}
-            borderColor={borderColor}
-            borderRadius={5}
-            borderWidth={1}
-            p={2}
-            onClick={item.open}>
-           <Text>{item.category}</Text>
-           <Heading>{item.name}</Heading>
-           <Text>{item.text}</Text>
-        </Box>
+        <LinkBox>
+            <LinkOverlay href={item.link}>
+                <Box
+                    w={"100%"}
+                    borderColor={borderColor}
+                    borderRadius={5}
+                    borderWidth={1}
+                    p={2}>
+                    <Text>{item.category}</Text>
+                    <Heading>{item.name}</Heading>
+                    {item.text ? <Text>{item.text}</Text> : null}
+                </Box>
+            </LinkOverlay>
+        </LinkBox>
     );
 };
