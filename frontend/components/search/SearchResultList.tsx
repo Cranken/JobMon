@@ -1,5 +1,8 @@
+import { clamp, useIsWideDevice, useSessionStorageState } from "@/utils/utils";
 import { Box, Heading, Text, Stack, useColorModeValue, LinkOverlay, LinkBox } from "@chakra-ui/react";
 import React from "react";
+import PageSelection from "../utils/PageSelection";
+import CentredSpinner from "../utils/CentredSpinner";
 
 /**
  * A search-result.
@@ -41,9 +44,50 @@ interface SearchResultListProps {
 export const SearchResultList = ({
     results
 }: SearchResultListProps) => {
+    const limit = 50;
+    const [page, setPageStorage, , pageIsLoading] = useSessionStorageState("searchPage", 1)
+    const pages = results.length / limit;
+    const isWideDevice = useIsWideDevice();
+
+    if (pageIsLoading) {
+        return (
+            <CentredSpinner />
+        );
+    }
+
+    // Clamp page if page is to high or low
+    if (!isNaN(pages) && isFinite(pages) && (page < 0 || Math.ceil(pages) < page)) {
+        setPageStorage(clamp(page, 0, Math.ceil(pages)))
+    }
+
+    // Set page to 1. This case is necessary coming from a filter with zero jobs to a filter with more than zero jobs.
+    if (page == 0 && pages > 0) {
+        setPageStorage(1)
+    }
+    const resultsSliced = results.slice(limit * (page - 1), limit * (page - 1) + limit)
     return (
         <Stack w={"100%"}>
-            {results.map((r: SearchResult) => (<SearchResultListItem item={r} key={"item_" + r.name + "_" + r.category} />))}
+            {pages > 1 ? (
+                <PageSelection
+                    key="pageselection_top"
+                    currentPage={page}
+                    pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
+                    setPage={setPageStorage}
+                    marginBottomEnable={true}
+                    displayExtendedSelection={isWideDevice}
+                ></PageSelection>
+            ) : null}
+            {resultsSliced.map((r: SearchResult) => (<SearchResultListItem item={r} key={"item_" + r.name + "_" + r.category} />))}
+            {pages > 1 ? (
+                <PageSelection
+                    key="pageselection_end"
+                    currentPage={page}
+                    pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
+                    setPage={setPageStorage}
+                    marginTopEnable={true}
+                    displayExtendedSelection={isWideDevice}
+                ></PageSelection>
+            ) : null}
         </Stack>
     );
 };
