@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import JobFilter from "@/components/joblist/job-filter/JobFilter";
 import JobList from "@/components/joblist/JobList";
 import { dateToUnix, useGetJobs, useStorageState, useSessionStorageState, useIsWideDevice, clamp } from "@/utils/utils";
-import { JobSearchParams, JobMetadata } from "../types/job";
+import { JobSearchParams, JobMetadata, JobTag } from "../types/job";
 import { useRouter } from "next/router";
 import { Box, Center, Divider, Stack } from "@chakra-ui/react";
 import { JobListDisplaySettings } from "@/components/joblist/JobListDisplaySettings";
@@ -51,6 +51,16 @@ export const Jobs = () => {
       setParams({ ...params, UserName: user as string });
     }
   }, [router]);
+
+  useEffect(() => {
+    const { tag } = router.query;
+    if (jobListData && (tag?.length ?? 0 > 0)) {
+      const tagListFiltered = jobListData.Config.Tags.filter((value: JobTag) => value.Name == tag)
+      if (tagListFiltered.length > 0) {
+      setParams({ ...params, Tags: tagListFiltered });
+      }
+    }
+  }, [router, jobListData]);
 
   useEffect(() => {
     if (joblistRef.current) {

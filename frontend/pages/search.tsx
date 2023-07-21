@@ -116,7 +116,7 @@ const Search = () => {
                             return {
                                 category: "Job",
                                 name: value.Name,
-                                link: `/job/${value.Id}`,
+                                link: `/jobs?tag=${value.Name}`,
                                 text: "Created by: " + value.CreatedBy
                             }
                         });
