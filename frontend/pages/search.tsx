@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Center, Grid, GridItem, Heading, Stack, useColorModeValue } from "@chakra-ui/react";
+import { Box, Center, Grid, GridItem, Heading, Stack, Tag, Text, Wrap, useColorModeValue } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import SearchSelection, { SearchResultsCategories } from "@/components/search/SearchSelection";
 import SearchBar from "@/components/search/SearchBar";
@@ -81,9 +81,36 @@ const Search = () => {
                         const results = val.sort((a: JobMetadata, b: JobMetadata) => b.StartTime - a.StartTime).map((value: JobMetadata) => {
                             return {
                                 category: "Job",
-                                name: value.Id.toString(),
+                                name: "Job ID: " + value.Id.toString(),
                                 link: `/job/${value.Id}`,
-                                text: value.JobName + " | " + value.Account + " | " + value.Partition + " | Start: " + new Date(value.StartTime * 1000).toLocaleString() + " | End: " + new Date(value.StopTime * 1000).toLocaleString()
+                                //text: value.JobName + " | " + value.Account + " | " + value.Partition + " | Start: " + new Date(value.StartTime * 1000).toLocaleString() + " | End: " + new Date(value.StopTime * 1000).toLocaleString(),
+                                body: (
+                                    <Stack textAlign="start" pt={2} pl={2}>
+                                        <Text>
+                                            User: {value.UserName} ({value.GroupName})
+                                        </Text>
+                                        <Text>Name: {value.JobName}</Text>
+                                        <Text>
+                                            Start: {new Date(value.StartTime * 1000).toLocaleString()}
+                                        </Text>
+                                        {value.IsRunning ? (
+                                            <Box>
+                                                <Tag colorScheme="green">Running</Tag>
+                                            </Box>
+                                        ) : (
+                                            <Text>
+                                                End: {new Date(value.StopTime * 1000).toLocaleString()}
+                                            </Text>
+                                        )}
+                                        {value.Tags && value.Tags.length > 0 ? (
+                                            <Wrap>
+                                                {value.Tags.map((tag) => (
+                                                    <Tag key={tag.Name}>{tag.Name}</Tag>
+                                                ))}
+                                            </Wrap>
+                                        ) : null}
+                                    </Stack>
+                                ),
                             }
                         });
                         setResultsJobs(results);
@@ -114,7 +141,7 @@ const Search = () => {
                     else {
                         const results = val.sort().map((value: JobTag) => {
                             return {
-                                category: "Job",
+                                category: "Tag",
                                 name: value.Name,
                                 link: `/jobs?tag=${value.Name}`,
                                 text: "Created by: " + value.CreatedBy

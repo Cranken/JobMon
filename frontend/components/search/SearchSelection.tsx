@@ -1,4 +1,4 @@
-import { Box, Grid, GridItem, Heading, Spinner, useColorModeValue } from "@chakra-ui/react";
+import { Box, Grid, GridItem, Heading, Spinner, Tag, useColorModeValue } from "@chakra-ui/react";
 import React from "react";
 
 /**
@@ -58,8 +58,9 @@ export const SearchSelection = ({
             w={"100%"}
             borderColor={borderColor}
             borderRadius={5}
-            borderWidth={1}>
-            <Heading>Categories</Heading>
+            borderWidth={1}
+            p={1}>
+            <Heading size={"md"} mb={4}>Categories</Heading>
             {categories.map((category: SearchSelectionCategory) => (
                 <SearchSelectionItem
                     category={category}
@@ -97,7 +98,7 @@ const SearchSelectionItem = ({ category, active }: SearchSelectionItemProps) => 
         borderRadius={5}
         p={1}>
             <GridItem>{category.category}</GridItem>
-            <GridItem justifySelf={"end"}>{category.isLoading ? <Spinner /> : category.number}</GridItem>
+            <GridItem justifySelf={"end"}>{category.isLoading ? <Spinner /> : <Tag>{category.number}</Tag>}</GridItem>
         </Grid>
     );
 };

@@ -1,5 +1,5 @@
 import { clamp, useIsWideDevice, useSessionStorageState } from "@/utils/utils";
-import { Box, Heading, Text, Stack, useColorModeValue, LinkOverlay, LinkBox } from "@chakra-ui/react";
+import { Box, Heading, Text, Stack, useColorModeValue, LinkOverlay, LinkBox, Tag, Center } from "@chakra-ui/react";
 import React from "react";
 import PageSelection from "../utils/PageSelection";
 import CentredSpinner from "../utils/CentredSpinner";
@@ -28,6 +28,11 @@ export interface SearchResult {
      * A text describing the result or giving a hint, why the result matches the search.
      */
     text?: string;
+
+    /**
+     * A body to display in the element
+     */
+    body?: JSX.Element | JSX.Element[];
 }
 
 /**
@@ -69,7 +74,7 @@ export const SearchResultList = ({
         <Stack w={"100%"}>
             {pages > 1 ? (
                 <PageSelection
-                    key="pageselection_top"
+                    key="pageSelection_top"
                     currentPage={page}
                     pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
                     setPage={setPageStorage}
@@ -77,10 +82,15 @@ export const SearchResultList = ({
                     displayExtendedSelection={isWideDevice}
                 ></PageSelection>
             ) : null}
+            {results.length == 0 ? (
+                <Center>
+                    <Heading mt={10} size={"lg"}>There are no elements to display in this category</Heading>
+                </Center>
+            ) : null}
             {resultsSliced.map((r: SearchResult) => (<SearchResultListItem item={r} key={"item_" + r.name + "_" + r.category} />))}
             {pages > 1 ? (
                 <PageSelection
-                    key="pageselection_end"
+                    key="pageSelection_end"
                     currentPage={page}
                     pages={!isNaN(pages) && isFinite(pages) ? Math.ceil(pages) : 1}
                     setPage={setPageStorage}
@@ -118,9 +128,10 @@ const SearchResultListItem = ({
                     borderRadius={5}
                     borderWidth={1}
                     p={2}>
-                    <Text>{item.category}</Text>
-                    <Heading>{item.name}</Heading>
+                    <Tag colorScheme="blue">{item.category}</Tag>
+                    <Heading size={"md"}>{item.name}</Heading>
                     {item.text ? <Text>{item.text}</Text> : null}
+                    {item.body ? item.body : null}
                 </Box>
             </LinkOverlay>
         </LinkBox>
