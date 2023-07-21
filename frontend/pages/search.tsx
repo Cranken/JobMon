@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import SearchSelection, { SearchResultsCategories } from "@/components/search/SearchSelection";
 import SearchBar from "@/components/search/SearchBar";
 import SearchResultList, { SearchResult } from "@/components/search/SearchResultList";
-import { JobMetadata } from "@/types/job";
+import { JobMetadata, JobTag } from "@/types/job";
 
 
 /**
@@ -17,8 +17,10 @@ const Search = () => {
     const searchBorderColor = useColorModeValue("gray.300", "whiteAlpha.400");
     const [isLoadingUsers, setIsLoadingUsers] = useState(true);
     const [isLoadingJobs, setIsLoadingJobs] = useState(true);
+    const [isLoadingTags, setIsLoadingTags] = useState(true);
     const [resultsUsers, setResultsUsers] = useState<SearchResult[]>([]);
     const [resultsJobs, setResultsJobs] = useState<SearchResult[]>([]);
+    const [resultsTags, setResultsTags] = useState<SearchResult[]>([]);
     const [activeCategory, setActiveCategory] = useState(SearchResultsCategories.All);
 
     // Read term from router
@@ -91,20 +93,56 @@ const Search = () => {
             );
         }
         else {
-            setResultsUsers([]);
+            setResultsJobs([]);
             setIsLoadingJobs(false);
         }
-        
+
+    }, [searchTerm])
+
+    // Search for tags
+    useEffect(() => {
+        if (searchTerm != "") {
+            setIsLoadingTags(true)
+            fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/tag/${searchTerm}`, {
+                credentials: "include",
+            }).then((res) =>
+                res.json().then((val: JobTag[]) => {
+                    if (val == null) {
+                        setResultsTags([]);
+                        setIsLoadingTags(false);
+                    }
+                    else {
+                        const results = val.sort().map((value: JobTag) => {
+                            return {
+                                category: "Job",
+                                name: value.Name,
+                                link: `/job/${value.Id}`,
+                                text: "Created by: " + value.CreatedBy
+                            }
+                        });
+                        setResultsTags(results);
+                        setIsLoadingTags(false);
+                    }
+                })
+            );
+        }
+        else {
+            setResultsTags([]);
+            setIsLoadingTags(false);
+        }
+
     }, [searchTerm])
 
     const getCurrentResultsByCategory = () => {
         switch (activeCategory) {
             case SearchResultsCategories.All:
-                return resultsUsers.concat(resultsJobs);
+                return resultsUsers.concat(resultsJobs).concat(resultsTags);
             case SearchResultsCategories.Users:
                 return resultsUsers;
             case SearchResultsCategories.Jobs:
                 return resultsJobs;
+            case SearchResultsCategories.Tags:
+                return resultsTags;
         }
     }
 
@@ -132,8 +170,8 @@ const Search = () => {
                                 {
                                     category: SearchResultsCategories.All,
                                     select: (() => setActiveCategory(SearchResultsCategories.All)),
-                                    number: resultsUsers.length + resultsJobs.length,
-                                    isLoading: isLoadingUsers || isLoadingJobs
+                                    number: resultsUsers.length + resultsJobs.length + resultsTags.length,
+                                    isLoading: isLoadingUsers || isLoadingJobs || isLoadingTags
                                 },
                                 {
                                     category: SearchResultsCategories.Users,
@@ -147,8 +185,14 @@ const Search = () => {
                                     number: resultsJobs.length,
                                     isLoading: isLoadingJobs,
                                 },
+                                {
+                                    category: SearchResultsCategories.Tags,
+                                    select: (() => setActiveCategory(SearchResultsCategories.Tags)),
+                                    number: resultsTags.length,
+                                    isLoading: isLoadingTags,
+                                },
                             ]}
-                            activeCategory={activeCategory} />
+                                activeCategory={activeCategory} />
                         </GridItem>
                         <GridItem colSpan={5}>
                             <SearchResultList results={getCurrentResultsByCategory()} />

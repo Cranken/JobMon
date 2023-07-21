@@ -8,6 +8,7 @@ export enum SearchResultsCategories {
     All = "All",
     Users = "Users",
     Jobs = "Jobs",
+    Tags = "Tags",
 }
 
 /**
