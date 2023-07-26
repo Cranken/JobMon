@@ -493,7 +493,12 @@ func (r *Router) SearchJob(
 
 	searchTerm := params.ByName("term")
 
-	data, err := r.store.GetJobByString(searchTerm)
+	username := ""
+	if !utils.Contains(user.Roles, auth.ADMIN) {
+		username = user.Username
+	}
+
+	data, err := r.store.GetJobByString(searchTerm, username)
 	if err != nil {
 		errStr := fmt.Sprintln("router: SearchJob(): Could not read jobs")
 		logging.Error(errStr)

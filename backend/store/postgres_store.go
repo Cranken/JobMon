@@ -463,14 +463,18 @@ func (s *PostgresStore) SetUserRoles(
 }
 
 // GetJobByString implements GetJobByString method of store interface
-func (s *PostgresStore) GetJobByString(searchTerm string) (jobs []job.JobMetadata, err error) {
+func (s *PostgresStore) GetJobByString(searchTerm string, username string) (jobs []job.JobMetadata, err error) {
 	start := time.Now()
 
-	err = s.db.NewSelect().
+	query := s.db.NewSelect().
 		Model(&jobs).
-		Where("CAST(job_metadata.id AS VARCHAR) LIKE '%" + searchTerm + "%' OR job_metadata.job_name LIKE '%" + searchTerm + "%' OR job_metadata.account LIKE '%" + searchTerm + "%'").
-		//Where("job_metadata.job_name LIKE '%" + searchTerm + "%' OR job_metadata.account LIKE '%" + searchTerm + "%'").
-		Scan(context.Background())
+		Where("CAST(job_metadata.id AS VARCHAR) LIKE '%" + searchTerm + "%' OR job_metadata.job_name LIKE '%" + searchTerm + "%' OR job_metadata.account LIKE '%" + searchTerm + "%'")
+
+	if username != "" {
+		query = query.Where("job_metadata.user_name=?", username)
+	}
+
+	err = query.Scan(context.Background())
 
 	logging.Info("store: GetJobByString took ", time.Since(start))
 
