@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box, Center, Grid, GridItem, Heading, Stack, Tag, Text, Wrap, useColorModeValue } from "@chakra-ui/react";
+import { Alert, AlertDescription, AlertIcon, AlertTitle, Box, Center, Grid, GridItem, Heading, Stack, Tag, Text, Wrap, useColorModeValue } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import SearchSelection, { SearchResultsCategories } from "@/components/search/SearchSelection";
 import SearchBar from "@/components/search/SearchBar";
@@ -22,6 +22,7 @@ const Search = () => {
     const [resultsJobs, setResultsJobs] = useState<SearchResult[]>([]);
     const [resultsTags, setResultsTags] = useState<SearchResult[]>([]);
     const [activeCategory, setActiveCategory] = useState(SearchResultsCategories.All);
+    const MINIMAL_SEARCH_STRING_LENGTH = 2
 
     // Read term from router
     useEffect(() => {
@@ -33,7 +34,7 @@ const Search = () => {
 
     // Search for users
     useEffect(() => {
-        if (searchTerm != "") {
+        if (searchTerm.length >= MINIMAL_SEARCH_STRING_LENGTH) {
             setIsLoadingUsers(true)
             fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/user/${searchTerm}`, {
                 credentials: "include",
@@ -67,7 +68,7 @@ const Search = () => {
 
     // Search for jobs
     useEffect(() => {
-        if (searchTerm != "") {
+        if (searchTerm.length >= MINIMAL_SEARCH_STRING_LENGTH) {
             setIsLoadingJobs(true)
             fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/job/${searchTerm}`, {
                 credentials: "include",
@@ -128,7 +129,7 @@ const Search = () => {
 
     // Search for tags
     useEffect(() => {
-        if (searchTerm != "") {
+        if (searchTerm.length >= MINIMAL_SEARCH_STRING_LENGTH) {
             setIsLoadingTags(true)
             fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/tag/${searchTerm}`, {
                 credentials: "include",
@@ -224,7 +225,27 @@ const Search = () => {
                                 activeCategory={activeCategory} />
                         </GridItem>
                         <GridItem colSpan={5}>
-                            <SearchResultList results={getCurrentResultsByCategory()} />
+                            {searchTerm.length >= MINIMAL_SEARCH_STRING_LENGTH ? (
+                                <SearchResultList results={getCurrentResultsByCategory()} />
+                            ) : (
+                                <Alert
+                                    status='warning'
+                                    variant='subtle'
+                                    flexDirection='column'
+                                    alignItems='center'
+                                    justifyContent='center'
+                                    textAlign='center'
+                                    height='200px'
+                                >
+                                    <AlertIcon boxSize='40px' mr={0} />
+                                    <AlertTitle mt={4} mb={1} fontSize='lg'>
+                                        Unable to search
+                                    </AlertTitle>
+                                    <AlertDescription maxWidth='sm'>
+                                        Please enter at least to characters to search.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
                         </GridItem>
                     </Grid>
                 </Center>
