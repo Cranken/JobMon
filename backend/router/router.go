@@ -73,7 +73,6 @@ func (r *Router) Init(
 	router.GET("/api/job/:id", authManager.Protected(r.GetJob, auth.USER))
 	router.GET("/api/metric/:id", authManager.Protected(r.GetMetric, auth.USER))
 	router.GET("/api/live/:id", authManager.Protected(r.LiveMonitoring, auth.USER))
-	router.GET("/api/search/all/:term", authManager.Protected(r.Search, auth.USER))
 	router.GET("/api/search/user/:term", authManager.Protected(r.SearchUser, auth.ADMIN))
 	router.GET("/api/search/job/:term", authManager.Protected(r.SearchJob, auth.USER))
 	router.GET("/api/search/tag/:term", authManager.Protected(r.SearchTag, auth.USER))
@@ -453,29 +452,6 @@ func (r *Router) GetMetric(
 
 	logging.Info("router: GetMetric(): Sending metric with GUID", metric)
 	w.Write(jsonData)
-}
-
-// Search uses http request parameter term as search term
-// When a job is found which matches this search term then job:<Job ID> is returned
-// Otherwise it is assumed that it is a username and user:<search term> is returned
-func (r *Router) Search(
-	w http.ResponseWriter,
-	req *http.Request,
-	params httprouter.Params,
-	user auth.UserInfo) {
-
-	searchTerm := params.ByName("term")
-
-	id, err := strconv.Atoi(searchTerm)
-	if err == nil {
-		_, err := r.store.GetJob(id)
-		if err == nil {
-			w.Write([]byte(fmt.Sprintf("job:%v", id)))
-			return
-		}
-	}
-
-	w.Write([]byte(fmt.Sprintf("user:%v", searchTerm)))
 }
 
 // SearchUser uses http request parameter term as search term
