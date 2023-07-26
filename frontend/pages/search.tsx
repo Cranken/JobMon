@@ -161,6 +161,10 @@ const Search = () => {
 
     }, [searchTerm])
 
+    /**
+     * Selects to list of results, that should currently be displayed
+     * @returns The list of results
+     */
     const getCurrentResultsByCategory = () => {
         switch (activeCategory) {
             case SearchResultsCategories.All:
