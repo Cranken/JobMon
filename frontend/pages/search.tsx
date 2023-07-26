@@ -5,12 +5,15 @@ import SearchSelection, { SearchResultsCategories } from "@/components/search/Se
 import SearchBar from "@/components/search/SearchBar";
 import SearchResultList, { SearchResult } from "@/components/search/SearchResultList";
 import { JobMetadata, JobTag } from "@/types/job";
+import { useGetUser, UserRole } from "@/utils/user";
 
 
 /**
  * Search helps the user search for different a term in the list of jobs and in the users
  */
 const Search = () => {
+    const user = useGetUser();
+    const isAdmin = (user.Roles?.includes(UserRole.Admin) ?? false);
     const router = useRouter();
     const [searchTerm, setSearchTerm] = useState("");
     const searchButtonBackgroundColor = useColorModeValue("gray.500", "gray.400");
@@ -22,7 +25,7 @@ const Search = () => {
     const [resultsJobs, setResultsJobs] = useState<SearchResult[]>([]);
     const [resultsTags, setResultsTags] = useState<SearchResult[]>([]);
     const [activeCategory, setActiveCategory] = useState(SearchResultsCategories.All);
-    const MINIMAL_SEARCH_STRING_LENGTH = 2
+    const MINIMAL_SEARCH_STRING_LENGTH = 2;
 
     // Read term from router
     useEffect(() => {
@@ -34,7 +37,7 @@ const Search = () => {
 
     // Search for users
     useEffect(() => {
-        if (searchTerm.length >= MINIMAL_SEARCH_STRING_LENGTH) {
+        if (searchTerm.length >= MINIMAL_SEARCH_STRING_LENGTH && isAdmin) {
             setIsLoadingUsers(true)
             fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/api/search/user/${searchTerm}`, {
                 credentials: "include",
@@ -208,7 +211,7 @@ const Search = () => {
                         w={"100%"}
                         gap={2}>
                         <GridItem colSpan={1}>
-                            <SearchSelection categories={[
+                            <SearchSelection categories={isAdmin ? [
                                 {
                                     category: SearchResultsCategories.All,
                                     select: (() => setActiveCategory(SearchResultsCategories.All)),
@@ -220,6 +223,25 @@ const Search = () => {
                                     select: (() => setActiveCategory(SearchResultsCategories.Users)),
                                     number: resultsUsers.length,
                                     isLoading: isLoadingUsers,
+                                },
+                                {
+                                    category: SearchResultsCategories.Jobs,
+                                    select: (() => setActiveCategory(SearchResultsCategories.Jobs)),
+                                    number: resultsJobs.length,
+                                    isLoading: isLoadingJobs,
+                                },
+                                {
+                                    category: SearchResultsCategories.Tags,
+                                    select: (() => setActiveCategory(SearchResultsCategories.Tags)),
+                                    number: resultsTags.length,
+                                    isLoading: isLoadingTags,
+                                },
+                            ] : [
+                                {
+                                    category: SearchResultsCategories.All,
+                                    select: (() => setActiveCategory(SearchResultsCategories.All)),
+                                    number: resultsUsers.length + resultsJobs.length + resultsTags.length,
+                                    isLoading: isLoadingUsers || isLoadingJobs || isLoadingTags
                                 },
                                 {
                                     category: SearchResultsCategories.Jobs,
