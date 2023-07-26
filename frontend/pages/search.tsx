@@ -194,7 +194,15 @@ const Search = () => {
                     />
                 </Center>
                 <Center pt={15}>
-                    <Grid templateColumns={"repeat(6, 1fr)"} w={"100%"} gap={2}>
+                    <Grid
+                        templateColumns={{
+                            base: "1fr",
+                            md: "repeat(4, 1fr)",
+                            lg: "repeat(5, 1fr)",
+                            xl: "repeat(6, 1fr)"
+                        }}
+                        w={"100%"}
+                        gap={2}>
                         <GridItem colSpan={1}>
                             <SearchSelection categories={[
                                 {
@@ -224,7 +232,13 @@ const Search = () => {
                             ]}
                                 activeCategory={activeCategory} />
                         </GridItem>
-                        <GridItem colSpan={5}>
+                        <GridItem
+                            colSpan={{
+                                base: 1,
+                                md: 3,
+                                lg: 4,
+                                xl: 5
+                            }}>
                             {searchTerm.length >= MINIMAL_SEARCH_STRING_LENGTH ? (
                                 <SearchResultList results={getCurrentResultsByCategory()} />
                             ) : (
