@@ -55,6 +55,21 @@ func (s *MockStore) GetJobTags(username string) ([]job.JobTag, error) {
 	return make([]job.JobTag, 0), nil
 }
 
+func (s *MockStore) GetJobTagsByName(searchTerm string, username string) ([]job.JobTag, error) {
+	s.Calls += 1
+	return make([]job.JobTag, 0), nil
+}
+
+func (s *MockStore) GetAllUsersWithJob() ([]string, error) {
+	s.Calls += 1
+	return make([]string, 0), nil
+}
+
+func (s *MockStore) GetUserWithJob(searchTerm string) ([]string, error) {
+	s.Calls += 1
+	return make([]string, 0), nil
+}
+
 func (s *MockStore) AddTag(id int, tag *job.JobTag) error {
 	s.Calls += 1
 	return nil
@@ -96,4 +111,9 @@ func (s *MockStore) GetUserRoles(username string) (store.UserRoles, bool) {
 
 func (s *MockStore) SetUserRoles(username string, roles []string) {
 	s.Calls += 1
+}
+
+func (s *MockStore) GetJobByString(searchTerm string, username string) ([]job.JobMetadata, error) {
+	s.Calls += 1
+	return make([]job.JobMetadata, 0), nil
 }

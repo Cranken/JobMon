@@ -244,6 +244,70 @@ func (s *PostgresStore) GetJobTags(
 	return
 }
 
+// GetJobTagsByName implements GetJobTagsByName of store interface.
+func (s *PostgresStore) GetJobTagsByName(
+	searchTerm string,
+	username string,
+) (
+	tags []job.JobTag,
+	err error,
+) {
+	start := time.Now()
+
+	query := s.db.NewSelect().
+		Table("job_tags").
+		ColumnExpr("job_tags.*").
+		Where("job_tags.name LIKE '%" + searchTerm + "%'")
+	if username != "" {
+		query = query.Where("job_tags.created_by=?", username)
+	}
+	err = query.Scan(context.Background(), &tags)
+
+	logging.Info("store: GetJobTagsByName took ", time.Since(start))
+	return
+}
+
+// GetUsersWithJob implements GetUsersWithJob of store interface
+func (s *PostgresStore) GetAllUsersWithJob() (
+	data []string,
+	err error,
+) {
+	start := time.Now()
+
+	err = s.db.NewSelect().
+		Distinct().
+		Model(&data).
+		Table("job_metadata").
+		Column("user_name").
+		Scan(context.Background())
+
+	logging.Info("store: GetUsersWithJob took ", time.Since(start))
+
+	return
+}
+
+// GetAllUsersWithJob implements GetAllUsersWithJob of store interface
+func (s *PostgresStore) GetUserWithJob(
+	searchTerm string,
+) (
+	data []string,
+	err error,
+) {
+	start := time.Now()
+
+	err = s.db.NewSelect().
+		Distinct().
+		Model(&data).
+		Table("job_metadata").
+		Column("user_name").
+		Where("user_name LIKE '%" + searchTerm + "%'").
+		Scan(context.Background())
+
+	logging.Info("store: GetUsersWithJob took ", time.Since(start))
+
+	return
+}
+
 // StopJob implements StopJob method of store interface.
 func (s *PostgresStore) StopJob(
 	id int,
@@ -396,6 +460,25 @@ func (s *PostgresStore) SetUserRoles(
 	}
 
 	logging.Info("store: SetUserRoles took ", time.Since(start))
+}
+
+// GetJobByString implements GetJobByString method of store interface
+func (s *PostgresStore) GetJobByString(searchTerm string, username string) (jobs []job.JobMetadata, err error) {
+	start := time.Now()
+
+	query := s.db.NewSelect().
+		Model(&jobs).
+		Where("CAST(job_metadata.id AS VARCHAR) LIKE '%" + searchTerm + "%' OR job_metadata.job_name LIKE '%" + searchTerm + "%' OR job_metadata.account LIKE '%" + searchTerm + "%'")
+
+	if username != "" {
+		query = query.Where("job_metadata.user_name=?", username)
+	}
+
+	err = query.Scan(context.Background())
+
+	logging.Info("store: GetJobByString took ", time.Since(start))
+
+	return
 }
 
 // Flush implements Flush method of store interface.

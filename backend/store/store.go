@@ -39,6 +39,15 @@ type Store interface {
 	// GetJobTags returns all job tags for the user 'username'
 	GetJobTags(username string) ([]job.JobTag, error)
 
+	// GetJobTagsByName returns all job tags containing the given string in their name
+	GetJobTagsByName(searchTerm string, username string) ([]job.JobTag, error)
+
+	// GetAllUsersWithJob returns all users with at least one job
+	GetAllUsersWithJob() ([]string, error)
+
+	// GetUserWithJob returns all users with at least one job with a username containing the search term.
+	GetUserWithJob(searchTerm string) ([]string, error)
+
 	// AddTag adds tag to the job identified with id.
 	AddTag(id int, tag *job.JobTag) error
 
@@ -59,6 +68,9 @@ type Store interface {
 
 	// SetUserRoles sets roles for user 'username'.
 	SetUserRoles(username string, roles []string)
+
+	// Returns jobs that contain the given search term in their id, job-name or account-name
+	GetJobByString(searchTerm string, username string) ([]job.JobMetadata, error)
 }
 
 // UserSession represents a User session consisting of a username and a token.
