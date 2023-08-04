@@ -30,8 +30,21 @@ type JobMetadata struct {
 	Partition    string    // Requested resource partition
 	JobScript    string    // Submitted job script
 	ExitCode     int       // global job exit code
+	Nodes        []*Node   `bun:"m2m:job_to_nodes,join:Job=Node"`
 	Tags         []*JobTag `bun:"m2m:job_to_tags,join:Job=Tag"`
 	Data         []JobMetadataData
+}
+
+type JobToNodes struct {
+	JobId  int          `bun:",pk"`
+	Job    *JobMetadata `bun:"rel:belongs-to,join:job_id=id"`
+	NodeId int64        `bun:",pk"`
+	Node   *Node        `bun:"rel:belongs-to,join:node_id=id"`
+}
+
+type Node struct {
+	Id   int64 `bun:",pk,autoincrement"`
+	Name string
 }
 
 // JobMetaData represents the job data.

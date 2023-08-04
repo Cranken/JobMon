@@ -56,12 +56,15 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 	))
 
 	s.db.RegisterModel((*job.JobToTags)(nil))
+	s.db.RegisterModel((*job.JobToNodes)(nil))
 
 	// Table job_to_tags
 	_, err =
 		s.db.NewCreateTable().
 			Model((*job.JobToTags)(nil)).
 			IfNotExists().
+			ForeignKey(`("job_id") REFERENCES "job_metadata" ("id") ON DELETE CASCADE`).
+			ForeignKey(`("tag_id") REFERENCES "job_tags" ("id") ON DELETE CASCADE`).
 			Exec(context.Background())
 	if err != nil {
 		logging.Error("store: Init(): Failed to create table job_to_tags: ", err)
@@ -75,6 +78,28 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 			Exec(context.Background())
 	if err != nil {
 		logging.Error("store: Init(): Failed to create table job_tags: ", err)
+	}
+
+	// Table job_to_nodes
+	_, err =
+		s.db.NewCreateTable().
+			Model((*job.JobToNodes)(nil)).
+			ForeignKey(`("job_id") REFERENCES "job_metadata" ("id") ON DELETE CASCADE`).
+			ForeignKey(`("node_id") REFERENCES "nodes" ("id") ON DELETE CASCADE`).
+			IfNotExists().
+			Exec(context.Background())
+	if err != nil {
+		logging.Error("store: Init(): Failed to create table job_to_nodes: ", err)
+	}
+
+	// Table nodes
+	_, err =
+		s.db.NewCreateTable().
+			Model((*job.Node)(nil)).
+			IfNotExists().
+			Exec(context.Background())
+	if err != nil {
+		logging.Error("store: Init(): Failed to create table nodes: ", err)
 	}
 
 	// Table job_metadata
