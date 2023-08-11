@@ -81,7 +81,7 @@ type CLIConfig struct {
 // MetricConfig represents a metric configuration configured by the admin.
 type MetricConfig struct {
 	// Global unique identifier for metric
-	GUID string `json:"GUID"`
+	GUID string `json:"GUID" bun:",pk,autoincrement"`
 	// Metric type, e.g. "cpu", "node", "socket", "accelerator"
 	Type string `json:"Type"`
 	// Category the metric belongs to. Must be one of config->MetricCategories

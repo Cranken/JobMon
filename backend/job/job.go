@@ -49,13 +49,13 @@ type Node struct {
 
 // JobMetaData represents the job data.
 type JobMetadataData struct {
-	Config config.MetricConfig
-	// Mean
-	Mean float64
-	// Max
-	Max float64
-	// Change points
-	ChangePoints []time.Time
+	Id               int64 `bun:",pk,autoincrement"`
+	JobId            int64
+	MetricConfigGuid string
+	Config           config.MetricConfig
+	Mean             float64
+	Max              float64
+	ChangePoints     []time.Time
 }
 
 // StopJob stores the ExitCode of a job and the end time.

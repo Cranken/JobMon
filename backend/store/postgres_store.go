@@ -48,6 +48,7 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 	if err != nil {
 		logging.Fatal("store: Init(): Could not connect to PostgreSQL store: ", err)
 	}
+	logging.Info("store: Init(): Connection established to ", c.JobStore.PSQLHost, " database: ", c.JobStore.PSQLDB)
 
 	// Allow SQL statement debugging
 	s.db.AddQueryHook(bundebug.NewQueryHook(
@@ -57,6 +58,37 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 
 	s.db.RegisterModel((*job.JobToTags)(nil))
 	s.db.RegisterModel((*job.JobToNodes)(nil))
+
+	// Table metric_config
+	_, err =
+		s.db.NewCreateTable().
+			Model((*config.MetricConfig)(nil)).
+			IfNotExists().
+			Exec(context.Background())
+	if err != nil {
+		logging.Error("store: Init(): Failed to create table metric_config: ", err)
+	}
+	// Table job_metadata_data
+	_, err =
+		s.db.NewCreateTable().
+			Model((*job.JobMetadataData)(nil)).
+			ForeignKey(`("job_id") REFERENCES "job_metadata" ("id") ON DELETE CASCADE`).
+			ForeignKey(`("metric_config_guid") REFERENCES "metric_configs" ("guid") ON DELETE CASCADE`).
+			IfNotExists().
+			Exec(context.Background())
+	if err != nil {
+		logging.Error("store: Init(): Failed to create table job_metadata_data: ", err)
+	}
+
+	// Table job_tags
+	_, err =
+		s.db.NewCreateTable().
+			Model((*job.JobTag)(nil)).
+			IfNotExists().
+			Exec(context.Background())
+	if err != nil {
+		logging.Error("store: Init(): Failed to create table job_tags: ", err)
+	}
 
 	// Table job_to_tags
 	_, err =
@@ -70,14 +102,14 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 		logging.Error("store: Init(): Failed to create table job_to_tags: ", err)
 	}
 
-	// Table job_tags
+	// Table nodes
 	_, err =
 		s.db.NewCreateTable().
-			Model((*job.JobTag)(nil)).
+			Model((*job.Node)(nil)).
 			IfNotExists().
 			Exec(context.Background())
 	if err != nil {
-		logging.Error("store: Init(): Failed to create table job_tags: ", err)
+		logging.Error("store: Init(): Failed to create table nodes: ", err)
 	}
 
 	// Table job_to_nodes
@@ -90,16 +122,6 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 			Exec(context.Background())
 	if err != nil {
 		logging.Error("store: Init(): Failed to create table job_to_nodes: ", err)
-	}
-
-	// Table nodes
-	_, err =
-		s.db.NewCreateTable().
-			Model((*job.Node)(nil)).
-			IfNotExists().
-			Exec(context.Background())
-	if err != nil {
-		logging.Error("store: Init(): Failed to create table nodes: ", err)
 	}
 
 	// Table job_metadata
@@ -130,6 +152,14 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 			Exec(context.Background())
 	if err != nil {
 		logging.Error("store: Init(): Failed to create table user_roles: ", err)
+	}
+
+	// Write metric-configs
+	for _, metricConfig := range c.Metrics {
+		err := s.WriteMetricConfig(&metricConfig)
+		if err != nil {
+			logging.Error("store: Init(): Unable to write metric with guid: ", metricConfig.GUID, " Error: ", err)
+		}
 	}
 
 	go s.finishOvertimeJobs()
@@ -622,6 +652,20 @@ func (s *PostgresStore) startCleanJobsTimer() {
 		<-ticker.C
 		s.finishOvertimeJobs()
 	}
+}
+
+// WriteMetricConfig writes the given config to the database
+func (s *PostgresStore) WriteMetricConfig(config *config.MetricConfig) error {
+	start := time.Now()
+
+	_, err := s.db.NewInsert().
+		Model(config).
+		On("CONFLICT (guid) DO UPDATE").
+		Exec(context.Background())
+
+	logging.Info("store: WriteMetricConfig for metric ", config.GUID, " took ", time.Since(start))
+
+	return err
 }
 
 // appendValueFilter appends filter values val with key to the query.

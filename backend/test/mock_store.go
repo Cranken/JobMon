@@ -117,3 +117,8 @@ func (s *MockStore) GetJobByString(searchTerm string, username string) ([]job.Jo
 	s.Calls += 1
 	return make([]job.JobMetadata, 0), nil
 }
+
+func (s *MockStore) WriteMetricConfig(config *config.MetricConfig) error {
+	s.Calls += 1
+	return nil
+}

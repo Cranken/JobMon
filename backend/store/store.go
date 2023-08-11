@@ -71,6 +71,9 @@ type Store interface {
 
 	// Returns jobs that contain the given search term in their id, job-name or account-name
 	GetJobByString(searchTerm string, username string) ([]job.JobMetadata, error)
+
+	// Writes a metric config to the storage
+	WriteMetricConfig(config *config.MetricConfig) error
 }
 
 // UserSession represents a User session consisting of a username and a token.
