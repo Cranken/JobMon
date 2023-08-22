@@ -216,15 +216,14 @@ func (s *PostgresStore) PutJob(j job.JobMetadata) error {
 
 	// Create and link nodes
 	for _, n := range j.Nodes {
-		err := s.db.NewSelect().
-			Model(n).
-			Where("name = ?", n.Name).
-			Scan(context.Background())
+		exists, db_node, err := s.getNode(n.Name)
 		if err != nil {
-			logging.Error("store: PutJob(): Unable to read node from postgres")
+			logging.Error("store: PutJob(): Unable to read node ", n.Name, " from postgres")
 			return err
 		}
-		if n.Id == 0 {
+		if exists {
+			n.Id = db_node.Id
+		} else {
 			err = s.insertNode(n)
 			if err != nil {
 				logging.Error("store: PutJob(): Unable to insert node")
@@ -234,14 +233,7 @@ func (s *PostgresStore) PutJob(j job.JobMetadata) error {
 		}
 
 		// Linking job to node
-		j2n :=
-			job.JobToNodes{
-				JobId:  j.Id,
-				NodeId: n.Id,
-			}
-		_, err = s.db.NewInsert().
-			Model(&j2n).
-			Exec(context.Background())
+		err = s.linkJobToNode(&j, n)
 
 		if err != nil {
 			logging.Error("store: PutJob(): Unable to link node to job")
@@ -718,13 +710,39 @@ func (s *PostgresStore) WriteMetricConfig(config *config.MetricConfig) error {
 	return err
 }
 
+// Inserts a node into the nodes table
 func (s *PostgresStore) insertNode(node *job.Node) (err error) {
-	start := time.Now()
 	node.Id = 0
-
 	_, err = s.db.NewInsert().Model(node).On("CONFLICT (name) DO NOTHING").Exec(context.Background())
+	return
+}
 
-	logging.Info("store: updating nodes list took ", time.Since(start))
+/* Checks if the given name exists in the database.
+ * The existence of a node is checked using the given name.
+ * If the node exists the node is fetched and returned.
+ */
+func (s *PostgresStore) getNode(name string) (exists bool, node job.Node, err error) {
+	node.Id = 0
+	query := s.db.NewSelect().
+		Model(&node).
+		Where("name = ?", name)
+	exists, err = query.Exists(context.Background())
+	if err == nil && exists {
+		err = query.Scan(context.Background())
+	}
+	return
+}
+
+// Links a node to a job
+func (s *PostgresStore) linkJobToNode(j *job.JobMetadata, n *job.Node) (err error) {
+	j2n :=
+		job.JobToNodes{
+			JobId:  j.Id,
+			NodeId: n.Id,
+		}
+	_, err = s.db.NewInsert().
+		Model(&j2n).
+		Exec(context.Background())
 	return
 }
 
