@@ -586,12 +586,12 @@ func (s *PostgresStore) Flush() {
 }
 
 // UpdateJob implements UpdateJob method of store interface.
-func (s *PostgresStore) UpdateJob(job job.JobMetadata) error {
+func (s *PostgresStore) UpdateJob(j job.JobMetadata) error {
 	start := time.Now()
 
 	_, err :=
 		s.db.NewUpdate().
-			Model(&job).
+			Model(&j).
 			WherePK().
 			Exec(context.Background())
 	if err != nil {
@@ -599,6 +599,48 @@ func (s *PostgresStore) UpdateJob(job job.JobMetadata) error {
 	}
 
 	logging.Info("store: UpdateJob took ", time.Since(start))
+	return nil
+}
+
+// UpdateNodesForJob implements UpdateNodesForJob method of store interface
+func (s *PostgresStore) UpdateNodesForJob(j job.JobMetadata) error {
+	start := time.Now()
+
+	// Remove previously assigned nodes
+	_, err := s.db.NewDelete().Table("job_to_nodes").Where("job_id = ?", j.Id).Exec(context.Background())
+	if err != nil {
+		logging.Error("store: UpdateNodesForJob(): Unable to remove old node assignment")
+		return err
+	}
+
+	// Create and link nodes
+	for _, n := range j.Nodes {
+		exists, db_node, err := s.getNode(n.Name)
+		if err != nil {
+			logging.Error("store: UpdateNodesForJob(): Unable to read node ", n.Name, " from postgres")
+			return err
+		}
+		if exists {
+			n.Id = db_node.Id
+		} else {
+			err = s.insertNode(n)
+			if err != nil {
+				logging.Error("store: UpdateNodesForJob(): Unable to insert node")
+				return err
+			}
+			logging.Info("store: UpdateNodesForJob(): Unknown Node ", n.Name, " created")
+		}
+
+		// Linking job to node
+		err = s.linkJobToNode(&j, n)
+
+		if err != nil {
+			logging.Error("store: UpdateNodesForJob(): Unable to link node to job")
+			return err
+		}
+	}
+
+	logging.Info("store: UpdateNodesForJob took ", time.Since(start))
 	return nil
 }
 

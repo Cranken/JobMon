@@ -50,6 +50,11 @@ func (s *MockStore) UpdateJob(job job.JobMetadata) error {
 	return nil
 }
 
+func (s *MockStore) UpdateNodesForJob(job job.JobMetadata) error {
+	s.Calls += 1
+	return nil
+}
+
 func (s *MockStore) GetJobTags(username string) ([]job.JobTag, error) {
 	s.Calls += 1
 	return make([]job.JobTag, 0), nil

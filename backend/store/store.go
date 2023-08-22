@@ -36,6 +36,9 @@ type Store interface {
 	// UpdateJob update the job metadata.
 	UpdateJob(job job.JobMetadata) error
 
+	// UpdateJob update the nodes associated with the given node.
+	UpdateNodesForJob(job job.JobMetadata) error
+
 	// GetJobTags returns all job tags for the user 'username'
 	GetJobTags(username string) ([]job.JobTag, error)
 
