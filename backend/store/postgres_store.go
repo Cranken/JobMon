@@ -59,6 +59,16 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 	s.db.RegisterModel((*job.JobToTags)(nil))
 	s.db.RegisterModel((*job.JobToNodes)(nil))
 
+	// Table job_metadata
+	_, err =
+		s.db.NewCreateTable().
+			Model((*job.JobMetadata)(nil)).
+			IfNotExists().
+			Exec(context.Background())
+	if err != nil {
+		logging.Error("store: Init(): Failed to create table job_metadata: ", err)
+	}
+
 	// Table metric_config
 	_, err =
 		s.db.NewCreateTable().
@@ -68,6 +78,7 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 	if err != nil {
 		logging.Error("store: Init(): Failed to create table metric_config: ", err)
 	}
+
 	// Table job_metadata_data
 	_, err =
 		s.db.NewCreateTable().
@@ -78,6 +89,17 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 			Exec(context.Background())
 	if err != nil {
 		logging.Error("store: Init(): Failed to create table job_metadata_data: ", err)
+	}
+
+	// Table change_points
+	_, err =
+		s.db.NewCreateTable().
+			Model((*job.ChangePoint)(nil)).
+			ForeignKey(`("data_id") REFERENCES "job_metadata_data" ("id") ON DELETE CASCADE`).
+			IfNotExists().
+			Exec(context.Background())
+	if err != nil {
+		logging.Error("store: Init(): Failed to create table change_points: ", err)
 	}
 
 	// Table job_tags
@@ -122,16 +144,6 @@ func (s *PostgresStore) Init(c config.Configuration, influx *db.DB) {
 			Exec(context.Background())
 	if err != nil {
 		logging.Error("store: Init(): Failed to create table job_to_nodes: ", err)
-	}
-
-	// Table job_metadata
-	_, err =
-		s.db.NewCreateTable().
-			Model((*job.JobMetadata)(nil)).
-			IfNotExists().
-			Exec(context.Background())
-	if err != nil {
-		logging.Error("store: Init(): Failed to create table job_metadata: ", err)
 	}
 
 	// Table user_sessions
@@ -190,18 +202,54 @@ func (s *PostgresStore) Migrate(source *Store) {
 }
 
 // PutJob implements PutJob method of store interface.
-func (s *PostgresStore) PutJob(job job.JobMetadata) error {
+func (s *PostgresStore) PutJob(j job.JobMetadata) error {
 	start := time.Now()
 
+	// Insert job into job_metadata table
 	_, err :=
 		s.db.NewInsert().
-			Model(&job).
+			Model(&j).
 			Exec(context.Background())
 	if err != nil {
 		return err
 	}
 
-	logging.Info("store: PutJob (job ID = ", job.Id, ") took ", time.Since(start))
+	// Create and link nodes
+	for _, n := range j.Nodes {
+		err := s.db.NewSelect().
+			Model(n).
+			Where("name = ?", n.Name).
+			Scan(context.Background())
+		if err != nil {
+			logging.Error("store: PutJob(): Unable to read node from postgres")
+			return err
+		}
+		if n.Id == 0 {
+			err = s.insertNode(n)
+			if err != nil {
+				logging.Error("store: PutJob(): Unable to insert node")
+				return err
+			}
+			logging.Info("store: PutJob(): Unknown Node ", n.Name, " created")
+		}
+
+		// Linking job to node
+		j2n :=
+			job.JobToNodes{
+				JobId:  j.Id,
+				NodeId: n.Id,
+			}
+		_, err = s.db.NewInsert().
+			Model(&j2n).
+			Exec(context.Background())
+
+		if err != nil {
+			logging.Error("store: PutJob(): Unable to link node to job")
+			return err
+		}
+	}
+
+	logging.Info("store: PutJob (job ID = ", j.Id, ") took ", time.Since(start))
 	return nil
 }
 
@@ -215,6 +263,7 @@ func (s *PostgresStore) GetJob(id int) (job job.JobMetadata, err error) {
 			Model(&job).
 			WherePK().
 			Relation("Tags").
+			Relation("Nodes").
 			Scan(context.Background())
 	if err != nil {
 		return
@@ -250,7 +299,7 @@ func (s *PostgresStore) GetFilteredJobs(
 ) {
 	start := time.Now()
 
-	query := s.db.NewSelect().Model(&jobs).Relation("Tags")
+	query := s.db.NewSelect().Model(&jobs).Relation("Tags").Relation("Nodes")
 	query = appendTagFilter(query, filter.Tags, s.db)
 	query = appendValueFilter(query, filter.UserId, "user_id")
 	query = appendValueFilter(query, filter.UserName, "user_name")
@@ -654,7 +703,8 @@ func (s *PostgresStore) startCleanJobsTimer() {
 	}
 }
 
-// WriteMetricConfig writes the given config to the database
+// WriteMetricConfig writes the given config to the database.
+// In case a metric with the same GUId already exists on the database, the metric is updated.
 func (s *PostgresStore) WriteMetricConfig(config *config.MetricConfig) error {
 	start := time.Now()
 
@@ -666,6 +716,16 @@ func (s *PostgresStore) WriteMetricConfig(config *config.MetricConfig) error {
 	logging.Info("store: WriteMetricConfig for metric ", config.GUID, " took ", time.Since(start))
 
 	return err
+}
+
+func (s *PostgresStore) insertNode(node *job.Node) (err error) {
+	start := time.Now()
+	node.Id = 0
+
+	_, err = s.db.NewInsert().Model(node).On("CONFLICT (name) DO NOTHING").Exec(context.Background())
+
+	logging.Info("store: updating nodes list took ", time.Since(start))
+	return
 }
 
 // appendValueFilter appends filter values val with key to the query.

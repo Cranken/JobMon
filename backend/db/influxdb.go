@@ -185,7 +185,9 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 	cps := analysis.ChangePointDetection(&aggData)
 	for i := range data {
 		data_i := &data[i]
-		data_i.ChangePoints = cps[data_i.Config.Measurement]
+		for _, cp := range cps[data_i.Config.Measurement] {
+			data_i.ChangePoints = append(data_i.ChangePoints, job.ChangePoint{Time: cp})
+		}
 	}
 
 	return

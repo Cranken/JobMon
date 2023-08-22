@@ -43,8 +43,8 @@ type JobToNodes struct {
 }
 
 type Node struct {
-	Id   int64 `bun:",pk,autoincrement"`
-	Name string
+	Id   int64  `bun:",pk,autoincrement"`
+	Name string `bun:",notnull,unique"`
 }
 
 // JobMetaData represents the job data.
@@ -55,7 +55,13 @@ type JobMetadataData struct {
 	Config           config.MetricConfig
 	Mean             float64
 	Max              float64
-	ChangePoints     []time.Time
+	ChangePoints     []ChangePoint `bun:"rel:has-many,join:id=data_id"`
+}
+
+type ChangePoint struct {
+	Id     int64 `bun:",pk,autoincrement"`
+	DataId int64
+	Time   time.Time
 }
 
 // StopJob stores the ExitCode of a job and the end time.
