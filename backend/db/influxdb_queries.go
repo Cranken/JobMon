@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"jobmon/job"
 	"jobmon/logging"
 	"strings"
 	"time"
@@ -202,6 +203,21 @@ func createQuantileMeasurementQuery(
 	q = sb.String()
 
 	logging.Debug("db: createQuantileMeasurementQuery(): flux query string = ", q)
+	return
+}
+
+// Creates a string of nodes as required by the database
+func createNodeString(nodes []*job.Node) (nodesString string) {
+	if len(nodes) == 0 {
+		return
+	}
+	nodesString = nodes[0].Name
+
+	for _, n := range nodes[1:] {
+		nodesString += "|"
+		nodesString += n.Name
+	}
+	logging.Debug("db: createNodeString: Nodes string = ", nodesString)
 	return
 }
 

@@ -292,8 +292,8 @@ func (r *Router) GetJob(
 	// Check authorization to access node metrics
 	if node != "" {
 		jobNodeMap := make(map[string]struct{})
-		for _, jobNode := range strings.Split(j.NodeList, "|") {
-			jobNodeMap[jobNode] = struct{}{}
+		for _, jobNode := range j.Nodes {
+			jobNodeMap[jobNode.Name] = struct{}{}
 		}
 		for _, reqNode := range strings.Split(node, "|") {
 			if _, ok := jobNodeMap[reqNode]; !ok {
@@ -330,7 +330,11 @@ func (r *Router) GetJob(
 			j.StopTime = int(time.Now().Unix())
 			node = ""
 		}
-		jobData, err = (*r.db).GetJobData(&j, node, sampleInterval, raw)
+		nodes := []*job.Node{}
+		for _, n := range strings.Split(node, "|") {
+			nodes = append(nodes, &job.Node{Id: 0, Name: n})
+		}
+		jobData, err = (*r.db).GetJobData(&j, nodes, sampleInterval, raw)
 	}
 	if err != nil {
 		logging.Error("router: GetJob(): Could not get job metric data (job ID = ", id, "): ", err)
@@ -875,7 +879,7 @@ func (r *Router) LiveMonitoring(
 						j.StopTime = wsLoadMetricsMsg.StopTime
 						dur, _ := time.ParseDuration(r.config.SampleInterval)
 						_, bestInterval := j.CalculateSampleIntervals(dur)
-						data, err := (*r.db).GetJobData(&j, "", bestInterval, false)
+						data, err := (*r.db).GetJobData(&j, []*job.Node{}, bestInterval, false)
 						j.StartTime = origStartTime
 						j.StopTime = origStopTime
 						if err == nil {

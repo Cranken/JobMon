@@ -20,7 +20,6 @@ type JobMetadata struct {
 	NumTasks     int       // number of requested tasks / processes
 	TasksPerNode int       // number of requested tasks per node
 	GPUsPerNode  int       // number of requested GPUs / accelerators  per node
-	NodeList     string    // Nodes allocated for the job
 	StartTime    int       // Job start time (in seconds since the Epoch (1970-01-01 00:00 UTC))
 	StopTime     int       // Job end time
 	IsRunning    bool      // is job still running?

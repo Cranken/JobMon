@@ -118,7 +118,7 @@ func (db *InfluxDB) Close() {
 // in case it was not specified.
 func (db *InfluxDB) GetJobData(
 	j *job.JobMetadata,
-	nodes string,
+	nodes []*job.Node,
 	sampleInterval time.Duration,
 	raw bool,
 ) (
@@ -126,8 +126,8 @@ func (db *InfluxDB) GetJobData(
 	err error,
 ) {
 	// if no subset of job nodes is selected then use all nodes from NodeList
-	if nodes == "" {
-		nodes = j.NodeList
+	if len(nodes) == 0 {
+		nodes = j.Nodes
 	}
 	return db.getJobData(j, nodes, sampleInterval, raw, false)
 }
@@ -136,7 +136,7 @@ func (db *InfluxDB) GetJobData(
 // Single node jobs also return aggregated data for metrics with metric granularity finer than per node.
 func (db *InfluxDB) GetAggregatedJobData(
 	j *job.JobMetadata,
-	nodes string,
+	nodes []*job.Node,
 	sampleInterval time.Duration,
 	raw bool,
 ) (
@@ -144,8 +144,8 @@ func (db *InfluxDB) GetAggregatedJobData(
 	err error,
 ) {
 	// if no subset of job nodes is selected then use all nodes from NodeList
-	if nodes == "" {
-		nodes = j.NodeList
+	if len(nodes) == 0 {
+		nodes = j.Nodes
 	}
 	forceAggregate := true
 	return db.getJobData(j, nodes, sampleInterval, raw, forceAggregate)
@@ -178,7 +178,7 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 	// Get aggregated metrics
 	raw := false
 	forceAggregate := true
-	aggData, err := db.getJobData(j, j.NodeList, interval, raw, forceAggregate)
+	aggData, err := db.getJobData(j, j.Nodes, interval, raw, forceAggregate)
 
 	// Compute change points that split measurements into
 	// "statistically homogeneous" segments
@@ -196,7 +196,7 @@ func (db *InfluxDB) GetJobMetadataMetrics(j *job.JobMetadata) (data []job.JobMet
 // GetMetricDataWithAggFn returns the the metric-data data for job j based on the configuration m
 // and aggregated by function aggFn.
 func (db *InfluxDB) GetMetricDataWithAggFn(j *job.JobMetadata, m conf.MetricConfig, aggFn string, sampleInterval time.Duration) (data job.MetricData, err error) {
-	tempResult, err := db.queryAggregateMeasurement(m, j, j.NodeList, aggFn, sampleInterval)
+	tempResult, err := db.queryAggregateMeasurement(m, j, j.Nodes, aggFn, sampleInterval)
 	if err != nil {
 		logging.Error("db: GetMetricDataWithAggFn(): Job ", j.Id, ": could not get quantile data: ", err)
 		return
@@ -268,7 +268,7 @@ func (db *InfluxDB) CreateLiveMonitoringChannel(j *job.JobMetadata) (chan []job.
 // If no nodes are specified, data for all nodes are queried.
 func (db *InfluxDB) getJobData(
 	j *job.JobMetadata,
-	nodes string,
+	nodes []*job.Node,
 	sampleInterval time.Duration,
 	raw bool,
 	forceAggregate bool,
@@ -423,7 +423,7 @@ func (db *InfluxDB) getMetadataData(j *job.JobMetadata) (
 func (db *InfluxDB) query(
 	metric conf.MetricConfig,
 	j *job.JobMetadata,
-	nodes string,
+	nodes []*job.Node,
 	sampleInterval time.Duration,
 	forceAggregate bool,
 ) (
@@ -436,7 +436,7 @@ func (db *InfluxDB) query(
 	var queryResult *api.QueryTableResult
 	separationKey := metric.SeparationKey
 	// If only one node is specified, always return detailed data, never aggregated data
-	if numNodes := strings.Count(nodes, "|") + 1; numNodes == 1 && !forceAggregate {
+	if numNodes := len(nodes); numNodes == 1 && !forceAggregate {
 		queryResult, err = db.querySimpleMeasurement(metric, j, nodes, sampleInterval)
 	} else {
 		if metric.Type != "node" {
@@ -469,7 +469,7 @@ func (db *InfluxDB) query(
 func (db *InfluxDB) queryRaw(
 	metric conf.MetricConfig,
 	j *job.JobMetadata,
-	node string,
+	node []*job.Node,
 	sampleInterval time.Duration,
 	forceAggregate bool,
 ) (
@@ -489,7 +489,7 @@ func (db *InfluxDB) queryRaw(
 func (db *InfluxDB) querySimpleMeasurement(
 	metric conf.MetricConfig,
 	j *job.JobMetadata,
-	nodes string,
+	nodes []*job.Node,
 	sampleInterval time.Duration,
 ) (
 	result *api.QueryTableResult,
@@ -499,7 +499,7 @@ func (db *InfluxDB) querySimpleMeasurement(
 		db.bucketName,
 		j.StartTime, j.StopTime,
 		metric.Measurement, metric.Type,
-		nodes,
+		createNodeString(nodes),
 		sampleInterval,
 		metric.FilterFunc, metric.PostQueryOp,
 	)
@@ -515,7 +515,7 @@ func (db *InfluxDB) querySimpleMeasurement(
 func (db *InfluxDB) querySimpleMeasurementRaw(
 	metric conf.MetricConfig,
 	j *job.JobMetadata,
-	nodes string,
+	nodes []*job.Node,
 	sampleInterval time.Duration,
 ) (
 	result string,
@@ -525,7 +525,7 @@ func (db *InfluxDB) querySimpleMeasurementRaw(
 		db.bucketName,
 		j.StartTime, j.StopTime,
 		metric.Measurement, metric.Type,
-		nodes,
+		createNodeString(nodes),
 		sampleInterval,
 		metric.FilterFunc, metric.PostQueryOp,
 	)
@@ -624,7 +624,7 @@ func parseQueryResult(
 func (db *InfluxDB) queryAggregateMeasurement(
 	metric conf.MetricConfig,
 	j *job.JobMetadata,
-	nodes string,
+	nodes []*job.Node,
 	aggFn string,
 	sampleInterval time.Duration,
 ) (
@@ -639,7 +639,7 @@ func (db *InfluxDB) queryAggregateMeasurement(
 		db.bucketName,
 		j.StartTime, j.StopTime,
 		measurement,
-		nodes,
+		createNodeString(nodes),
 		sampleInterval,
 		metric.FilterFunc,
 		metric.PostQueryOp,
@@ -656,7 +656,7 @@ func (db *InfluxDB) queryAggregateMeasurement(
 func (db *InfluxDB) queryAggregateMeasurementRaw(
 	metric conf.MetricConfig,
 	j *job.JobMetadata,
-	nodes string,
+	nodes []*job.Node,
 	aggFn string,
 	sampleInterval time.Duration,
 ) (
@@ -671,7 +671,7 @@ func (db *InfluxDB) queryAggregateMeasurementRaw(
 		db.bucketName,
 		j.StartTime, j.StopTime,
 		measurement,
-		nodes,
+		createNodeString(nodes),
 		sampleInterval,
 		metric.FilterFunc,
 		metric.PostQueryOp,
@@ -711,7 +711,7 @@ func (db *InfluxDB) queryQuantileMeasurement(
 		db.bucketName,
 		j.StartTime, j.StopTime,
 		measurement,
-		j.NodeList,
+		createNodeString(j.Nodes),
 		sampleInterval,
 		filterFunc,
 		metric.PostQueryOp,
@@ -749,7 +749,7 @@ func (db *InfluxDB) queryMetadataMeasurements(
 			db.bucketName,
 			j.StartTime, j.StopTime,
 			measurement,
-			j.NodeList,
+			createNodeString(j.Nodes),
 			metric.FilterFunc,
 			metric.PostQueryOp,
 		)
@@ -778,10 +778,10 @@ func (db *InfluxDB) queryLastDatapoints(j job.JobMetadata) (metricData []job.Met
 			var queryResult *api.QueryTableResult
 			separationKey := "hostname"
 			if j.NumNodes == 1 {
-				queryResult, err = db.querySimpleMeasurement(m, &j, j.NodeList, sampleInterval)
+				queryResult, err = db.querySimpleMeasurement(m, &j, j.Nodes, sampleInterval)
 				separationKey = m.SeparationKey
 			} else {
-				queryResult, err = db.queryAggregateMeasurement(m, &j, j.NodeList, m.AggFn, sampleInterval)
+				queryResult, err = db.queryAggregateMeasurement(m, &j, j.Nodes, m.AggFn, sampleInterval)
 			}
 			if err != nil {
 				logging.Error("db: queryLastDatapoints(): Job ", j.Id, ": could not get last datapoints: ", err)
@@ -919,12 +919,11 @@ func (db *InfluxDB) updateAggregationTasks() {
 
 // getPartition returns a partition configuration for job j.
 func (db *InfluxDB) getPartition(j *job.JobMetadata) conf.BasePartitionConfig {
-	nodes := strings.Split(j.NodeList, "|")
 	for _, vp := range db.partitionConfig[j.Partition].VirtualPartitions {
 		matches := true
 		// Check if all nodes are in vp
-		for _, n := range nodes {
-			if !utils.Contains(vp.Nodes, n) {
+		for _, n := range j.Nodes {
+			if !utils.Contains(vp.Nodes, n.Name) {
 				matches = false
 				break
 			}

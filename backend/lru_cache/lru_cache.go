@@ -44,9 +44,9 @@ func (c *LRUCache) Get(j *job.JobMetadata, sampleInterval time.Duration) (data j
 		return data, err
 	}
 	if j.NumNodes == 1 {
-		data, err = (*c.db).GetJobData(j, j.NodeList, sampleInterval, false)
+		data, err = (*c.db).GetJobData(j, j.Nodes, sampleInterval, false)
 	} else {
-		data, err = (*c.db).GetJobData(j, "", sampleInterval, false)
+		data, err = (*c.db).GetJobData(j, []*job.Node{}, sampleInterval, false)
 	}
 	if err == nil {
 		c.put(Item{id: j.Id, data: data})
