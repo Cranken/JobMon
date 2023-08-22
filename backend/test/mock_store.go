@@ -25,6 +25,11 @@ func (s *MockStore) PutJob(job job.JobMetadata) error {
 	return nil
 }
 
+func (s *MockStore) PutJobData(id int64, job job.JobMetadataData) error {
+	s.Calls += 1
+	return nil
+}
+
 func (s *MockStore) GetJob(id int) (job.JobMetadata, error) {
 	s.Calls += 1
 	return job.JobMetadata{}, nil

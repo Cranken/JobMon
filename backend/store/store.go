@@ -20,6 +20,9 @@ type Store interface {
 	// PutJob adds job metadata to store
 	PutJob(job job.JobMetadata) error
 
+	// PutJobData adds data corresponding to job metadata
+	PutJobData(id int64, data job.JobMetadataData) error
+
 	// GetJob returns metadata for job with jobid id.
 	GetJob(id int) (job.JobMetadata, error)
 

@@ -245,6 +245,20 @@ func (s *PostgresStore) PutJob(j job.JobMetadata) error {
 	return nil
 }
 
+// PutJobData implements PutJobData method of store interface.
+func (s *PostgresStore) PutJobData(id int64, d job.JobMetadataData) (err error) {
+	start := time.Now()
+	_, err =
+		s.db.NewInsert().
+			Model(&d).
+			Exec(context.Background())
+	if err != nil {
+		return
+	}
+	logging.Info("store: PutJobData ( for job ID = ", id, " and metric GUID = ", d.MetricConfigGuid, ") took ", time.Since(start))
+	return
+}
+
 // GetJob implements GetJob method of store interface.
 func (s *PostgresStore) GetJob(id int) (job job.JobMetadata, err error) {
 	start := time.Now()

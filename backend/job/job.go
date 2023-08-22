@@ -52,10 +52,10 @@ type JobMetadataData struct {
 	Id               int64 `bun:",pk,autoincrement"`
 	JobId            int64
 	MetricConfigGuid string
-	Config           config.MetricConfig
 	Mean             float64
 	Max              float64
-	ChangePoints     []ChangePoint `bun:"rel:has-many,join:id=data_id"`
+	Config           config.MetricConfig `bun:"rel:has-one,join:metric_config_guid=guid"`
+	ChangePoints     []ChangePoint       `bun:"rel:has-many,join:id=data_id"`
 }
 
 type ChangePoint struct {
