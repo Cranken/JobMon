@@ -10,29 +10,28 @@ const DEFAULT_MAX_POINTS_PER_JOB = 200
 
 // JobMetadata represents all the metadata of a job.
 type JobMetadata struct {
-	Id           int       `bun:",pk"` // uniq job ID
-	UserId       int       // numeric unix user ID
-	UserName     string    // unix user name
-	GroupId      int       // numeric unix group ID
-	GroupName    string    // unix group name
-	ClusterId    string    // cluster name
-	NumNodes     int       // number of requested nodes
-	NumTasks     int       // number of requested tasks / processes
-	TasksPerNode int       // number of requested tasks per node
-	GPUsPerNode  int       // number of requested GPUs / accelerators  per node
-	StartTime    int       // Job start time (in seconds since the Epoch (1970-01-01 00:00 UTC))
-	StopTime     int       // Job end time
-	IsRunning    bool      // is job still running?
-	JobName      string    // job name / description
-	Account      string    // account charged for the resources
-	TTL          int       // Time to life
-	Partition    string    // Requested resource partition
-	JobScript    string    // Submitted job script
-	ExitCode     int       // global job exit code
-	Nodes        []*Node   `bun:"m2m:job_to_nodes,join:Job=Node"`
-	Tags         []*JobTag `bun:"m2m:job_to_tags,join:Job=Tag"`
-	Data         []JobMetadataData
-	Data2        []*JobMetadataData `bun:"rel:has-many,join:id=job_id"`
+	Id           int                `bun:",pk"` // uniq job ID
+	UserId       int                // numeric unix user ID
+	UserName     string             // unix user name
+	GroupId      int                // numeric unix group ID
+	GroupName    string             // unix group name
+	ClusterId    string             // cluster name
+	NumNodes     int                // number of requested nodes
+	NumTasks     int                // number of requested tasks / processes
+	TasksPerNode int                // number of requested tasks per node
+	GPUsPerNode  int                // number of requested GPUs / accelerators  per node
+	StartTime    int                // Job start time (in seconds since the Epoch (1970-01-01 00:00 UTC))
+	StopTime     int                // Job end time
+	IsRunning    bool               // is job still running?
+	JobName      string             // job name / description
+	Account      string             // account charged for the resources
+	TTL          int                // Time to life
+	Partition    string             // Requested resource partition
+	JobScript    string             // Submitted job script
+	ExitCode     int                // global job exit code
+	Nodes        []*Node            `bun:"m2m:job_to_nodes,join:Job=Node"`
+	Tags         []*JobTag          `bun:"m2m:job_to_tags,join:Job=Tag"`
+	Data         []*JobMetadataData `bun:"rel:has-many,join:id=job_id"`
 }
 
 type JobToNodes struct {

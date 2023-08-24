@@ -241,7 +241,7 @@ func (s *PostgresStore) PutJob(j job.JobMetadata) error {
 		}
 	}
 
-	for _, d := range j.Data2 {
+	for _, d := range j.Data {
 		err = s.PutJobData(*d)
 		if err != nil {
 			return err
@@ -292,7 +292,7 @@ func (s *PostgresStore) GetJob(id int) (job job.JobMetadata, err error) {
 			WherePK().
 			Relation("Tags").
 			Relation("Nodes").
-			Relation("Data2", func(q *bun.SelectQuery) *bun.SelectQuery {
+			Relation("Data", func(q *bun.SelectQuery) *bun.SelectQuery {
 				return q.
 					// Relation("ChangePoints").
 					// TODO Directly fetching Changepoints leads to failure
@@ -304,7 +304,7 @@ func (s *PostgresStore) GetJob(id int) (job job.JobMetadata, err error) {
 	}
 
 	// Only necessary since direct fetching in the query above does not work correctly
-	for _, d := range job.Data2 {
+	for _, d := range job.Data {
 		err = s.recursivelyFetchData(d)
 		if err != nil {
 			return
@@ -497,7 +497,10 @@ func (s *PostgresStore) StopJob(
 	if err != nil {
 		return
 	}
-	job.Data = data
+
+	for _, d := range data {
+		job.Data = append(job.Data, &d)
+	}
 
 	err = s.UpdateJob(job)
 	if err != nil {
@@ -668,7 +671,7 @@ func (s *PostgresStore) UpdateJob(j job.JobMetadata) (err error) {
 		return
 	}
 
-	for _, d := range j.Data2 {
+	for _, d := range j.Data {
 		err = s.PutJobData(*d)
 		if err != nil {
 			return

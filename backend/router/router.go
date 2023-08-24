@@ -1048,7 +1048,9 @@ func (r *Router) RefreshMetadata(
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	j.Data = data
+	for _, d := range data {
+		j.Data = append(j.Data, &d)
+	}
 	err = r.store.UpdateJob(j)
 	if err != nil {
 		logging.Error("Router: RefreshMetadata(): Could not update job ", id, "in store: ", err)
