@@ -32,6 +32,7 @@ type JobMetadata struct {
 	Nodes        []*Node   `bun:"m2m:job_to_nodes,join:Job=Node"`
 	Tags         []*JobTag `bun:"m2m:job_to_tags,join:Job=Tag"`
 	Data         []JobMetadataData
+	Data2        []*JobMetadataData `bun:"rel:has-many,join:id=job_id"`
 }
 
 type JobToNodes struct {
@@ -48,9 +49,9 @@ type Node struct {
 
 // JobMetaData represents the job data.
 type JobMetadataData struct {
-	Id               int64 `bun:",pk,autoincrement"`
-	JobId            int64
-	MetricConfigGuid string
+	Id               int64  `bun:",pk,autoincrement"`
+	JobId            int    `bun:",unique:unique_data"`
+	MetricConfigGuid string `bun:",unique:unique_data"`
 	Mean             float64
 	Max              float64
 	Config           config.MetricConfig `bun:"rel:has-one,join:metric_config_guid=guid"`

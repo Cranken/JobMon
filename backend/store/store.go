@@ -20,11 +20,18 @@ type Store interface {
 	// PutJob adds job metadata to store
 	PutJob(job job.JobMetadata) error
 
-	// PutJobData adds data corresponding to job metadata
-	PutJobData(id int64, data job.JobMetadataData) error
+	/* PutJobData adds data corresponding to job metadata
+	 * Corresponding changepoints automatically get stored
+	 *
+	 * In case there is already data stored for the given job combined with the metric the dataset gets updated.
+	 */
+	PutJobData(data job.JobMetadataData) error
 
 	// GetJob returns metadata for job with jobid id.
 	GetJob(id int) (job.JobMetadata, error)
+
+	// GetJob returns data for the given job
+	GetDataForJob(jobID int) ([]job.JobMetadataData, error)
 
 	// GetAllJobs returns metadata information for all jobs.
 	GetAllJobs() ([]job.JobMetadata, error)

@@ -25,7 +25,7 @@ func (s *MockStore) PutJob(job job.JobMetadata) error {
 	return nil
 }
 
-func (s *MockStore) PutJobData(id int64, job job.JobMetadataData) error {
+func (s *MockStore) PutJobData(job job.JobMetadataData) error {
 	s.Calls += 1
 	return nil
 }
@@ -33,6 +33,11 @@ func (s *MockStore) PutJobData(id int64, job job.JobMetadataData) error {
 func (s *MockStore) GetJob(id int) (job.JobMetadata, error) {
 	s.Calls += 1
 	return job.JobMetadata{}, nil
+}
+
+func (s *MockStore) GetDataForJob(jobID int) ([]job.JobMetadataData, error) {
+	s.Calls += 1
+	return []job.JobMetadataData{}, nil
 }
 
 func (s *MockStore) GetAllJobs() ([]job.JobMetadata, error) {

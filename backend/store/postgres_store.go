@@ -241,21 +241,43 @@ func (s *PostgresStore) PutJob(j job.JobMetadata) error {
 		}
 	}
 
+	for _, d := range j.Data2 {
+		err = s.PutJobData(*d)
+		if err != nil {
+			return err
+		}
+	}
+
 	logging.Info("store: PutJob (job ID = ", j.Id, ") took ", time.Since(start))
 	return nil
 }
 
 // PutJobData implements PutJobData method of store interface.
-func (s *PostgresStore) PutJobData(id int64, d job.JobMetadataData) (err error) {
+func (s *PostgresStore) PutJobData(d job.JobMetadataData) (err error) {
 	start := time.Now()
 	_, err =
 		s.db.NewInsert().
 			Model(&d).
+			On("CONFLICT (job_id, metric_config_guid) DO UPDATE").
 			Exec(context.Background())
 	if err != nil {
 		return
 	}
-	logging.Info("store: PutJobData ( for job ID = ", id, " and metric GUID = ", d.MetricConfigGuid, ") took ", time.Since(start))
+
+	// Remove previously assigned changepoints
+	_, err = s.db.NewDelete().Table("change_points").Where("data_id = ?", d.Id).Exec(context.Background())
+	if err != nil {
+		return
+	}
+	for _, cp := range d.ChangePoints {
+		cp.DataId = d.Id
+		_, err = s.db.NewInsert().Model(&cp).Exec(context.Background())
+		if err != nil {
+			return
+		}
+	}
+
+	logging.Info("store: PutJobData ( for job ID = ", d.JobId, " and metric GUID = ", d.MetricConfigGuid, ") took ", time.Since(start))
 	return
 }
 
@@ -270,16 +292,49 @@ func (s *PostgresStore) GetJob(id int) (job job.JobMetadata, err error) {
 			WherePK().
 			Relation("Tags").
 			Relation("Nodes").
+			Relation("Data2", func(q *bun.SelectQuery) *bun.SelectQuery {
+				return q.
+					// Relation("ChangePoints").
+					// TODO Directly fetching Changepoints leads to failure
+					Relation("Config")
+			}).
 			Scan(context.Background())
 	if err != nil {
 		return
+	}
+
+	// Only necessary since direct fetching in the query above does not work correctly
+	for _, d := range job.Data2 {
+		err = s.recursivelyFetchData(d)
+		if err != nil {
+			return
+		}
 	}
 
 	logging.Info("store: GetJob (job ID = ", job.Id, ") took ", time.Since(start))
 	return
 }
 
+func (s *PostgresStore) GetDataForJob(jobID int) (data []job.JobMetadataData, err error) {
+	start := time.Now()
+
+	err =
+		s.db.NewSelect().
+			Model(&data).
+			Where("job_id=?", jobID).
+			Relation("Config").
+			Relation("ChangePoints").
+			Scan(context.Background())
+	if err != nil {
+		return
+	}
+
+	logging.Info("store: GetDataForJob (job ID = ", jobID, ") took ", time.Since(start))
+	return
+}
+
 // GetAllJobs implements GetAllJobs of store interface.
+// This function does not fetch data to minimize database traffic. To get data use the GetDataForJob method
 func (s *PostgresStore) GetAllJobs() (jobs []job.JobMetadata, err error) {
 	start := time.Now()
 
@@ -297,6 +352,7 @@ func (s *PostgresStore) GetAllJobs() (jobs []job.JobMetadata, err error) {
 }
 
 // GetFilteredJobs implements GetFilteredJobs of store interface.
+// This function does not fetch data to minimize database traffic. To get data use the GetDataForJob method
 func (s *PostgresStore) GetFilteredJobs(
 	filter job.JobFilter,
 ) (
@@ -600,20 +656,27 @@ func (s *PostgresStore) Flush() {
 }
 
 // UpdateJob implements UpdateJob method of store interface.
-func (s *PostgresStore) UpdateJob(j job.JobMetadata) error {
+func (s *PostgresStore) UpdateJob(j job.JobMetadata) (err error) {
 	start := time.Now()
 
-	_, err :=
+	_, err =
 		s.db.NewUpdate().
 			Model(&j).
 			WherePK().
 			Exec(context.Background())
 	if err != nil {
-		return err
+		return
+	}
+
+	for _, d := range j.Data2 {
+		err = s.PutJobData(*d)
+		if err != nil {
+			return
+		}
 	}
 
 	logging.Info("store: UpdateJob took ", time.Since(start))
-	return nil
+	return
 }
 
 // UpdateNodesForJob implements UpdateNodesForJob method of store interface
@@ -799,6 +862,17 @@ func (s *PostgresStore) linkJobToNode(j *job.JobMetadata, n *job.Node) (err erro
 	_, err = s.db.NewInsert().
 		Model(&j2n).
 		Exec(context.Background())
+	return
+}
+
+// Extends given data with values from the database
+func (s *PostgresStore) recursivelyFetchData(d *job.JobMetadataData) (err error) {
+	err =
+		s.db.NewSelect().
+			Model(d).
+			Relation("Config").
+			Relation("ChangePoints").
+			Scan(context.Background())
 	return
 }
 
